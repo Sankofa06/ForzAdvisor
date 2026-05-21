@@ -6,14 +6,62 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		849462DA2FBDAB12004B8D9D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 849462B92FBD93A6004B8D9D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 849462C02FBD93A6004B8D9D;
+			remoteInfo = forzadvisor;
+		};
+		849462E62FBE0000004B8D9D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 849462B92FBD93A6004B8D9D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 849462C02FBD93A6004B8D9D;
+			remoteInfo = forzadvisor;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		849462C12FBD93A6004B8D9D /* forzadvisor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = forzadvisor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		849462D32FBDAB12004B8D9D /* forzadvisorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = forzadvisorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		849462E02FBE0000004B8D9D /* forzadvisorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = forzadvisorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		849462D22FBD98E9004B8D9D /* Exceptions for "forzadvisorDocs" folder in "forzadvisor" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"forza-tuning-app-PRD.md",
+				"overnight-progress.md",
+			);
+			target = 849462C02FBD93A6004B8D9D /* forzadvisor */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		849462C32FBD93A6004B8D9D /* forzadvisor */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = forzadvisor;
+			sourceTree = "<group>";
+		};
+		849462D02FBD98C0004B8D9D /* forzadvisorDocs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				849462D22FBD98E9004B8D9D /* Exceptions for "forzadvisorDocs" folder in "forzadvisor" target */,
+			);
+			path = forzadvisorDocs;
+			sourceTree = "<group>";
+		};
+		849462D42FBDAB12004B8D9D /* forzadvisorTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = forzadvisorTests;
+			sourceTree = "<group>";
+		};
+		849462E12FBE0000004B8D9D /* forzadvisorUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = forzadvisorUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,13 +74,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		849462D62FBDAB12004B8D9D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		849462E22FBE0000004B8D9D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		849462B82FBD93A6004B8D9D = {
 			isa = PBXGroup;
 			children = (
+				849462D02FBD98C0004B8D9D /* forzadvisorDocs */,
 				849462C32FBD93A6004B8D9D /* forzadvisor */,
+				849462D42FBDAB12004B8D9D /* forzadvisorTests */,
+				849462E12FBE0000004B8D9D /* forzadvisorUITests */,
 				849462C22FBD93A6004B8D9D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +106,8 @@
 			isa = PBXGroup;
 			children = (
 				849462C12FBD93A6004B8D9D /* forzadvisor.app */,
+				849462D32FBDAB12004B8D9D /* forzadvisorTests.xctest */,
+				849462E02FBE0000004B8D9D /* forzadvisorUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -62,6 +129,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				849462C32FBD93A6004B8D9D /* forzadvisor */,
+				849462D02FBD98C0004B8D9D /* forzadvisorDocs */,
 			);
 			name = forzadvisor;
 			packageProductDependencies = (
@@ -69,6 +137,52 @@
 			productName = forzadvisor;
 			productReference = 849462C12FBD93A6004B8D9D /* forzadvisor.app */;
 			productType = "com.apple.product-type.application";
+		};
+		849462D82FBDAB12004B8D9D /* forzadvisorTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 849462DD2FBDAB12004B8D9D /* Build configuration list for PBXNativeTarget "forzadvisorTests" */;
+			buildPhases = (
+				849462D72FBDAB12004B8D9D /* Sources */,
+				849462D62FBDAB12004B8D9D /* Frameworks */,
+				849462D52FBDAB12004B8D9D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				849462D92FBDAB12004B8D9D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				849462D42FBDAB12004B8D9D /* forzadvisorTests */,
+			);
+			name = forzadvisorTests;
+			packageProductDependencies = (
+			);
+			productName = forzadvisorTests;
+			productReference = 849462D32FBDAB12004B8D9D /* forzadvisorTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		849462E52FBE0000004B8D9D /* forzadvisorUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 849462EA2FBE0000004B8D9D /* Build configuration list for PBXNativeTarget "forzadvisorUITests" */;
+			buildPhases = (
+				849462E42FBE0000004B8D9D /* Sources */,
+				849462E22FBE0000004B8D9D /* Frameworks */,
+				849462E32FBE0000004B8D9D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				849462E72FBE0000004B8D9D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				849462E12FBE0000004B8D9D /* forzadvisorUITests */,
+			);
+			name = forzadvisorUITests;
+			packageProductDependencies = (
+			);
+			productName = forzadvisorUITests;
+			productReference = 849462E02FBE0000004B8D9D /* forzadvisorUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -82,6 +196,14 @@
 				TargetAttributes = {
 					849462C02FBD93A6004B8D9D = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					849462D82FBDAB12004B8D9D = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = 849462C02FBD93A6004B8D9D;
+					};
+					849462E52FBE0000004B8D9D = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = 849462C02FBD93A6004B8D9D;
 					};
 				};
 			};
@@ -100,12 +222,28 @@
 			projectRoot = "";
 			targets = (
 				849462C02FBD93A6004B8D9D /* forzadvisor */,
+				849462D82FBDAB12004B8D9D /* forzadvisorTests */,
+				849462E52FBE0000004B8D9D /* forzadvisorUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		849462BF2FBD93A6004B8D9D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		849462D52FBDAB12004B8D9D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		849462E32FBE0000004B8D9D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +260,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		849462D72FBDAB12004B8D9D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		849462E42FBE0000004B8D9D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		849462D92FBDAB12004B8D9D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 849462C02FBD93A6004B8D9D /* forzadvisor */;
+			targetProxy = 849462DA2FBDAB12004B8D9D /* PBXContainerItemProxy */;
+		};
+		849462E72FBE0000004B8D9D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 849462C02FBD93A6004B8D9D /* forzadvisor */;
+			targetProxy = 849462E62FBE0000004B8D9D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		849462CA2FBD93A7004B8D9D /* Debug */ = {
@@ -256,6 +421,7 @@
 				DEVELOPMENT_TEAM = 5RGU344VJR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to photograph your Forza performance screen for OCR.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +454,7 @@
 				DEVELOPMENT_TEAM = 5RGU344VJR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to photograph your Forza performance screen for OCR.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -310,6 +477,108 @@
 			};
 			name = Release;
 		};
+		849462DB2FBDAB12004B8D9D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5RGU344VJR;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaelwilliams.forzadvisorTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/forzadvisor.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/forzadvisor";
+			};
+			name = Debug;
+		};
+		849462DC2FBDAB12004B8D9D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5RGU344VJR;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaelwilliams.forzadvisorTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/forzadvisor.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/forzadvisor";
+			};
+			name = Release;
+		};
+		849462E82FBE0000004B8D9D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5RGU344VJR;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaelwilliams.forzadvisorUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = forzadvisor;
+			};
+			name = Debug;
+		};
+		849462E92FBE0000004B8D9D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5RGU344VJR;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.michaelwilliams.forzadvisorUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = forzadvisor;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -327,6 +596,24 @@
 			buildConfigurations = (
 				849462CD2FBD93A7004B8D9D /* Debug */,
 				849462CE2FBD93A7004B8D9D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		849462DD2FBDAB12004B8D9D /* Build configuration list for PBXNativeTarget "forzadvisorTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				849462DB2FBDAB12004B8D9D /* Debug */,
+				849462DC2FBDAB12004B8D9D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		849462EA2FBE0000004B8D9D /* Build configuration list for PBXNativeTarget "forzadvisorUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				849462E82FBE0000004B8D9D /* Debug */,
+				849462E92FBE0000004B8D9D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

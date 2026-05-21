@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct forzadvisorApp: App {
@@ -13,5 +14,6 @@ struct forzadvisorApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: SavedTune.self)
     }
 }
