@@ -100,6 +100,13 @@ struct TuneAPIResponse: Codable, Equatable {
             )
         )
     }
+
+    func mergedTuneResult(updating previous: TuneResult) -> TuneResult {
+        var adjustedTune = previous
+        adjustedTune.sections = tune.sections().merging(into: previous.sections)
+        adjustedTune.notes = notes.merging(into: previous.notes)
+        return adjustedTune
+    }
 }
 
 struct TuneAPITune: Codable, Equatable {

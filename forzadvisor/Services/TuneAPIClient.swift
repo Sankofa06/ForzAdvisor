@@ -27,7 +27,7 @@ struct TuneAPIClient: TuneProvider {
             adjustment: adjustment.apiValue
         )
         let response: TuneAPIResponse = try await performJSONRequest(payload: payload)
-        let adjustedTune = response.tuneResult(for: tune.request, id: tune.id)
+        let adjustedTune = response.mergedTuneResult(updating: tune)
         return TuneAdjustmentResult(
             tune: adjustedTune,
             changes: adjustedTune.changes(comparedWith: tune)

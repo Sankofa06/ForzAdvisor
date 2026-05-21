@@ -57,6 +57,28 @@ final class TuneAPIModelTests: XCTestCase {
         XCTAssertEqual(tune.notes.bias, "neutral")
     }
 
+    func testPartialAdjustmentResponseMergesIntoPreviousTune() async throws {
+        let previous = try await LocalSampleTuneProvider().generateTune(
+            for: TuneRequest(car: SampleTuningData.starterCar, discipline: .touge)
+        )
+        let response = TuneAPIResponse(
+            tune: TuneAPITune(
+                antirollBars: TuneAPIFrontRear(front: 24, rear: 26)
+            ),
+            notes: TuneAPINotes(ifPushesWide: "rear ARB already increased")
+        )
+
+        let adjusted = response.mergedTuneResult(updating: previous)
+
+        XCTAssertEqual(adjusted.id, previous.id)
+        XCTAssertEqual(adjusted.sections.map(\.title), previous.sections.map(\.title))
+        XCTAssertEqual(adjusted.section("Tires")?.number("Front pressure"), previous.section("Tires")?.number("Front pressure"))
+        XCTAssertEqual(adjusted.section("Antiroll Bars")?.number("Front"), 24)
+        XCTAssertEqual(adjusted.section("Antiroll Bars")?.number("Rear"), 26)
+        XCTAssertEqual(adjusted.notes.bias, previous.notes.bias)
+        XCTAssertEqual(adjusted.notes.ifPushesWide, "rear ARB already increased")
+    }
+
     func testCompositeProviderFallsBackToLocalWithoutAPIKey() async throws {
         let provider = CompositeTuneProvider(
             configuration: TuneProviderConfiguration(prefersRemoteGeneration: true),
