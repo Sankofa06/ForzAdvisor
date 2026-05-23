@@ -37,6 +37,7 @@ struct SavedTuneEditView: View {
                 TextField("Model", text: $draft.car.model)
                     .textInputAutocapitalization(.words)
             }
+            .forzAdvisorRowBackground()
 
             Section("Performance") {
                 LabeledContent("Weight") {
@@ -70,33 +71,38 @@ struct SavedTuneEditView: View {
                 }
                 .pickerStyle(.segmented)
             }
+            .forzAdvisorRowBackground()
 
             Section("Notes") {
                 TextEditor(text: $draft.playerNotes)
                     .frame(minHeight: 100)
             }
+            .forzAdvisorRowBackground()
 
             if draft.needsRetune {
                 Section("Re-tune recommended") {
                     Label("Weight or front distribution changed by more than 2%.", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ForzAdvisorTheme.warning)
                     Button("Save & Re-tune") {
                         onSaveAndRetune(draft)
                     }
                     .disabled(!draft.isValid)
                 }
+                .listRowBackground(ForzAdvisorTheme.warning.opacity(0.13))
             }
 
             if !draft.validationIssues.isEmpty {
                 Section("Fix before saving") {
                     ForEach(draft.validationIssues) { issue in
                         Label(issue.message, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ForzAdvisorTheme.warning)
                     }
                 }
+                .forzAdvisorRowBackground()
             }
         }
         .navigationTitle("Edit Tune")
+        .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Cancel", action: onCancel)

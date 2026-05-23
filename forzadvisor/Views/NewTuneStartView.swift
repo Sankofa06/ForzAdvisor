@@ -26,15 +26,14 @@ struct NewTuneStartView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("New Tune")
-                        .font(.title2.weight(.bold))
-                    Text("Take or import a Forza performance screenshot, then confirm every value before tuning.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
+                ForzAdvisorScreenHeader(
+                    title: "New Tune",
+                    subtitle: "Take or import a Forza performance screenshot, then confirm every value before tuning.",
+                    systemImage: "camera.metering.matrix",
+                    tint: ForzAdvisorTheme.warmAccent
+                )
             }
+            .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
             CaptureGuideSection()
 
@@ -50,6 +49,7 @@ struct NewTuneStartView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isProcessingPhoto)
+                .forzAdvisorRowBackground()
 
                 PhotosPicker(selection: $selectedItem, matching: .images) {
                     StartRow(
@@ -59,6 +59,7 @@ struct NewTuneStartView: View {
                     )
                 }
                 .disabled(isProcessingPhoto)
+                .forzAdvisorRowBackground()
 
                 Button(action: onManualEntry) {
                     StartRow(
@@ -69,6 +70,7 @@ struct NewTuneStartView: View {
                 }
                 .accessibilityIdentifier("manualEntryButton")
                 .buttonStyle(.plain)
+                .forzAdvisorRowBackground()
             }
 
             if isProcessingPhoto {
@@ -79,12 +81,13 @@ struct NewTuneStartView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .forzAdvisorRowBackground()
             }
 
             if let errorMessage {
                 Section("Photo OCR") {
                     Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ForzAdvisorTheme.warning)
                     if let lastFailedImage {
                         Button("Retry OCR") {
                             processCapturedPhoto(lastFailedImage)
@@ -92,9 +95,11 @@ struct NewTuneStartView: View {
                     }
                     Button("Enter manually", action: onManualEntry)
                 }
+                .forzAdvisorRowBackground()
             }
         }
         .navigationTitle("Tune Source")
+        .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Cancel", action: onCancel)
@@ -210,8 +215,11 @@ private struct CaptureGuideSection: View {
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(fields, id: \.0) { field, hint in
                     HStack(spacing: 10) {
-                        Image(systemName: "checkmark.circle")
-                            .foregroundStyle(.tint)
+                        ForzAdvisorIcon(
+                            systemName: "checkmark",
+                            tint: ForzAdvisorTheme.success,
+                            size: 28
+                        )
                         Text(field)
                             .font(.subheadline.weight(.semibold))
                         Spacer()
@@ -223,6 +231,7 @@ private struct CaptureGuideSection: View {
             }
             .padding(.vertical, 4)
         }
+        .forzAdvisorRowBackground()
     }
 }
 
@@ -233,10 +242,7 @@ private struct StartRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.title3)
-                .foregroundStyle(.tint)
-                .frame(width: 32)
+            ForzAdvisorIcon(systemName: systemImage)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)

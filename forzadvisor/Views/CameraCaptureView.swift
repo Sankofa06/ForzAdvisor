@@ -71,11 +71,6 @@ struct CameraCaptureView: View {
                 }
             }
         }
-        .task {
-            if authorizationStatus == .notDetermined {
-                requestCameraAccess()
-            }
-        }
     }
 
     private var authorizedCameraView: some View {

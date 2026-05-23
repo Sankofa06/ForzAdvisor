@@ -6,7 +6,7 @@
 //  one-shot photo capture for CameraCaptureView.
 //
 
-import AVFoundation
+@preconcurrency import AVFoundation
 import SwiftUI
 import UIKit
 
@@ -73,16 +73,14 @@ final class CameraViewController: UIViewController, AVCapturePhotoCaptureDelegat
         guard requestID != 0, requestID != lastCaptureRequestID else { return }
         lastCaptureRequestID = requestID
 
-        sessionQueue.async {
-            guard self.session.isRunning else {
-                self.reportError("Camera is still starting. Try again in a moment.")
-                return
-            }
-
-            let settings = AVCapturePhotoSettings()
-            settings.flashMode = .off
-            self.output.capturePhoto(with: settings, delegate: self)
+        guard session.isRunning else {
+            reportError("Camera is still starting. Try again in a moment.")
+            return
         }
+
+        let settings = AVCapturePhotoSettings()
+        settings.flashMode = .off
+        output.capturePhoto(with: settings, delegate: self)
     }
 
     func photoOutput(

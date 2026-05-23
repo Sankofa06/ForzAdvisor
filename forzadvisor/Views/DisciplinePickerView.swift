@@ -16,15 +16,9 @@ struct DisciplinePickerView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(car.displayName)
-                        .font(.title2.weight(.bold))
-                    Text("\(car.performanceClass.rawValue) \(car.performanceIndex) - \(car.drivetrain.rawValue) - \(car.weightPounds) lb - \(car.frontWeightPercent.formatted(.number.precision(.fractionLength(1))))% front")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.vertical, 4)
+                CarSummaryHeader(car: car)
             }
+            .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
             Section("Discipline") {
                 ForEach(DrivingDiscipline.allCases) { discipline in
@@ -39,6 +33,7 @@ struct DisciplinePickerView: View {
             }
         }
         .navigationTitle("Pick Tune Type")
+        .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Back", action: onBack)
@@ -47,15 +42,48 @@ struct DisciplinePickerView: View {
     }
 }
 
+private struct CarSummaryHeader: View {
+    let car: CarInput
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                ForzAdvisorIcon(systemName: "car.side", tint: ForzAdvisorTheme.warmAccent, size: 40)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(car.displayName)
+                        .font(.title2.weight(.bold))
+                    Text("Choose the tune behavior before generating values.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForzAdvisorPill(title: "\(car.performanceClass.rawValue) \(car.performanceIndex)")
+                    ForzAdvisorPill(title: car.drivetrain.rawValue, tint: ForzAdvisorTheme.warmAccent)
+                    ForzAdvisorPill(title: "\(car.weightPounds) lb")
+                    ForzAdvisorPill(
+                        title: "\(car.frontWeightPercent.formatted(.number.precision(.fractionLength(1))))% front",
+                        tint: ForzAdvisorTheme.success
+                    )
+                }
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
 private struct DisciplineRow: View {
     let discipline: DrivingDiscipline
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: discipline.symbolName)
-                .font(.title3)
-                .foregroundStyle(.tint)
-                .frame(width: 32)
+            ForzAdvisorIcon(
+                systemName: discipline.symbolName,
+                tint: ForzAdvisorTheme.disciplineColor(discipline)
+            )
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
@@ -64,9 +92,10 @@ private struct DisciplineRow: View {
                     if discipline == .touge {
                         Text("Signature")
                             .font(.caption2.weight(.bold))
+                            .foregroundStyle(ForzAdvisorTheme.warmAccent)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)
-                            .background(Color.accentColor.opacity(0.16))
+                            .background(ForzAdvisorTheme.warmAccent.opacity(0.15))
                             .clipShape(Capsule())
                     }
                 }
@@ -90,9 +119,18 @@ private extension View {
     @ViewBuilder
     func signatureDisciplineBackground(_ isSignature: Bool) -> some View {
         if isSignature {
-            listRowBackground(Color.accentColor.opacity(0.12))
+            listRowBackground(
+                LinearGradient(
+                    colors: [
+                        ForzAdvisorTheme.warmAccent.opacity(0.13),
+                        ForzAdvisorTheme.surface
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
         } else {
-            self
+            self.forzAdvisorRowBackground()
         }
     }
 }
@@ -102,15 +140,23 @@ struct TuneLoadingView: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            ProgressView()
-                .controlSize(.large)
+            ZStack {
+                Circle()
+                    .fill(ForzAdvisorTheme.accent.opacity(0.14))
+                    .frame(width: 72, height: 72)
+                ProgressView()
+                    .controlSize(.large)
+            }
             Text("Tuning \(request.car.displayName)")
                 .font(.title3.weight(.semibold))
             Text(request.discipline.title)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ForzAdvisorTheme.disciplineColor(request.discipline))
+                .fontWeight(.semibold)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(ForzAdvisorTheme.screenBackground.ignoresSafeArea())
+        .tint(ForzAdvisorTheme.accent)
         .navigationTitle("Generating")
     }
 }

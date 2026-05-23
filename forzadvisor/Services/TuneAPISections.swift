@@ -201,8 +201,8 @@ extension TuneAPITune {
     private var aeroSection: TuneSection? {
         guard let aero else { return nil }
         return section("Aero", "wind", [
-            line("Front", aero.front, "lb", digits: 0),
-            line("Rear", aero.rear, "lb", digits: 0)
+            line("Front", aero.frontPounds, "lb", digits: 0),
+            line("Rear", aero.rearPounds, "lb", digits: 0)
         ])
     }
 

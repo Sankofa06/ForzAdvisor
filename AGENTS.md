@@ -28,3 +28,15 @@ The current history only contains `Initial Commit`, so use concise imperative co
 ## Agent-Specific Instructions
 
 Preserve existing uncommitted work. Do not rewrite the PRD or Xcode project settings unless the task requires it. Keep generated files, DerivedData, and local Xcode user state out of version control.
+
+## Codex Completion And Release Default
+
+For completed app-code work, default to this order so a TestFlight build is available while deeper validation continues:
+
+1. Get a clean local Xcode build with zero errors and zero warnings. Treat warnings as blockers before committing.
+2. Commit the completed task with a focused message.
+3. Push the branch.
+4. Upload to TestFlight when signing and App Store Connect configuration are available.
+5. After the upload starts or finishes, run the relevant test suite and report results separately.
+
+Do not keep cycling on sandboxed Xcode attempts. If Codex hits sandbox, SwiftPM cache, signing, or CoreSimulator infrastructure failures, use the local Xcode/TestFlight path or the external Xcode gate instead. Preserve unrelated user changes and stop before commit/push/upload only when scope, signing, secrets, or build cleanliness is ambiguous.

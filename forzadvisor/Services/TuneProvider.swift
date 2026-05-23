@@ -8,9 +8,18 @@
 
 import Foundation
 
+typealias TuneProgressHandler = @MainActor (TuneResult) -> Void
+
 protocol TuneProvider {
     func generateTune(for request: TuneRequest) async throws -> TuneResult
+    func generateTune(for request: TuneRequest, onPartial: TuneProgressHandler?) async throws -> TuneResult
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult
+}
+
+extension TuneProvider {
+    func generateTune(for request: TuneRequest, onPartial: TuneProgressHandler?) async throws -> TuneResult {
+        try await generateTune(for: request)
+    }
 }
 
 struct LocalSampleTuneProvider: TuneProvider {
@@ -55,206 +64,128 @@ struct LocalSampleTuneProvider: TuneProvider {
 
     private func makeTune(for request: TuneRequest) -> TuneResult {
         let car = request.car
-        let frontWeightRatio = car.frontWeightPercent / 100
-        let rearWeightRatio = 1 - frontWeightRatio
-        let classBias = classBias(for: car.performanceClass)
-        let disciplineBias = disciplineBias(for: request.discipline)
-        let drivetrainBias = drivetrainBias(for: car.drivetrain)
-
-        let frontTire = clamp(27 + classBias.tire + disciplineBias.frontTire, 24, 34)
-        let rearTire = clamp(27 + classBias.tire + disciplineBias.rearTire + drivetrainBias.rearTire, 24, 34)
-        let finalDrive = clamp(3.2 + classBias.gearing + disciplineBias.gearing, 2.5, 5.5)
-        let frontCamber = clamp(-1.6 - classBias.camber - disciplineBias.camber, -4.5, -0.5)
-        let rearCamber = clamp(frontCamber + 0.8 + drivetrainBias.rearCamber, -3.5, -0.3)
-        let caster = clamp(5.2 + disciplineBias.caster, 4.5, 7)
-
-        let frontSpring = springRate(weight: car.weightPounds, ratio: frontWeightRatio, classBias: classBias.spring)
-        let rearSpring = springRate(weight: car.weightPounds, ratio: rearWeightRatio, classBias: classBias.spring)
-        let frontArb = clamp(18 + (frontWeightRatio * 20) + disciplineBias.frontArb, 10, 65)
-        let rearArb = clamp(18 + (rearWeightRatio * 20) + disciplineBias.rearArb + drivetrainBias.rearArb, 8, 65)
-        let frontRebound = clamp(frontSpring / 85 + disciplineBias.damping, 3, 13)
-        let rearRebound = clamp(rearSpring / 85 + disciplineBias.damping + drivetrainBias.rearDamping, 3, 13)
+        let tires = TuningKnowledgeBase.tirePressures(for: request)
+        let finalDrive = TuningKnowledgeBase.finalDrive(for: request)
+        let alignment = TuningKnowledgeBase.alignment(for: request)
+        let antirollBars = TuningKnowledgeBase.antirollBars(for: request)
+        let springs = TuningKnowledgeBase.springs(for: request)
+        let rideHeight = TuningKnowledgeBase.rideHeight(for: request)
+        let damping = TuningKnowledgeBase.damping(for: request, springs: springs)
+        let aero = TuningKnowledgeBase.aero(for: request)
+        let brakes = TuningKnowledgeBase.brakes(for: request)
+        let differential = TuningKnowledgeBase.differential(for: request)
 
         let sections = [
             TuneSection(title: "Tires", symbolName: "circle.dashed", lines: [
-                line("Front pressure", frontTire, "PSI"),
-                line("Rear pressure", rearTire, "PSI")
+                line("Front pressure", tires.frontPsi, "PSI", detail: tires.detail),
+                line("Rear pressure", tires.rearPsi, "PSI", detail: tires.detail)
             ]),
             TuneSection(title: "Gearing", symbolName: "gearshape.2", lines: [
                 line("Final drive", finalDrive, "", digits: 2),
-                TuneLine(label: "Individual gears", value: "Stock baseline", unit: "", detail: "Adjust after top-speed telemetry.")
+                TuneLine(label: "Individual gears", value: "Stock baseline", unit: "", detail: "Scale final drive first; only adjust gears after limiter checks.")
             ]),
             TuneSection(title: "Alignment", symbolName: "arrow.left.and.right", lines: [
-                line("Front camber", frontCamber, "deg"),
-                line("Rear camber", rearCamber, "deg"),
-                line("Front toe", disciplineBias.frontToe, "deg"),
-                line("Rear toe", disciplineBias.rearToe, "deg"),
-                line("Caster", caster, "deg")
+                line("Front camber", alignment.frontCamber, "deg"),
+                line("Rear camber", alignment.rearCamber, "deg"),
+                line("Front toe", alignment.frontToe, "deg"),
+                line("Rear toe", alignment.rearToe, "deg"),
+                line("Caster", alignment.caster, "deg")
             ]),
             TuneSection(title: "Antiroll Bars", symbolName: "arrow.up.left.and.arrow.down.right", lines: [
-                line("Front", frontArb, ""),
-                line("Rear", rearArb, "")
+                line("Front", antirollBars.front, ""),
+                line("Rear", antirollBars.rear, "")
             ]),
             TuneSection(title: "Springs", symbolName: "waveform.path.ecg", lines: [
-                line("Front rate", frontSpring, "lb/in", digits: 0),
-                line("Rear rate", rearSpring, "lb/in", digits: 0),
-                line("Front ride height", disciplineBias.rideHeight, "in"),
-                line("Rear ride height", disciplineBias.rideHeight + disciplineBias.rake, "in")
+                line("Front rate", springs.frontRate, "lb/in", digits: 0),
+                line("Rear rate", springs.rearRate, "lb/in", digits: 0),
+                line("Front ride height", rideHeight.front, "in"),
+                line("Rear ride height", rideHeight.rear, "in")
             ]),
             TuneSection(title: "Damping", symbolName: "slider.horizontal.3", lines: [
-                line("Front rebound", frontRebound, ""),
-                line("Rear rebound", rearRebound, ""),
-                line("Front bump", frontRebound * 0.62, ""),
-                line("Rear bump", rearRebound * 0.62, "")
+                line("Front rebound", damping.frontRebound, "", detail: "Road baseline keeps bump near 40% of rebound; off-road and drag are exceptions."),
+                line("Rear rebound", damping.rearRebound, "", detail: "Match the stiffer spring end with slightly more damping."),
+                line("Front bump", damping.frontBump, ""),
+                line("Rear bump", damping.rearBump, "")
             ]),
-            TuneSection(title: "Aero", symbolName: "wind", lines: aeroLines(for: request.discipline, classBias: classBias)),
+            TuneSection(title: "Aero", symbolName: "wind", lines: [
+                line("Front", aero.front, "lb", digits: 0, detail: aeroDetail(for: request.discipline)),
+                line("Rear", aero.rear, "lb", digits: 0, detail: aeroDetail(for: request.discipline))
+            ]),
             TuneSection(title: "Brakes", symbolName: "exclamationmark.octagon", lines: [
-                line("Balance", 50 + disciplineBias.brakeBalance, "%", digits: 0),
-                line("Pressure", 100 + disciplineBias.brakePressure, "%", digits: 0)
+                line("Balance", brakes.balancePercent, "%", digits: 0, detail: brakeDetail(for: request.discipline)),
+                line("Pressure", brakes.pressurePercent, "%", digits: 0)
             ]),
-            TuneSection(title: "Differential", symbolName: "point.3.connected.trianglepath.dotted", lines: diffLines(for: car.drivetrain, discipline: request.discipline))
+            TuneSection(title: "Differential", symbolName: "point.3.connected.trianglepath.dotted", lines: diffLines(for: differential))
         ]
 
         return TuneResult(
             request: request,
             sections: sections,
             notes: TuneNotes(
-                bias: "\(request.discipline.title) baseline with \(biasSummary(for: car.drivetrain, discipline: request.discipline)).",
-                ifPushesWide: "Soften front ARB by 2 or add 0.1 rear toe-out.",
-                ifSnapsOnLift: "Lower rear rebound by 0.4 and reduce rear diff decel by 5%.",
+                bias: "\(request.discipline.title) \(sourceSummary(for: car.drivetrain, discipline: request.discipline)).",
+                ifPushesWide: "Soften front ARB first; if it happens on exit, reduce diff accel 2-5%.",
+                ifSnapsOnLift: "Increase diff decel 2-5%, then soften rear ARB or rear spring if needed.",
                 retuneTrigger: "Re-tune if weight distribution shifts more than 2%."
             )
         )
     }
 
-    private func springRate(weight: Int, ratio: Double, classBias: Double) -> Double {
-        clamp((Double(weight) * ratio * 0.32) + classBias, 220, 1_200)
+    private func diffLines(for differential: DifferentialBaseline) -> [TuneLine] {
+        [
+            line("Accel", differential.accel, "%", digits: 0),
+            line("Decel", differential.decel, "%", digits: 0),
+            line("Front accel", differential.frontAccel, "%", digits: 0),
+            line("Front decel", differential.frontDecel, "%", digits: 0),
+            line("Rear accel", differential.rearAccel, "%", digits: 0),
+            line("Rear decel", differential.rearDecel, "%", digits: 0),
+            line("Center balance", differential.centerBalance, "% rear", digits: 0)
+        ].compactMap { $0 }
     }
 
-    private func aeroLines(for discipline: DrivingDiscipline, classBias: ClassBias) -> [TuneLine] {
+    private func aeroDetail(for discipline: DrivingDiscipline) -> String? {
         switch discipline {
         case .drag:
-            return [TuneLine(label: "Aero", value: "Minimum usable", unit: "", detail: "Reduce drag unless launch stability suffers.")]
-        case .dirt, .crossCountry:
-            return [
-                line("Front", 110 + classBias.aero, "lb", digits: 0),
-                line("Rear", 140 + classBias.aero, "lb", digits: 0)
-            ]
-        default:
-            return [
-                line("Front", 160 + classBias.aero, "lb", digits: 0),
-                line("Rear", 190 + classBias.aero, "lb", digits: 0)
-            ]
-        }
-    }
-
-    private func diffLines(for drivetrain: Drivetrain, discipline: DrivingDiscipline) -> [TuneLine] {
-        switch drivetrain {
-        case .fwd:
-            return [
-                line("Front accel", discipline == .drag ? 65 : 35, "%", digits: 0),
-                line("Front decel", 12, "%", digits: 0)
-            ]
-        case .rwd:
-            return [
-                line("Accel", discipline == .drift ? 82 : 55, "%", digits: 0),
-                line("Decel", discipline == .drift ? 48 : 30, "%", digits: 0)
-            ]
-        case .awd:
-            return [
-                line("Front accel", 22, "%", digits: 0),
-                line("Front decel", 8, "%", digits: 0),
-                line("Rear accel", discipline == .drag ? 72 : 58, "%", digits: 0),
-                line("Rear decel", 24, "%", digits: 0),
-                line("Center balance", discipline == .dirt ? 62 : 70, "% rear", digits: 0)
-            ]
-        }
-    }
-
-    private func line(_ label: String, _ value: Double, _ unit: String, digits: Int = 1) -> TuneLine {
-        TuneLine(label: label, value: value.formatted(.number.precision(.fractionLength(digits))), unit: unit)
-    }
-
-    private func line(_ label: String, _ value: Int, _ unit: String, digits: Int = 0) -> TuneLine {
-        line(label, Double(value), unit, digits: digits)
-    }
-
-    private func clamp(_ value: Double, _ lower: Double, _ upper: Double) -> Double {
-        min(max(value, lower), upper)
-    }
-
-    private func classBias(for performanceClass: PerformanceClass) -> ClassBias {
-        switch performanceClass {
-        case .c: ClassBias(tire: -1, gearing: -0.2, camber: 0, spring: -20, aero: -40)
-        case .b: ClassBias(tire: -0.5, gearing: -0.1, camber: 0.1, spring: 0, aero: -20)
-        case .a: ClassBias(tire: 0, gearing: 0, camber: 0.2, spring: 35, aero: 0)
-        case .s1: ClassBias(tire: 0.5, gearing: 0.15, camber: 0.4, spring: 80, aero: 25)
-        case .s2: ClassBias(tire: 1, gearing: 0.25, camber: 0.65, spring: 140, aero: 55)
-        case .x: ClassBias(tire: 1.5, gearing: 0.35, camber: 0.8, spring: 190, aero: 80)
-        }
-    }
-
-    private func disciplineBias(for discipline: DrivingDiscipline) -> DisciplineBias {
-        switch discipline {
-        case .road:
-            DisciplineBias(frontTire: 0, rearTire: 0, gearing: 0, camber: 0, caster: 0.1, frontToe: 0, rearToe: 0, frontArb: 0, rearArb: 0, damping: 0, rideHeight: 4.6, rake: 0.1, brakeBalance: 0, brakePressure: 0)
-        case .touge:
-            DisciplineBias(frontTire: -0.4, rearTire: -0.1, gearing: 0.15, camber: 0.25, caster: 0.4, frontToe: -0.1, rearToe: 0.1, frontArb: -1, rearArb: 4, damping: 0.3, rideHeight: 4.5, rake: 0.2, brakeBalance: 1, brakePressure: 4)
+            return "Run minimum or remove aero when the build allows it."
         case .drift:
-            DisciplineBias(frontTire: 2, rearTire: 4, gearing: 0.3, camber: 0.9, caster: 0.8, frontToe: -0.3, rearToe: 0.2, frontArb: 5, rearArb: 9, damping: 0.5, rideHeight: 4.9, rake: 0, brakeBalance: -2, brakePressure: 8)
-        case .dirt:
-            DisciplineBias(frontTire: -2, rearTire: -2, gearing: 0.2, camber: -0.2, caster: -0.2, frontToe: 0, rearToe: 0, frontArb: -6, rearArb: -4, damping: -0.8, rideHeight: 6.2, rake: 0.2, brakeBalance: 2, brakePressure: -5)
-        case .crossCountry:
-            DisciplineBias(frontTire: -2.5, rearTire: -2.5, gearing: 0.1, camber: -0.3, caster: -0.3, frontToe: 0, rearToe: 0, frontArb: -8, rearArb: -6, damping: -1, rideHeight: 7, rake: 0.3, brakeBalance: 3, brakePressure: -8)
-        case .drag:
-            DisciplineBias(frontTire: 2, rearTire: -3, gearing: -0.4, camber: -0.8, caster: -0.4, frontToe: 0, rearToe: 0, frontArb: -4, rearArb: 2, damping: -0.2, rideHeight: 4.8, rake: -0.1, brakeBalance: 0, brakePressure: 0)
+            return "Front aero is optional grip; rear aero is usually unnecessary."
+        default:
+            return "Increase front for high-speed push; increase rear for high-speed looseness."
         }
     }
 
-    private func drivetrainBias(for drivetrain: Drivetrain) -> DrivetrainBias {
-        switch drivetrain {
-        case .fwd: DrivetrainBias(rearTire: -0.5, rearArb: 5, rearDamping: 0.2, rearCamber: 0.2)
-        case .rwd: DrivetrainBias(rearTire: 0, rearArb: 1, rearDamping: 0, rearCamber: 0)
-        case .awd: DrivetrainBias(rearTire: -0.2, rearArb: 3, rearDamping: 0.1, rearCamber: 0.1)
+    private func brakeDetail(for discipline: DrivingDiscipline) -> String? {
+        switch discipline {
+        case .touge:
+            return "FH6 uses normal brake direction; this starts rotation-first for trail braking."
+        case .drift:
+            return "Forward bias keeps the rear calmer during mid-drift braking."
+        default:
+            return "Tune 1-2% at a time after suspension and diff feel right."
         }
     }
 
-    private func biasSummary(for drivetrain: Drivetrain, discipline: DrivingDiscipline) -> String {
-        if discipline == .drift { return "rear-biased oversteer" }
-        if discipline == .drag { return "straight-line traction" }
-        return drivetrain == .awd ? "stable rotation" : "light rotation"
+    private func sourceSummary(for drivetrain: Drivetrain, discipline: DrivingDiscipline) -> String {
+        if discipline == .drift {
+            return "baseline: soft, locked RWD-style drift setup."
+        }
+        if discipline == .drag {
+            return "baseline: launch-first setup with tall gearing and minimum aero."
+        }
+        if discipline == .dirt || discipline == .crossCountry {
+            return "baseline: soft off-road compliance with looser AWD center behavior."
+        }
+        return drivetrain == .awd
+            ? "baseline: FH6 tarmac setup with rear-biased AWD rotation."
+            : "baseline: FH6 tarmac setup with conservative diff lock."
     }
 
-}
+    private func line(_ label: String, _ value: Double, _ unit: String, digits: Int = 1, detail: String? = nil) -> TuneLine {
+        TuneLine(label: label, value: value.formatted(.number.precision(.fractionLength(digits))), unit: unit, detail: detail)
+    }
 
-private struct ClassBias {
-    var tire: Double
-    var gearing: Double
-    var camber: Double
-    var spring: Double
-    var aero: Double
-}
+    private func line(_ label: String, _ value: Double?, _ unit: String, digits: Int = 1) -> TuneLine? {
+        guard let value else { return nil }
+        return line(label, value, unit, digits: digits, detail: nil)
+    }
 
-private struct DisciplineBias {
-    var frontTire: Double
-    var rearTire: Double
-    var gearing: Double
-    var camber: Double
-    var caster: Double
-    var frontToe: Double
-    var rearToe: Double
-    var frontArb: Double
-    var rearArb: Double
-    var damping: Double
-    var rideHeight: Double
-    var rake: Double
-    var brakeBalance: Double
-    var brakePressure: Double
-}
-
-private struct DrivetrainBias {
-    var rearTire: Double
-    var rearArb: Double
-    var rearDamping: Double
-    var rearCamber: Double
 }

@@ -12,6 +12,7 @@ import UIKit
 struct TuneResultView: View {
     let tune: TuneResult
     let isSaved: Bool
+    var isStreaming = false
     let playerNotes: String
     let thumbnailData: Data?
     let adjustmentChanges: [TuneAdjustmentChange]
@@ -38,6 +39,16 @@ struct TuneResultView: View {
                             .scaledToFill()
                             .frame(width: 72, height: 54)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(ForzAdvisorTheme.separator, lineWidth: 1)
+                            }
+                    } else {
+                        ForzAdvisorIcon(
+                            systemName: tune.request.discipline.symbolName,
+                            tint: ForzAdvisorTheme.disciplineColor(tune.request.discipline),
+                            size: 44
+                        )
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -50,8 +61,23 @@ struct TuneResultView: View {
                 }
                 .padding(.vertical, 4)
             }
+            .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
-            if isSaved {
+            if isStreaming {
+                Section {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Streaming structured on-device tune")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                    }
+                    .foregroundStyle(ForzAdvisorTheme.accent)
+                }
+                .forzAdvisorRowBackground()
+            }
+
+            if isSaved && !isStreaming {
                 Section("Adjust Feel") {
                     AdjustmentGrid(
                         activeAdjustment: activeAdjustment,
@@ -59,6 +85,7 @@ struct TuneResultView: View {
                     )
                     .padding(.vertical, 4)
                 }
+                .forzAdvisorRowBackground()
             }
 
             if !adjustmentChanges.isEmpty {
@@ -67,14 +94,20 @@ struct TuneResultView: View {
                         AdjustmentChangeRow(change: change)
                     }
                 }
+                .forzAdvisorRowBackground()
             }
 
-            ForEach(tune.sections) { section in
+            ForEach(displaySections) { section in
                 Section {
-                    TuneSectionView(section: section, copiedLineID: $copiedLineID)
+                    TuneSectionView(
+                        section: section,
+                        isStreaming: isStreaming,
+                        copiedLineID: $copiedLineID
+                    )
                 } header: {
                     Label(section.title, systemImage: section.symbolName)
                 }
+                .forzAdvisorRowBackground()
             }
 
             Section("Notes") {
@@ -83,14 +116,17 @@ struct TuneResultView: View {
                 NoteRow(title: "If snaps on lift", text: tune.notes.ifSnapsOnLift)
                 NoteRow(title: "Retune", text: tune.notes.retuneTrigger)
             }
+            .forzAdvisorRowBackground()
 
             if !playerNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Section("Garage Notes") {
                     Text(playerNotes)
                 }
+                .forzAdvisorRowBackground()
             }
         }
         .navigationTitle("Tune")
+        .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Done", action: onDone)
@@ -98,11 +134,22 @@ struct TuneResultView: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if isSaved {
                     Button("Edit", action: onEdit)
-                        .disabled(isAdjusting)
+                        .disabled(isAdjusting || isStreaming)
                 }
                 Button(isSaved ? "Saved" : "Save", action: onSave)
-                    .disabled(isSaved || isAdjusting)
+                    .disabled(isSaved || isAdjusting || isStreaming)
             }
+        }
+    }
+
+    private var displaySections: [TuneSection] {
+        guard isStreaming else { return tune.sections }
+        return TuneSection.loadingOrder.map { item in
+            tune.section(item.title) ?? TuneSection(
+                title: item.title,
+                symbolName: item.symbolName,
+                lines: []
+            )
         }
     }
 }
@@ -139,7 +186,14 @@ private struct AdjustmentGrid: View {
                     }
                     .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
                     .padding(.horizontal, 10)
-                    .background(Color.gray.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                    .background(
+                        ForzAdvisorTheme.mutedSurface,
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(ForzAdvisorTheme.separator, lineWidth: 1)
+                    }
                 }
                 .buttonStyle(.plain)
                 .disabled(activeAdjustment != nil)
@@ -171,6 +225,7 @@ private struct AdjustmentChangeRow: View {
                     .foregroundStyle(.tertiary)
                 Text(change.newValue)
                     .fontWeight(.semibold)
+                    .foregroundStyle(ForzAdvisorTheme.accent)
                 if !change.unit.isEmpty {
                     Text(change.unit)
                         .font(.caption.weight(.semibold))
@@ -185,11 +240,24 @@ private struct AdjustmentChangeRow: View {
 
 private struct TuneSectionView: View {
     let section: TuneSection
+    let isStreaming: Bool
     @Binding var copiedLineID: TuneLine.ID?
 
     var body: some View {
+        if section.lines.isEmpty && isStreaming {
+            HStack(spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Waiting for values")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 8)
+        }
+
         ForEach(section.lines) { line in
             Button {
+                guard !isStreaming else { return }
                 UIPasteboard.general.string = line.copyText
                 copiedLineID = line.id
             } label: {
@@ -210,6 +278,7 @@ private struct TuneSectionView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(line.value)
                             .font(.system(.title3, design: .monospaced).weight(.semibold))
+                            .foregroundStyle(ForzAdvisorTheme.accent)
                         if !line.unit.isEmpty {
                             Text(line.unit)
                                 .font(.caption.weight(.semibold))
@@ -226,6 +295,7 @@ private struct TuneSectionView: View {
                 .padding(.vertical, 4)
             }
             .buttonStyle(.plain)
+            .disabled(isStreaming)
         }
     }
 }
@@ -244,4 +314,18 @@ private struct NoteRow: View {
         }
         .padding(.vertical, 3)
     }
+}
+
+private extension TuneSection {
+    static let loadingOrder: [(title: String, symbolName: String)] = [
+        ("Tires", "circle.dashed"),
+        ("Gearing", "gearshape.2"),
+        ("Alignment", "arrow.left.and.right"),
+        ("Antiroll Bars", "arrow.up.left.and.arrow.down.right"),
+        ("Springs", "waveform.path.ecg"),
+        ("Damping", "slider.horizontal.3"),
+        ("Aero", "wind"),
+        ("Brakes", "exclamationmark.octagon"),
+        ("Differential", "point.3.connected.trianglepath.dotted")
+    ]
 }

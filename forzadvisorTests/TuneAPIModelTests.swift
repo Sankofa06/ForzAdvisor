@@ -33,7 +33,7 @@ final class TuneAPIModelTests: XCTestCase {
                 antirollBars: TuneAPIFrontRear(front: 28, rear: 19),
                 springs: TuneAPISprings(frontRate: 524, rearRate: 464, frontRideHeight: 4.5, rearRideHeight: 4.7),
                 damping: TuneAPIDamping(frontRebound: 6.6, rearRebound: 6.2, frontBump: 4.3, rearBump: 4),
-                aero: TuneAPIFrontRear(front: 180, rear: 210),
+                aero: TuneAPIAero(frontPounds: 180, rearPounds: 210),
                 brakes: TuneAPIBrakes(balancePercent: 50, pressurePercent: 100),
                 differential: TuneAPIDifferential(accelPercent: 55, decelPercent: 30)
             ),
@@ -55,6 +55,48 @@ final class TuneAPIModelTests: XCTestCase {
             "Differential"
         ])
         XCTAssertEqual(tune.notes.bias, "neutral")
+    }
+
+    func testPRDAeroKeysDecodeIntoTuneSection() throws {
+        let data = Data("""
+        {
+          "tune": {
+            "aero": {
+              "front_lb": 180,
+              "rear_lb": 210
+            }
+          },
+          "notes": {
+            "bias": "neutral"
+          }
+        }
+        """.utf8)
+        let response = try JSONDecoder().decode(TuneAPIResponse.self, from: data)
+
+        let tune = response.tuneResult(for: TuneRequest(car: SampleTuningData.starterCar, discipline: .road))
+
+        XCTAssertEqual(tune.section("Aero")?.number("Front"), 180)
+        XCTAssertEqual(tune.section("Aero")?.number("Rear"), 210)
+    }
+
+    func testPreviousTunePayloadEncodesPRDAeroKeys() async throws {
+        let tune = try await LocalSampleTuneProvider().generateTune(
+            for: TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+        )
+        let payload = TuneAPIAdjustmentPayload(
+            previousTune: TuneAPIResponse(result: tune),
+            adjustment: "more_rotation"
+        )
+        let data = try JSONEncoder().encode(payload)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let previousTune = try XCTUnwrap(object["previous_tune"] as? [String: Any])
+        let tuneObject = try XCTUnwrap(previousTune["tune"] as? [String: Any])
+        let aero = try XCTUnwrap(tuneObject["aero"] as? [String: Any])
+
+        XCTAssertNotNil(aero["front_lb"])
+        XCTAssertNotNil(aero["rear_lb"])
+        XCTAssertNil(aero["front"])
+        XCTAssertNil(aero["rear"])
     }
 
     func testPartialAdjustmentResponseMergesIntoPreviousTune() async throws {
@@ -81,8 +123,9 @@ final class TuneAPIModelTests: XCTestCase {
 
     func testCompositeProviderFallsBackToLocalWithoutAPIKey() async throws {
         let provider = CompositeTuneProvider(
-            configuration: TuneProviderConfiguration(prefersRemoteGeneration: true),
+            configuration: TuneProviderConfiguration(mode: .anthropicAPI),
             remoteProvider: TuneAPIClient(keychainStore: KeychainStore(service: "forzadvisor-tests-\(UUID().uuidString)")),
+            onDeviceProvider: UnavailableOnDeviceProvider(),
             localProvider: LocalSampleTuneProvider()
         )
         let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
@@ -91,5 +134,23 @@ final class TuneAPIModelTests: XCTestCase {
 
         XCTAssertEqual(tune.request, request)
         XCTAssertFalse(tune.sections.isEmpty)
+    }
+}
+
+private struct UnavailableOnDeviceProvider: OnDeviceTuneProviding {
+    var availability: OnDeviceModelAvailability {
+        .modelNotReady
+    }
+
+    func generateTune(for request: TuneRequest) async throws -> TuneResult {
+        throw OnDeviceTuneError.unavailable(.modelNotReady)
+    }
+
+    func generateTune(for request: TuneRequest, onPartial: TuneProgressHandler?) async throws -> TuneResult {
+        throw OnDeviceTuneError.unavailable(.modelNotReady)
+    }
+
+    func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
+        throw OnDeviceTuneError.unavailable(.modelNotReady)
     }
 }

@@ -29,6 +29,7 @@ struct ManualEntryView: View {
                 TextField("Model", text: $draft.model)
                     .textInputAutocapitalization(.words)
             }
+            .forzAdvisorRowBackground()
 
             Section("Performance") {
                 LabeledContent("Weight") {
@@ -62,6 +63,7 @@ struct ManualEntryView: View {
                 }
                 .pickerStyle(.segmented)
             }
+            .forzAdvisorRowBackground()
 
             Section("Optional") {
                 TextField("Horsepower", text: optionalNumberText($draft.peakHorsepower))
@@ -69,17 +71,20 @@ struct ManualEntryView: View {
                 TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds))
                     .keyboardType(.numberPad)
             }
+            .forzAdvisorRowBackground()
 
             if !draft.validationIssues.isEmpty {
                 Section("Fix before tuning") {
                     ForEach(draft.validationIssues) { issue in
                         Label(issue.message, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(ForzAdvisorTheme.warning)
                     }
                 }
+                .forzAdvisorRowBackground()
             }
         }
         .navigationTitle("Manual Entry")
+        .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Cancel", action: onCancel)

@@ -12,7 +12,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.modelContext) var modelContext
     @Query(sort: \SavedTune.updatedAt, order: .reverse) var savedTunes: [SavedTune]
-    @AppStorage("prefersRemoteTuneProvider") var prefersRemoteTuneProvider = false
+    @AppStorage("tuneProviderMode") var tuneProviderMode = TuneProviderMode.offlineFormula
 
     @State var step: WorkflowStep = .home
     @State var errorMessage: String?
@@ -86,16 +86,27 @@ struct ContentView: View {
                             )
                         }
                     )
-                case .loading(let request, let thumbnailData, _, _):
-                    TuneLoadingView(request: request)
-                        .overlay(alignment: .bottom) {
-                            if thumbnailData != nil {
-                                Label("Screenshot saved with this tune", systemImage: "photo")
-                                    .font(.caption.weight(.semibold))
-                                    .padding(.bottom, 24)
-                                    .foregroundStyle(.secondary)
+                case .loading(let request, let thumbnailData, let savedTuneID, let playerNotes, let partialTune):
+                    if let partialTune {
+                        resultView(
+                            tune: partialTune,
+                            savedTuneID: savedTuneID,
+                            adjustmentChanges: [],
+                            thumbnailData: thumbnailData,
+                            playerNotes: playerNotes,
+                            isStreaming: true
+                        )
+                    } else {
+                        TuneLoadingView(request: request)
+                            .overlay(alignment: .bottom) {
+                                if thumbnailData != nil {
+                                    Label("Screenshot saved with this tune", systemImage: "photo")
+                                        .font(.caption.weight(.semibold))
+                                        .padding(.bottom, 24)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
-                        }
+                    }
                 case .result(let tune, let savedTuneID, let adjustmentChanges, let thumbnailData, let playerNotes):
                     resultView(
                         tune: tune,
@@ -155,6 +166,7 @@ struct ContentView: View {
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(keychainStore: keychainStore)
             }
+            .tint(ForzAdvisorTheme.accent)
         }
     }
 
@@ -164,16 +176,18 @@ struct ContentView: View {
         savedTuneID: UUID?,
         adjustmentChanges: [TuneAdjustmentChange],
         thumbnailData: Data?,
-        playerNotes: String
+        playerNotes: String,
+        isStreaming: Bool = false
     ) -> some View {
         let resolvedSavedTune = resolvedSavedTune(for: tune, savedTuneID: savedTuneID)
-        let resolvedSavedTuneID = resolvedSavedTune?.id ?? savedTuneID
+        let resolvedSavedTuneID = isStreaming ? savedTuneID : (resolvedSavedTune?.id ?? savedTuneID)
         let resolvedThumbnailData = resolvedSavedTune?.thumbnailData ?? thumbnailData
         let resolvedPlayerNotes = resolvedSavedTune?.playerNotes ?? playerNotes
 
         TuneResultView(
             tune: tune,
             isSaved: resolvedSavedTuneID != nil,
+            isStreaming: isStreaming,
             playerNotes: resolvedPlayerNotes,
             thumbnailData: resolvedThumbnailData,
             adjustmentChanges: adjustmentChanges,

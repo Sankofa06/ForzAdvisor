@@ -63,6 +63,69 @@ final class TuningDomainTests: XCTestCase {
         XCTAssertEqual(firstTune.notes, secondTune.notes)
     }
 
+    func testRoadDampingUsesSourceBackedBumpToReboundRatio() async throws {
+        let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+        let tune = try await LocalSampleTuneProvider().generateTune(for: request)
+
+        let frontRatio = numericValue(in: tune, section: "Damping", line: "Front bump")
+            / numericValue(in: tune, section: "Damping", line: "Front rebound")
+        let rearRatio = numericValue(in: tune, section: "Damping", line: "Rear bump")
+            / numericValue(in: tune, section: "Damping", line: "Rear rebound")
+
+        XCTAssertEqual(frontRatio, 0.4, accuracy: 0.03)
+        XCTAssertEqual(rearRatio, 0.4, accuracy: 0.03)
+    }
+
+    func testDifferentialBaselinesFollowFH6SourceRanges() async throws {
+        let provider = LocalSampleTuneProvider()
+
+        var fwdCar = SampleTuningData.starterCar
+        fwdCar.drivetrain = .fwd
+        let fwdTune = try await provider.generateTune(for: TuneRequest(car: fwdCar, discipline: .road))
+
+        XCTAssertEqual(numericValue(in: fwdTune, section: "Differential", line: "Front accel"), 85)
+        XCTAssertEqual(numericValue(in: fwdTune, section: "Differential", line: "Front decel"), 5)
+
+        var awdCar = SampleTuningData.starterCar
+        awdCar.drivetrain = .awd
+        let awdTune = try await provider.generateTune(for: TuneRequest(car: awdCar, discipline: .road))
+
+        XCTAssertEqual(numericValue(in: awdTune, section: "Differential", line: "Front accel"), 85)
+        XCTAssertEqual(numericValue(in: awdTune, section: "Differential", line: "Rear accel"), 55)
+        XCTAssertEqual(numericValue(in: awdTune, section: "Differential", line: "Center balance"), 75)
+    }
+
+    func testOffRoadBaselinesPrioritizeCompliance() async throws {
+        var car = SampleTuningData.starterCar
+        car.drivetrain = .awd
+        let tune = try await LocalSampleTuneProvider().generateTune(
+            for: TuneRequest(car: car, discipline: .dirt)
+        )
+
+        XCTAssertLessThanOrEqual(numericValue(in: tune, section: "Tires", line: "Front pressure"), 21)
+        XCTAssertLessThanOrEqual(numericValue(in: tune, section: "Antiroll Bars", line: "Front"), 10)
+        XCTAssertGreaterThanOrEqual(numericValue(in: tune, section: "Springs", line: "Front ride height"), 6)
+        XCTAssertEqual(numericValue(in: tune, section: "Differential", line: "Center balance"), 65)
+    }
+
+    func testDragAndDriftUseDisciplineSpecificExceptions() async throws {
+        let provider = LocalSampleTuneProvider()
+        let dragTune = try await provider.generateTune(
+            for: TuneRequest(car: SampleTuningData.starterCar, discipline: .drag)
+        )
+        let driftTune = try await provider.generateTune(
+            for: TuneRequest(car: SampleTuningData.starterCar, discipline: .drift)
+        )
+
+        XCTAssertGreaterThan(
+            numericValue(in: dragTune, section: "Tires", line: "Front pressure"),
+            numericValue(in: dragTune, section: "Tires", line: "Rear pressure")
+        )
+        XCTAssertEqual(numericValue(in: dragTune, section: "Aero", line: "Front"), 0)
+        XCTAssertEqual(numericValue(in: driftTune, section: "Alignment", line: "Front toe"), 1)
+        XCTAssertEqual(numericValue(in: driftTune, section: "Differential", line: "Accel"), 100)
+    }
+
     func testLocalAdjustmentPreservesTuneIdentityAndMenuOrder() async throws {
         let provider = LocalSampleTuneProvider()
         let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .touge)

@@ -8,7 +8,7 @@
 
 import CoreGraphics
 import Foundation
-import Vision
+@preconcurrency import Vision
 
 protocol CarInputOCRService {
     func confirmationDraft(from image: CGImage) async throws -> OCRConfirmationDraft

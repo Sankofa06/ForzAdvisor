@@ -32,8 +32,9 @@ struct OCRConfirmationView: View {
             if !draft.fieldsNeedingReview.isEmpty {
                 Section {
                     Label("Review highlighted fields before continuing.", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ForzAdvisorTheme.warning)
                 }
+                .forzAdvisorRowBackground()
             }
 
             Section("Car") {
@@ -44,6 +45,7 @@ struct OCRConfirmationView: View {
                 TextField("Model", text: $draft.model)
                     .textInputAutocapitalization(.words)
             }
+            .forzAdvisorRowBackground()
 
             Section("Required Performance") {
                 ConfirmedNumberField(
@@ -80,6 +82,7 @@ struct OCRConfirmationView: View {
                 CandidateChipRow(candidates: draft.candidates(for: .performanceClass)) { value in
                     draft.performanceClass = PerformanceClass(rawValue: value)
                 }
+                .forzAdvisorRowBackground()
 
                 Picker("Drivetrain", selection: $draft.drivetrain) {
                     Text("Select").tag(nil as Drivetrain?)
@@ -92,6 +95,7 @@ struct OCRConfirmationView: View {
                 CandidateChipRow(candidates: draft.candidates(for: .drivetrain)) { value in
                     draft.drivetrain = Drivetrain(rawValue: value)
                 }
+                .forzAdvisorRowBackground()
             }
 
             Section("Optional") {
@@ -100,14 +104,17 @@ struct OCRConfirmationView: View {
                 TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds))
                     .keyboardType(.numberPad)
             }
+            .forzAdvisorRowBackground()
 
             Section {
                 Button("Enter manually instead") {
                     onUseManualEntry(draft)
                 }
             }
+            .forzAdvisorRowBackground()
         }
         .navigationTitle("Confirm Inputs")
+        .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Back", action: onBack)
@@ -160,7 +167,7 @@ private struct ConfirmedNumberField: View {
             HStack(spacing: 8) {
                 Text("Confidence \(evidence.confidencePercentText)")
                     .font(.caption)
-                    .foregroundStyle(evidence.needsReview ? .orange : .secondary)
+                    .foregroundStyle(evidence.needsReview ? ForzAdvisorTheme.warning : .secondary)
                 if let rawText = evidence.rawText {
                     Text(rawText)
                         .font(.caption)
@@ -169,7 +176,7 @@ private struct ConfirmedNumberField: View {
                 } else {
                     Text("No OCR value found")
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(ForzAdvisorTheme.warning)
                 }
             }
 
@@ -202,7 +209,8 @@ private struct CandidateChipRow: View {
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 5)
-                                .background(Color.accentColor.opacity(0.14), in: Capsule())
+                                .foregroundStyle(ForzAdvisorTheme.accent)
+                                .background(ForzAdvisorTheme.accent.opacity(0.14), in: Capsule())
                         }
                         .buttonStyle(.plain)
                     }
@@ -216,9 +224,9 @@ private extension View {
     @ViewBuilder
     func reviewTint(_ needsReview: Bool) -> some View {
         if needsReview {
-            listRowBackground(Color.orange.opacity(0.12))
+            listRowBackground(ForzAdvisorTheme.warning.opacity(0.13))
         } else {
-            self
+            self.forzAdvisorRowBackground()
         }
     }
 }

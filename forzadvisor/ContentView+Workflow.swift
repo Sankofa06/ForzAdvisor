@@ -23,12 +23,21 @@ extension ContentView {
             request,
             thumbnailData: thumbnailData,
             savedTuneID: savedTuneID,
-            playerNotes: playerNotes
+            playerNotes: playerNotes,
+            partialTune: nil
         )
 
         Task {
             do {
-                let tune = try await makeTuneProvider().generateTune(for: request)
+                let tune = try await makeTuneProvider().generateTune(for: request) { partialTune in
+                    step = .loading(
+                        request,
+                        thumbnailData: thumbnailData,
+                        savedTuneID: savedTuneID,
+                        playerNotes: playerNotes,
+                        partialTune: partialTune
+                    )
+                }
                 try await MainActor.run {
                     if let savedTuneID {
                         try updateSavedTune(
@@ -257,9 +266,10 @@ extension ContentView {
     func makeTuneProvider() -> CompositeTuneProvider {
         CompositeTuneProvider(
             configuration: TuneProviderConfiguration(
-                prefersRemoteGeneration: prefersRemoteTuneProvider
+                mode: tuneProviderMode
             ),
             remoteProvider: TuneAPIClient(keychainStore: keychainStore),
+            onDeviceProvider: FoundationModelTuneProvider(),
             localProvider: LocalSampleTuneProvider()
         )
     }
@@ -271,7 +281,7 @@ enum WorkflowStep {
     case ocrReview(OCRConfirmationDraft)
     case manualEntry(CarInput, thumbnailData: Data?)
     case discipline(CarInput, origin: InputOrigin, thumbnailData: Data?)
-    case loading(TuneRequest, thumbnailData: Data?, savedTuneID: UUID?, playerNotes: String)
+    case loading(TuneRequest, thumbnailData: Data?, savedTuneID: UUID?, playerNotes: String, partialTune: TuneResult?)
     case result(TuneResult, savedTuneID: UUID?, adjustmentChanges: [TuneAdjustmentChange], thumbnailData: Data?, playerNotes: String)
     case editSavedTune(TuneResult, savedTuneID: UUID, playerNotes: String, thumbnailData: Data?)
 }

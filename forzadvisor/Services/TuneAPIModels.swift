@@ -116,7 +116,7 @@ struct TuneAPITune: Codable, Equatable {
     var antirollBars: TuneAPIFrontRear?
     var springs: TuneAPISprings?
     var damping: TuneAPIDamping?
-    var aero: TuneAPIFrontRear?
+    var aero: TuneAPIAero?
     var brakes: TuneAPIBrakes?
     var differential: TuneAPIDifferential?
 
@@ -139,7 +139,7 @@ struct TuneAPITune: Codable, Equatable {
         antirollBars: TuneAPIFrontRear? = nil,
         springs: TuneAPISprings? = nil,
         damping: TuneAPIDamping? = nil,
-        aero: TuneAPIFrontRear? = nil,
+        aero: TuneAPIAero? = nil,
         brakes: TuneAPIBrakes? = nil,
         differential: TuneAPIDifferential? = nil
     ) {
@@ -162,7 +162,7 @@ struct TuneAPITune: Codable, Equatable {
             antirollBars: TuneAPIFrontRear(section: result.section("Antiroll Bars"), front: "Front", rear: "Rear"),
             springs: TuneAPISprings(section: result.section("Springs")),
             damping: TuneAPIDamping(section: result.section("Damping")),
-            aero: TuneAPIFrontRear(section: result.section("Aero"), front: "Front", rear: "Rear"),
+            aero: TuneAPIAero(section: result.section("Aero")),
             brakes: TuneAPIBrakes(section: result.section("Brakes")),
             differential: TuneAPIDifferential(section: result.section("Differential"))
         )
@@ -257,6 +257,27 @@ struct TuneAPIFrontRear: Codable, Equatable {
         guard let section else { return nil }
         self.front = section.number(frontLabel)
         self.rear = section.number(rearLabel)
+    }
+}
+
+struct TuneAPIAero: Codable, Equatable {
+    var frontPounds: Double?
+    var rearPounds: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case frontPounds = "front_lb"
+        case rearPounds = "rear_lb"
+    }
+
+    init(frontPounds: Double? = nil, rearPounds: Double? = nil) {
+        self.frontPounds = frontPounds
+        self.rearPounds = rearPounds
+    }
+
+    init?(section: TuneSection?) {
+        guard let section else { return nil }
+        self.frontPounds = section.number("Front")
+        self.rearPounds = section.number("Rear")
     }
 }
 

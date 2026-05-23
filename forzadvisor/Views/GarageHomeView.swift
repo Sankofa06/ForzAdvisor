@@ -33,9 +33,7 @@ struct GarageHomeView: View {
             Section {
                 Button(action: onNewTune) {
                     HStack(spacing: 14) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 34, weight: .semibold))
-                            .foregroundStyle(.tint)
+                        ForzAdvisorIcon(systemName: "plus", tint: ForzAdvisorTheme.warmAccent, size: 42)
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text("New Tune")
@@ -55,6 +53,7 @@ struct GarageHomeView: View {
                 }
                 .accessibilityIdentifier("newTuneButton")
                 .buttonStyle(.plain)
+                .listRowBackground(ForzAdvisorTheme.heroRowBackground)
             }
 
             Section("Garage") {
@@ -64,10 +63,10 @@ struct GarageHomeView: View {
                         systemImage: "wrench.adjustable",
                         description: Text("Create a manual tune to start filling the garage.")
                     )
-                    .listRowBackground(Color.clear)
+                    .listRowBackground(ForzAdvisorTheme.surface)
                 } else if filteredTunes.isEmpty {
                     ContentUnavailableView.search(text: searchText)
-                        .listRowBackground(Color.clear)
+                        .listRowBackground(ForzAdvisorTheme.surface)
                 } else {
                     ForEach(filteredTunes) { tune in
                         Button {
@@ -81,6 +80,7 @@ struct GarageHomeView: View {
                                 onDeleteTune(tune)
                             }
                         }
+                        .forzAdvisorRowBackground()
                     }
                 }
             }
@@ -94,9 +94,11 @@ struct GarageHomeView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                .forzAdvisorRowBackground()
             }
         }
         .navigationTitle("ForzAdvisor")
+        .forzAdvisorScreenChrome()
         .searchable(text: $searchText, prompt: "Search garage")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -111,7 +113,12 @@ struct GarageHomeView: View {
                 DisciplineFilterBar(selection: $disciplineFilter)
                     .padding(.horizontal)
                     .padding(.vertical, 10)
-                    .background(.bar)
+                    .background(.regularMaterial)
+                    .overlay(alignment: .top) {
+                        Rectangle()
+                            .fill(ForzAdvisorTheme.separator)
+                            .frame(height: 1)
+                    }
             }
         }
     }
@@ -122,10 +129,10 @@ private struct GarageTuneRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: tune.disciplineSymbolName)
-                .font(.title3)
-                .foregroundStyle(.tint)
-                .frame(width: 32)
+            ForzAdvisorIcon(
+                systemName: tune.disciplineSymbolName,
+                tint: tune.discipline.map { ForzAdvisorTheme.disciplineColor($0) } ?? ForzAdvisorTheme.accent
+            )
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(tune.carName)
@@ -167,10 +174,17 @@ private struct DisciplineFilterBar: View {
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
-                .background(selection == value ? Color.accentColor : Color.gray.opacity(0.14))
+                .background(
+                    selection == value ? activeTint(for: value) : ForzAdvisorTheme.mutedSurface,
+                    in: Capsule()
+                )
                 .foregroundColor(selection == value ? .white : .primary)
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+
+    private func activeTint(for value: DrivingDiscipline?) -> Color {
+        value.map { ForzAdvisorTheme.disciplineColor($0) } ?? ForzAdvisorTheme.accent
     }
 }
