@@ -58,3 +58,38 @@
 - Tests: `/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'platform=iOS Simulator,name=iPhone 17' test` succeeded; 8 tests passed across `TuningDomainTests` and `OCRTextParserTests`.
 - Blockers/notes: no app-code blockers. This slice uses Photos import, not live camera capture, so it avoids camera permission and AVFoundation setup for now.
 - Next best slice: add an AVFoundation/PHPicker capture wrapper or a lightweight saved-tune detail adjustment surface, depending on whether photo capture or feel adjustments should come next.
+
+## 2026-05-24 07:04 PDT
+
+- Added collapsible tune-menu cards so generated tune sections can be expanded/collapsed while preserving Forza menu order and copyable values.
+- Split tune section rendering into `TuneSectionDisclosureView` to keep `TuneResultView` focused on screen workflow and below the practical file-size ceiling.
+- Added quick Expand all / Collapse all controls above the tune sections.
+- Files changed/added this run: `forzadvisor/Views/TuneResultView.swift`, `forzadvisor/Views/TuneSectionDisclosureView.swift`, `forzadvisorDocs/overnight-progress.md`.
+- Verification attempted: `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'generic/platform=iOS Simulator' build`.
+- Build result: blocked by environment. `actool` failed with `No available simulator runtimes for platform iphonesimulator. SimServiceContext supportedRuntimes=[]` after CoreSimulator/simdiskimaged connection failures.
+- Additional check: `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build` hit the same `actool`/CoreSimulator runtime failure.
+- Tests attempted: `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'platform=iOS Simulator,name=iPhone 17' test`.
+- Test result: blocked by environment. Xcode could not find an `iPhone 17` simulator because simulator services reported no available devices.
+- Next best slice: once simulator services are healthy, rerun build/test; then consider a small saved-tune comparison/diff polish pass.
+
+## 2026-05-26 06:24 PDT
+
+- Added a deterministic plain-text tune export formatter for pasteboard sharing/entry.
+- Added a "Copy full tune" action to the tune result screen while keeping per-line copy affordances.
+- Added focused formatter tests covering full tune headers, sections, notes, garage notes, and blank-unit formatting.
+- Files changed/added this run: `forzadvisor/Models/TuneClipboardFormatter.swift`, `forzadvisor/Views/TuneResultView.swift`, `forzadvisorTests/TuneClipboardFormatterTests.swift`, `forzadvisorDocs/overnight-progress.md`.
+- Verification attempted: `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'generic/platform=iOS Simulator' build`.
+- Build result: blocked by environment. `actool` still reports `No available simulator runtimes for platform iphonesimulator`; Swift macro/plugin work also hit `swift-plugin-server produced malformed response` and Xcode sandbox errors during the same run.
+- Tests attempted: `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'platform=iOS Simulator,name=iPhone 17' test`.
+- Test result: blocked by environment. Xcode could not find an `iPhone 17` simulator because CoreSimulator reported no available devices.
+- Additional check: `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build` also failed at `actool` because CoreSimulator services were unavailable.
+- Next best slice: repair local CoreSimulator/Xcode sandbox execution, then rerun build and tests before committing.
+
+### 2026-05-26 06:27 PDT verification follow-up
+
+- Reran verification outside the sandbox with the installed Xcode path and simulator `iPhone 17 Pro Max` (`3388DB67-86EA-40DB-9BC7-0C9499E1D8F8`, iOS 26.5).
+- Build succeeded: `/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'platform=iOS Simulator,id=3388DB67-86EA-40DB-9BC7-0C9499E1D8F8' build`.
+- Tests succeeded: `/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project forzadvisor.xcodeproj -scheme forzadvisor -destination 'platform=iOS Simulator,id=3388DB67-86EA-40DB-9BC7-0C9499E1D8F8'`.
+- Test result bundle: `/Users/blackslabpro/Library/Developer/Xcode/DerivedData/forzadvisor-glcrjijmthmeomfxnbimvrtgzsuy/Logs/Test/Test-forzadvisor-2026.05.26_06-26-53--0700.xcresult`.
+- Confirmed tests include `TuneClipboardFormatterTests`, `OCRTextParserTests`, `TuneAPIModelTests`, `OnDeviceTuneProviderTests`, `TuningDomainTests`, and the launch UI test.
+- Next best slice: review the dirty worktree and commit once the current implementation scope is accepted.

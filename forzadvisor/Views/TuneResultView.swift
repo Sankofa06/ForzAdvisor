@@ -23,6 +23,8 @@ struct TuneResultView: View {
     let onAdjust: (TuneAdjustment) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
+    @State private var expandedSectionTitles = Set(TuneSection.menuOrder.map(\.title))
+    @State private var didCopyFullTune = false
 
     private var isAdjusting: Bool {
         activeAdjustment != nil
@@ -63,6 +65,26 @@ struct TuneResultView: View {
             }
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
+            Section {
+                Button {
+                    UIPasteboard.general.string = TuneClipboardFormatter.fullTuneText(
+                        for: tune,
+                        playerNotes: playerNotes
+                    )
+                    copiedLineID = nil
+                    didCopyFullTune = true
+                } label: {
+                    Label(
+                        didCopyFullTune ? "Copied full tune" : "Copy full tune",
+                        systemImage: didCopyFullTune ? "checkmark" : "doc.on.doc"
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isStreaming)
+            }
+            .forzAdvisorRowBackground()
+
             if isStreaming {
                 Section {
                     HStack(spacing: 10) {
@@ -97,15 +119,33 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
 
+            Section {
+                HStack(spacing: 10) {
+                    Button("Expand all") {
+                        expandedSectionTitles = Set(displaySections.map(\.title))
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isStreaming)
+
+                    Button("Collapse all") {
+                        expandedSectionTitles.removeAll()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(isStreaming)
+                }
+                .font(.caption.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .forzAdvisorRowBackground()
+
             ForEach(displaySections) { section in
                 Section {
-                    TuneSectionView(
+                    TuneSectionDisclosureView(
                         section: section,
                         isStreaming: isStreaming,
+                        isExpanded: expandedBinding(for: section),
                         copiedLineID: $copiedLineID
                     )
-                } header: {
-                    Label(section.title, systemImage: section.symbolName)
                 }
                 .forzAdvisorRowBackground()
             }
@@ -144,12 +184,24 @@ struct TuneResultView: View {
 
     private var displaySections: [TuneSection] {
         guard isStreaming else { return tune.sections }
-        return TuneSection.loadingOrder.map { item in
+        return TuneSection.menuOrder.map { item in
             tune.section(item.title) ?? TuneSection(
                 title: item.title,
                 symbolName: item.symbolName,
                 lines: []
             )
+        }
+    }
+
+    private func expandedBinding(for section: TuneSection) -> Binding<Bool> {
+        Binding {
+            expandedSectionTitles.contains(section.title)
+        } set: { isExpanded in
+            if isExpanded {
+                expandedSectionTitles.insert(section.title)
+            } else {
+                expandedSectionTitles.remove(section.title)
+            }
         }
     }
 }
@@ -238,68 +290,6 @@ private struct AdjustmentChangeRow: View {
     }
 }
 
-private struct TuneSectionView: View {
-    let section: TuneSection
-    let isStreaming: Bool
-    @Binding var copiedLineID: TuneLine.ID?
-
-    var body: some View {
-        if section.lines.isEmpty && isStreaming {
-            HStack(spacing: 10) {
-                ProgressView()
-                    .controlSize(.small)
-                Text("Waiting for values")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 8)
-        }
-
-        ForEach(section.lines) { line in
-            Button {
-                guard !isStreaming else { return }
-                UIPasteboard.general.string = line.copyText
-                copiedLineID = line.id
-            } label: {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(line.label)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        if let detail = line.detail {
-                            Text(detail)
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-
-                    Spacer(minLength: 16)
-
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text(line.value)
-                            .font(.system(.title3, design: .monospaced).weight(.semibold))
-                            .foregroundStyle(ForzAdvisorTheme.accent)
-                        if !line.unit.isEmpty {
-                            Text(line.unit)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Image(systemName: copiedLineID == line.id ? "checkmark" : "doc.on.doc")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(copiedLineID == line.id ? .green : .gray)
-                        .frame(width: 16)
-                }
-                .contentShape(Rectangle())
-                .padding(.vertical, 4)
-            }
-            .buttonStyle(.plain)
-            .disabled(isStreaming)
-        }
-    }
-}
-
 private struct NoteRow: View {
     let title: String
     let text: String
@@ -314,18 +304,4 @@ private struct NoteRow: View {
         }
         .padding(.vertical, 3)
     }
-}
-
-private extension TuneSection {
-    static let loadingOrder: [(title: String, symbolName: String)] = [
-        ("Tires", "circle.dashed"),
-        ("Gearing", "gearshape.2"),
-        ("Alignment", "arrow.left.and.right"),
-        ("Antiroll Bars", "arrow.up.left.and.arrow.down.right"),
-        ("Springs", "waveform.path.ecg"),
-        ("Damping", "slider.horizontal.3"),
-        ("Aero", "wind"),
-        ("Brakes", "exclamationmark.octagon"),
-        ("Differential", "point.3.connected.trianglepath.dotted")
-    ]
 }
