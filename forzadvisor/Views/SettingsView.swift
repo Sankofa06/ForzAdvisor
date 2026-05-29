@@ -77,6 +77,23 @@ struct SettingsView: View {
                     }
                     .forzAdvisorRowBackground()
                 }
+
+                Section("Privacy") {
+                    Label("Offline by default", systemImage: "lock.shield")
+                        .foregroundStyle(ForzAdvisorTheme.success)
+                    Text("Screenshots are processed on device. API mode sends confirmed car details and notes to Anthropic using your saved key; screenshots are not uploaded.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .forzAdvisorRowBackground()
+
+                Section("About") {
+                    LabeledContent("Version", value: appVersion)
+                    Text("ForzAdvisor is an unofficial tuning tool and is not affiliated with or endorsed by Microsoft, Xbox, Turn 10, Playground Games, or the Forza franchise.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .forzAdvisorRowBackground()
             }
             .navigationTitle("Settings")
             .forzAdvisorScreenChrome()
@@ -95,6 +112,12 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var appVersion: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        return "\(version) (\(build))"
     }
 
     private func saveKey() {

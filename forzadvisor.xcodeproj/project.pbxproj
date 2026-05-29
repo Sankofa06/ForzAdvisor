@@ -33,6 +33,16 @@
 		849462D22FBD98E9004B8D9D /* Exceptions for "forzadvisorDocs" folder in "forzadvisor" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"app-store",
+				"app-store/metadata.md",
+				"app-store/privacy-policy.md",
+				"app-store/privacy.md",
+				"app-store/release-checklist.md",
+				"app-store/screenshot-plan.md",
+				"app-store/screenshots",
+				"app-store/screenshots/20260528-205632-home-empty-garage.png",
+				"app-store/screenshots/20260528-205745-iphone-17-pro-max-home-empty-garage.png",
+				"app-store/support.md",
 				"forza-tuning-app-PRD.md",
 				"overnight-progress.md",
 			);
@@ -421,6 +431,7 @@
 				DEVELOPMENT_TEAM = 5RGU344VJR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ForzAdvisor;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to photograph your Forza performance screen for OCR.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -440,7 +451,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -454,6 +465,7 @@
 				DEVELOPMENT_TEAM = 5RGU344VJR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ForzAdvisor;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use the camera to photograph your Forza performance screen for OCR.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -473,7 +485,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

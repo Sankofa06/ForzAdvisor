@@ -5,6 +5,7 @@
 //  Minimal launch and manual-entry smoke coverage for the main tune flow.
 //
 
+import AppIntents
 import XCTest
 
 final class ForzAdvisorUITests: XCTestCase {
