@@ -2,7 +2,7 @@
 
 Effective date: 2026-05-31
 
-Public URL: https://blackslabpro.github.io/ForzAdvisor/privacy/
+Public URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
 
 ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains how the app handles information in version 1.0.
 
@@ -32,7 +32,7 @@ ForzAdvisor is not directed to children and does not knowingly collect personal 
 
 ## Contact
 
-For privacy questions, use the public support tracker at https://github.com/blackslabpro/ForzAdvisor/issues.
+For privacy questions, use the public support tracker at https://github.com/Sankofa06/ForzAdvisor/issues.
 
 ## Unofficial App Notice
 

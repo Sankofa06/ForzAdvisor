@@ -26,7 +26,7 @@ Open Settings, switch the provider to API, and tap Clear Key.
 
 ## Contact
 
-Use the public support tracker at https://github.com/blackslabpro/ForzAdvisor/issues.
+Use the public support tracker at https://github.com/Sankofa06/ForzAdvisor/issues.
 
 ## Unofficial App Notice
 

@@ -27,8 +27,8 @@ The local app record identifiers, metadata, privacy notes, support pages, and sc
 
 - Verify the App Store Connect app record for `com.michaelwilliams.forzadvisor`.
 - Publish GitHub Pages and confirm these public URLs resolve:
-  - `https://blackslabpro.github.io/ForzAdvisor/privacy/`
-  - `https://blackslabpro.github.io/ForzAdvisor/support/`
+  - `https://Sankofa06.github.io/ForzAdvisor/privacy/`
+  - `https://Sankofa06.github.io/ForzAdvisor/support/`
 - Provide App Review contact name, phone number, and email.
 - Confirm age rating answers.
 - Confirm export compliance answers.

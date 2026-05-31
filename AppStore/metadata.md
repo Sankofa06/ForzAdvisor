@@ -20,9 +20,9 @@ Last updated: 2026-05-31
 - Subtitle: Photo-to-tune racing setups
 - Promotional text: Capture or enter car stats, pick a discipline, and get a drive-ready setup with offline formulas, saved garage history, and optional AI tuning.
 - Keywords: racing,tuning,garage,drift,road,drag,setup,ocr,cars,advisor
-- Support URL: https://blackslabpro.github.io/ForzAdvisor/support/
-- Privacy Policy URL: https://blackslabpro.github.io/ForzAdvisor/privacy/
-- Marketing URL: https://blackslabpro.github.io/ForzAdvisor/
+- Support URL: https://Sankofa06.github.io/ForzAdvisor/support/
+- Privacy Policy URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
+- Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## Description
 

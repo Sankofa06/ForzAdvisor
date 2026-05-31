@@ -1,4 +1,27 @@
-# ForzAdvisor Release Notes
+# Release Notes
+
+## Shipflight 2026-05-31
+
+- Branch: `codex/app-store-ready-1.0`
+- Build number bumped for TestFlight upload.
+- Changed files:
+- ` M AppStore/metadata.md`
+- ` M AppStore/privacy-policy.md`
+- ` M AppStore/release-checklist.md`
+- ` M AppStore/support.md`
+- ` M docs/privacy/index.md`
+- ` M docs/support/index.md`
+- ` M forzadvisor.xcodeproj/project.pbxproj`
+
+### Recent commits
+
+- f01ba98 Prepare ForzAdvisor App Store release
+- 28c772b Prepare App Store release package
+- 0cb07e2 Add copyable tune sections
+- c5d1ea8 Add on-device tuning provider
+- ac5d979 Remove legacy OCR parser
+
+
 
 Last updated: 2026-05-31
 

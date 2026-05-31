@@ -30,7 +30,7 @@ ForzAdvisor is not directed to children and does not knowingly collect personal 
 
 ## Contact
 
-For privacy questions, use the public support tracker at https://github.com/blackslabpro/ForzAdvisor/issues.
+For privacy questions, use the public support tracker at https://github.com/Sankofa06/ForzAdvisor/issues.
 
 ## Unofficial App Notice
 

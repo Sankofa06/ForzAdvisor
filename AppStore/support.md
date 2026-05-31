@@ -1,6 +1,6 @@
 # ForzAdvisor Support
 
-Public URL: https://blackslabpro.github.io/ForzAdvisor/support/
+Public URL: https://Sankofa06.github.io/ForzAdvisor/support/
 
 ForzAdvisor helps racing-game players generate, save, and adjust tuning setups from confirmed car details.
 
@@ -28,7 +28,7 @@ Open Settings, switch the provider to API, and tap Clear Key.
 
 ## Contact
 
-Use the public support tracker at https://github.com/blackslabpro/ForzAdvisor/issues.
+Use the public support tracker at https://github.com/Sankofa06/ForzAdvisor/issues.
 
 ## Unofficial App Notice
 
