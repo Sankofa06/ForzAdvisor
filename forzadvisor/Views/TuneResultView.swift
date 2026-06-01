@@ -170,6 +170,7 @@ struct TuneResultView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Done", action: onDone)
+                    .accessibilityIdentifier("doneTuneButton")
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if isSaved {
@@ -178,6 +179,7 @@ struct TuneResultView: View {
                 }
                 Button(isSaved ? "Saved" : "Save", action: onSave)
                     .disabled(isSaved || isAdjusting || isStreaming)
+                    .accessibilityIdentifier("saveTuneButton")
             }
         }
     }

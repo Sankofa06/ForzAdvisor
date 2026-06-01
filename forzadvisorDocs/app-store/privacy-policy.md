@@ -1,6 +1,8 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: TODO_EFFECTIVE_DATE
+Effective date: 2026-05-31
+
+Public URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
 
 ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains how the app handles information in version 1.0.
 
@@ -30,9 +32,8 @@ ForzAdvisor is not directed to children and does not knowingly collect personal 
 
 ## Contact
 
-For privacy questions, contact: TODO_SUPPORT_EMAIL_OR_CONTACT_FORM
+For privacy questions, use the public support tracker at https://github.com/Sankofa06/ForzAdvisor/issues.
 
 ## Unofficial App Notice
 
 ForzAdvisor is not affiliated with, endorsed by, or sponsored by Microsoft, Xbox, Turn 10 Studios, Playground Games, or the Forza franchise.
-

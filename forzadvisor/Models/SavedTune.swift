@@ -100,7 +100,6 @@ final class SavedTune {
         thumbnailData: Data? = nil,
         now: Date = .now
     ) throws {
-        id = tune.id
         carName = tune.request.car.displayName
         year = tune.request.car.year
         make = tune.request.car.make

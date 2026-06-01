@@ -28,6 +28,7 @@ struct DisciplinePickerView: View {
                         DisciplineRow(discipline: discipline)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("disciplineButton-\(discipline.rawValue)")
                     .signatureDisciplineBackground(discipline == .touge)
                 }
             }

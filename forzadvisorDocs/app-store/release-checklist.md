@@ -1,6 +1,6 @@
 # ForzAdvisor 1.0 Release Checklist
 
-Last updated: 2026-05-29
+Last updated: 2026-05-31
 
 Readiness: Yellow
 
@@ -30,8 +30,8 @@ The local release package is prepared and an App Store-signed IPA export succeed
 ## Still Required Before Submission
 
 - Create or verify the App Store Connect app record for `com.michaelwilliams.forzadvisor`.
-- Publish the privacy policy URL and replace `TODO_PUBLIC_PRIVACY_POLICY_URL`.
-- Publish the support URL and replace `TODO_PUBLIC_SUPPORT_URL`.
+- Verify the published privacy policy URL remains available: https://Sankofa06.github.io/ForzAdvisor/privacy/
+- Verify the published support URL remains available: https://Sankofa06.github.io/ForzAdvisor/support/
 - Provide App Review contact name, phone number, and email in App Store Connect.
 - Confirm age rating answers in App Store Connect.
 - Confirm export compliance answers in App Store Connect.

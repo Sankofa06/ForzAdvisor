@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import SwiftData
 @testable import forzadvisor
 
 final class TuningDomainTests: XCTestCase {
@@ -191,6 +192,47 @@ final class TuningDomainTests: XCTestCase {
         draft = SavedTuneEditDraft(tune: tune, playerNotes: "")
         draft.car.weightPounds = Int(Double(draft.car.weightPounds) * 1.03)
         XCTAssertTrue(draft.needsRetune)
+    }
+
+    @MainActor
+    func testSavedTuneKeepsStableRecordIDWhenUpdatedWithNewTuneResult() async throws {
+        let container = try ModelContainer(
+            for: SavedTune.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let context = ModelContext(container)
+        let provider = LocalSampleTuneProvider()
+        let original = try await provider.generateTune(
+            for: TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+        )
+        let savedTune = try SavedTune(tune: original)
+        let savedTuneID = savedTune.id
+
+        context.insert(savedTune)
+        try context.save()
+
+        var retunedCar = SampleTuningData.starterCar
+        retunedCar.frontWeightPercent += 3
+        let retuned = try await provider.generateTune(
+            for: TuneRequest(car: retunedCar, discipline: .road)
+        )
+        XCTAssertNotEqual(retuned.id, savedTuneID)
+
+        try savedTune.update(with: retuned, playerNotes: "Retuned after weight shift")
+        try context.save()
+
+        var descriptor = FetchDescriptor<SavedTune>(
+            predicate: #Predicate<SavedTune> { tune in
+                tune.id == savedTuneID
+            }
+        )
+        descriptor.fetchLimit = 1
+        let fetched = try XCTUnwrap(context.fetch(descriptor).first)
+
+        XCTAssertEqual(fetched.id, savedTuneID)
+        XCTAssertEqual(fetched.frontWeightPercent, retunedCar.frontWeightPercent)
+        XCTAssertEqual(fetched.playerNotes, "Retuned after weight shift")
+        XCTAssertEqual(fetched.tuneResult?.id, retuned.id)
     }
 
     private func numericValue(in tune: TuneResult, section sectionTitle: String, line lineLabel: String) -> Double {

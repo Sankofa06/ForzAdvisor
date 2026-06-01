@@ -1,5 +1,10 @@
 # Release Notes
 
+## Version 1.1.0 (Build 3) - 2026-06-01
+
+- Improved data management reliability for saved app content.
+- Improved navigation and workspace status visibility.
+
 ## Shipflight 2026-05-31
 
 - Branch: `codex/app-store-ready-1.0`

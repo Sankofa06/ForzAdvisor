@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata - Version 1.0
 
-Last updated: 2026-05-29
+Last updated: 2026-05-31
 
 ## App Information
 
@@ -20,9 +20,9 @@ Last updated: 2026-05-29
 - Subtitle: Photo-to-tune racing setups
 - Promotional text: Capture or enter car stats, pick a discipline, and get a drive-ready setup with offline formulas, saved garage history, and optional AI tuning.
 - Keywords: racing,tuning,garage,drift,road,drag,setup,ocr,cars,advisor
-- Support URL: TODO_PUBLIC_SUPPORT_URL
-- Privacy Policy URL: TODO_PUBLIC_PRIVACY_POLICY_URL
-- Marketing URL: TODO_OPTIONAL_MARKETING_URL
+- Support URL: https://Sankofa06.github.io/ForzAdvisor/support/
+- Privacy Policy URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
+- Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## Description
 
@@ -63,14 +63,13 @@ The app uses Apple platform security, Keychain, URLSession over HTTPS, and syste
 
 ## Screenshot Shot List
 
-Use the screenshot plan in `forzadvisorDocs/app-store/screenshot-plan.md`.
+Use the screenshot plan in `AppStore/screenshots-spec.md`.
 
 Recommended order:
 
-1. Garage home with New Tune entry.
-2. Tune source screen with camera, screenshot import, and manual entry.
-3. OCR/manual confirmation or manual entry form.
-4. Discipline picker.
-5. Tune result with copyable sections.
-6. Saved garage tune with feel adjustment controls.
-
+1. Build a Tune Fast
+2. Photo, Screenshot, or Manual
+3. Confirm Every Stat
+4. Tune for Road, Drift, Drag
+5. Copy Complete Settings
+6. Refine After Every Run

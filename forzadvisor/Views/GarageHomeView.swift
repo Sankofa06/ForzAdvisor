@@ -74,6 +74,7 @@ struct GarageHomeView: View {
                         } label: {
                             GarageTuneRow(tune: tune)
                         }
+                        .accessibilityIdentifier("savedTuneRow")
                         .buttonStyle(.plain)
                         .swipeActions {
                             Button("Delete", role: .destructive) {
