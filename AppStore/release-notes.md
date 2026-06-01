@@ -1,5 +1,9 @@
 # Release Notes
 
+## Version 1.1.1 (Build 4) - 2026-06-01
+
+- Improved reliability, usability, and app polish.
+
 ## Version 1.1.0 (Build 3) - 2026-06-01
 
 - Improved data management reliability for saved app content.
