@@ -1,57 +1,62 @@
-# ForzAdvisor Screenshot Plan - Version 1.0
+# ForzAdvisor Screenshot Specification
 
-Last updated: 2026-05-29
+Last updated: 2026-06-15
 
-## Requirements
+## Required App Store Set
 
-The app target is iPhone-only for version 1.0. App Store Connect requires one to ten screenshots per supported localization. Use PNG or JPEG.
+ForzAdvisor is currently prepared as an iPhone app. App Store Connect accepts one to ten screenshots per localization in PNG, JPEG, or JPG format. Apple's current screenshot reference lists `1320 x 2868` portrait as an accepted 6.9-inch iPhone screenshot size, matching the generated upload set.
 
-Preferred capture target:
+Source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
 
-- iPhone 6.9-inch display class, portrait
-- Use the exact pixel size produced by the simulator/device and verify it is accepted by App Store Connect.
+## Suggested Upload Order
 
-Apple's current screenshot reference lists accepted iPhone sizes and allows highest-resolution screenshots to scale down when the UI is the same across device sizes.
+Use the six generated marketing screenshots in `AppStore/screenshots/`:
 
-Source: https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications
+1. `01-build-a-tune-fast.png` - Start Tunes Faster
+2. `02-photo-screenshot-or-manual.png` - Scan, Import, or Type
+3. `03-confirm-every-stat.png` - Confirm Every Stat
+4. `04-tune-for-road-drift-drag.png` - Pick the Drive Style
+5. `05-copy-complete-settings.png` - Copy Menu-Order Settings
+6. `06-refine-after-every-run.png` - Refine After Every Run
 
-## Shot List
+Each image is `1320 x 2868` pixels, portrait, PNG, and designed for the iPhone 6.9-inch screenshot slot.
 
-1. Garage home
-   - Empty or seeded garage
-   - Show the New Tune entry
-   - Caption idea: "Start a setup in seconds"
+## Production Notes
 
-2. Tune source
-   - Show Take Photo, Import Screenshot, and Enter Manually
-   - Caption idea: "Use a photo, screenshot, or manual entry"
+Regenerate the screenshot set with:
 
-3. Manual entry or OCR review
-   - Show editable car stats
-   - Caption idea: "Confirm every value before tuning"
+```sh
+swift scripts/generate_marketing_screenshots.swift
+```
 
-4. Discipline picker
-   - Show Road, Touge, Drift, Dirt, Cross-Country, Drag
-   - Caption idea: "Pick the behavior you want"
+The generator writes App Store upload images to `AppStore/screenshots/` and supporting marketing notes to `AppStore/marketing/`.
 
-5. Tune result
-   - Show tune sections and Copy full tune
-   - Caption idea: "Copy complete menu-order settings"
+## Creative Direction
 
-6. Saved tune adjustment
-   - Save a tune, reopen it, and show feel adjustment controls
-   - Caption idea: "Save setups and adjust after track time"
+- Lead with the actual app workflow rather than a generic racing graphic.
+- Use short, high-contrast headlines that fit comfortably on iPhone App Store previews.
+- Keep the device mockup large enough to inspect the relevant UI state.
+- Use a restrained racing utility palette with teal, orange, gold, green, blue, and graphite accents.
+- Keep the copy focused on outcomes: start faster, confirm values, choose discipline, copy settings, refine after testing.
 
-## Capture Notes
+## Visual QA
 
-- Capture with real app UI, not mockups.
-- Use seeded test data only if the saved garage state is hard to reach manually.
-- Keep status bars clean and avoid showing real API keys.
-- Do not show a Microsoft, Xbox, Turn 10, Playground Games, or Forza logo unless explicit legal approval exists.
+- Confirm every generated image is `1320 x 2868`.
+- Confirm the headline, phone mockup, row text, and footer do not overlap.
+- Confirm text is readable at App Store thumbnail scale.
+- Confirm the screenshot set tells a sequential story from starting a tune through refining a saved tune.
+- Confirm the final upload folder contains only the six intended PNG files.
 
-## Captured Evidence
+## Safe Sample Data
 
-- `forzadvisorDocs/app-store/screenshots/20260528-205632-home-empty-garage.png` - iPhone 17, 1206 x 2622.
-- `forzadvisorDocs/app-store/screenshots/20260528-205745-iphone-17-pro-max-home-empty-garage.png` - iPhone 17 Pro Max, 1320 x 2868.
+No secrets, API keys, private hostnames, private IP addresses, personal messages, unreleased customer data, or private support conversations may appear in screenshots.
 
-The remaining shot-list screens still need capture after UI navigation is available through Xcode, XCUITest screenshot export, or manual Simulator capture.
+Use representative car and tune details only. Do not show Microsoft, Xbox, Turn 10, Playground Games, Forza logos, or official game UI. Keep the unofficial companion app disclosure in metadata, public pages, and Settings.
+
+## What Not To Show
+
+- Real API keys or placeholder strings that resemble keys.
+- Real user notes, personal names, or private messages.
+- Official game logos, storefront badges, or platform marks.
+- Apple device chrome beyond the generated neutral phone mockup.
+- Claims that depend on App Review approval or unverified remote service behavior.

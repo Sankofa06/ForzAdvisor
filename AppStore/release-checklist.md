@@ -1,61 +1,63 @@
-# ForzAdvisor 1.0 Release Checklist
+# ForzAdvisor Release Checklist
 
-Last updated: 2026-05-31
+Last updated: 2026-06-15
 
-Readiness: Yellow
+Readiness: Quickflight ready
 
-The local app record identifiers, metadata, privacy notes, support pages, and screenshot artwork are prepared. Final TestFlight upload and App Review submission still require human-controlled App Store Connect access.
+The release branch has been fast-forwarded into `main`. Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are prepared for the current `1.1.3` app state. The final TestFlight build number has been assigned by `xcode-versioning`.
 
 ## Completed In Repository
 
-- App version is `1.0`.
-- Build number is `1`.
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Version 1.0 target device family is iPhone.
+- Current project version is `1.1.3`.
+- Current project build is `6`.
+- Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
 - Privacy manifest is present at `forzadvisor/PrivacyInfo.xcprivacy`.
+- Settings includes privacy behavior, app version, and unofficial-app disclosure.
 - App Store metadata is present at `AppStore/metadata.md`.
 - Release notes are present at `AppStore/release-notes.md`.
-- Privacy policy and support pages are present under `docs/privacy/` and `docs/support/`.
+- Privacy policy and support pages are present under `AppStore/`, `docs/`, and `forzadvisorDocs/app-store/`.
 - Marketing screenshot generation is present at `scripts/generate_marketing_screenshots.swift`.
 - App Store screenshot outputs are stored in `AppStore/screenshots/`.
 
 ## Required In App Store Connect
 
 - Verify the App Store Connect app record for `com.michaelwilliams.forzadvisor`.
-- Publish GitHub Pages and confirm these public URLs resolve:
-  - `https://Sankofa06.github.io/ForzAdvisor/privacy/`
-  - `https://Sankofa06.github.io/ForzAdvisor/support/`
+- Verify the public privacy URL resolves: `https://Sankofa06.github.io/ForzAdvisor/privacy/`.
+- Verify the public support URL resolves: `https://Sankofa06.github.io/ForzAdvisor/support/`.
 - Provide App Review contact name, phone number, and email.
 - Confirm age rating answers.
 - Confirm export compliance answers.
 - Upload accepted App Store screenshots.
-- Upload build `1.0 (1)` to TestFlight using Xcode Organizer.
-- Wait for App Store Connect processing.
+- Wait for TestFlight processing after quickflight upload.
 - Submit for App Review only after explicit human approval.
 
 ## App Review Risk Notes
 
 - The app is an unofficial companion tool. Keep the disclaimer in metadata, support, privacy policy, screenshots, and Settings.
 - Do not use official game logos or screenshots without legal clearance.
-- Optional API mode requires a user-supplied Anthropic key. Reviewers can complete the core flow offline without an API key.
-- Screenshots are processed locally. Current code does not upload screenshot images.
+- Offline formula tuning is the default and requires no account or API key.
+- Optional on-device model assistance falls back to offline formulas when unavailable.
+- Optional Anthropic API mode requires a user-supplied API key. Reviewers can complete the core flow offline without an API key.
+- Screenshots and camera photos are processed locally for OCR. Current code does not upload screenshot images.
 
-## Verification Log
+## Quickflight Verification Plan
 
-- `xcodebuild -list -project forzadvisor.xcodeproj`: pass with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`; sandbox logged CoreSimulator/provisioning warnings unrelated to scheme discovery.
-- Generic iOS Debug build: passed outside the sandbox after sandboxed asset compilation failed on CoreSimulator access.
-- Generic iOS Release build: passed outside the sandbox with `CODE_SIGNING_ALLOWED=NO`.
-- Unit and UI tests: passed on `iPhone 17` simulator. Result bundle: `/Users/blackslabpro/Library/Developer/Xcode/DerivedData/forzadvisor-glcrjijmthmeomfxnbimvrtgzsuy/Logs/Test/Test-forzadvisor-2026.05.31_09-53-16--0700.xcresult`.
-- Marketing screenshots: generated and verified at `1320 x 2868` PNG for all six App Store upload images.
-- Local App Store Connect export from the prior release pass remains available at `/tmp/ForzAdvisorExportLocal/forzadvisor.ipa`.
-- TestFlight upload remains assigned to Xcode Organizer because the prior command-line upload was blocked by App Store Connect account/provider resolution.
+- Run `git diff --check`.
+- Run a clean warning-free Xcode build using Xcode beta.
+- Run `xcode-versioning --write --asc require`.
+- Re-run the clean build if versioning changes files.
+- Commit final release changes on `main`.
+- Push `main` to `origin`.
+- Run `testflight`.
+- Run post-upload tests and report results separately.
 
 ## Sources Checked
 
-- App Store Connect screenshot specifications: https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications
-- App privacy details: https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy
-- Submit an app: https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app
+- App Store Connect screenshot specifications: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
+- App Store Connect platform version information: https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/
+- App Store Connect app privacy reference: https://developer.apple.com/help/app-store-connect/reference/app-information/app-privacy/

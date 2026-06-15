@@ -1,65 +1,63 @@
-# ForzAdvisor 1.0 Release Checklist
+# ForzAdvisor Release Checklist
 
-Last updated: 2026-05-31
+Last updated: 2026-06-15
 
-Readiness: Yellow
+Readiness: Quickflight ready
 
-The local release package is prepared and an App Store-signed IPA export succeeded. App Store Connect upload, public URLs, and final App Review submission still require human-controlled account setup and approval.
+The release branch has been fast-forwarded into `main`. Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are prepared for the current `1.1.3` app state. The final TestFlight build number has been assigned by `xcode-versioning`.
 
 ## Completed In Repository
 
-- App version is `1.0`.
-- Build number is `1`.
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Version 1.0 target device family is iPhone.
+- Current project version is `1.1.3`.
+- Current project build is `6`.
+- Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
 - Privacy manifest is present at `forzadvisor/PrivacyInfo.xcprivacy`.
-- Settings includes privacy behavior, version, and unofficial-app disclosure.
-- App Store metadata draft is present at `forzadvisorDocs/app-store/metadata.md`.
-- Privacy notes are present at `forzadvisorDocs/app-store/privacy.md`.
-- Privacy policy draft is present at `forzadvisorDocs/app-store/privacy-policy.md`.
-- Support page draft is present at `forzadvisorDocs/app-store/support.md`.
-- Screenshot plan is present at `forzadvisorDocs/app-store/screenshot-plan.md`.
-- Initial release screenshots are present at `forzadvisorDocs/app-store/screenshots/`.
-- iPhoneOS archive succeeded at `/tmp/ForzAdvisorArchives/ForzAdvisor-1.0.xcarchive`.
-- Local App Store Connect export succeeded at `/tmp/ForzAdvisorExportLocal/forzadvisor.ipa` using Cloud Managed Apple Distribution signing.
+- Settings includes privacy behavior, app version, and unofficial-app disclosure.
+- App Store metadata is present at `AppStore/metadata.md`.
+- Release notes are present at `AppStore/release-notes.md`.
+- Privacy policy and support pages are present under `AppStore/`, `docs/`, and `forzadvisorDocs/app-store/`.
+- Marketing screenshot generation is present at `scripts/generate_marketing_screenshots.swift`.
+- App Store screenshot outputs are stored in `AppStore/screenshots/`.
 
-## Still Required Before Submission
+## Required In App Store Connect
 
-- Create or verify the App Store Connect app record for `com.michaelwilliams.forzadvisor`.
-- Verify the published privacy policy URL remains available: https://Sankofa06.github.io/ForzAdvisor/privacy/
-- Verify the published support URL remains available: https://Sankofa06.github.io/ForzAdvisor/support/
-- Provide App Review contact name, phone number, and email in App Store Connect.
-- Confirm age rating answers in App Store Connect.
-- Confirm export compliance answers in App Store Connect.
-- Capture the remaining App Store screenshots beyond the initial home-screen evidence.
+- Verify the App Store Connect app record for `com.michaelwilliams.forzadvisor`.
+- Verify the public privacy URL resolves: `https://Sankofa06.github.io/ForzAdvisor/privacy/`.
+- Verify the public support URL resolves: `https://Sankofa06.github.io/ForzAdvisor/support/`.
+- Provide App Review contact name, phone number, and email.
+- Confirm age rating answers.
+- Confirm export compliance answers.
 - Upload accepted App Store screenshots.
-- Upload build `1.0 (1)` to TestFlight.
-- Wait for App Store Connect processing.
-- Submit for App Review only after human approval.
+- Wait for TestFlight processing after quickflight upload.
+- Submit for App Review only after explicit human approval.
 
 ## App Review Risk Notes
 
-- The app is an unofficial companion tool. Keep the disclaimer in metadata, support, privacy policy, and Settings.
-- Do not use official game logos or screenshots unless legal clearance exists.
-- Optional API mode requires a user-supplied Anthropic key. Reviewers can complete the core flow offline without an API key.
-- Screenshots are processed locally. Current code does not upload screenshot images.
+- The app is an unofficial companion tool. Keep the disclaimer in metadata, support, privacy policy, screenshots, and Settings.
+- Do not use official game logos or screenshots without legal clearance.
+- Offline formula tuning is the default and requires no account or API key.
+- Optional on-device model assistance falls back to offline formulas when unavailable.
+- Optional Anthropic API mode requires a user-supplied API key. Reviewers can complete the core flow offline without an API key.
+- Screenshots and camera photos are processed locally for OCR. Current code does not upload screenshot images.
 
-## Verification Log
+## Quickflight Verification Plan
 
-- Release simulator build: passed on iPhone 17 with zero warnings.
-- Unit and UI tests: passed with zero warnings.
-- iPhoneOS archive: passed with zero warnings.
-- Local App Store Connect export: passed. IPA: `/tmp/ForzAdvisorExportLocal/forzadvisor.ipa`; distribution summary shows Cloud Managed Apple Distribution signing, `beta-reports-active = true`, and `get-task-allow = false`.
-- TestFlight upload: blocked by App Store Connect credentials/provider resolution. Xcode reported `exportArchive App Store Connect Credentials Error` and distribution logs showed `Unexpected nil property at path: 'Actor/relationships/providerId'`.
+- Run `git diff --check`.
+- Run a clean warning-free Xcode build using Xcode beta.
+- Run `xcode-versioning --write --asc require`.
+- Re-run the clean build if versioning changes files.
+- Commit final release changes on `main`.
+- Push `main` to `origin`.
+- Run `testflight`.
+- Run post-upload tests and report results separately.
 
 ## Sources Checked
 
-- App icon guidance: https://developer.apple.com/help/app-store-connect/manage-app-information/add-an-app-icon
-- Screenshot requirements: https://developer.apple.com/help/app-store-connect/reference/screenshot-specifications
-- App privacy requirements: https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy
-- Privacy manifest documentation: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk
-- App submission flow: https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app
+- App Store Connect screenshot specifications: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
+- App Store Connect platform version information: https://developer.apple.com/help/app-store-connect/reference/app-information/platform-version-information/
+- App Store Connect app privacy reference: https://developer.apple.com/help/app-store-connect/reference/app-information/app-privacy/

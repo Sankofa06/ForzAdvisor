@@ -2,21 +2,33 @@
 
 Public URL: https://Sankofa06.github.io/ForzAdvisor/support/
 
-ForzAdvisor helps racing-game players generate, save, and adjust tuning setups from confirmed car details.
+ForzAdvisor helps racing-game players generate, save, copy, and adjust tuning setups from confirmed car details.
 
 ## Common Questions
 
 ### Do I need an account?
 
-No. Version 1.0 does not require a ForzAdvisor account.
+No. ForzAdvisor does not require a ForzAdvisor account.
 
 ### Do I need an API key?
 
-No. Offline formula tuning is the default. API mode is optional for users who want to use their own Anthropic API key.
+No. Offline formula tuning is the default. On-device model assistance is optional when available. Anthropic API mode is optional for users who want to use their own Anthropic API key.
 
 ### Are screenshots uploaded?
 
-No. Screenshots and camera photos are processed on device for OCR in version 1.0.
+No. Camera photos and imported screenshots are processed on device for OCR in the current release. They are not uploaded by ForzAdvisor.
+
+### How do I start a tune?
+
+Tap New Tune, then choose Take Photo, Import Screenshot, or Enter Manually. Confirm the detected or entered car details, choose a discipline, and review the generated tune.
+
+### How do I copy a tune?
+
+Open a generated or saved tune and tap Copy full tune. Individual tune lines can also be copied from their section rows.
+
+### How do I adjust a saved tune?
+
+Open a saved tune and use Adjust Feel to request changes such as more rotation, more stability, softer, stiffer, more top speed, or more acceleration.
 
 ### How do I delete a tune?
 
@@ -24,11 +36,13 @@ Open the garage, swipe left on a saved tune, and tap Delete.
 
 ### How do I remove my API key?
 
-Open Settings, switch the provider to API, and tap Clear Key.
+Open Settings, switch the provider to Anthropic API if needed, and tap Clear Key.
 
 ## Contact
 
 Use the public support tracker at https://github.com/Sankofa06/ForzAdvisor/issues.
+
+Do not include API keys, private screenshots, personal messages, private hostnames, private IP addresses, or other sensitive data in public support issues.
 
 ## Unofficial App Notice
 

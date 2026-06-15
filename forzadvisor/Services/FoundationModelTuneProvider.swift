@@ -39,7 +39,7 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
         session.prewarm()
 
         let options = GenerationOptions(
-            sampling: .greedy,
+            samplingMode: .greedy,
             temperature: nil,
             maximumResponseTokens: 1_200
         )
