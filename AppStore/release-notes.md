@@ -1,5 +1,10 @@
 # Release Notes
 
+## Version 1.1.5 (Build 8) - 2026-06-25
+
+- Added guided tuning refinement: describe what happened on a run, then get bounded tune changes with explanations for each adjusted setting.
+- Improved garage rows and pre-generation setup summaries so saved tunes and input details are easier to scan.
+
 ## Version 1.1.3 (Build 6) - 2026-06-15
 
 - Refined the full tune workflow from photo, screenshot, or manual entry through discipline selection and generated tune review.
