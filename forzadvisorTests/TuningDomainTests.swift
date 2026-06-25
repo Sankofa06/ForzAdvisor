@@ -140,6 +140,38 @@ final class TuningDomainTests: XCTestCase {
         XCTAssertFalse(result.changes.isEmpty)
     }
 
+    func testTuneFeedbackMapsToAdjustmentIntent() {
+        XCTAssertEqual(TuneFeedback.pushesWide.adjustment, .moreRotation)
+        XCTAssertEqual(TuneFeedback.oversteersOnExit.adjustment, .moreStability)
+        XCTAssertEqual(TuneFeedback.snapsOnLift.adjustment, .moreStability)
+        XCTAssertEqual(TuneFeedback.wheelspinOnLaunch.adjustment, .moreStability)
+        XCTAssertEqual(TuneFeedback.bouncyOverBumps.adjustment, .softer)
+        XCTAssertEqual(TuneFeedback.feelsFloaty.adjustment, .stiffer)
+        XCTAssertEqual(TuneFeedback.runsOutOfGear.adjustment, .moreTopSpeed)
+        XCTAssertEqual(TuneFeedback.needsMorePull.adjustment, .moreAcceleration)
+    }
+
+    func testLocalAdjustmentChangesIncludeRationaleAndStayInBounds() async throws {
+        let provider = LocalSampleTuneProvider()
+        let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+        let tune = try await provider.generateTune(for: request)
+        let result = try await provider.adjustTune(previous: tune, adjustment: TuneFeedback.pushesWide.adjustment)
+
+        XCTAssertEqual(result.tune.id, tune.id)
+        XCTAssertEqual(result.tune.request, tune.request)
+        XCTAssertEqual(result.tune.sections.map(\.title), tune.sections.map(\.title))
+        XCTAssertFalse(result.changes.isEmpty)
+        XCTAssertTrue(result.changes.allSatisfy { change in
+            !(change.rationale ?? "").isEmpty
+        })
+        XCTAssertTrue(result.tune.sections.flatMap(\.lines).allSatisfy { line in
+            guard let value = Double(line.value.replacingOccurrences(of: ",", with: "")) else {
+                return true
+            }
+            return value.isFinite
+        })
+    }
+
     func testMoreRotationChangesBalanceRelatedLines() async throws {
         let provider = LocalSampleTuneProvider()
         let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .touge)

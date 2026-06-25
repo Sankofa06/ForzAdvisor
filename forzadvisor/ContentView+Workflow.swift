@@ -132,7 +132,7 @@ extension ContentView {
         }
     }
 
-    func adjust(_ tune: TuneResult, savedTuneID: UUID, adjustment: TuneAdjustment) {
+    func adjust(_ tune: TuneResult, savedTuneID: UUID, feedback: TuneFeedback) {
         let resolvedSavedTune: SavedTune
 
         do {
@@ -146,15 +146,22 @@ extension ContentView {
             return
         }
 
-        adjustingAdjustment = adjustment
+        adjustingFeedback = feedback
 
         Task {
             do {
-                let result = try await makeTuneProvider().adjustTune(previous: tune, adjustment: adjustment)
+                var result = try await makeTuneProvider().adjustTune(previous: tune, adjustment: feedback.adjustment)
+                result.changes = result.changes.map { change in
+                    var resolvedChange = change
+                    if resolvedChange.rationale == nil {
+                        resolvedChange.rationale = feedback.rationale
+                    }
+                    return resolvedChange
+                }
                 try await MainActor.run {
                     try resolvedSavedTune.update(with: result.tune)
                     try modelContext.save()
-                    adjustingAdjustment = nil
+                    adjustingFeedback = nil
                     step = .result(
                         result.tune,
                         savedTuneID: savedTuneID,
@@ -165,7 +172,7 @@ extension ContentView {
                 }
             } catch {
                 await MainActor.run {
-                    adjustingAdjustment = nil
+                    adjustingFeedback = nil
                     errorMessage = "Could not adjust this tune: \(error.localizedDescription)"
                     step = .result(
                         tune,

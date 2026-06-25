@@ -69,8 +69,19 @@ private struct CarSummaryHeader: View {
                         title: "\(car.frontWeightPercent.formatted(.number.precision(.fractionLength(1))))% front",
                         tint: ForzAdvisorTheme.success
                     )
+                    if let peakHorsepower = car.peakHorsepower {
+                        ForzAdvisorPill(title: "\(peakHorsepower) hp", tint: ForzAdvisorTheme.warmAccent)
+                    }
+                    if let peakTorqueFootPounds = car.peakTorqueFootPounds {
+                        ForzAdvisorPill(title: "\(peakTorqueFootPounds) lb-ft")
+                    }
                 }
             }
+
+            Text("Setup check: \(car.weightPounds) lb, \(car.frontWeightPercent.formatted(.number.precision(.fractionLength(1))))% front, \(car.drivetrain.rawValue). These values drive tire pressure, springs, damping, gearing, and differential baselines.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 6)
     }

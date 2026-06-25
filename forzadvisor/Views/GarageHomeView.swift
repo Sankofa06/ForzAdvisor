@@ -138,9 +138,25 @@ private struct GarageTuneRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(tune.carName)
                     .font(.headline)
-                Text("\(tune.disciplineTitle) - \(tune.performanceClassRawValue) \(tune.performanceIndex) - \(tune.drivetrainRawValue)")
-                    .font(.subheadline)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForzAdvisorPill(
+                            title: tune.disciplineTitle,
+                            tint: tune.discipline.map { ForzAdvisorTheme.disciplineColor($0) } ?? ForzAdvisorTheme.accent
+                        )
+                        ForzAdvisorPill(title: "\(tune.performanceClassRawValue) \(tune.performanceIndex)")
+                        ForzAdvisorPill(title: tune.drivetrainRawValue, tint: ForzAdvisorTheme.warmAccent)
+                    }
+                }
+                Text("Updated \(tune.updatedAt.formatted(.relative(presentation: .named)))")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
+                if !tune.playerNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(tune.playerNotes)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
 
             Spacer()

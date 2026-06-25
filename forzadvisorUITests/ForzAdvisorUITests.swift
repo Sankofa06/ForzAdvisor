@@ -51,5 +51,11 @@ final class ForzAdvisorUITests: XCTestCase {
 
         XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["2019 Toyota Supra"].waitForExistence(timeout: 5))
+
+        let feedbackButton = app.buttons["feedbackButton-pushesWide"]
+        XCTAssertTrue(feedbackButton.waitForExistence(timeout: 5))
+        feedbackButton.tap()
+
+        XCTAssertTrue(app.staticTexts["Last changes"].waitForExistence(timeout: 5))
     }
 }

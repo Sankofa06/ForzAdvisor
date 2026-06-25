@@ -78,7 +78,8 @@ extension LocalSampleTuneProvider {
             lineLabel: lineLabel,
             oldValue: oldLine.value,
             newValue: newValueText,
-            unit: oldLine.unit
+            unit: oldLine.unit,
+            rationale: rationale(for: sectionTitle, lineLabel: lineLabel, delta: newValue - oldValue)
         )
     }
 
@@ -88,6 +89,34 @@ extension LocalSampleTuneProvider {
 
     func formatted(_ value: Double, digits: Int) -> String {
         value.formatted(.number.precision(.fractionLength(digits)))
+    }
+
+    private func rationale(for sectionTitle: String, lineLabel: String, delta: Double) -> String {
+        switch sectionTitle {
+        case "Antiroll Bars":
+            if lineLabel == "Front" {
+                return delta < 0 ? "Less front roll stiffness helps the nose bite and rotate." : "More front roll stiffness calms turn-in and reduces sudden rotation."
+            }
+            return delta > 0 ? "More rear roll stiffness helps the car rotate." : "Less rear roll stiffness makes the rear end more settled."
+        case "Differential":
+            if lineLabel.localizedCaseInsensitiveContains("center") {
+                return delta > 0 ? "More rear bias makes AWD feel more agile." : "Less rear bias makes AWD more planted."
+            }
+            if lineLabel.localizedCaseInsensitiveContains("decel") {
+                return delta > 0 ? "More decel lock steadies lift-off and braking rotation." : "Less decel lock lets the car rotate more freely off throttle."
+            }
+            return delta > 0 ? "More accel lock improves drive off the corner." : "Less accel lock reduces power-on push or snap."
+        case "Springs":
+            return delta > 0 ? "A stiffer spring rate adds support and faster response." : "A softer spring rate improves compliance and grip over bumps."
+        case "Damping":
+            return delta > 0 ? "More damping settles body motion faster." : "Less damping lets the suspension absorb rough surfaces."
+        case "Gearing":
+            return delta > 0 ? "A shorter final drive improves acceleration." : "A taller final drive gives more top-speed headroom."
+        case "Aero":
+            return delta > 0 ? "More downforce adds high-speed grip." : "Less downforce reduces drag for speed."
+        default:
+            return "Adjusted this value to match the selected driving feedback."
+        }
     }
 }
 

@@ -17,7 +17,7 @@ struct ContentView: View {
     @State var step: WorkflowStep = .home
     @State var errorMessage: String?
     @State var errorRecovery: ErrorRecovery?
-    @State var adjustingAdjustment: TuneAdjustment?
+    @State var adjustingFeedback: TuneFeedback?
     @State var isShowingSettings = false
 
     let keychainStore = KeychainStore()
@@ -191,7 +191,7 @@ struct ContentView: View {
             playerNotes: resolvedPlayerNotes,
             thumbnailData: resolvedThumbnailData,
             adjustmentChanges: adjustmentChanges,
-            activeAdjustment: adjustingAdjustment,
+            activeFeedback: adjustingFeedback,
             onDone: { step = .home },
             onSave: {
                 if let savedTuneID = save(
@@ -217,9 +217,9 @@ struct ContentView: View {
                     thumbnailData: resolvedThumbnailData
                 )
             },
-            onAdjust: { adjustment in
+            onFeedback: { feedback in
                 guard let resolvedSavedTuneID else { return }
-                adjust(tune, savedTuneID: resolvedSavedTuneID, adjustment: adjustment)
+                adjust(tune, savedTuneID: resolvedSavedTuneID, feedback: feedback)
             }
         )
     }

@@ -16,18 +16,18 @@ struct TuneResultView: View {
     let playerNotes: String
     let thumbnailData: Data?
     let adjustmentChanges: [TuneAdjustmentChange]
-    let activeAdjustment: TuneAdjustment?
+    let activeFeedback: TuneFeedback?
     let onDone: () -> Void
     let onSave: () -> Void
     let onEdit: () -> Void
-    let onAdjust: (TuneAdjustment) -> Void
+    let onFeedback: (TuneFeedback) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
     @State private var expandedSectionTitles = Set(TuneSection.menuOrder.map(\.title))
     @State private var didCopyFullTune = false
 
     private var isAdjusting: Bool {
-        activeAdjustment != nil
+        activeFeedback != nil
     }
 
     var body: some View {
@@ -100,10 +100,10 @@ struct TuneResultView: View {
             }
 
             if isSaved && !isStreaming {
-                Section("Adjust Feel") {
-                    AdjustmentGrid(
-                        activeAdjustment: activeAdjustment,
-                        onAdjust: onAdjust
+                Section("Guided Refinement") {
+                    GuidedRefinementView(
+                        activeFeedback: activeFeedback,
+                        onFeedback: onFeedback
                     )
                     .padding(.vertical, 4)
                 }
@@ -208,49 +208,66 @@ struct TuneResultView: View {
     }
 }
 
-private struct AdjustmentGrid: View {
-    let activeAdjustment: TuneAdjustment?
-    let onAdjust: (TuneAdjustment) -> Void
+private struct GuidedRefinementView: View {
+    let activeFeedback: TuneFeedback?
+    let onFeedback: (TuneFeedback) -> Void
 
     private let columns = [
-        GridItem(.adaptive(minimum: 150), spacing: 8)
+        GridItem(.adaptive(minimum: 156), spacing: 8)
     ]
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(TuneAdjustment.allCases) { adjustment in
-                Button {
-                    onAdjust(adjustment)
-                } label: {
-                    HStack(spacing: 8) {
-                        if activeAdjustment == adjustment {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Image(systemName: adjustment.symbolName)
-                                .frame(width: 18)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("What happened on the last run?")
+                .font(.subheadline.weight(.semibold))
+            Text("Pick the closest symptom and ForzAdvisor will make a bounded change, then explain every moved setting.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            LazyVGrid(columns: columns, spacing: 8) {
+                ForEach(TuneFeedback.allCases) { feedback in
+                    Button {
+                        onFeedback(feedback)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack(spacing: 8) {
+                                if activeFeedback == feedback {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                } else {
+                                    Image(systemName: feedback.symbolName)
+                                        .frame(width: 18)
+                                }
+
+                                Text(feedback.title)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.85)
+
+                                Spacer(minLength: 0)
+                            }
+
+                            Text(feedback.prompt)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
                         }
-
-                        Text(adjustment.title)
-                            .font(.caption.weight(.semibold))
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.85)
-
-                        Spacer(minLength: 0)
+                        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(
+                            ForzAdvisorTheme.mutedSurface,
+                            in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        )
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(ForzAdvisorTheme.separator, lineWidth: 1)
+                        }
                     }
-                    .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
-                    .padding(.horizontal, 10)
-                    .background(
-                        ForzAdvisorTheme.mutedSurface,
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    )
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .stroke(ForzAdvisorTheme.separator, lineWidth: 1)
-                    }
+                    .buttonStyle(.plain)
+                    .disabled(activeFeedback != nil)
+                    .accessibilityIdentifier("feedbackButton-\(feedback.rawValue)")
                 }
-                .buttonStyle(.plain)
-                .disabled(activeAdjustment != nil)
             }
         }
     }
@@ -267,6 +284,12 @@ private struct AdjustmentChangeRow: View {
                 Text(change.sectionTitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                if let rationale = change.rationale {
+                    Text(rationale)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             Spacer(minLength: 16)
