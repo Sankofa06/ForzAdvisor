@@ -115,6 +115,15 @@ final class OCRTextParserTests: XCTestCase {
 
         XCTAssertEqual(fallback.weightPounds, 3_600)
         XCTAssertEqual(fallback.frontWeightPercent, 51)
-        XCTAssertEqual(fallback.performanceClass, SampleTuningData.starterCar.performanceClass)
+        XCTAssertEqual(fallback.make, "")
+        XCTAssertEqual(fallback.model, "")
+        XCTAssertNil(fallback.performanceIndex)
+        XCTAssertNil(fallback.performanceClass)
+        XCTAssertNil(fallback.drivetrain)
+        XCTAssertNil(fallback.confirmedCarInput())
+        XCTAssertTrue(fallback.validationIssues.contains(.missingName))
+        XCTAssertTrue(fallback.validationIssues.contains(.missingPerformanceIndex))
+        XCTAssertTrue(fallback.validationIssues.contains(.missingPerformanceClass))
+        XCTAssertTrue(fallback.validationIssues.contains(.missingDrivetrain))
     }
 }

@@ -9,7 +9,7 @@
 import CoreGraphics
 import Foundation
 
-enum OCRInputField: String, CaseIterable, Identifiable {
+enum OCRInputField: String, CaseIterable, Identifiable, Sendable {
     case weightPounds
     case frontWeightPercent
     case performanceIndex
@@ -33,7 +33,7 @@ enum OCRInputField: String, CaseIterable, Identifiable {
     }
 }
 
-struct OCRTextObservation: Equatable {
+struct OCRTextObservation: Equatable, Sendable {
     var text: String
     var confidence: Double
     var boundingBox: CGRect?
@@ -52,7 +52,7 @@ struct OCRTextObservation: Equatable {
     }
 }
 
-struct OCRFieldEvidence: Equatable {
+struct OCRFieldEvidence: Equatable, Sendable {
     static let reviewThreshold = 0.6
 
     var rawText: String?
@@ -73,7 +73,7 @@ struct OCRFieldEvidence: Equatable {
     }
 }
 
-struct OCRFieldCandidate: Identifiable, Equatable {
+struct OCRFieldCandidate: Identifiable, Equatable, Sendable {
     var field: OCRInputField
     var value: String
     var confidence: Double
@@ -91,7 +91,7 @@ protocol OCRCorrectionProvider {
     ) async throws -> OCRConfirmationDraft
 }
 
-struct OCRConfirmationDraft: Equatable {
+struct OCRConfirmationDraft: Equatable, Sendable {
     var year: Int?
     var make = ""
     var model = ""
@@ -126,18 +126,18 @@ struct OCRConfirmationDraft: Equatable {
         fieldCandidates[field] ?? []
     }
 
-    func manualEntryFallback(default defaultCar: CarInput = SampleTuningData.starterCar) -> CarInput {
-        CarInput(
-            year: year ?? defaultCar.year,
-            make: make.isEmpty ? defaultCar.make : make,
-            model: model.isEmpty ? defaultCar.model : model,
-            weightPounds: weightPounds ?? defaultCar.weightPounds,
-            frontWeightPercent: frontWeightPercent ?? defaultCar.frontWeightPercent,
-            performanceIndex: performanceIndex ?? defaultCar.performanceIndex,
-            performanceClass: performanceClass ?? defaultCar.performanceClass,
-            drivetrain: drivetrain ?? defaultCar.drivetrain,
-            peakHorsepower: peakHorsepower ?? defaultCar.peakHorsepower,
-            peakTorqueFootPounds: peakTorqueFootPounds ?? defaultCar.peakTorqueFootPounds
+    func manualEntryFallback() -> ManualEntryDraft {
+        ManualEntryDraft(
+            year: year,
+            make: make,
+            model: model,
+            weightPounds: weightPounds,
+            frontWeightPercent: frontWeightPercent,
+            performanceIndex: performanceIndex,
+            performanceClass: performanceClass,
+            drivetrain: drivetrain,
+            peakHorsepower: peakHorsepower,
+            peakTorqueFootPounds: peakTorqueFootPounds
         )
     }
 

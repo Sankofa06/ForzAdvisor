@@ -134,6 +134,104 @@ final class TuneAPIModelTests: XCTestCase {
 
         XCTAssertEqual(tune.request, request)
         XCTAssertFalse(tune.sections.isEmpty)
+        XCTAssertEqual(tune.providerInfo?.requestedMode, .anthropicAPI)
+        XCTAssertEqual(tune.providerInfo?.actualMode, .offlineFormula)
+        XCTAssertEqual(tune.providerInfo?.fallbackReason, .missingAPIKey)
+    }
+
+    func testAPIClientReportsKeychainReadFailureSeparatelyFromMissingKey() {
+        let client = TuneAPIClient(keychainStore: FailingAPIKeyStore())
+
+        let status = client.apiKeyStatus()
+
+        guard case .readFailed(let message) = status else {
+            return XCTFail("Expected Keychain read failure, got \(status).")
+        }
+        XCTAssertTrue(message.contains("Test Keychain read failure"))
+        XCTAssertFalse(client.hasConfiguredAPIKey())
+    }
+
+    func testCompositeProviderFallbackRecordsKeychainReadFailure() async throws {
+        let provider = CompositeTuneProvider(
+            configuration: TuneProviderConfiguration(mode: .anthropicAPI),
+            remoteProvider: TuneAPIClient(keychainStore: FailingAPIKeyStore()),
+            onDeviceProvider: UnavailableOnDeviceProvider(),
+            localProvider: LocalSampleTuneProvider()
+        )
+        let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+
+        let tune = try await provider.generateTune(for: request)
+
+        XCTAssertEqual(tune.request, request)
+        XCTAssertFalse(tune.sections.isEmpty)
+        XCTAssertEqual(tune.providerInfo?.requestedMode, .anthropicAPI)
+        XCTAssertEqual(tune.providerInfo?.actualMode, .offlineFormula)
+        XCTAssertEqual(tune.providerInfo?.fallbackReason, .apiKeyReadFailed)
+    }
+
+    func testAPIClientGenerateReportsKeychainReadFailureBeforeNetwork() async throws {
+        let client = TuneAPIClient(
+            keychainStore: FailingAPIKeyStore(),
+            session: UnexpectedURLSession()
+        )
+
+        do {
+            _ = try await client.generateTune(for: TuneRequest(car: SampleTuningData.starterCar, discipline: .road))
+            XCTFail("Expected API key read failure.")
+        } catch let error as TuneAPIError {
+            guard case .apiKeyReadFailed(let message) = error else {
+                return XCTFail("Expected apiKeyReadFailed, got \(error).")
+            }
+            XCTAssertTrue(message.contains("Test Keychain read failure"))
+        } catch {
+            XCTFail("Expected TuneAPIError, got \(error).")
+        }
+    }
+
+    func testCompositeProviderFallsBackToLocalAdjustmentWithoutAPIKey() async throws {
+        let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .touge)
+        let previous = try await LocalSampleTuneProvider().generateTune(for: request)
+        let provider = CompositeTuneProvider(
+            configuration: TuneProviderConfiguration(mode: .anthropicAPI),
+            remoteProvider: TuneAPIClient(keychainStore: KeychainStore(service: "forzadvisor-tests-\(UUID().uuidString)")),
+            onDeviceProvider: UnavailableOnDeviceProvider(),
+            localProvider: LocalSampleTuneProvider()
+        )
+
+        let result = try await provider.adjustTune(previous: previous, adjustment: .moreRotation)
+
+        XCTAssertEqual(result.tune.request, request)
+        XCTAssertFalse(result.changes.isEmpty)
+        XCTAssertEqual(result.tune.providerInfo?.requestedMode, .anthropicAPI)
+        XCTAssertEqual(result.tune.providerInfo?.actualMode, .offlineFormula)
+        XCTAssertEqual(result.tune.providerInfo?.fallbackReason, .missingAPIKey)
+        XCTAssertLessThan(
+            try XCTUnwrap(result.tune.section("Antiroll Bars")?.number("Front")),
+            try XCTUnwrap(previous.section("Antiroll Bars")?.number("Front"))
+        )
+        XCTAssertGreaterThan(
+            try XCTUnwrap(result.tune.section("Antiroll Bars")?.number("Rear")),
+            try XCTUnwrap(previous.section("Antiroll Bars")?.number("Rear"))
+        )
+    }
+
+    func testCompositeProviderAdjustmentFallbackRecordsKeychainReadFailure() async throws {
+        let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .touge)
+        let previous = try await LocalSampleTuneProvider().generateTune(for: request)
+        let provider = CompositeTuneProvider(
+            configuration: TuneProviderConfiguration(mode: .anthropicAPI),
+            remoteProvider: TuneAPIClient(keychainStore: FailingAPIKeyStore()),
+            onDeviceProvider: UnavailableOnDeviceProvider(),
+            localProvider: LocalSampleTuneProvider()
+        )
+
+        let result = try await provider.adjustTune(previous: previous, adjustment: .moreRotation)
+
+        XCTAssertEqual(result.tune.request, request)
+        XCTAssertFalse(result.changes.isEmpty)
+        XCTAssertEqual(result.tune.providerInfo?.requestedMode, .anthropicAPI)
+        XCTAssertEqual(result.tune.providerInfo?.actualMode, .offlineFormula)
+        XCTAssertEqual(result.tune.providerInfo?.fallbackReason, .apiKeyReadFailed)
     }
 }
 
@@ -152,5 +250,28 @@ private struct UnavailableOnDeviceProvider: OnDeviceTuneProviding {
 
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
         throw OnDeviceTuneError.unavailable(.modelNotReady)
+    }
+}
+
+private struct FailingAPIKeyStore: APIKeyStoring {
+    func readAPIKey() throws -> String? {
+        throw TestKeychainReadError()
+    }
+
+    func saveAPIKey(_ key: String) throws {}
+
+    func deleteAPIKey() throws {}
+
+    private struct TestKeychainReadError: LocalizedError {
+        var errorDescription: String? {
+            "Test Keychain read failure."
+        }
+    }
+}
+
+private struct UnexpectedURLSession: URLSessionProtocol {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        XCTFail("Network should not be called when the API key cannot be read.")
+        throw URLError(.badServerResponse)
     }
 }

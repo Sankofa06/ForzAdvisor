@@ -58,6 +58,7 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
                 id: baseline.id,
                 generatedAt: baseline.generatedAt
             )
+            .withProviderInfo(.direct(.onDeviceFoundationModel))
             onPartial?(partialTune)
 
             if let complete = try? OnDeviceTuneResponse(snapshot.rawContent) {
@@ -74,10 +75,16 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
             id: baseline.id,
             generatedAt: Date()
         )
+        .withProviderInfo(.direct(.onDeviceFoundationModel))
     }
 
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
-        try await baselineProvider.adjustTune(previous: tune, adjustment: adjustment)
+        var result = try await baselineProvider.adjustTune(previous: tune, adjustment: adjustment)
+        result.tune = result.tune.withProviderInfo(.fallback(
+            requestedMode: .onDeviceFoundationModel,
+            reason: .onDeviceAdjustmentUsesFormula
+        ))
+        return result
     }
 }
 

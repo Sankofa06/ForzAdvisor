@@ -27,48 +27,48 @@ extension ContentView {
             partialTune: nil
         )
 
-        Task {
-            do {
-                let tune = try await makeTuneProvider().generateTune(for: request) { partialTune in
-                    step = .loading(
-                        request,
-                        thumbnailData: thumbnailData,
+        let provider = makeTuneProvider()
+        tuneWorkflow.generateTune(
+            for: request,
+            provider: provider,
+            onPartial: { partialTune in
+                step = .loading(
+                    request,
+                    thumbnailData: thumbnailData,
+                    savedTuneID: savedTuneID,
+                    playerNotes: playerNotes,
+                    partialTune: partialTune
+                )
+            },
+            onSuccess: { tune in
+                if let savedTuneID {
+                    try updateSavedTune(
                         savedTuneID: savedTuneID,
+                        with: tune,
                         playerNotes: playerNotes,
-                        partialTune: partialTune
+                        thumbnailData: thumbnailData
                     )
                 }
-                try await MainActor.run {
-                    if let savedTuneID {
-                        try updateSavedTune(
-                            savedTuneID: savedTuneID,
-                            with: tune,
-                            playerNotes: playerNotes,
-                            thumbnailData: thumbnailData
-                        )
-                    }
-                    step = .result(
-                        tune,
-                        savedTuneID: savedTuneID,
-                        adjustmentChanges: [],
-                        thumbnailData: thumbnailData,
-                        playerNotes: playerNotes
-                    )
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = error.localizedDescription
-                    errorRecovery = .generate(
-                        request: request,
-                        origin: origin,
-                        thumbnailData: thumbnailData,
-                        savedTuneID: savedTuneID,
-                        playerNotes: playerNotes
-                    )
-                    step = .discipline(input, origin: origin, thumbnailData: thumbnailData)
-                }
+                step = .result(
+                    tune,
+                    savedTuneID: savedTuneID,
+                    adjustmentChanges: [],
+                    thumbnailData: thumbnailData,
+                    playerNotes: playerNotes
+                )
+            },
+            onFailure: { error in
+                errorMessage = error.localizedDescription
+                errorRecovery = .generate(
+                    request: request,
+                    origin: origin,
+                    thumbnailData: thumbnailData,
+                    savedTuneID: savedTuneID,
+                    playerNotes: playerNotes
+                )
+                step = .discipline(input, origin: origin, thumbnailData: thumbnailData)
             }
-        }
+        )
     }
 
     func save(_ tune: TuneResult, playerNotes: String, thumbnailData: Data?) -> UUID? {
@@ -133,60 +133,52 @@ extension ContentView {
     }
 
     func adjust(_ tune: TuneResult, savedTuneID: UUID, feedback: TuneFeedback) {
-        let resolvedSavedTune: SavedTune
-
         do {
-            guard let fetchedTune = try savedTune(for: savedTuneID) else {
+            guard try savedTune(for: savedTuneID) != nil else {
                 errorMessage = "This saved tune could not be adjusted."
                 return
             }
-            resolvedSavedTune = fetchedTune
         } catch {
             errorMessage = "Could not load this saved tune: \(error.localizedDescription)"
             return
         }
 
-        adjustingFeedback = feedback
-
-        Task {
-            do {
-                var result = try await makeTuneProvider().adjustTune(previous: tune, adjustment: feedback.adjustment)
-                result.changes = result.changes.map { change in
-                    var resolvedChange = change
-                    if resolvedChange.rationale == nil {
-                        resolvedChange.rationale = feedback.rationale
-                    }
-                    return resolvedChange
+        let provider = makeTuneProvider()
+        tuneWorkflow.adjustTune(
+            previous: tune,
+            savedTuneID: savedTuneID,
+            feedback: feedback,
+            provider: provider,
+            onSuccess: { result in
+                guard let resolvedSavedTune = try savedTune(for: savedTuneID) else {
+                    throw ContentWorkflowError.missingSavedTune
                 }
-                try await MainActor.run {
-                    try resolvedSavedTune.update(with: result.tune)
-                    try modelContext.save()
-                    adjustingFeedback = nil
-                    step = .result(
-                        result.tune,
-                        savedTuneID: savedTuneID,
-                        adjustmentChanges: result.changes,
-                        thumbnailData: resolvedSavedTune.thumbnailData,
-                        playerNotes: resolvedSavedTune.playerNotes
-                    )
-                }
-            } catch {
-                await MainActor.run {
-                    adjustingFeedback = nil
-                    errorMessage = "Could not adjust this tune: \(error.localizedDescription)"
-                    step = .result(
-                        tune,
-                        savedTuneID: savedTuneID,
-                        adjustmentChanges: [],
-                        thumbnailData: resolvedSavedTune.thumbnailData,
-                        playerNotes: resolvedSavedTune.playerNotes
-                    )
-                }
+                try resolvedSavedTune.update(with: result.tune)
+                try modelContext.save()
+                step = .result(
+                    result.tune,
+                    savedTuneID: savedTuneID,
+                    adjustmentChanges: result.changes,
+                    thumbnailData: resolvedSavedTune.thumbnailData,
+                    playerNotes: resolvedSavedTune.playerNotes
+                )
+            },
+            onFailure: { error in
+                let resolvedSavedTune = try? savedTune(for: savedTuneID)
+                errorMessage = "Could not adjust this tune: \(error.localizedDescription)"
+                step = .result(
+                    tune,
+                    savedTuneID: savedTuneID,
+                    adjustmentChanges: [],
+                    thumbnailData: resolvedSavedTune?.thumbnailData,
+                    playerNotes: resolvedSavedTune?.playerNotes ?? ""
+                )
             }
-        }
+        )
     }
 
     func open(_ savedTune: SavedTune) {
+        cancelActiveTuneWork()
         if let tune = savedTune.tuneResult {
             step = .result(
                 tune,
@@ -240,6 +232,7 @@ extension ContentView {
     }
 
     func delete(_ savedTune: SavedTune) {
+        tuneWorkflow.cancelAdjustment(for: savedTune.id)
         modelContext.delete(savedTune)
 
         do {
@@ -270,6 +263,10 @@ extension ContentView {
         errorRecovery = nil
     }
 
+    func cancelActiveTuneWork() {
+        tuneWorkflow.cancelActiveTuneWork()
+    }
+
     func makeTuneProvider() -> CompositeTuneProvider {
         CompositeTuneProvider(
             configuration: TuneProviderConfiguration(
@@ -286,7 +283,7 @@ enum WorkflowStep {
     case home
     case newTune
     case ocrReview(OCRConfirmationDraft)
-    case manualEntry(CarInput, thumbnailData: Data?)
+    case manualEntry(ManualEntryDraft, thumbnailData: Data?)
     case discipline(CarInput, origin: InputOrigin, thumbnailData: Data?)
     case loading(TuneRequest, thumbnailData: Data?, savedTuneID: UUID?, playerNotes: String, partialTune: TuneResult?)
     case result(TuneResult, savedTuneID: UUID?, adjustmentChanges: [TuneAdjustmentChange], thumbnailData: Data?, playerNotes: String)
@@ -300,7 +297,7 @@ enum InputOrigin {
     func previousStep(thumbnailData: Data?) -> WorkflowStep {
         switch self {
         case .manual(let input):
-            .manualEntry(input, thumbnailData: thumbnailData)
+            .manualEntry(ManualEntryDraft(car: input), thumbnailData: thumbnailData)
         case .ocr(let draft):
             .ocrReview(draft)
         }
@@ -315,6 +312,12 @@ enum ErrorRecovery {
         savedTuneID: UUID?,
         playerNotes: String
     )
+}
+
+struct ActiveTuneAdjustment {
+    let id: UUID
+    let savedTuneID: UUID
+    let feedback: TuneFeedback
 }
 
 enum ContentWorkflowError: LocalizedError {

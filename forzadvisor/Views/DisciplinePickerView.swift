@@ -2,7 +2,7 @@
 //  DisciplinePickerView.swift
 //  forzadvisor
 //
-//  Lets the player choose the driving discipline before the local tune provider
+//  Lets the player choose the driving discipline before the selected provider
 //  generates values in Forza tune-menu order.
 //
 

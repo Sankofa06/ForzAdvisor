@@ -9,7 +9,7 @@
 import Foundation
 
 struct TuneAPIClient: TuneProvider {
-    var keychainStore = KeychainStore()
+    var keychainStore: any APIKeyStoring = KeychainStore()
     var session: any URLSessionProtocol = URLSession.shared
     var endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
     var modelName = "claude-sonnet-4-6"
@@ -19,6 +19,7 @@ struct TuneAPIClient: TuneProvider {
         let payload = TuneAPIRequestPayload(request: request)
         let response: TuneAPIResponse = try await performJSONRequest(payload: payload)
         return response.tuneResult(for: request)
+            .withProviderInfo(.direct(.anthropicAPI))
     }
 
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
@@ -29,22 +30,23 @@ struct TuneAPIClient: TuneProvider {
         let response: TuneAPIResponse = try await performJSONRequest(payload: payload)
         let adjustedTune = response.mergedTuneResult(updating: tune)
         return TuneAdjustmentResult(
-            tune: adjustedTune,
+            tune: adjustedTune.withProviderInfo(.direct(.anthropicAPI)),
             changes: adjustedTune.changes(comparedWith: tune)
         )
     }
 
     func hasConfiguredAPIKey() -> Bool {
-        guard let key = try? keychainStore.readAPIKey() else { return false }
-        return !key.isEmpty
+        apiKeyStatus().hasConfiguredKey
+    }
+
+    func apiKeyStatus() -> APIKeyStatus {
+        keychainStore.apiKeyStatus()
     }
 
     private func performJSONRequest<Response: Decodable, Payload: Encodable>(
         payload: Payload
     ) async throws -> Response {
-        guard let apiKey = try keychainStore.readAPIKey(), !apiKey.isEmpty else {
-            throw TuneAPIError.missingAPIKey
-        }
+        let apiKey = try readConfiguredAPIKey()
 
         var request = URLRequest(url: endpoint, timeoutInterval: timeout)
         request.httpMethod = "POST"
@@ -89,6 +91,7 @@ extension URLSession: URLSessionProtocol {}
 
 enum TuneAPIError: LocalizedError, Equatable {
     case missingAPIKey
+    case apiKeyReadFailed(String)
     case invalidResponse
     case httpStatus(Int)
     case malformedJSON
@@ -98,6 +101,8 @@ enum TuneAPIError: LocalizedError, Equatable {
         switch self {
         case .missingAPIKey:
             "No API key is saved."
+        case .apiKeyReadFailed(let detail):
+            "Could not read API key: \(detail)"
         case .invalidResponse:
             "The tune service returned an invalid response."
         case .httpStatus(let status):
@@ -158,6 +163,22 @@ private extension TuneAPIClient {
     Do not include Markdown, prose, code fences, or fields outside the requested tune schema.
     Use complete tune-menu order for generate_tune responses. For adjust_tune, return changed numeric fields and notes.
     """
+}
+
+private extension TuneAPIClient {
+    func readConfiguredAPIKey() throws -> String {
+        do {
+            guard let apiKey = try keychainStore.readAPIKey(), !apiKey.isEmpty else {
+                throw TuneAPIError.missingAPIKey
+            }
+
+            return apiKey
+        } catch let error as TuneAPIError {
+            throw error
+        } catch {
+            throw TuneAPIError.apiKeyReadFailed(error.localizedDescription)
+        }
+    }
 }
 
 private extension TuneAdjustment {

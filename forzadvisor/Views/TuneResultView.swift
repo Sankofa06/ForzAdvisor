@@ -59,6 +59,7 @@ struct TuneResultView: View {
                         Text("\(tune.request.discipline.title) - \(tune.request.car.performanceClass.rawValue) \(tune.request.car.performanceIndex) - \(tune.request.car.drivetrain.rawValue)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        ProviderStatusView(providerInfo: tune.providerInfo)
                     }
                 }
                 .padding(.vertical, 4)
@@ -208,13 +209,34 @@ struct TuneResultView: View {
     }
 }
 
+private struct ProviderStatusView: View {
+    let providerInfo: TuneProviderInfo?
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: providerInfo?.symbolName ?? "questionmark.circle")
+                .font(.caption.weight(.semibold))
+                .frame(width: 16)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(providerInfo?.statusTitle ?? "Provider not recorded")
+                    .font(.caption.weight(.semibold))
+                Text(providerInfo?.statusDetail ?? "This saved tune was created before provider tracking.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .foregroundStyle(providerInfo?.fallbackReason == nil ? ForzAdvisorTheme.accent : ForzAdvisorTheme.warning)
+        .accessibilityIdentifier("providerStatus")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(providerInfo?.statusTitle ?? "Provider not recorded")
+        .accessibilityValue(providerInfo?.statusDetail ?? "This saved tune was created before provider tracking.")
+    }
+}
+
 private struct GuidedRefinementView: View {
     let activeFeedback: TuneFeedback?
     let onFeedback: (TuneFeedback) -> Void
-
-    private let columns = [
-        GridItem(.adaptive(minimum: 156), spacing: 8)
-    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -224,7 +246,7 @@ private struct GuidedRefinementView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            LazyVGrid(columns: columns, spacing: 8) {
+            VStack(spacing: 8) {
                 ForEach(TuneFeedback.allCases) { feedback in
                     Button {
                         onFeedback(feedback)
@@ -252,7 +274,7 @@ private struct GuidedRefinementView: View {
                                 .foregroundStyle(.secondary)
                                 .lineLimit(2)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+                        .frame(minHeight: 72, alignment: .leading)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 8)
                         .background(
@@ -266,7 +288,12 @@ private struct GuidedRefinementView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(activeFeedback != nil)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("feedbackButton-\(feedback.rawValue)")
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(feedback.title)
+                    .accessibilityHint(feedback.prompt)
+                    .accessibilityValue(activeFeedback == feedback ? "Adjusting" : "")
                 }
             }
         }
@@ -274,44 +301,79 @@ private struct GuidedRefinementView: View {
 }
 
 private struct AdjustmentChangeRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let change: TuneAdjustmentChange
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(change.lineLabel)
-                    .font(.subheadline.weight(.semibold))
-                Text(change.sectionTitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if let rationale = change.rationale {
-                    Text(rationale)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 8) {
+                    changeText
+                    changeValues
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    changeText
+
+                    Spacer(minLength: 16)
+
+                    changeValues
                 }
             }
-
-            Spacer(minLength: 16)
-
-            HStack(alignment: .firstTextBaseline, spacing: 5) {
-                Text(change.oldValue)
-                    .foregroundStyle(.secondary)
-                Image(systemName: "arrow.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-                Text(change.newValue)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(ForzAdvisorTheme.accent)
-                if !change.unit.isEmpty {
-                    Text(change.unit)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .font(.system(.subheadline, design: .monospaced))
         }
         .padding(.vertical, 3)
+        .accessibilityIdentifier("adjustmentChangeRow")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var changeText: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(change.lineLabel)
+                .font(.subheadline.weight(.semibold))
+            Text(change.sectionTitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if let rationale = change.rationale {
+                Text(rationale)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var changeValues: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            Text(change.oldValue)
+                .foregroundStyle(.secondary)
+            Image(systemName: "arrow.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+            Text(change.newValue)
+                .fontWeight(.semibold)
+                .foregroundStyle(ForzAdvisorTheme.accent)
+            if !change.unit.isEmpty {
+                Text(change.unit)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .font(.system(.subheadline, design: .monospaced))
+    }
+
+    private var accessibilityLabel: String {
+        var parts = [
+            "\(change.lineLabel), \(change.sectionTitle)",
+            "changed from \(change.oldValue) to \(change.newValue)\(change.unit.isEmpty ? "" : " \(change.unit)")"
+        ]
+        if let rationale = change.rationale {
+            parts.append(rationale)
+        }
+        return parts.joined(separator: ". ")
     }
 }
 
@@ -328,5 +390,6 @@ private struct NoteRow: View {
                 .font(.body)
         }
         .padding(.vertical, 3)
+        .accessibilityElement(children: .combine)
     }
 }

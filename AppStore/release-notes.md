@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 1.1.6 (Build 9) - 2026-07-16
+
+- Made manual entry safer with blank required fields, clearer validation, keyboard controls, and easier class and drivetrain selection.
+- Improved photo and screenshot OCR reliability with cancellation, retry, and stale-result safeguards while keeping image processing on device.
+- Added clearer provider and fallback status plus more accessible, copy-friendly tune results.
+- Fixed localized decimal handling so manual input and guided tuning adjustments remain accurate across regions.
+
 ## Version 1.1.5 (Build 8) - 2026-06-25
 
 - Added guided tuning refinement: describe what happened on a run, then get bounded tune changes with explanations for each adjusted setting.
@@ -15,11 +22,11 @@
 
 ## App Store What's New
 
-ForzAdvisor now supports a complete tuning workflow: camera/photo OCR, manual entry, discipline-based setup generation, saved garage history, copyable tune sections, on-device model fallback support, and optional Anthropic API mode.
+ForzAdvisor now has safer manual entry, more reliable on-device photo OCR, clearer tuning-provider status, improved VoiceOver and Dynamic Type support, and accurate localized decimal handling.
 
 ## TestFlight Notes
 
-This TestFlight build is ready for end-to-end tuning feedback. Please verify New Tune, manual entry, photo or screenshot OCR, discipline selection, generated tune sections, saving, reopening, copying, editing saved tunes, and Adjust Feel changes.
+This TestFlight build is ready for end-to-end tuning feedback. Please verify New Tune, localized manual entry, photo or screenshot OCR and retry, discipline selection, provider status, generated tune sections, saving, reopening, copying, editing saved tunes, and Guided Refinement changes.
 
 Offline formula tuning is the default path and does not require an account or API key. Camera and photo import are optional. Screenshots are processed on device. Anthropic API mode requires the tester to provide their own API key in Settings.
 

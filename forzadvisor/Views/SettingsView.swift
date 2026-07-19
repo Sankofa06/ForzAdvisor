@@ -12,10 +12,11 @@ struct SettingsView: View {
     @AppStorage("tuneProviderMode") private var tuneProviderMode = TuneProviderMode.offlineFormula
     @AppStorage("prefersRemoteTuneProvider") private var legacyPrefersRemoteTuneProvider = false
 
-    let keychainStore: KeychainStore
+    let keychainStore: any APIKeyStoring
 
     @Environment(\.dismiss) private var dismiss
     @State private var apiKey = ""
+    @State private var apiKeyStatus: APIKeyStatus = .missing
     @State private var onDeviceAvailability = OnDeviceModelAvailability.current()
     @State private var statusMessage: String?
 
@@ -34,6 +35,12 @@ struct SettingsView: View {
                     Text(tuneProviderMode.detail)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    ProviderStatusRow(
+                        mode: tuneProviderMode,
+                        onDeviceAvailability: onDeviceAvailability,
+                        apiKeyStatus: apiKeyStatus
+                    )
                 }
                 .forzAdvisorRowBackground()
 
@@ -65,6 +72,7 @@ struct SettingsView: View {
                         Button("Clear Key", role: .destructive) {
                             clearKey()
                         }
+                        .disabled(!apiKeyStatus.hasConfiguredKey && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                     .forzAdvisorRowBackground()
                 }
@@ -107,10 +115,23 @@ struct SettingsView: View {
             .task {
                 migrateLegacyRemotePreference()
                 onDeviceAvailability = OnDeviceModelAvailability.current()
-                if let savedKey = try? keychainStore.readAPIKey() {
-                    apiKey = savedKey
-                }
+                loadAPIKeyStatus()
             }
+        }
+    }
+
+    private func loadAPIKeyStatus() {
+        do {
+            if let savedKey = try keychainStore.readAPIKey() {
+                apiKey = savedKey
+                apiKeyStatus = savedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .missing : .configured
+            } else {
+                apiKey = ""
+                apiKeyStatus = .missing
+            }
+        } catch {
+            apiKeyStatus = .readFailed(error.localizedDescription)
+            statusMessage = "Could not read API key: \(error.localizedDescription)"
         }
     }
 
@@ -122,7 +143,10 @@ struct SettingsView: View {
 
     private func saveKey() {
         do {
-            try keychainStore.saveAPIKey(apiKey)
+            let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            try keychainStore.saveAPIKey(trimmedKey)
+            apiKey = trimmedKey
+            apiKeyStatus = .configured
             statusMessage = "API key saved."
         } catch {
             statusMessage = "Could not save key: \(error.localizedDescription)"
@@ -133,6 +157,7 @@ struct SettingsView: View {
         do {
             try keychainStore.deleteAPIKey()
             apiKey = ""
+            apiKeyStatus = .missing
             statusMessage = "API key cleared."
         } catch {
             statusMessage = "Could not clear key: \(error.localizedDescription)"
@@ -145,5 +170,57 @@ struct SettingsView: View {
             tuneProviderMode = .anthropicAPI
         }
         legacyPrefersRemoteTuneProvider = false
+    }
+}
+
+private struct ProviderStatusRow: View {
+    let mode: TuneProviderMode
+    let onDeviceAvailability: OnDeviceModelAvailability
+    let apiKeyStatus: APIKeyStatus
+
+    var body: some View {
+        Label(statusText, systemImage: systemImage)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(tint)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var statusText: String {
+        switch mode {
+        case .offlineFormula:
+            "Offline formulas ready."
+        case .onDeviceFoundationModel:
+            onDeviceAvailability.isAvailable
+                ? "On-device model ready."
+                : "\(onDeviceAvailability.title); using offline formulas."
+        case .anthropicAPI:
+            switch apiKeyStatus {
+            case .configured:
+                "API key saved; remote tuning ready."
+            case .missing:
+                "No API key saved; using offline formulas."
+            case .readFailed:
+                "Could not read API key; using offline formulas."
+            }
+        }
+    }
+
+    private var systemImage: String {
+        isReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
+    }
+
+    private var tint: Color {
+        isReady ? ForzAdvisorTheme.success : ForzAdvisorTheme.warning
+    }
+
+    private var isReady: Bool {
+        switch mode {
+        case .offlineFormula:
+            true
+        case .onDeviceFoundationModel:
+            onDeviceAvailability.isAvailable
+        case .anthropicAPI:
+            apiKeyStatus.hasConfiguredKey
+        }
     }
 }

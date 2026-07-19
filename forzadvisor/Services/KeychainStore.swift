@@ -9,6 +9,49 @@
 import Foundation
 import Security
 
+protocol APIKeyStoring {
+    func readAPIKey() throws -> String?
+    func saveAPIKey(_ key: String) throws
+    func deleteAPIKey() throws
+}
+
+extension APIKeyStoring {
+    func apiKeyStatus() -> APIKeyStatus {
+        do {
+            guard let key = try readAPIKey(),
+                  !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            else {
+                return .missing
+            }
+
+            return .configured
+        } catch {
+            return .readFailed(error.localizedDescription)
+        }
+    }
+}
+
+enum APIKeyStatus: Equatable {
+    case configured
+    case missing
+    case readFailed(String)
+
+    var hasConfiguredKey: Bool {
+        self == .configured
+    }
+
+    var fallbackReason: TuneProviderFallbackReason? {
+        switch self {
+        case .configured:
+            nil
+        case .missing:
+            .missingAPIKey
+        case .readFailed:
+            .apiKeyReadFailed
+        }
+    }
+}
+
 struct KeychainStore {
     var service = "com.michaelwilliams.forzadvisor"
     var account = "anthropic-api-key"
@@ -75,3 +118,5 @@ enum KeychainError: LocalizedError, Equatable {
         }
     }
 }
+
+extension KeychainStore: APIKeyStoring {}

@@ -2,8 +2,8 @@
 //  TuneProvider.swift
 //  forzadvisor
 //
-//  Defines the tune generation boundary. LocalSampleTuneProvider gives the UI a
-//  deterministic, offline implementation until the API client is introduced.
+//  Defines the tune generation boundary shared by offline formulas, optional
+//  remote API tuning, and optional on-device model tuning.
 //
 
 import Foundation
@@ -26,6 +26,7 @@ struct LocalSampleTuneProvider: TuneProvider {
     func generateTune(for request: TuneRequest) async throws -> TuneResult {
         try await Task.sleep(for: .milliseconds(250))
         return makeTune(for: request)
+            .withProviderInfo(.direct(.offlineFormula))
     }
 
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
@@ -59,7 +60,10 @@ struct LocalSampleTuneProvider: TuneProvider {
             changes.append(contentsOf: aeroChanges(in: &adjustedTune, delta: 10))
         }
 
-        return TuneAdjustmentResult(tune: adjustedTune, changes: changes)
+        return TuneAdjustmentResult(
+            tune: adjustedTune.withProviderInfo(.direct(.offlineFormula)),
+            changes: changes
+        )
     }
 
     private func makeTune(for request: TuneRequest) -> TuneResult {
@@ -180,7 +184,12 @@ struct LocalSampleTuneProvider: TuneProvider {
     }
 
     private func line(_ label: String, _ value: Double, _ unit: String, digits: Int = 1, detail: String? = nil) -> TuneLine {
-        TuneLine(label: label, value: value.formatted(.number.precision(.fractionLength(digits))), unit: unit, detail: detail)
+        TuneLine(
+            label: label,
+            value: LocalizedNumberText.format(value, fractionDigits: digits),
+            unit: unit,
+            detail: detail
+        )
     }
 
     private func line(_ label: String, _ value: Double?, _ unit: String, digits: Int = 1) -> TuneLine? {

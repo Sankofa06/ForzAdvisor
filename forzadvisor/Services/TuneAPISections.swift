@@ -239,53 +239,7 @@ extension TuneAPITune {
     }
 
     private func formatted(_ value: Double, digits: Int = 1) -> String {
-        value.formatted(.number.precision(.fractionLength(digits)))
-    }
-}
-
-extension Array where Element == TuneSection {
-    func merging(into existingSections: [TuneSection]) -> [TuneSection] {
-        var mergedSections = existingSections
-
-        for partialSection in self {
-            guard let sectionIndex = mergedSections.firstIndex(where: { $0.title == partialSection.title }) else {
-                mergedSections.append(partialSection)
-                continue
-            }
-
-            mergedSections[sectionIndex].lines = partialSection.lines.merging(
-                into: mergedSections[sectionIndex].lines
-            )
-        }
-
-        return mergedSections
-    }
-}
-
-extension Array where Element == TuneLine {
-    func merging(into existingLines: [TuneLine]) -> [TuneLine] {
-        var mergedLines = existingLines
-
-        for partialLine in self {
-            if let lineIndex = mergedLines.firstIndex(where: { $0.label == partialLine.label }) {
-                mergedLines[lineIndex] = partialLine
-            } else {
-                mergedLines.append(partialLine)
-            }
-        }
-
-        return mergedLines
-    }
-}
-
-extension TuneAPINotes {
-    func merging(into existingNotes: TuneNotes) -> TuneNotes {
-        TuneNotes(
-            bias: bias ?? existingNotes.bias,
-            ifPushesWide: ifPushesWide ?? existingNotes.ifPushesWide,
-            ifSnapsOnLift: ifSnapsOnLift ?? existingNotes.ifSnapsOnLift,
-            retuneTrigger: retuneTrigger ?? existingNotes.retuneTrigger
-        )
+        LocalizedNumberText.format(value, fractionDigits: digits)
     }
 }
 
@@ -303,7 +257,7 @@ extension TuneSection {
 
 extension TuneLine {
     var numericValue: Double? {
-        Double(value.replacingOccurrences(of: ",", with: ""))
+        LocalizedNumberText.parse(value)
     }
 }
 

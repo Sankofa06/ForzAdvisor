@@ -17,8 +17,8 @@ struct ContentView: View {
     @State var step: WorkflowStep = .home
     @State var errorMessage: String?
     @State var errorRecovery: ErrorRecovery?
-    @State var adjustingFeedback: TuneFeedback?
     @State var isShowingSettings = false
+    @StateObject var tuneWorkflow = TuneWorkflowController()
 
     let keychainStore = KeychainStore()
 
@@ -31,7 +31,10 @@ struct ContentView: View {
                 case .home:
                     GarageHomeView(
                         savedTunes: savedTunes,
-                        onNewTune: { step = .newTune },
+                        onNewTune: {
+                            cancelActiveTuneWork()
+                            step = .newTune
+                        },
                         onOpenTune: open,
                         onDeleteTune: delete,
                         onSettings: { isShowingSettings = true }
@@ -40,7 +43,7 @@ struct ContentView: View {
                     NewTuneStartView(
                         onCancel: { step = .home },
                         onManualEntry: {
-                            step = .manualEntry(SampleTuningData.starterCar, thumbnailData: nil)
+                            step = .manualEntry(.empty, thumbnailData: nil)
                         },
                         onDraftReady: { draft in
                             step = .ocrReview(draft)
@@ -191,8 +194,11 @@ struct ContentView: View {
             playerNotes: resolvedPlayerNotes,
             thumbnailData: resolvedThumbnailData,
             adjustmentChanges: adjustmentChanges,
-            activeFeedback: adjustingFeedback,
-            onDone: { step = .home },
+            activeFeedback: tuneWorkflow.activeFeedback(for: resolvedSavedTuneID),
+            onDone: {
+                cancelActiveTuneWork()
+                step = .home
+            },
             onSave: {
                 if let savedTuneID = save(
                     tune,
@@ -210,6 +216,7 @@ struct ContentView: View {
             },
             onEdit: {
                 guard let resolvedSavedTuneID else { return }
+                tuneWorkflow.cancelAdjustment()
                 step = .editSavedTune(
                     tune,
                     savedTuneID: resolvedSavedTuneID,

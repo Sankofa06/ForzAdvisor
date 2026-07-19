@@ -2,8 +2,8 @@
 //  GarageHomeView.swift
 //  forzadvisor
 //
-//  First screen for the app. Shows the local in-memory garage placeholder and
-//  starts the manual tune flow.
+//  First screen for the app. Shows saved garage tunes and starts a new tune
+//  from camera capture, screenshot OCR, or manual entry.
 //
 
 import SwiftUI
@@ -61,7 +61,7 @@ struct GarageHomeView: View {
                     ContentUnavailableView(
                         "No saved tunes",
                         systemImage: "wrench.adjustable",
-                        description: Text("Create a manual tune to start filling the garage.")
+                        description: Text("Create a tune from a photo, screenshot, or manual entry to start filling the garage.")
                     )
                     .listRowBackground(ForzAdvisorTheme.surface)
                 } else if filteredTunes.isEmpty {
@@ -99,6 +99,7 @@ struct GarageHomeView: View {
             }
         }
         .navigationTitle("ForzAdvisor")
+        .accessibilityIdentifier("garageHome")
         .forzAdvisorScreenChrome()
         .searchable(text: $searchText, prompt: "Search garage")
         .toolbar {

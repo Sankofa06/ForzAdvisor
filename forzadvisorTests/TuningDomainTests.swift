@@ -2,8 +2,8 @@
 //  TuningDomainTests.swift
 //  forzadvisorTests
 //
-//  Focused coverage for pure tuning inputs and the deterministic local tune
-//  provider used by the manual-entry MVP.
+//  Focused coverage for tuning inputs, offline formulas, saved edits, and
+//  guided refinement behavior.
 //
 
 import XCTest
@@ -14,6 +14,25 @@ final class TuningDomainTests: XCTestCase {
     func testStarterCarPassesValidation() {
         XCTAssertTrue(SampleTuningData.starterCar.isValid)
         XCTAssertTrue(SampleTuningData.starterCar.validationIssues.isEmpty)
+    }
+
+    func testManualEntryDraftStartsIncompleteWithoutSampleIdentity() {
+        let draft = ManualEntryDraft.empty
+
+        XCTAssertNil(draft.confirmedCarInput())
+        XCTAssertEqual(draft.make, "")
+        XCTAssertEqual(draft.model, "")
+        XCTAssertNil(draft.weightPounds)
+        XCTAssertNil(draft.frontWeightPercent)
+        XCTAssertNil(draft.performanceIndex)
+        XCTAssertNil(draft.performanceClass)
+        XCTAssertNil(draft.drivetrain)
+        XCTAssertTrue(draft.validationIssues.contains(.missingName))
+        XCTAssertTrue(draft.validationIssues.contains(.missingWeight))
+        XCTAssertTrue(draft.validationIssues.contains(.missingFrontWeight))
+        XCTAssertTrue(draft.validationIssues.contains(.missingPerformanceIndex))
+        XCTAssertTrue(draft.validationIssues.contains(.missingPerformanceClass))
+        XCTAssertTrue(draft.validationIssues.contains(.missingDrivetrain))
     }
 
     func testValidationCatchesRequiredInputRanges() {
@@ -53,6 +72,49 @@ final class TuningDomainTests: XCTestCase {
             ]
         )
         XCTAssertTrue(tune.sections.allSatisfy { !$0.lines.isEmpty })
+        XCTAssertEqual(tune.providerInfo?.requestedMode, .offlineFormula)
+        XCTAssertEqual(tune.providerInfo?.actualMode, .offlineFormula)
+        XCTAssertNil(tune.providerInfo?.fallbackReason)
+    }
+
+    func testTuneResultDecodesLegacyPayloadWithoutProviderInfo() throws {
+        let legacyPayload = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "request": {
+            "car": {
+              "year": 2019,
+              "make": "Toyota",
+              "model": "Supra",
+              "weightPounds": 3340,
+              "frontWeightPercent": 53,
+              "performanceIndex": 750,
+              "performanceClass": "S1",
+              "drivetrain": "RWD",
+              "peakHorsepower": 480,
+              "peakTorqueFootPounds": 410
+            },
+            "discipline": "road"
+          },
+          "sections": [],
+          "notes": {
+            "bias": "Legacy tune.",
+            "ifPushesWide": "Adjust front grip.",
+            "ifSnapsOnLift": "Adjust rear stability.",
+            "retuneTrigger": "Retune after major changes."
+          },
+          "generatedAt": "2026-06-27T12:00:00Z"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let tune = try decoder.decode(TuneResult.self, from: Data(legacyPayload.utf8))
+
+        XCTAssertEqual(tune.id, UUID(uuidString: "00000000-0000-0000-0000-000000000001"))
+        XCTAssertEqual(tune.request.car.displayName, "2019 Toyota Supra")
+        XCTAssertNil(tune.providerInfo)
     }
 
     func testLocalProviderIsDeterministicForTuneValues() async throws {
@@ -223,6 +285,27 @@ final class TuningDomainTests: XCTestCase {
 
         draft = SavedTuneEditDraft(tune: tune, playerNotes: "")
         draft.car.weightPounds = Int(Double(draft.car.weightPounds) * 1.03)
+        XCTAssertTrue(draft.needsRetune)
+    }
+
+    func testSavedTuneEditDraftRetuneThresholdRequiresMoreThanTwoPercent() async throws {
+        var car = SampleTuningData.starterCar
+        car.weightPounds = 5_000
+        car.frontWeightPercent = 50
+        let tune = try await LocalSampleTuneProvider().generateTune(for: TuneRequest(car: car, discipline: .road))
+
+        var draft = SavedTuneEditDraft(tune: tune, playerNotes: "")
+        draft.car.weightPounds = 5_100
+        XCTAssertFalse(draft.needsRetune)
+
+        draft.car.weightPounds = 5_101
+        XCTAssertTrue(draft.needsRetune)
+
+        draft = SavedTuneEditDraft(tune: tune, playerNotes: "")
+        draft.car.frontWeightPercent = 52
+        XCTAssertFalse(draft.needsRetune)
+
+        draft.car.frontWeightPercent = 52.5
         XCTAssertTrue(draft.needsRetune)
     }
 

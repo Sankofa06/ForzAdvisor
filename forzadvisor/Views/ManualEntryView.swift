@@ -2,7 +2,8 @@
 //  ManualEntryView.swift
 //  forzadvisor
 //
-//  Editable car input form used by the MVP while OCR capture is still pending.
+//  Editable car input form for players who prefer typing values or need a
+//  fallback when photo or screenshot OCR is unavailable.
 //
 
 import SwiftUI
@@ -11,9 +12,10 @@ struct ManualEntryView: View {
     let onCancel: () -> Void
     let onContinue: (CarInput) -> Void
 
-    @State private var draft: CarInput
+    @State private var draft: ManualEntryDraft
+    @FocusState private var focusedField: ManualEntryField?
 
-    init(draft: CarInput, onCancel: @escaping () -> Void, onContinue: @escaping (CarInput) -> Void) {
+    init(draft: ManualEntryDraft, onCancel: @escaping () -> Void, onContinue: @escaping (CarInput) -> Void) {
         self._draft = State(initialValue: draft)
         self.onCancel = onCancel
         self.onContinue = onContinue
@@ -24,52 +26,56 @@ struct ManualEntryView: View {
             Section("Car") {
                 TextField("Year", text: optionalNumberText($draft.year))
                     .keyboardType(.numberPad)
+                    .focused($focusedField, equals: .year)
+                    .accessibilityIdentifier("manualEntryYearField")
                 TextField("Make", text: $draft.make)
                     .textInputAutocapitalization(.words)
+                    .focused($focusedField, equals: .make)
+                    .accessibilityIdentifier("manualEntryMakeField")
                 TextField("Model", text: $draft.model)
                     .textInputAutocapitalization(.words)
+                    .focused($focusedField, equals: .model)
+                    .accessibilityIdentifier("manualEntryModelField")
             }
             .forzAdvisorRowBackground()
 
             Section("Performance") {
                 LabeledContent("Weight") {
-                    TextField("lb", value: $draft.weightPounds, format: .number)
+                    TextField("lb", text: optionalNumberText($draft.weightPounds))
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .weight)
+                        .accessibilityIdentifier("manualEntryWeightField")
                 }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    LabeledContent("Front weight", value: "\(draft.frontWeightPercent.formatted(.number.precision(.fractionLength(1))))%")
-                    Slider(value: $draft.frontWeightPercent, in: 30...70, step: 0.5)
+                LabeledContent("Front weight") {
+                    TextField("%", text: optionalPercentText($draft.frontWeightPercent))
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .frontWeight)
+                        .accessibilityIdentifier("manualEntryFrontWeightField")
                 }
 
                 LabeledContent("PI") {
-                    TextField("100-999", value: $draft.performanceIndex, format: .number)
+                    TextField("100-999", text: optionalNumberText($draft.performanceIndex))
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
+                        .focused($focusedField, equals: .performanceIndex)
+                        .accessibilityIdentifier("manualEntryPerformanceIndexField")
                 }
 
-                Picker("Class", selection: $draft.performanceClass) {
-                    ForEach(PerformanceClass.allCases) { performanceClass in
-                        Text(performanceClass.rawValue).tag(performanceClass)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Picker("Drivetrain", selection: $draft.drivetrain) {
-                    ForEach(Drivetrain.allCases) { drivetrain in
-                        Text(drivetrain.rawValue).tag(drivetrain)
-                    }
-                }
-                .pickerStyle(.segmented)
+                classPicker
+                drivetrainPicker
             }
             .forzAdvisorRowBackground()
 
             Section("Optional") {
                 TextField("Horsepower", text: optionalNumberText($draft.peakHorsepower))
                     .keyboardType(.numberPad)
+                    .focused($focusedField, equals: .horsepower)
                 TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds))
                     .keyboardType(.numberPad)
+                    .focused($focusedField, equals: .torque)
             }
             .forzAdvisorRowBackground()
 
@@ -84,19 +90,97 @@ struct ManualEntryView: View {
             }
         }
         .navigationTitle("Manual Entry")
+        .scrollDismissesKeyboard(.interactively)
         .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel", action: onCancel)
+                Button("Cancel") {
+                    focusedField = nil
+                    onCancel()
+                }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Next") {
-                    onContinue(draft)
+                    focusedField = nil
+                    if let car = draft.confirmedCarInput() {
+                        onContinue(car)
+                    }
                 }
                 .accessibilityIdentifier("manualEntryNextButton")
-                .disabled(!draft.isValid)
+                .disabled(draft.confirmedCarInput() == nil)
+            }
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
+                }
+                .accessibilityIdentifier("manualEntryKeyboardDoneButton")
             }
         }
+    }
+
+    private var classPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Class")
+                .font(.subheadline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(PerformanceClass.allCases) { performanceClass in
+                        choiceButton(
+                            performanceClass.rawValue,
+                            isSelected: draft.performanceClass == performanceClass,
+                            identifier: "manualEntryClass-\(performanceClass.rawValue)"
+                        ) {
+                            focusedField = nil
+                            draft.performanceClass = performanceClass
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var drivetrainPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Drivetrain")
+                .font(.subheadline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Drivetrain.allCases) { drivetrain in
+                        choiceButton(
+                            drivetrain.rawValue,
+                            isSelected: draft.drivetrain == drivetrain,
+                            identifier: "manualEntryDrivetrain-\(drivetrain.rawValue)"
+                        ) {
+                            focusedField = nil
+                            draft.drivetrain = drivetrain
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func choiceButton(
+        _ title: String,
+        isSelected: Bool,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .frame(minWidth: 38)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
+                .foregroundStyle(isSelected ? ForzAdvisorTheme.accent : .secondary)
+                .background(
+                    isSelected ? ForzAdvisorTheme.accent.opacity(0.16) : Color.secondary.opacity(0.08),
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
     }
 
     private func optionalNumberText(_ value: Binding<Int?>) -> Binding<String> {
@@ -107,4 +191,23 @@ struct ManualEntryView: View {
             value.wrappedValue = digits.isEmpty ? nil : Int(digits)
         }
     }
+
+    private func optionalPercentText(_ value: Binding<Double?>) -> Binding<String> {
+        Binding {
+            value.wrappedValue.map { LocalizedNumberText.format($0, fractionDigits: 1) } ?? ""
+        } set: { newValue in
+            value.wrappedValue = LocalizedNumberText.parse(newValue)
+        }
+    }
+}
+
+private enum ManualEntryField: Hashable {
+    case year
+    case make
+    case model
+    case weight
+    case frontWeight
+    case performanceIndex
+    case horsepower
+    case torque
 }

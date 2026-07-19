@@ -13,6 +13,7 @@ enum TuneClipboardFormatter {
         var lines = [
             tune.request.car.displayName,
             "\(tune.request.discipline.title) | \(tune.request.car.performanceClass.rawValue) \(tune.request.car.performanceIndex) | \(tune.request.car.drivetrain.rawValue)",
+            providerText(for: tune.providerInfo),
             ""
         ]
 
@@ -46,5 +47,13 @@ enum TuneClipboardFormatter {
                 ? "\(line.label): \(line.value)"
                 : "\(line.label): \(line.value) \(line.unit)"
         }
+    }
+
+    private static func providerText(for providerInfo: TuneProviderInfo?) -> String {
+        guard let providerInfo else {
+            return "Provider: Provider not recorded - This saved tune was created before provider tracking."
+        }
+
+        return "Provider: \(providerInfo.statusTitle) - \(providerInfo.statusDetail)"
     }
 }

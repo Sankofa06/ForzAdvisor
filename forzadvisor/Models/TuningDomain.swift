@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum PerformanceClass: String, CaseIterable, Codable, Identifiable {
+enum PerformanceClass: String, CaseIterable, Codable, Identifiable, Sendable {
     case c = "C"
     case b = "B"
     case a = "A"
@@ -19,7 +19,7 @@ enum PerformanceClass: String, CaseIterable, Codable, Identifiable {
     var id: String { rawValue }
 }
 
-enum Drivetrain: String, CaseIterable, Codable, Identifiable {
+enum Drivetrain: String, CaseIterable, Codable, Identifiable, Sendable {
     case fwd = "FWD"
     case rwd = "RWD"
     case awd = "AWD"
@@ -27,7 +27,7 @@ enum Drivetrain: String, CaseIterable, Codable, Identifiable {
     var id: String { rawValue }
 }
 
-enum DrivingDiscipline: String, CaseIterable, Codable, Identifiable {
+enum DrivingDiscipline: String, CaseIterable, Codable, Identifiable, Sendable {
     case road
     case touge
     case drift
@@ -71,7 +71,7 @@ enum DrivingDiscipline: String, CaseIterable, Codable, Identifiable {
     }
 }
 
-struct CarInput: Codable, Equatable {
+struct CarInput: Codable, Equatable, Sendable {
     var year: Int?
     var make: String
     var model: String
@@ -134,27 +134,63 @@ enum ValidationIssue: Identifiable, Equatable {
     }
 }
 
-struct TuneRequest: Codable, Equatable {
+struct TuneRequest: Codable, Equatable, Sendable {
     var car: CarInput
     var discipline: DrivingDiscipline
 }
 
-struct TuneResult: Identifiable, Codable, Equatable {
+struct TuneResult: Identifiable, Codable, Equatable, Sendable {
     var id = UUID()
     var request: TuneRequest
     var sections: [TuneSection]
     var notes: TuneNotes
     var generatedAt: Date = .now
+    var providerInfo: TuneProviderInfo?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case request
+        case sections
+        case notes
+        case generatedAt
+        case providerInfo
+    }
+
+    init(
+        id: UUID = UUID(),
+        request: TuneRequest,
+        sections: [TuneSection],
+        notes: TuneNotes,
+        generatedAt: Date = .now,
+        providerInfo: TuneProviderInfo? = nil
+    ) {
+        self.id = id
+        self.request = request
+        self.sections = sections
+        self.notes = notes
+        self.generatedAt = generatedAt
+        self.providerInfo = providerInfo
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        request = try container.decode(TuneRequest.self, forKey: .request)
+        sections = try container.decode([TuneSection].self, forKey: .sections)
+        notes = try container.decode(TuneNotes.self, forKey: .notes)
+        generatedAt = try container.decode(Date.self, forKey: .generatedAt)
+        providerInfo = try container.decodeIfPresent(TuneProviderInfo.self, forKey: .providerInfo)
+    }
 }
 
-struct TuneSection: Identifiable, Codable, Equatable {
+struct TuneSection: Identifiable, Codable, Equatable, Sendable {
     var id: String { title }
     var title: String
     var symbolName: String
     var lines: [TuneLine]
 }
 
-struct TuneLine: Identifiable, Codable, Equatable {
+struct TuneLine: Identifiable, Codable, Equatable, Sendable {
     var id: String { "\(label)-\(value)-\(unit)" }
     var label: String
     var value: String
@@ -166,138 +202,11 @@ struct TuneLine: Identifiable, Codable, Equatable {
     }
 }
 
-struct TuneNotes: Codable, Equatable {
+struct TuneNotes: Codable, Equatable, Sendable {
     var bias: String
     var ifPushesWide: String
     var ifSnapsOnLift: String
     var retuneTrigger: String
-}
-
-enum TuneAdjustment: String, CaseIterable, Identifiable {
-    case moreRotation
-    case moreStability
-    case softer
-    case stiffer
-    case moreTopSpeed
-    case moreAcceleration
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .moreRotation: "More rotation"
-        case .moreStability: "More stability"
-        case .softer: "Softer"
-        case .stiffer: "Stiffer"
-        case .moreTopSpeed: "More top speed"
-        case .moreAcceleration: "More acceleration"
-        }
-    }
-
-    var symbolName: String {
-        switch self {
-        case .moreRotation: "arrow.triangle.2.circlepath"
-        case .moreStability: "shield"
-        case .softer: "arrow.down.forward.and.arrow.up.backward"
-        case .stiffer: "arrow.up.backward.and.arrow.down.forward"
-        case .moreTopSpeed: "speedometer"
-        case .moreAcceleration: "bolt"
-        }
-    }
-}
-
-enum TuneFeedback: String, CaseIterable, Identifiable {
-    case pushesWide
-    case oversteersOnExit
-    case snapsOnLift
-    case wheelspinOnLaunch
-    case bouncyOverBumps
-    case feelsFloaty
-    case runsOutOfGear
-    case needsMorePull
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .pushesWide: "Pushes wide"
-        case .oversteersOnExit: "Oversteers on exit"
-        case .snapsOnLift: "Snaps on lift"
-        case .wheelspinOnLaunch: "Wheelspin on launch"
-        case .bouncyOverBumps: "Bouncy over bumps"
-        case .feelsFloaty: "Feels floaty"
-        case .runsOutOfGear: "Runs out of gear"
-        case .needsMorePull: "Needs more pull"
-        }
-    }
-
-    var prompt: String {
-        switch self {
-        case .pushesWide: "Car will not rotate into or through the corner."
-        case .oversteersOnExit: "Rear steps out when throttle comes in."
-        case .snapsOnLift: "Rear rotates too sharply when lifting or braking."
-        case .wheelspinOnLaunch: "Too much slip before the car hooks up."
-        case .bouncyOverBumps: "The car skips, hops, or loses contact."
-        case .feelsFloaty: "Body motion is slow and unsettled."
-        case .runsOutOfGear: "Hits limiter or needs more top speed."
-        case .needsMorePull: "Acceleration feels lazy out of corners."
-        }
-    }
-
-    var symbolName: String {
-        switch self {
-        case .pushesWide: "arrow.turn.up.right"
-        case .oversteersOnExit: "arrow.triangle.2.circlepath"
-        case .snapsOnLift: "exclamationmark.triangle"
-        case .wheelspinOnLaunch: "flag.checkered"
-        case .bouncyOverBumps: "waveform.path.ecg"
-        case .feelsFloaty: "slider.horizontal.3"
-        case .runsOutOfGear: "speedometer"
-        case .needsMorePull: "bolt"
-        }
-    }
-
-    var adjustment: TuneAdjustment {
-        switch self {
-        case .pushesWide: .moreRotation
-        case .oversteersOnExit, .snapsOnLift, .wheelspinOnLaunch: .moreStability
-        case .bouncyOverBumps: .softer
-        case .feelsFloaty: .stiffer
-        case .runsOutOfGear: .moreTopSpeed
-        case .needsMorePull: .moreAcceleration
-        }
-    }
-
-    var rationale: String {
-        switch self {
-        case .pushesWide: "Adds rotation by softening front roll resistance and freeing the rear to turn."
-        case .oversteersOnExit: "Adds stability by calming rear rotation and reducing aggressive diff lock."
-        case .snapsOnLift: "Stabilizes lift-off behavior with more decel lock and a calmer rear balance."
-        case .wheelspinOnLaunch: "Tames launch slip by adding stability before chasing more acceleration."
-        case .bouncyOverBumps: "Softens springs and damping so the tires stay in contact over rough surfaces."
-        case .feelsFloaty: "Adds spring and damping support so body motion settles faster."
-        case .runsOutOfGear: "Lowers the final drive and trims drag so the car has more room up top."
-        case .needsMorePull: "Shortens gearing and adds grip-biased support for stronger corner exit pull."
-        }
-    }
-}
-
-struct TuneAdjustmentResult: Equatable {
-    var tune: TuneResult
-    var changes: [TuneAdjustmentChange]
-}
-
-struct TuneAdjustmentChange: Identifiable, Equatable {
-    var sectionTitle: String
-    var lineLabel: String
-    var oldValue: String
-    var newValue: String
-    var unit: String
-    var rationale: String? = nil
-
-    var id: String {
-        "\(sectionTitle)-\(lineLabel)-\(oldValue)-\(newValue)-\(unit)-\(rationale ?? "")"
-    }
 }
 
 enum SampleTuningData {

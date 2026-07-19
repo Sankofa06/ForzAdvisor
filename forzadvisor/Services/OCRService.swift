@@ -16,7 +16,9 @@ protocol CarInputOCRService {
 
 struct VisionCarInputOCRService: CarInputOCRService {
     func confirmationDraft(from image: CGImage) async throws -> OCRConfirmationDraft {
+        try Task.checkCancellation()
         let observations = try await recognizedTextObservations(from: image)
+        try Task.checkCancellation()
         return OCRTextParser.confirmationDraft(from: observations)
     }
 

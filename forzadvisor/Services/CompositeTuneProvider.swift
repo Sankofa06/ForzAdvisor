@@ -40,25 +40,56 @@ struct CompositeTuneProvider: TuneProvider {
         switch configuration.mode {
         case .offlineFormula:
             return try await localProvider.generateTune(for: request, onPartial: onPartial)
+                .withProviderInfo(.direct(.offlineFormula))
         case .onDeviceFoundationModel:
             guard onDeviceProvider.availability.isAvailable else {
-                return try await localProvider.generateTune(for: request, onPartial: onPartial)
+                return try await fallbackTune(
+                    for: request,
+                    requestedMode: .onDeviceFoundationModel,
+                    reason: .onDeviceUnavailable,
+                    onPartial: onPartial
+                )
             }
 
             do {
-                return try await onDeviceProvider.generateTune(for: request, onPartial: onPartial)
+                let annotatedPartial = partialHandler(
+                    requestedMode: .onDeviceFoundationModel,
+                    actualMode: .onDeviceFoundationModel,
+                    onPartial: onPartial
+                )
+                return try await onDeviceProvider.generateTune(for: request, onPartial: annotatedPartial)
+                    .withProviderInfo(.direct(.onDeviceFoundationModel))
             } catch {
-                return try await localProvider.generateTune(for: request, onPartial: onPartial)
+                try Self.rethrowIfCancelled(error)
+                return try await fallbackTune(
+                    for: request,
+                    requestedMode: .onDeviceFoundationModel,
+                    reason: .providerError,
+                    onPartial: onPartial
+                )
             }
         case .anthropicAPI:
-            guard remoteProvider.hasConfiguredAPIKey() else {
-                return try await localProvider.generateTune(for: request, onPartial: onPartial)
+            let apiKeyStatus = remoteProvider.apiKeyStatus()
+            guard apiKeyStatus.hasConfiguredKey else {
+                return try await fallbackTune(
+                    for: request,
+                    requestedMode: .anthropicAPI,
+                    reason: apiKeyStatus.fallbackReason ?? .providerError,
+                    onPartial: onPartial
+                )
             }
 
             do {
                 return try await remoteProvider.generateTune(for: request, onPartial: onPartial)
+                    .withProviderInfo(.direct(.anthropicAPI))
             } catch {
-                return try await localProvider.generateTune(for: request, onPartial: onPartial)
+                try Self.rethrowIfCancelled(error)
+                return try await fallbackTune(
+                    for: request,
+                    requestedMode: .anthropicAPI,
+                    reason: .providerError,
+                    onPartial: onPartial
+                )
             }
         }
     }
@@ -66,27 +97,123 @@ struct CompositeTuneProvider: TuneProvider {
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
         switch configuration.mode {
         case .offlineFormula:
-            return try await localProvider.adjustTune(previous: tune, adjustment: adjustment)
+            var result = try await localProvider.adjustTune(previous: tune, adjustment: adjustment)
+            result.tune = result.tune.withProviderInfo(.direct(.offlineFormula))
+            return result
         case .onDeviceFoundationModel:
             guard onDeviceProvider.availability.isAvailable else {
-                return try await localProvider.adjustTune(previous: tune, adjustment: adjustment)
+                return try await fallbackAdjustment(
+                    previous: tune,
+                    adjustment: adjustment,
+                    requestedMode: .onDeviceFoundationModel,
+                    reason: .onDeviceUnavailable
+                )
             }
 
             do {
-                return try await onDeviceProvider.adjustTune(previous: tune, adjustment: adjustment)
+                var result = try await onDeviceProvider.adjustTune(previous: tune, adjustment: adjustment)
+                if result.tune.providerInfo == nil {
+                    result.tune = result.tune.withProviderInfo(.direct(.onDeviceFoundationModel))
+                }
+                return result
             } catch {
-                return try await localProvider.adjustTune(previous: tune, adjustment: adjustment)
+                try Self.rethrowIfCancelled(error)
+                return try await fallbackAdjustment(
+                    previous: tune,
+                    adjustment: adjustment,
+                    requestedMode: .onDeviceFoundationModel,
+                    reason: .providerError
+                )
             }
         case .anthropicAPI:
-            guard remoteProvider.hasConfiguredAPIKey() else {
-                return try await localProvider.adjustTune(previous: tune, adjustment: adjustment)
+            let apiKeyStatus = remoteProvider.apiKeyStatus()
+            guard apiKeyStatus.hasConfiguredKey else {
+                return try await fallbackAdjustment(
+                    previous: tune,
+                    adjustment: adjustment,
+                    requestedMode: .anthropicAPI,
+                    reason: apiKeyStatus.fallbackReason ?? .providerError
+                )
             }
 
             do {
-                return try await remoteProvider.adjustTune(previous: tune, adjustment: adjustment)
+                var result = try await remoteProvider.adjustTune(previous: tune, adjustment: adjustment)
+                result.tune = result.tune.withProviderInfo(.direct(.anthropicAPI))
+                return result
             } catch {
-                return try await localProvider.adjustTune(previous: tune, adjustment: adjustment)
+                try Self.rethrowIfCancelled(error)
+                return try await fallbackAdjustment(
+                    previous: tune,
+                    adjustment: adjustment,
+                    requestedMode: .anthropicAPI,
+                    reason: .providerError
+                )
             }
+        }
+    }
+
+    private func fallbackTune(
+        for request: TuneRequest,
+        requestedMode: TuneProviderMode,
+        reason: TuneProviderFallbackReason,
+        onPartial: TuneProgressHandler?
+    ) async throws -> TuneResult {
+        let info = TuneProviderInfo.fallback(requestedMode: requestedMode, reason: reason)
+        let annotatedPartial = partialHandler(providerInfo: info, onPartial: onPartial)
+        return try await localProvider.generateTune(for: request, onPartial: annotatedPartial)
+            .withProviderInfo(info)
+    }
+
+    private func fallbackAdjustment(
+        previous tune: TuneResult,
+        adjustment: TuneAdjustment,
+        requestedMode: TuneProviderMode,
+        reason: TuneProviderFallbackReason
+    ) async throws -> TuneAdjustmentResult {
+        var result = try await localProvider.adjustTune(previous: tune, adjustment: adjustment)
+        result.tune = result.tune.withProviderInfo(.fallback(
+            requestedMode: requestedMode,
+            reason: reason
+        ))
+        return result
+    }
+
+    private func partialHandler(
+        requestedMode: TuneProviderMode,
+        actualMode: TuneProviderMode,
+        onPartial: TuneProgressHandler?
+    ) -> TuneProgressHandler? {
+        partialHandler(
+            providerInfo: TuneProviderInfo(
+                requestedMode: requestedMode,
+                actualMode: actualMode,
+                fallbackReason: nil
+            ),
+            onPartial: onPartial
+        )
+    }
+
+    private func partialHandler(
+        providerInfo: TuneProviderInfo,
+        onPartial: TuneProgressHandler?
+    ) -> TuneProgressHandler? {
+        guard let onPartial else { return nil }
+        return { partialTune in
+            onPartial(partialTune.withProviderInfo(providerInfo))
+        }
+    }
+
+    private static func rethrowIfCancelled(_ error: Error) throws {
+        if error is CancellationError {
+            throw error
+        }
+
+        if let urlError = error as? URLError, urlError.code == .cancelled {
+            throw CancellationError()
+        }
+
+        if Task.isCancelled {
+            throw CancellationError()
         }
     }
 }

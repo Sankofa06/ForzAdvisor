@@ -1,18 +1,18 @@
 # ForzAdvisor Release Checklist
 
-Last updated: 2026-06-15
+Last updated: 2026-07-16
 
-Readiness: Quickflight ready
+Readiness: TestFlight candidate
 
-The release branch has been fast-forwarded into `main`. Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are prepared for the current `1.1.3` app state. The final TestFlight build number has been assigned by `xcode-versioning`.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are prepared for the current `1.1.6` app state. The warning-free build and focused unit suites are clean. The focused UI smoke remains blocked by the local simulator denying launch of the XCTest runner, so App Review submission remains gated pending interactive smoke validation; TestFlight upload is explicitly approved.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.1.3`.
-- Current project build is `6`.
+- Current project version is `1.1.6`.
+- Current project build is `9`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -45,15 +45,20 @@ The release branch has been fast-forwarded into `main`. Metadata, privacy/suppor
 - Optional Anthropic API mode requires a user-supplied API key. Reviewers can complete the core flow offline without an API key.
 - Screenshots and camera photos are processed locally for OCR. Current code does not upload screenshot images.
 
-## Quickflight Verification Plan
+## Local Verification Plan
 
 - Run `git diff --check`.
 - Run a clean warning-free Xcode build using Xcode beta.
-- Run `xcode-versioning --write --asc require`.
+- Run the focused unit test suite.
+- Complete an interactive simulator smoke before declaring App Review readiness.
+
+## Human-Approved Release Steps
+
+- Run `xcode-versioning --write --asc require` only when App Store Connect configuration is available and release scope is approved.
 - Re-run the clean build if versioning changes files.
-- Commit final release changes on `main`.
-- Push `main` to `origin`.
-- Run `testflight`.
+- Commit final release changes only after validation is clean.
+- Push only after explicit approval.
+- Upload to TestFlight only after explicit approval.
 - Run post-upload tests and report results separately.
 
 ## Sources Checked

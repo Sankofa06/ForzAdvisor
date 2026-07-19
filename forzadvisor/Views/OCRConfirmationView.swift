@@ -141,10 +141,9 @@ struct OCRConfirmationView: View {
 
     private func optionalPercentText(_ value: Binding<Double?>) -> Binding<String> {
         Binding {
-            value.wrappedValue.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? ""
+            value.wrappedValue.map { LocalizedNumberText.format($0, fractionDigits: 1) } ?? ""
         } set: { newValue in
-            let filtered = newValue.filter { $0.isNumber || $0 == "." }
-            value.wrappedValue = filtered.isEmpty ? nil : Double(filtered)
+            value.wrappedValue = LocalizedNumberText.parse(newValue)
         }
     }
 }

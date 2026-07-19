@@ -10,18 +10,28 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
+typealias OCRDraftReadyHandler = @MainActor (OCRConfirmationDraft) -> Void
+
 struct NewTuneStartView: View {
     let onCancel: () -> Void
     let onManualEntry: () -> Void
-    let onDraftReady: (OCRConfirmationDraft) -> Void
+    let onDraftReady: OCRDraftReadyHandler
 
     @State private var selectedItem: PhotosPickerItem?
     @State private var isShowingCamera = false
-    @State private var isProcessingPhoto = false
-    @State private var errorMessage: String?
-    @State private var lastFailedImage: UIImage?
+    @StateObject private var photoImport: PhotoOCRImportController
 
-    private let ocrService = VisionCarInputOCRService()
+    init(
+        onCancel: @escaping () -> Void,
+        onManualEntry: @escaping () -> Void,
+        onDraftReady: @escaping OCRDraftReadyHandler,
+        ocrService: any CarInputOCRService = VisionCarInputOCRService()
+    ) {
+        self.onCancel = onCancel
+        self.onManualEntry = onManualEntry
+        self.onDraftReady = onDraftReady
+        self._photoImport = StateObject(wrappedValue: PhotoOCRImportController(ocrService: ocrService))
+    }
 
     var body: some View {
         List {
@@ -48,7 +58,7 @@ struct NewTuneStartView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .disabled(isProcessingPhoto)
+                .disabled(photoImport.isProcessingPhoto)
                 .forzAdvisorRowBackground()
 
                 PhotosPicker(selection: $selectedItem, matching: .images) {
@@ -58,10 +68,10 @@ struct NewTuneStartView: View {
                         systemImage: "photo.badge.plus"
                     )
                 }
-                .disabled(isProcessingPhoto)
+                .disabled(photoImport.isProcessingPhoto)
                 .forzAdvisorRowBackground()
 
-                Button(action: onManualEntry) {
+                Button(action: startManualEntry) {
                     StartRow(
                         title: "Enter Manually",
                         subtitle: "Type weight, front %, PI, class, and drivetrain.",
@@ -73,27 +83,27 @@ struct NewTuneStartView: View {
                 .forzAdvisorRowBackground()
             }
 
-            if isProcessingPhoto {
+            if photoImport.isProcessingPhoto {
                 Section {
                     HStack(spacing: 12) {
                         ProgressView()
-                        Text("Reading image")
+                        Text("Reading image on device")
                             .foregroundStyle(.secondary)
                     }
                 }
                 .forzAdvisorRowBackground()
             }
 
-            if let errorMessage {
+            if let errorMessage = photoImport.errorMessage {
                 Section("Photo OCR") {
                     Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(ForzAdvisorTheme.warning)
-                    if let lastFailedImage {
+                    if let lastFailedImage = photoImport.lastFailedImage {
                         Button("Retry OCR") {
                             processCapturedPhoto(lastFailedImage)
                         }
                     }
-                    Button("Enter manually", action: onManualEntry)
+                    Button("Enter manually", action: startManualEntry)
                 }
                 .forzAdvisorRowBackground()
             }
@@ -102,7 +112,11 @@ struct NewTuneStartView: View {
         .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel", action: onCancel)
+                Button("Cancel") {
+                    photoImport.cancelPhotoImport()
+                    selectedItem = nil
+                    onCancel()
+                }
             }
         }
         .onChange(of: selectedItem) { _, newItem in
@@ -114,7 +128,7 @@ struct NewTuneStartView: View {
                 onCancel: { isShowingCamera = false },
                 onUseManualEntry: {
                     isShowingCamera = false
-                    onManualEntry()
+                    startManualEntry()
                 },
                 onPhotoCaptured: { image in
                     isShowingCamera = false
@@ -122,82 +136,39 @@ struct NewTuneStartView: View {
                 }
             )
         }
+        .onDisappear {
+            photoImport.cancelPhotoImport()
+            selectedItem = nil
+        }
     }
 
     private func processPhoto(_ item: PhotosPickerItem) {
-        Task {
-            isProcessingPhoto = true
-            errorMessage = nil
-            defer {
-                isProcessingPhoto = false
-                selectedItem = nil
+        photoImport.processPhotoData(
+            loadData: {
+                try await item.loadTransferable(type: Data.self)
+            },
+            failureMessage: "Could not read that screenshot. Try another photo or enter the values manually.",
+            onFinish: { selectedItem = nil },
+            onDraftReady: { draft in
+                onDraftReady(draft)
             }
-
-            do {
-                guard let data = try await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data)
-                else {
-                    throw PhotoImportError.unreadableImage
-                }
-
-                lastFailedImage = image
-                try await processImage(image)
-                lastFailedImage = nil
-            } catch {
-                errorMessage = "Could not read that screenshot. Try another photo or enter the values manually."
-            }
-        }
+        )
     }
 
     private func processCapturedPhoto(_ image: UIImage) {
-        Task {
-            isProcessingPhoto = true
-            errorMessage = nil
-            defer { isProcessingPhoto = false }
-
-            do {
-                lastFailedImage = image
-                try await processImage(image)
-                lastFailedImage = nil
-            } catch {
-                errorMessage = "Could not read that photo. Try another capture, import a screenshot, or enter the values manually."
+        photoImport.processCapturedPhoto(
+            image,
+            failureMessage: "Could not read that photo. Try another capture, import a screenshot, or enter the values manually.",
+            onDraftReady: { draft in
+                onDraftReady(draft)
             }
-        }
+        )
     }
 
-    private func processImage(_ image: UIImage) async throws {
-        guard let cgImage = cgImage(from: image) else {
-            throw PhotoImportError.unreadableImage
-        }
-
-        var draft = try await ocrService.confirmationDraft(from: cgImage)
-        draft.thumbnailData = thumbnailData(from: image)
-        onDraftReady(draft)
-    }
-
-    private func cgImage(from image: UIImage) -> CGImage? {
-        guard image.imageOrientation != .up || image.cgImage == nil else {
-            return image.cgImage
-        }
-
-        let format = UIGraphicsImageRendererFormat.default()
-        format.scale = image.scale
-        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: image.size))
-        }.cgImage
-    }
-
-    private func thumbnailData(from image: UIImage) -> Data? {
-        let maxSide: CGFloat = 480
-        let largestSide = max(image.size.width, image.size.height)
-        let scale = largestSide > maxSide ? maxSide / largestSide : 1
-        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let thumbnail = renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: size))
-        }
-        return thumbnail.jpegData(compressionQuality: 0.68)
+    private func startManualEntry() {
+        photoImport.cancelPhotoImport()
+        selectedItem = nil
+        onManualEntry()
     }
 }
 
@@ -261,8 +232,4 @@ private struct StartRow: View {
         .padding(.vertical, 6)
         .contentShape(Rectangle())
     }
-}
-
-private enum PhotoImportError: Error {
-    case unreadableImage
 }

@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata
 
-Last updated: 2026-06-15
+Last updated: 2026-06-27
 
 ## App Name
 
@@ -22,7 +22,7 @@ Start from the input path that fits the session: take a photo, import a screensh
 
 Choose the discipline you are building for, including road, drift, drag, dirt, cross-country, or touge. ForzAdvisor returns a complete setup in menu order across tires, gearing, alignment, antiroll bars, springs, damping, aero, brakes, differential, and driving notes.
 
-Save tunes to a local garage, search by car, filter by discipline, copy complete setups, and make quick feel adjustments after testing on track.
+Save tunes to a local garage, search by car, filter by discipline, copy complete setups, and use Guided Refinement after testing on track.
 
 ForzAdvisor runs offline by default using deterministic local formulas. Optional on-device AI can assist when Apple Foundation Models are available on the device, and optional API mode lets advanced users connect their own Anthropic API key. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -56,7 +56,7 @@ Suggested review path:
 1. Launch the app.
 2. Tap New Tune.
 3. Tap Enter Manually.
-4. Use the starter values or edit the car details.
+4. Enter the required car details.
 5. Tap Next.
 6. Choose any discipline.
 7. Review the generated tune.
@@ -69,8 +69,8 @@ Camera access is optional and only used when the reviewer chooses Take Photo to 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.1.3
-- Current project build: 6
+- Current project version: 1.1.6
+- Current project build: 9
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 

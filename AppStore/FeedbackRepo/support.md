@@ -24,9 +24,9 @@ Tap New Tune, then choose Take Photo, Import Screenshot, or Enter Manually. Conf
 
 Open a generated or saved tune and tap Copy full tune. Individual tune lines can also be copied from their section rows.
 
-### How do I adjust a saved tune?
+### How do I use Guided Refinement?
 
-Open a saved tune and use Adjust Feel to request changes such as more rotation, more stability, softer, stiffer, more top speed, or more acceleration.
+Open a saved tune and use Guided Refinement to request changes such as more rotation, more stability, softer, stiffer, more top speed, or more acceleration.
 
 ### How do I delete a tune?
 

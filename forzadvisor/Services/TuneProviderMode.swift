@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum TuneProviderMode: String, CaseIterable, Codable, Identifiable {
+enum TuneProviderMode: String, CaseIterable, Codable, Identifiable, Sendable {
     case offlineFormula
     case onDeviceFoundationModel
     case anthropicAPI
@@ -31,6 +31,33 @@ enum TuneProviderMode: String, CaseIterable, Codable, Identifiable {
             "Uses Apple Intelligence on this device with formula fallback."
         case .anthropicAPI:
             "Uses the saved Anthropic key with formula fallback."
+        }
+    }
+
+    var resultTitle: String {
+        switch self {
+        case .offlineFormula: "Offline formulas"
+        case .onDeviceFoundationModel: "On-device model"
+        case .anthropicAPI: "Anthropic API"
+        }
+    }
+
+    var resultDetail: String {
+        switch self {
+        case .offlineFormula:
+            "Generated entirely on this device with deterministic formulas."
+        case .onDeviceFoundationModel:
+            "Generated on this device with Apple Intelligence."
+        case .anthropicAPI:
+            "Generated with the configured Anthropic API key."
+        }
+    }
+
+    var resultSymbolName: String {
+        switch self {
+        case .offlineFormula: "function"
+        case .onDeviceFoundationModel: "apple.intelligence"
+        case .anthropicAPI: "cloud"
         }
     }
 }

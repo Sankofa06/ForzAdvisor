@@ -62,6 +62,8 @@ struct TuneSectionDisclosureView: View {
 }
 
 private struct TuneLineCopyRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let line: TuneLine
     let isStreaming: Bool
     @Binding var copiedLineID: TuneLine.ID?
@@ -71,42 +73,97 @@ private struct TuneLineCopyRow: View {
             guard !isStreaming else { return }
             UIPasteboard.general.string = line.copyText
             copiedLineID = line.id
+            UIAccessibility.post(
+                notification: .announcement,
+                argument: "Copied \(line.label), \(spokenValue)"
+            )
         } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(line.label)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    if let detail = line.detail {
-                        Text(detail)
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 8) {
+                        lineText
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            lineValue
+                            copyIcon
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        lineText
+
+                        Spacer(minLength: 16)
+
+                        lineValue
+                        copyIcon
                     }
                 }
-
-                Spacer(minLength: 16)
-
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(line.value)
-                        .font(.system(.title3, design: .monospaced).weight(.semibold))
-                        .foregroundStyle(ForzAdvisorTheme.accent)
-                    if !line.unit.isEmpty {
-                        Text(line.unit)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Image(systemName: copiedLineID == line.id ? "checkmark" : "doc.on.doc")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(copiedLineID == line.id ? .green : .gray)
-                    .frame(width: 16)
             }
             .contentShape(Rectangle())
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
         .disabled(isStreaming)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(line.label)
+        .accessibilityValue(accessibilityValue)
+        .accessibilityHint(accessibilityHint)
+    }
+
+    private var lineText: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(line.label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            if let detail = line.detail {
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var lineValue: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(line.value)
+                .font(.system(.title3, design: .monospaced).weight(.semibold))
+                .foregroundStyle(ForzAdvisorTheme.accent)
+            if !line.unit.isEmpty {
+                Text(line.unit)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var copyIcon: some View {
+        Image(systemName: copiedLineID == line.id ? "checkmark" : "doc.on.doc")
+            .font(.caption.weight(.semibold))
+            .foregroundColor(copiedLineID == line.id ? .green : .gray)
+            .frame(width: 16)
+            .accessibilityHidden(true)
+    }
+
+    private var spokenValue: String {
+        line.unit.isEmpty ? line.value : "\(line.value) \(line.unit)"
+    }
+
+    private var accessibilityValue: String {
+        if let detail = line.detail {
+            return "\(spokenValue). \(detail)"
+        }
+        return spokenValue
+    }
+
+    private var accessibilityHint: String {
+        if isStreaming {
+            return "Values are still streaming."
+        }
+        if copiedLineID == line.id {
+            return "Copied to clipboard."
+        }
+        return "Copies this setting to the clipboard."
     }
 }
 

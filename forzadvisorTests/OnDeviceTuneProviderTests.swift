@@ -39,6 +39,70 @@ final class OnDeviceTuneProviderTests: XCTestCase {
         XCTAssertEqual(tune.request, request)
         XCTAssertEqual(tune.sections.map(\.title).first, "Tires")
         XCTAssertFalse(tune.sections.isEmpty)
+        XCTAssertEqual(tune.providerInfo?.requestedMode, .onDeviceFoundationModel)
+        XCTAssertEqual(tune.providerInfo?.actualMode, .offlineFormula)
+        XCTAssertEqual(tune.providerInfo?.fallbackReason, .onDeviceUnavailable)
+    }
+
+    func testCompositeProviderFallsBackForAdjustmentWhenOnDeviceModelUnavailable() async throws {
+        let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+        let previous = try await LocalSampleTuneProvider().generateTune(for: request)
+        let provider = CompositeTuneProvider(
+            configuration: TuneProviderConfiguration(mode: .onDeviceFoundationModel),
+            remoteProvider: TuneAPIClient(keychainStore: KeychainStore(service: "forzadvisor-tests-\(UUID().uuidString)")),
+            onDeviceProvider: PromptTestUnavailableOnDeviceProvider(),
+            localProvider: LocalSampleTuneProvider()
+        )
+
+        let result = try await provider.adjustTune(previous: previous, adjustment: .moreStability)
+
+        XCTAssertEqual(result.tune.request, request)
+        XCTAssertFalse(result.changes.isEmpty)
+        XCTAssertEqual(result.tune.providerInfo?.requestedMode, .onDeviceFoundationModel)
+        XCTAssertEqual(result.tune.providerInfo?.actualMode, .offlineFormula)
+        XCTAssertEqual(result.tune.providerInfo?.fallbackReason, .onDeviceUnavailable)
+        XCTAssertGreaterThan(
+            try XCTUnwrap(result.tune.section("Antiroll Bars")?.number("Front")),
+            try XCTUnwrap(previous.section("Antiroll Bars")?.number("Front"))
+        )
+        XCTAssertLessThan(
+            try XCTUnwrap(result.tune.section("Antiroll Bars")?.number("Rear")),
+            try XCTUnwrap(previous.section("Antiroll Bars")?.number("Rear"))
+        )
+    }
+
+    func testCompositeProviderDoesNotFallbackWhenOnDeviceGenerationIsCancelled() async {
+        let provider = CompositeTuneProvider(
+            configuration: TuneProviderConfiguration(mode: .onDeviceFoundationModel),
+            remoteProvider: TuneAPIClient(keychainStore: KeychainStore(service: "forzadvisor-tests-\(UUID().uuidString)")),
+            onDeviceProvider: CancellingOnDeviceProvider(),
+            localProvider: FailingFallbackTuneProvider()
+        )
+
+        do {
+            _ = try await provider.generateTune(for: TuneRequest(car: SampleTuningData.starterCar, discipline: .road))
+            XCTFail("Expected cancellation to be rethrown.")
+        } catch {
+            XCTAssertTrue(error is CancellationError)
+        }
+    }
+
+    func testCompositeProviderDoesNotFallbackWhenOnDeviceAdjustmentIsCancelled() async throws {
+        let request = TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+        let previous = try await LocalSampleTuneProvider().generateTune(for: request)
+        let provider = CompositeTuneProvider(
+            configuration: TuneProviderConfiguration(mode: .onDeviceFoundationModel),
+            remoteProvider: TuneAPIClient(keychainStore: KeychainStore(service: "forzadvisor-tests-\(UUID().uuidString)")),
+            onDeviceProvider: CancellingOnDeviceProvider(),
+            localProvider: FailingFallbackTuneProvider()
+        )
+
+        do {
+            _ = try await provider.adjustTune(previous: previous, adjustment: .moreStability)
+            XCTFail("Expected cancellation to be rethrown.")
+        } catch {
+            XCTAssertTrue(error is CancellationError)
+        }
     }
 
     func testTuneProviderModeHasStableRawValues() {
@@ -64,4 +128,34 @@ private struct PromptTestUnavailableOnDeviceProvider: OnDeviceTuneProviding {
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
         throw OnDeviceTuneError.unavailable(.modelNotReady)
     }
+}
+
+private struct CancellingOnDeviceProvider: OnDeviceTuneProviding {
+    var availability: OnDeviceModelAvailability {
+        .available
+    }
+
+    func generateTune(for request: TuneRequest) async throws -> TuneResult {
+        throw CancellationError()
+    }
+
+    func generateTune(for request: TuneRequest, onPartial: TuneProgressHandler?) async throws -> TuneResult {
+        throw CancellationError()
+    }
+
+    func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
+        throw CancellationError()
+    }
+}
+
+private struct FailingFallbackTuneProvider: TuneProvider {
+    func generateTune(for request: TuneRequest) async throws -> TuneResult {
+        throw FallbackCalledError()
+    }
+
+    func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
+        throw FallbackCalledError()
+    }
+
+    private struct FallbackCalledError: Error {}
 }

@@ -84,11 +84,11 @@ extension LocalSampleTuneProvider {
     }
 
     func numericValue(from text: String) -> Double? {
-        Double(text.replacingOccurrences(of: ",", with: ""))
+        LocalizedNumberText.parse(text)
     }
 
     func formatted(_ value: Double, digits: Int) -> String {
-        value.formatted(.number.precision(.fractionLength(digits)))
+        LocalizedNumberText.format(value, fractionDigits: digits)
     }
 
     private func rationale(for sectionTitle: String, lineLabel: String, delta: Double) -> String {
