@@ -4,7 +4,7 @@ Last updated: 2026-07-16
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are prepared for the current `1.1.6` app state. The warning-free build and focused unit suites are clean. The focused UI smoke remains blocked by the local simulator denying launch of the XCTest runner, so App Review submission remains gated pending interactive smoke validation; TestFlight upload is explicitly approved.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are prepared for the current `1.1.6` app state. The warning-free build, unit suite, and end-to-end UI smoke are clean. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
 
 ## Completed In Repository
 
@@ -12,7 +12,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
 - Current project version is `1.1.6`.
-- Current project build is `9`.
+- Current project build is `10`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -48,9 +48,9 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 ## Local Verification Plan
 
 - Run `git diff --check`.
-- Run a clean warning-free Xcode build using Xcode beta.
+- Run a clean warning-free Xcode build using stable Xcode.
 - Run the focused unit test suite.
-- Complete an interactive simulator smoke before declaring App Review readiness.
+- Run the automated tune, save, reopen, and refinement UI smoke.
 
 ## Human-Approved Release Steps
 

@@ -1,11 +1,12 @@
 # Release Notes
 
-## Version 1.1.6 (Build 9) - 2026-07-16
+## Version 1.1.6 (Build 10) - 2026-07-16
 
 - Made manual entry safer with blank required fields, clearer validation, keyboard controls, and easier class and drivetrain selection.
 - Improved photo and screenshot OCR reliability with cancellation, retry, and stale-result safeguards while keeping image processing on device.
 - Added clearer provider and fallback status plus more accessible, copy-friendly tune results.
 - Fixed localized decimal handling so manual input and guided tuning adjustments remain accurate across regions.
+- Made the PI field easier to tap during manual entry.
 
 ## Version 1.1.5 (Build 8) - 2026-06-25
 

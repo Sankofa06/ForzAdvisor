@@ -36,19 +36,18 @@ final class ForzAdvisorUITests: XCTestCase {
         XCTAssertTrue(nextButton.waitForExistence(timeout: 5))
         XCTAssertFalse(nextButton.isEnabled)
 
-        app.textFields["manualEntryYearField"].tap()
-        app.textFields["manualEntryYearField"].typeText("1997")
-        app.textFields["manualEntryMakeField"].tap()
-        app.textFields["manualEntryMakeField"].typeText("Mazda")
-        app.textFields["manualEntryModelField"].tap()
-        app.textFields["manualEntryModelField"].typeText("Miata")
-        app.textFields["manualEntryWeightField"].tap()
-        app.textFields["manualEntryWeightField"].typeText("2345")
-        app.textFields["manualEntryFrontWeightField"].tap()
-        app.textFields["manualEntryFrontWeightField"].typeText("55")
-        app.textFields["manualEntryPerformanceIndexField"].tap()
-        app.textFields["manualEntryPerformanceIndexField"].typeText("789")
+        app.textFields["manualEntryYearField"].enterText("1997")
+        app.textFields["manualEntryMakeField"].enterText("Mazda")
+        app.textFields["manualEntryModelField"].enterText("Miata")
+        app.textFields["manualEntryWeightField"].enterText("2345")
+        app.textFields["manualEntryFrontWeightField"].enterText("55")
+
         let keyboardDoneButton = app.buttons["manualEntryKeyboardDoneButton"]
+        XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
+        keyboardDoneButton.tap()
+
+        app.swipeUp()
+        app.textFields["manualEntryPerformanceIndexField"].enterText("789")
         if keyboardDoneButton.waitForExistence(timeout: 2) {
             keyboardDoneButton.tap()
         }
@@ -96,6 +95,27 @@ final class ForzAdvisorUITests: XCTestCase {
 }
 
 private extension XCUIElement {
+    func enterText(_ text: String, focusTimeout: TimeInterval = 2) {
+        tap()
+
+        if !waitForKeyboardFocus(timeout: 0.4) {
+            coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.2)).tap()
+        }
+
+        guard waitForKeyboardFocus(timeout: focusTimeout) else {
+            XCTFail("\(identifier) did not receive keyboard focus before typing.")
+            return
+        }
+
+        typeText(text)
+    }
+
+    private func waitForKeyboardFocus(timeout: TimeInterval) -> Bool {
+        let focusPredicate = NSPredicate(format: "hasKeyboardFocus == true")
+        let focusExpectation = XCTNSPredicateExpectation(predicate: focusPredicate, object: self)
+        return XCTWaiter.wait(for: [focusExpectation], timeout: timeout) == .completed
+    }
+
     func waitUntilEnabled(timeout: TimeInterval) -> Bool {
         let predicate = NSPredicate(format: "isEnabled == true")
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)

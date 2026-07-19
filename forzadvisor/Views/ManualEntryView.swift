@@ -56,11 +56,16 @@ struct ManualEntryView: View {
                         .accessibilityIdentifier("manualEntryFrontWeightField")
                 }
 
-                LabeledContent("PI") {
+                HStack {
+                    Text("PI")
+                        .accessibilityHidden(true)
+                    Spacer()
                     TextField("100-999", text: optionalNumberText($draft.performanceIndex))
+                        .frame(minWidth: 120, idealWidth: 120)
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .performanceIndex)
+                        .accessibilityLabel("PI")
                         .accessibilityIdentifier("manualEntryPerformanceIndexField")
                 }
 
