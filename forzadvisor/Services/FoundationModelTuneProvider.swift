@@ -38,11 +38,19 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
         )
         session.prewarm()
 
+        #if compiler(>=6.4)
         let options = GenerationOptions(
             samplingMode: .greedy,
             temperature: nil,
             maximumResponseTokens: 1_200
         )
+        #else
+        let options = GenerationOptions(
+            sampling: .greedy,
+            temperature: nil,
+            maximumResponseTokens: 1_200
+        )
+        #endif
         let stream = session.streamResponse(
             to: prompt,
             generating: OnDeviceTuneResponse.self,
@@ -58,7 +66,7 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
                 id: baseline.id,
                 generatedAt: baseline.generatedAt
             )
-            .withProviderInfo(.direct(.onDeviceFoundationModel))
+            .withProviderInfo(TuneProviderInfo.direct(.onDeviceFoundationModel))
             onPartial?(partialTune)
 
             if let complete = try? OnDeviceTuneResponse(snapshot.rawContent) {
@@ -75,7 +83,7 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
             id: baseline.id,
             generatedAt: Date()
         )
-        .withProviderInfo(.direct(.onDeviceFoundationModel))
+        .withProviderInfo(TuneProviderInfo.direct(.onDeviceFoundationModel))
     }
 
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
