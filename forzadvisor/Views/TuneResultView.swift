@@ -36,6 +36,10 @@ struct TuneResultView: View {
         TuneControlUpgradePlanner().paths(for: tune)
     }
 
+    private var verifiedBuildShareCard: VerifiedBuildShareCard? {
+        VerifiedBuildShareCardFactory().make(for: tune, isStreaming: isStreaming)
+    }
+
     var body: some View {
         List {
             Section {
@@ -155,6 +159,25 @@ struct TuneResultView: View {
                                 kind: .buildPlan,
                                 prominent: false
                             )
+                        }
+                        if let shareCard = verifiedBuildShareCard {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ShareLink(
+                                    item: shareCard.text,
+                                    subject: Text(shareCard.subject)
+                                ) {
+                                    Label("Share verified build", systemImage: "square.and.arrow.up")
+                                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                }
+                                .buttonStyle(.bordered)
+                                .accessibilityIdentifier("shareVerifiedBuildButton")
+                                .accessibilityHint("Opens the system share sheet with only this verified build card.")
+
+                                Text("Sharing sends this card to an app you choose. Garage notes and screenshots are excluded.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.vertical, 2)
                         }
                     }
                     .forzAdvisorRowBackground()

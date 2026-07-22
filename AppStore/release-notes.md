@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.1.14 (Build 18) - 2026-07-22
+
+- Added a privacy-safe Share verified build action for exact observed game builds with at least one freshly verified setting.
+- Shared cards are rechecked before export and include only the game, car, tune context, canonical verified settings, and at most one exact tuning-control path.
+- Excluded garage notes, screenshots, provider details, evidence records, identifiers, timestamps, and withheld values; sharing remains user-initiated through the iOS system share sheet with no share analytics or history.
+
 ## Version 1.1.13 (Build 17) - 2026-07-22
 
 - Added a Contextual Copilot that is available throughout the tuning workflow and explains the safest next step for the current screen.
