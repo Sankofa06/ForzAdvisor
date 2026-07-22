@@ -80,6 +80,7 @@ final class SavedTune {
         else { return nil }
 
         return CarInput(
+            game: tuneResult?.request.car.game ?? .fh6,
             year: year,
             make: make,
             model: model,

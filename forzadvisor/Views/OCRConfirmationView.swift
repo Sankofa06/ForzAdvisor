@@ -74,7 +74,7 @@ struct OCRConfirmationView: View {
 
                 Picker("Class", selection: $draft.performanceClass) {
                     Text("Select").tag(nil as PerformanceClass?)
-                    ForEach(PerformanceClass.allCases) { performanceClass in
+                    ForEach(draft.game.supportedPerformanceClasses) { performanceClass in
                         Text(performanceClass.rawValue).tag(Optional(performanceClass))
                     }
                 }

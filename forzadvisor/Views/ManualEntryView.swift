@@ -130,7 +130,7 @@ struct ManualEntryView: View {
                 .font(.subheadline)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    ForEach(PerformanceClass.allCases) { performanceClass in
+                    ForEach(draft.game.supportedPerformanceClasses) { performanceClass in
                         choiceButton(
                             performanceClass.rawValue,
                             isSelected: draft.performanceClass == performanceClass,

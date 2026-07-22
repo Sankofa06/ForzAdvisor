@@ -13,7 +13,7 @@ import Foundation
 import FoundationModels
 
 @available(iOS 26.4, *)
-@Generable(description: "Complete Forza Horizon 6 tune response.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Complete Forza Horizon tune response.", representNilExplicitlyInGeneratedContent: true)
 struct OnDeviceTuneResponse {
     let tune: OnDeviceTune
     let notes: OnDeviceTuneNotes

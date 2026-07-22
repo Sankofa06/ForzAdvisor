@@ -16,6 +16,48 @@ final class TuningDomainTests: XCTestCase {
         XCTAssertTrue(SampleTuningData.starterCar.validationIssues.isEmpty)
     }
 
+    func testGameClassBoundariesAndSupportAreGameScoped() {
+        XCTAssertEqual(ForzaGame.fh5.title, "Forza Horizon 5")
+        XCTAssertEqual(ForzaGame.fh6.title, "Forza Horizon 6")
+        XCTAssertEqual(ForzaGame.fh5.supportedPerformanceClasses, [.d, .c, .b, .a, .s1, .s2, .x])
+        XCTAssertEqual(ForzaGame.fh6.supportedPerformanceClasses, [.d, .c, .b, .a, .s1, .s2, .r, .x])
+        XCTAssertEqual(ForzaGame.fh5.performanceIndexRange(for: .d), 100...500)
+        XCTAssertEqual(ForzaGame.fh5.performanceIndexRange(for: .x), 999...999)
+        XCTAssertEqual(ForzaGame.fh6.performanceIndexRange(for: .d), 100...400)
+        XCTAssertEqual(ForzaGame.fh6.performanceIndexRange(for: .r), 901...998)
+        XCTAssertEqual(ForzaGame.fh6.performanceIndexRange(for: .x), 999...999)
+        XCTAssertNil(ForzaGame.fh5.performanceIndexRange(for: .r))
+    }
+
+    func testValidationRejectsUnsupportedClassAndGameClassMismatch() {
+        var unsupported = SampleTuningData.starterCar
+        unsupported.game = .fh5
+        unsupported.performanceClass = .r
+        unsupported.performanceIndex = 950
+        XCTAssertTrue(unsupported.validationIssues.contains(.unsupportedPerformanceClass(.fh5, .r)))
+
+        var preservedFH6X = SampleTuningData.starterCar
+        preservedFH6X.performanceClass = .x
+        preservedFH6X.performanceIndex = 999
+        XCTAssertTrue(preservedFH6X.validationIssues.isEmpty)
+
+        var mismatch = SampleTuningData.starterCar
+        mismatch.performanceClass = .s1
+        mismatch.performanceIndex = 850
+        XCTAssertTrue(mismatch.validationIssues.contains(.performanceIndexOutsideClass(.fh6, .s1, 701...800)))
+    }
+
+    func testManualDraftPreservesSelectedGame() {
+        var car = SampleTuningData.starterCar
+        car.game = .fh5
+        car.performanceClass = .a
+
+        let draft = ManualEntryDraft(car: car)
+
+        XCTAssertEqual(draft.game, .fh5)
+        XCTAssertEqual(draft.confirmedCarInput()?.game, .fh5)
+    }
+
     func testManualEntryDraftStartsIncompleteWithoutSampleIdentity() {
         let draft = ManualEntryDraft.empty
 
@@ -114,7 +156,36 @@ final class TuningDomainTests: XCTestCase {
 
         XCTAssertEqual(tune.id, UUID(uuidString: "00000000-0000-0000-0000-000000000001"))
         XCTAssertEqual(tune.request.car.displayName, "2019 Toyota Supra")
+        XCTAssertEqual(tune.request.car.game, .fh6)
         XCTAssertNil(tune.providerInfo)
+    }
+
+    func testLocalProviderRefusesFH5GenerationAndAdjustment() async throws {
+        var fh5Car = SampleTuningData.starterCar
+        fh5Car.game = .fh5
+        fh5Car.performanceClass = .a
+        let request = TuneRequest(car: fh5Car, discipline: .road)
+        let provider = LocalSampleTuneProvider()
+
+        do {
+            _ = try await provider.generateTune(for: request)
+            XCTFail("Expected FH5 generation to be refused until its ruleset exists.")
+        } catch let error as LocalTuneProviderError {
+            XCTAssertEqual(error, .unsupportedRuleset(.fh5))
+            XCTAssertEqual(error.errorDescription, "Local tuning rules for Forza Horizon 5 are not available yet.")
+        }
+
+        var previous = try await provider.generateTune(
+            for: TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+        )
+        previous.request.car.game = .fh5
+
+        do {
+            _ = try await provider.adjustTune(previous: previous, adjustment: .moreRotation)
+            XCTFail("Expected FH5 adjustment to be refused until its ruleset exists.")
+        } catch let error as LocalTuneProviderError {
+            XCTAssertEqual(error, .unsupportedRuleset(.fh5))
+        }
     }
 
     func testLocalProviderIsDeterministicForTuneValues() async throws {

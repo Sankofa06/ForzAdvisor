@@ -25,6 +25,22 @@ final class OnDeviceTuneProviderTests: XCTestCase {
         XCTAssertFalse(prompt.localizedCaseInsensitiveContains("SKILL"))
     }
 
+    func testOnDevicePromptUsesSelectedGame() async throws {
+        let baselineRequest = TuneRequest(car: SampleTuningData.starterCar, discipline: .road)
+        let baseline = try await LocalSampleTuneProvider().generateTune(for: baselineRequest)
+        var fh5Car = SampleTuningData.starterCar
+        fh5Car.game = .fh5
+        fh5Car.performanceClass = .a
+        let request = TuneRequest(car: fh5Car, discipline: .road)
+
+        let prompt = try OnDeviceTunePromptBuilder().prompt(for: request, baseline: baseline)
+
+        XCTAssertTrue(prompt.contains("Forza Horizon 5"))
+        XCTAssertTrue(prompt.contains("FH5 ranges"))
+        XCTAssertFalse(prompt.contains("Forza Horizon 6"))
+        XCTAssertFalse(prompt.contains("FH6 ranges"))
+    }
+
     func testCompositeProviderFallsBackWhenOnDeviceModelUnavailable() async throws {
         let provider = CompositeTuneProvider(
             configuration: TuneProviderConfiguration(mode: .onDeviceFoundationModel),

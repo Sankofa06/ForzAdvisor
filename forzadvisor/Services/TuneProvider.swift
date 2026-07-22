@@ -24,12 +24,18 @@ extension TuneProvider {
 
 struct LocalSampleTuneProvider: TuneProvider {
     func generateTune(for request: TuneRequest) async throws -> TuneResult {
+        guard request.car.game == .fh6 else {
+            throw LocalTuneProviderError.unsupportedRuleset(request.car.game)
+        }
         try await Task.sleep(for: .milliseconds(250))
         return makeTune(for: request)
             .withProviderInfo(.direct(.offlineFormula))
     }
 
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
+        guard tune.request.car.game == .fh6 else {
+            throw LocalTuneProviderError.unsupportedRuleset(tune.request.car.game)
+        }
         try await Task.sleep(for: .milliseconds(150))
 
         var adjustedTune = tune
@@ -197,4 +203,15 @@ struct LocalSampleTuneProvider: TuneProvider {
         return line(label, value, unit, digits: digits, detail: nil)
     }
 
+}
+
+enum LocalTuneProviderError: LocalizedError, Equatable {
+    case unsupportedRuleset(ForzaGame)
+
+    var errorDescription: String? {
+        switch self {
+        case .unsupportedRuleset(let game):
+            "Local tuning rules for \(game.title) are not available yet."
+        }
+    }
 }

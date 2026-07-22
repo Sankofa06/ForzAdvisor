@@ -58,11 +58,11 @@ struct SavedTuneEditView: View {
                 }
 
                 Picker("Class", selection: $draft.car.performanceClass) {
-                    ForEach(PerformanceClass.allCases) { performanceClass in
+                    ForEach(draft.car.game.supportedPerformanceClasses) { performanceClass in
                         Text(performanceClass.rawValue).tag(performanceClass)
                     }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
 
                 Picker("Drivetrain", selection: $draft.car.drivetrain) {
                     ForEach(Drivetrain.allCases) { drivetrain in

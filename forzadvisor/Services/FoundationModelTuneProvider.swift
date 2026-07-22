@@ -37,7 +37,7 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
         let prompt = try promptBuilder.prompt(for: request, baseline: baseline)
         let session = LanguageModelSession(
             model: .default,
-            instructions: Self.instructions
+            instructions: Self.instructions(for: request.car.game)
         )
         session.prewarm()
 
@@ -105,11 +105,13 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
 }
 
 private extension FoundationModelTuneProvider {
-    static let instructions = """
-    You are ForzAdvisor's private on-device FH6 tuner. Produce structured tune data only.
+    static func instructions(for game: ForzaGame) -> String {
+        """
+    You are ForzAdvisor's private on-device \(game.title) tuner. Produce structured tune data only.
     Treat supplied baseline numbers as formula-backed source data. Make small, coherent refinements.
-    Keep values valid for Forza Horizon 6 and keep note strings concise.
+    Keep values valid for \(game.title) and keep note strings concise.
     """
+    }
 }
 #else
 struct FoundationModelTuneProvider: OnDeviceTuneProviding {

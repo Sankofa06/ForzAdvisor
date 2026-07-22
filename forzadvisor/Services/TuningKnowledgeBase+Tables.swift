@@ -10,7 +10,7 @@ import Foundation
 extension TuningKnowledgeBase {
     static func roadTireBase(for performanceClass: PerformanceClass) -> Double {
         switch performanceClass {
-        case .c:
+        case .d, .c:
             25
         case .b:
             25.5
@@ -20,14 +20,14 @@ extension TuningKnowledgeBase {
             28
         case .s2:
             30
-        case .x:
+        case .r, .x:
             31
         }
     }
 
     static func classGearingBase(for performanceClass: PerformanceClass) -> Double {
         switch performanceClass {
-        case .c:
+        case .d, .c:
             3.35
         case .b:
             3.45
@@ -37,7 +37,7 @@ extension TuningKnowledgeBase {
             3.75
         case .s2:
             3.9
-        case .x:
+        case .r, .x:
             4.05
         }
     }
@@ -61,7 +61,7 @@ extension TuningKnowledgeBase {
 
     static func classCamberExtra(for performanceClass: PerformanceClass) -> Double {
         switch performanceClass {
-        case .c:
+        case .d, .c:
             0
         case .b:
             -0.05
@@ -71,14 +71,14 @@ extension TuningKnowledgeBase {
             -0.3
         case .s2:
             -0.45
-        case .x:
+        case .r, .x:
             -0.55
         }
     }
 
     static func classARBBase(for performanceClass: PerformanceClass) -> Double {
         switch performanceClass {
-        case .c:
+        case .d, .c:
             38
         case .b:
             42
@@ -88,7 +88,7 @@ extension TuningKnowledgeBase {
             52
         case .s2:
             57
-        case .x:
+        case .r, .x:
             61
         }
     }
@@ -116,7 +116,7 @@ extension TuningKnowledgeBase {
         }
 
         return switch performanceClass {
-        case .c:
+        case .d, .c:
             -20
         case .b:
             0
@@ -126,7 +126,7 @@ extension TuningKnowledgeBase {
             80
         case .s2:
             140
-        case .x:
+        case .r, .x:
             190
         }
     }
@@ -146,7 +146,7 @@ extension TuningKnowledgeBase {
 
     static func dampingClassExtra(for performanceClass: PerformanceClass) -> Double {
         switch performanceClass {
-        case .c, .b:
+        case .d, .c, .b:
             0
         case .a:
             0.1
@@ -154,14 +154,14 @@ extension TuningKnowledgeBase {
             0.25
         case .s2:
             0.4
-        case .x:
+        case .r, .x:
             0.55
         }
     }
 
     static func classAeroBonus(for performanceClass: PerformanceClass) -> Double {
         switch performanceClass {
-        case .c:
+        case .d, .c:
             -50
         case .b:
             -25
@@ -171,14 +171,14 @@ extension TuningKnowledgeBase {
             35
         case .s2:
             70
-        case .x:
+        case .r, .x:
             100
         }
     }
 
     static func estimatedHorsepower(for performanceClass: PerformanceClass) -> Int {
         switch performanceClass {
-        case .c:
+        case .d, .c:
             220
         case .b:
             320
@@ -188,7 +188,7 @@ extension TuningKnowledgeBase {
             600
         case .s2:
             850
-        case .x:
+        case .r, .x:
             1_000
         }
     }

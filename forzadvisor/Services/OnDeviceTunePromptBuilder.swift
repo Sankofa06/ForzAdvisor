@@ -15,9 +15,9 @@ struct OnDeviceTunePromptBuilder {
     func prompt(for request: TuneRequest, baseline: TuneResult) throws -> String {
         let car = request.car
         let prompt = [
-            "Task: refine a Forza Horizon 6 tune from compact baseline values.",
+            "Task: refine a \(car.game.title) tune from compact baseline values.",
             "Return only the guided structure. Keep notes under 90 chars each.",
-            "Use tune-menu order. Stay near baseline; clamp to sane FH6 ranges.",
+            "Use tune-menu order. Stay near baseline; clamp to sane \(car.game.shortTitle) ranges.",
             "Car: \(carLine(car)); mode=\(request.discipline.apiValue).",
             "Baseline: \(baselineLine(baseline)).",
             "Rules: psi15-40 fd2.5-5.5 camber-5..0 toe-2..2 caster3-8 arb1-65 spring100-2000 ride2-12 damp1-20 aero0-600 brake0-200 diff0-100.",

@@ -196,9 +196,9 @@ extension ForzaOCRKnowledgeBase {
     func performanceClassCandidates(in windows: [ObservationWindow]) -> [ParsedCandidate<PerformanceClass>] {
         windows.compactMap { window in
             let patterns = [
-                #"(?i)\b(S1|S2|X|C|B|A)\s*-?\s*\d{3}\b"#,
-                #"(?i)\bclass[^A-Z0-9]*(S1|S2|X|C|B|A)\b"#,
-                #"(?i)\bpi[^A-Z0-9]*(S1|S2|X|C|B|A)\b"#
+                #"(?i)\b(S1|S2|R|X|D|C|B|A)\s*-?\s*\d{3}\b"#,
+                #"(?i)\bclass[^A-Z0-9]*(S1|S2|R|X|D|C|B|A)\b"#,
+                #"(?i)\bpi[^A-Z0-9]*(S1|S2|R|X|D|C|B|A)\b"#
             ]
 
             guard let rawValue = firstCapture(in: window.rawText, patterns: patterns),
@@ -212,7 +212,7 @@ extension ForzaOCRKnowledgeBase {
     func performanceIndexCandidates(in windows: [ObservationWindow]) -> [ParsedCandidate<Int>] {
         windows.compactMap { window in
             let patterns = [
-                #"(?i)\b(?:PI|P1|PL|S1|S2|X|C|B|A)[^0-9]*(\d{3})\b"#,
+                #"(?i)\b(?:PI|P1|PL|S1|S2|R|X|D|C|B|A)[^0-9]*(\d{3})\b"#,
                 #"(?i)\bclass[^0-9]*(\d{3})\b"#
             ]
 

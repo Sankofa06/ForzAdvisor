@@ -22,6 +22,24 @@ final class TuneAPIModelTests: XCTestCase {
         XCTAssertEqual(car["front_weight_pct"] as? Double, 53)
         XCTAssertEqual(car["class"] as? String, "S1")
         XCTAssertEqual(car["peak_hp"] as? Int, 480)
+        XCTAssertEqual(car["game"] as? String, "fh6")
+    }
+
+    func testGeneratePayloadAndSystemPromptUseSelectedGame() throws {
+        var car = SampleTuningData.starterCar
+        car.game = .fh5
+        car.performanceClass = .a
+        let payload = TuneAPIRequestPayload(
+            request: TuneRequest(car: car, discipline: .road)
+        )
+        let data = try JSONEncoder().encode(payload)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let encodedCar = try XCTUnwrap(object["car"] as? [String: Any])
+
+        XCTAssertEqual(encodedCar["game"] as? String, "fh5")
+        XCTAssertTrue(TuneAPIClient.systemPrompt(for: .fh5).contains("Forza Horizon 5"))
+        XCTAssertFalse(TuneAPIClient.systemPrompt(for: .fh5).contains("FH6"))
+        XCTAssertTrue(TuneAPIClient.systemPrompt(for: .fh6).contains("Forza Horizon 6"))
     }
 
     func testAPIResponseMapsToTuneSections() {

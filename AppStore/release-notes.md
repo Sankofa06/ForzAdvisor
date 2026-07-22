@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.1.8 (Build 12) - 2026-07-21
+
+- Added the game-aware tuning foundation for Forza Horizon 5 and Forza Horizon 6, including their distinct PI class bands.
+- Added D and R class support while preserving X-class saved tunes and legacy garage data.
+- Prevented FH5 requests from silently using the existing FH6 offline formulas until a separately validated FH5 ruleset is available.
+
 ## Version 1.1.7 (Build 11) - 2026-07-21
 
 - Expanded app compatibility to iOS 17 and later while preserving the offline-first tuning workflow.
@@ -28,11 +34,11 @@
 
 ## App Store What's New
 
-ForzAdvisor now has safer manual entry, more reliable on-device photo OCR, clearer tuning-provider status, improved VoiceOver and Dynamic Type support, and accurate localized decimal handling.
+ForzAdvisor now understands the distinct FH5 and FH6 performance-class systems, supports D and R classes, and preserves existing X-class garage tunes. This foundation keeps future game-specific tuning rules from being mixed together.
 
 ## TestFlight Notes
 
-This TestFlight build is ready for end-to-end tuning feedback. Please verify New Tune, localized manual entry, photo or screenshot OCR and retry, discipline selection, provider status, generated tune sections, saving, reopening, copying, editing saved tunes, and Guided Refinement changes.
+This TestFlight build is ready for end-to-end tuning feedback. Please verify D, R, and X class entry where available; New Tune; localized manual entry; photo or screenshot OCR and retry; discipline selection; provider status; generated tune sections; saving; reopening; copying; editing saved tunes; and Guided Refinement changes.
 
 Offline formula tuning is the default path and does not require an account or API key. Camera and photo import are optional. Screenshots are processed on device. Anthropic API mode requires the tester to provide their own API key in Settings.
 

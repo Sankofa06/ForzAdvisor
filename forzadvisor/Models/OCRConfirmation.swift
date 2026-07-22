@@ -92,6 +92,7 @@ protocol OCRCorrectionProvider {
 }
 
 struct OCRConfirmationDraft: Equatable, Sendable {
+    var game: ForzaGame = .fh6
     var year: Int?
     var make = ""
     var model = ""
@@ -128,6 +129,7 @@ struct OCRConfirmationDraft: Equatable, Sendable {
 
     func manualEntryFallback() -> ManualEntryDraft {
         ManualEntryDraft(
+            game: game,
             year: year,
             make: make,
             model: model,
@@ -153,6 +155,7 @@ struct OCRConfirmationDraft: Equatable, Sendable {
         }
 
         let car = CarInput(
+            game: game,
             year: year,
             make: make,
             model: model,

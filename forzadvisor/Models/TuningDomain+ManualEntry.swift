@@ -1,6 +1,7 @@
 import Foundation
 
 struct ManualEntryDraft: Equatable, Sendable {
+    var game: ForzaGame
     var year: Int?
     var make: String
     var model: String
@@ -15,6 +16,7 @@ struct ManualEntryDraft: Equatable, Sendable {
     static let empty = ManualEntryDraft()
 
     init(
+        game: ForzaGame = .fh6,
         year: Int? = nil,
         make: String = "",
         model: String = "",
@@ -26,6 +28,7 @@ struct ManualEntryDraft: Equatable, Sendable {
         peakHorsepower: Int? = nil,
         peakTorqueFootPounds: Int? = nil
     ) {
+        self.game = game
         self.year = year
         self.make = make
         self.model = model
@@ -40,6 +43,7 @@ struct ManualEntryDraft: Equatable, Sendable {
 
     init(car: CarInput) {
         self.init(
+            game: car.game,
             year: car.year,
             make: car.make,
             model: car.model,
@@ -84,7 +88,17 @@ struct ManualEntryDraft: Equatable, Sendable {
             issues.append(.missingPerformanceIndex)
         }
 
-        if performanceClass == nil {
+        if let performanceClass {
+            if let classRange = game.performanceIndexRange(for: performanceClass) {
+                if let performanceIndex,
+                   (100...999).contains(performanceIndex),
+                   !classRange.contains(performanceIndex) {
+                    issues.append(.performanceIndexOutsideClass(game, performanceClass, classRange))
+                }
+            } else {
+                issues.append(.unsupportedPerformanceClass(game, performanceClass))
+            }
+        } else {
             issues.append(.missingPerformanceClass)
         }
 
@@ -107,6 +121,7 @@ struct ManualEntryDraft: Equatable, Sendable {
         }
 
         let car = CarInput(
+            game: game,
             year: year,
             make: make,
             model: model,
@@ -132,6 +147,8 @@ enum ManualEntryValidationIssue: Identifiable, Equatable {
     case missingPerformanceIndex
     case invalidPerformanceIndex
     case missingPerformanceClass
+    case unsupportedPerformanceClass(ForzaGame, PerformanceClass)
+    case performanceIndexOutsideClass(ForzaGame, PerformanceClass, ClosedRange<Int>)
     case missingDrivetrain
 
     var id: String { message }
@@ -146,6 +163,10 @@ enum ManualEntryValidationIssue: Identifiable, Equatable {
         case .missingPerformanceIndex: "Enter the PI."
         case .invalidPerformanceIndex: "PI should be between 100 and 999."
         case .missingPerformanceClass: "Choose a performance class."
+        case .unsupportedPerformanceClass(let game, let performanceClass):
+            "Class \(performanceClass.rawValue) is not supported by \(game.shortTitle)."
+        case .performanceIndexOutsideClass(let game, let performanceClass, let range):
+            "\(game.shortTitle) class \(performanceClass.rawValue) uses PI \(range.lowerBound)-\(range.upperBound)."
         case .missingDrivetrain: "Choose a drivetrain."
         }
     }

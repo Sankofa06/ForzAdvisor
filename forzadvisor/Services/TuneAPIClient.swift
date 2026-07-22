@@ -17,7 +17,10 @@ struct TuneAPIClient: TuneProvider {
 
     func generateTune(for request: TuneRequest) async throws -> TuneResult {
         let payload = TuneAPIRequestPayload(request: request)
-        let response: TuneAPIResponse = try await performJSONRequest(payload: payload)
+        let response: TuneAPIResponse = try await performJSONRequest(
+            payload: payload,
+            game: request.car.game
+        )
         return response.tuneResult(for: request)
             .withProviderInfo(.direct(.anthropicAPI))
     }
@@ -27,7 +30,10 @@ struct TuneAPIClient: TuneProvider {
             previousTune: TuneAPIResponse(result: tune),
             adjustment: adjustment.apiValue
         )
-        let response: TuneAPIResponse = try await performJSONRequest(payload: payload)
+        let response: TuneAPIResponse = try await performJSONRequest(
+            payload: payload,
+            game: tune.request.car.game
+        )
         let adjustedTune = response.mergedTuneResult(updating: tune)
         return TuneAdjustmentResult(
             tune: adjustedTune.withProviderInfo(.direct(.anthropicAPI)),
@@ -44,7 +50,8 @@ struct TuneAPIClient: TuneProvider {
     }
 
     private func performJSONRequest<Response: Decodable, Payload: Encodable>(
-        payload: Payload
+        payload: Payload,
+        game: ForzaGame
     ) async throws -> Response {
         let apiKey = try readConfiguredAPIKey()
 
@@ -55,7 +62,7 @@ struct TuneAPIClient: TuneProvider {
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.httpBody = try JSONEncoder.apiEncoder.encode(AnthropicRequest(
             model: modelName,
-            system: Self.systemPrompt,
+            system: Self.systemPrompt(for: game),
             payload: payload
         ))
 
@@ -157,12 +164,14 @@ private struct AnthropicContentBlock: Decodable {
     var text: String?
 }
 
-private extension TuneAPIClient {
-    static let systemPrompt = """
-    You are the ForzAdvisor FH6 tuning service. Return only JSON matching the provided schema.
+extension TuneAPIClient {
+    static func systemPrompt(for game: ForzaGame) -> String {
+        """
+    You are the ForzAdvisor \(game.title) tuning service. Return only JSON matching the provided schema.
     Do not include Markdown, prose, code fences, or fields outside the requested tune schema.
     Use complete tune-menu order for generate_tune responses. For adjust_tune, return changed numeric fields and notes.
     """
+    }
 }
 
 private extension TuneAPIClient {

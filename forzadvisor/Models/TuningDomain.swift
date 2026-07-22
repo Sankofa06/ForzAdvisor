@@ -8,12 +8,58 @@
 
 import Foundation
 
+enum ForzaGame: String, CaseIterable, Codable, Identifiable, Sendable {
+    case fh5
+    case fh6
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .fh5: "Forza Horizon 5"
+        case .fh6: "Forza Horizon 6"
+        }
+    }
+
+    var shortTitle: String { rawValue.uppercased() }
+
+    var supportedPerformanceClasses: [PerformanceClass] {
+        switch self {
+        case .fh5: [.d, .c, .b, .a, .s1, .s2, .x]
+        case .fh6: [.d, .c, .b, .a, .s1, .s2, .r, .x]
+        }
+    }
+
+    func performanceIndexRange(for performanceClass: PerformanceClass) -> ClosedRange<Int>? {
+        switch (self, performanceClass) {
+        case (.fh5, .d): 100...500
+        case (.fh5, .c): 501...600
+        case (.fh5, .b): 601...700
+        case (.fh5, .a): 701...800
+        case (.fh5, .s1): 801...900
+        case (.fh5, .s2): 901...998
+        case (.fh5, .x): 999...999
+        case (.fh6, .d): 100...400
+        case (.fh6, .c): 401...500
+        case (.fh6, .b): 501...600
+        case (.fh6, .a): 601...700
+        case (.fh6, .s1): 701...800
+        case (.fh6, .s2): 801...900
+        case (.fh6, .r): 901...998
+        case (.fh6, .x): 999...999
+        default: nil
+        }
+    }
+}
+
 enum PerformanceClass: String, CaseIterable, Codable, Identifiable, Sendable {
+    case d = "D"
     case c = "C"
     case b = "B"
     case a = "A"
     case s1 = "S1"
     case s2 = "S2"
+    case r = "R"
     case x = "X"
 
     var id: String { rawValue }
@@ -72,6 +118,7 @@ enum DrivingDiscipline: String, CaseIterable, Codable, Identifiable, Sendable {
 }
 
 struct CarInput: Codable, Equatable, Sendable {
+    var game: ForzaGame
     var year: Int?
     var make: String
     var model: String
@@ -82,6 +129,61 @@ struct CarInput: Codable, Equatable, Sendable {
     var drivetrain: Drivetrain
     var peakHorsepower: Int?
     var peakTorqueFootPounds: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case game
+        case year
+        case make
+        case model
+        case weightPounds
+        case frontWeightPercent
+        case performanceIndex
+        case performanceClass
+        case drivetrain
+        case peakHorsepower
+        case peakTorqueFootPounds
+    }
+
+    init(
+        game: ForzaGame = .fh6,
+        year: Int?,
+        make: String,
+        model: String,
+        weightPounds: Int,
+        frontWeightPercent: Double,
+        performanceIndex: Int,
+        performanceClass: PerformanceClass,
+        drivetrain: Drivetrain,
+        peakHorsepower: Int?,
+        peakTorqueFootPounds: Int?
+    ) {
+        self.game = game
+        self.year = year
+        self.make = make
+        self.model = model
+        self.weightPounds = weightPounds
+        self.frontWeightPercent = frontWeightPercent
+        self.performanceIndex = performanceIndex
+        self.performanceClass = performanceClass
+        self.drivetrain = drivetrain
+        self.peakHorsepower = peakHorsepower
+        self.peakTorqueFootPounds = peakTorqueFootPounds
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        game = try container.decodeIfPresent(ForzaGame.self, forKey: .game) ?? .fh6
+        year = try container.decodeIfPresent(Int.self, forKey: .year)
+        make = try container.decode(String.self, forKey: .make)
+        model = try container.decode(String.self, forKey: .model)
+        weightPounds = try container.decode(Int.self, forKey: .weightPounds)
+        frontWeightPercent = try container.decode(Double.self, forKey: .frontWeightPercent)
+        performanceIndex = try container.decode(Int.self, forKey: .performanceIndex)
+        performanceClass = try container.decode(PerformanceClass.self, forKey: .performanceClass)
+        drivetrain = try container.decode(Drivetrain.self, forKey: .drivetrain)
+        peakHorsepower = try container.decodeIfPresent(Int.self, forKey: .peakHorsepower)
+        peakTorqueFootPounds = try container.decodeIfPresent(Int.self, forKey: .peakTorqueFootPounds)
+    }
 
     var displayName: String {
         let name = [make, model]
@@ -107,6 +209,12 @@ struct CarInput: Codable, Equatable, Sendable {
         }
         if !(100...999).contains(performanceIndex) {
             issues.append(.invalidPerformanceIndex)
+        } else if let classRange = game.performanceIndexRange(for: performanceClass) {
+            if !classRange.contains(performanceIndex) {
+                issues.append(.performanceIndexOutsideClass(game, performanceClass, classRange))
+            }
+        } else {
+            issues.append(.unsupportedPerformanceClass(game, performanceClass))
         }
         return issues
     }
@@ -121,6 +229,8 @@ enum ValidationIssue: Identifiable, Equatable {
     case invalidWeight
     case invalidFrontWeight
     case invalidPerformanceIndex
+    case unsupportedPerformanceClass(ForzaGame, PerformanceClass)
+    case performanceIndexOutsideClass(ForzaGame, PerformanceClass, ClosedRange<Int>)
 
     var id: String { message }
 
@@ -130,6 +240,10 @@ enum ValidationIssue: Identifiable, Equatable {
         case .invalidWeight: "Weight should be between 1,500 and 7,000 lb."
         case .invalidFrontWeight: "Front weight should be between 30% and 70%."
         case .invalidPerformanceIndex: "PI should be between 100 and 999."
+        case .unsupportedPerformanceClass(let game, let performanceClass):
+            "Class \(performanceClass.rawValue) is not supported by \(game.shortTitle)."
+        case .performanceIndexOutsideClass(let game, let performanceClass, let range):
+            "\(game.shortTitle) class \(performanceClass.rawValue) uses PI \(range.lowerBound)-\(range.upperBound)."
         }
     }
 }

@@ -25,6 +25,7 @@ struct TuneAPIAdjustmentPayload: Codable, Equatable {
 }
 
 struct TuneAPICar: Codable, Equatable {
+    var game: String
     var year: Int?
     var make: String
     var model: String
@@ -37,6 +38,7 @@ struct TuneAPICar: Codable, Equatable {
     var peakTorqueFootPounds: Int?
 
     enum CodingKeys: String, CodingKey {
+        case game
         case year
         case make
         case model
@@ -50,6 +52,7 @@ struct TuneAPICar: Codable, Equatable {
     }
 
     init(car: CarInput) {
+        self.game = car.game.rawValue
         self.year = car.year
         self.make = car.make
         self.model = car.model
