@@ -1,5 +1,10 @@
 # Release Notes
 
+## Version 1.1.11 (Build 15) - 2026-07-22
+
+- Added an FH6 Tune Lab that records exact stock tire-pressure slider ranges locally and regenerates the tune against them.
+- Added tune coverage and build-plan guidance while withholding generated values that do not pass capability, range, and provenance checks.
+
 ## Version 1.1.10 (Build 14) - 2026-07-22
 
 - Added an explicit FH5/FH6 selector to manual entry and screenshot review.
