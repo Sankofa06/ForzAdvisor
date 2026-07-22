@@ -145,6 +145,15 @@ private struct GarageTuneRow: View {
                             title: tune.disciplineTitle,
                             tint: tune.discipline.map { ForzAdvisorTheme.disciplineColor($0) } ?? ForzAdvisorTheme.accent
                         )
+                        if let car = tune.carInput {
+                            ForzAdvisorPill(title: car.game.shortTitle, tint: ForzAdvisorTheme.accent)
+                            if car.catalogReference != nil {
+                                ForzAdvisorPill(
+                                    title: car.catalogValuesModified ? "Catalog · Edited" : "Catalog",
+                                    tint: ForzAdvisorTheme.success
+                                )
+                            }
+                        }
                         ForzAdvisorPill(title: "\(tune.performanceClassRawValue) \(tune.performanceIndex)")
                         ForzAdvisorPill(title: tune.drivetrainRawValue, tint: ForzAdvisorTheme.warmAccent)
                     }

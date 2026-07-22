@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026.07.21.1",
+  "reviewedAt": "2026-07-21T00:00:00Z",
+  "entries": [
+    {
+      "id": "fh5-2020-toyota-gr-supra",
+      "game": "fh5",
+      "year": 2020,
+      "make": "Toyota",
+      "model": "GR Supra",
+      "stock": { "performanceIndex": 731, "performanceClass": "A", "drivetrain": "RWD", "weightPounds": 3397, "frontWeightPercent": 51, "peakHorsepower": 335, "peakTorqueFootPounds": 365 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 5 Official Car List", "url": "https://forza.net/fh5cars/", "role": "officialRoster", "fields": ["identity"] },
+        { "id": "wiki", "title": "Forza Wiki — Toyota GR Supra", "url": "https://forza.fandom.com/wiki/Toyota_GR_Supra", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 2020 Toyota GR Supra", "url": "https://forza.labsgg.com/cars/2020-toyota-gr-supra", "role": "communityQA", "fields": ["identity", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh5-2022-subaru-brz",
+      "game": "fh5",
+      "year": 2022,
+      "make": "Subaru",
+      "model": "BRZ",
+      "stock": { "performanceIndex": 673, "performanceClass": "B", "drivetrain": "RWD", "weightPounds": 2835, "frontWeightPercent": 53, "peakHorsepower": 228, "peakTorqueFootPounds": 184 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 5 Official Car List", "url": "https://forza.net/fh5cars/", "role": "officialRoster", "fields": ["identity"] },
+        { "id": "wiki", "title": "Forza Wiki — 2022 Subaru BRZ", "url": "https://forza.fandom.com/wiki/Subaru_BRZ_%282022%29", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 2022 Subaru BRZ", "url": "https://forza.labsgg.com/cars/2022-subaru-brz", "role": "communityQA", "fields": ["identity", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh5-2018-porsche-911-gt2-rs",
+      "game": "fh5",
+      "year": 2018,
+      "make": "Porsche",
+      "model": "911 GT2 RS",
+      "stock": { "performanceIndex": 888, "performanceClass": "S1", "drivetrain": "RWD", "weightPounds": 3197, "frontWeightPercent": 40, "peakHorsepower": 691, "peakTorqueFootPounds": 553 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 5 Official Car List", "url": "https://forza.net/fh5cars/", "role": "officialRoster", "fields": ["identity"] },
+        { "id": "wiki", "title": "Forza Wiki — 2018 Porsche 911 GT2 RS", "url": "https://forza.fandom.com/wiki/Porsche_911_GT2_RS_%282018%29", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 2018 Porsche 911 GT2 RS", "url": "https://forza.labsgg.com/cars/2018-porsche-911-gt2-rs", "role": "communityQA", "fields": ["identity", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh6-2020-toyota-gr-supra",
+      "game": "fh6",
+      "year": 2020,
+      "make": "Toyota",
+      "model": "GR Supra",
+      "stock": { "performanceIndex": 616, "performanceClass": "A", "drivetrain": "RWD", "weightPounds": 3397, "frontWeightPercent": 51, "peakHorsepower": 335, "peakTorqueFootPounds": 365 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
+        { "id": "wiki", "title": "Forza Wiki — Toyota GR Supra", "url": "https://forza.fandom.com/wiki/Toyota_GR_Supra", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 2020 Toyota GR Supra", "url": "https://forza.labsgg.com/cars/2020-toyota-gr-supra", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh6-2022-subaru-brz",
+      "game": "fh6",
+      "year": 2022,
+      "make": "Subaru",
+      "model": "BRZ",
+      "stock": { "performanceIndex": 551, "performanceClass": "B", "drivetrain": "RWD", "weightPounds": 2835, "frontWeightPercent": 53, "peakHorsepower": 228, "peakTorqueFootPounds": 184 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
+        { "id": "wiki", "title": "Forza Wiki — 2022 Subaru BRZ", "url": "https://forza.fandom.com/wiki/Subaru_BRZ_%282022%29", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 2022 Subaru BRZ", "url": "https://forza.labsgg.com/cars/2022-subaru-brz", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh6-2018-porsche-911-gt2-rs",
+      "game": "fh6",
+      "year": 2018,
+      "make": "Porsche",
+      "model": "911 GT2 RS",
+      "stock": { "performanceIndex": 803, "performanceClass": "S2", "drivetrain": "RWD", "weightPounds": 3197, "frontWeightPercent": 40, "peakHorsepower": 691, "peakTorqueFootPounds": 553 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
+        { "id": "wiki", "title": "Forza Wiki — 2018 Porsche 911 GT2 RS", "url": "https://forza.fandom.com/wiki/Porsche_911_GT2_RS_%282018%29", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 2018 Porsche 911 GT2 RS", "url": "https://forza.labsgg.com/cars/2018-porsche-911-gt2-rs", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    }
+  ]
+}

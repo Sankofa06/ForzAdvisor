@@ -14,6 +14,7 @@ typealias OCRDraftReadyHandler = @MainActor (OCRConfirmationDraft) -> Void
 
 struct NewTuneStartView: View {
     let onCancel: () -> Void
+    let onCatalog: () -> Void
     let onManualEntry: () -> Void
     let onDraftReady: OCRDraftReadyHandler
 
@@ -23,11 +24,13 @@ struct NewTuneStartView: View {
 
     init(
         onCancel: @escaping () -> Void,
+        onCatalog: @escaping () -> Void,
         onManualEntry: @escaping () -> Void,
         onDraftReady: @escaping OCRDraftReadyHandler,
         ocrService: any CarInputOCRService = VisionCarInputOCRService()
     ) {
         self.onCancel = onCancel
+        self.onCatalog = onCatalog
         self.onManualEntry = onManualEntry
         self.onDraftReady = onDraftReady
         self._photoImport = StateObject(wrappedValue: PhotoOCRImportController(ocrService: ocrService))
@@ -45,9 +48,18 @@ struct NewTuneStartView: View {
             }
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
-            CaptureGuideSection()
-
             Section("Start") {
+                Button(action: onCatalog) {
+                    StartRow(
+                        title: "Choose a Car",
+                        subtitle: "Browse reviewed stock cars for FH5 or FH6.",
+                        systemImage: "car.2"
+                    )
+                }
+                .accessibilityIdentifier("catalogEntryButton")
+                .buttonStyle(.plain)
+                .forzAdvisorRowBackground()
+
                 Button {
                     isShowingCamera = true
                 } label: {
@@ -82,6 +94,8 @@ struct NewTuneStartView: View {
                 .buttonStyle(.plain)
                 .forzAdvisorRowBackground()
             }
+
+            CaptureGuideSection()
 
             if photoImport.isProcessingPhoto {
                 Section {

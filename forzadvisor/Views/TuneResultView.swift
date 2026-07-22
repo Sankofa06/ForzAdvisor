@@ -66,6 +66,18 @@ struct TuneResultView: View {
             }
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
+            if let catalogReference = tune.request.car.catalogReference {
+                Section("Catalog Data Origin") {
+                    CatalogProvenanceView(
+                        reference: catalogReference,
+                        showsOriginMessage: true,
+                        valuesModified: tune.request.car.catalogValuesModified
+                    )
+                    .accessibilityIdentifier("tuneCatalogIdentity")
+                }
+                .forzAdvisorRowBackground()
+            }
+
             Section {
                 Button {
                     UIPasteboard.general.string = TuneClipboardFormatter.fullTuneText(

@@ -282,6 +282,9 @@ extension ContentView {
 enum WorkflowStep {
     case home
     case newTune
+    case catalogPicker(initialGame: ForzaGame = .fh6)
+    case catalogReview(CatalogCarSelection)
+    case catalogEdit(CatalogCarSelection)
     case ocrReview(OCRConfirmationDraft)
     case manualEntry(ManualEntryDraft, thumbnailData: Data?)
     case discipline(CarInput, origin: InputOrigin, thumbnailData: Data?)
@@ -293,6 +296,7 @@ enum WorkflowStep {
 enum InputOrigin {
     case manual(CarInput)
     case ocr(OCRConfirmationDraft)
+    case catalog(CatalogCarSelection)
 
     func previousStep(thumbnailData: Data?) -> WorkflowStep {
         switch self {
@@ -300,6 +304,8 @@ enum InputOrigin {
             .manualEntry(ManualEntryDraft(car: input), thumbnailData: thumbnailData)
         case .ocr(let draft):
             .ocrReview(draft)
+        case .catalog(let selection):
+            .catalogReview(selection)
         }
     }
 }

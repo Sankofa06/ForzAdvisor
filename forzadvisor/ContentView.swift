@@ -18,6 +18,7 @@ struct ContentView: View {
     @State var errorMessage: String?
     @State var errorRecovery: ErrorRecovery?
     @State var isShowingSettings = false
+    @State var catalogResult = BundledCarCatalog.load()
     @StateObject var tuneWorkflow = TuneWorkflowController()
 
     let keychainStore = KeychainStore()
@@ -42,11 +43,53 @@ struct ContentView: View {
                 case .newTune:
                     NewTuneStartView(
                         onCancel: { step = .home },
+                        onCatalog: { step = .catalogPicker() },
                         onManualEntry: {
                             step = .manualEntry(.empty, thumbnailData: nil)
                         },
                         onDraftReady: { draft in
                             step = .ocrReview(draft)
+                        }
+                    )
+                case .catalogPicker(let initialGame):
+                    CarCatalogPickerView(
+                        catalogResult: catalogResult,
+                        initialGame: initialGame,
+                        onBack: { step = .newTune },
+                        onManualEntry: {
+                            step = .manualEntry(.empty, thumbnailData: nil)
+                        },
+                        onSelect: { selection in
+                            step = .catalogReview(selection)
+                        }
+                    )
+                case .catalogReview(let selection):
+                    CarCatalogReviewView(
+                        selection: selection,
+                        onBack: {
+                            step = .catalogPicker(initialGame: selection.entry.game)
+                        },
+                        onUseCar: {
+                            step = .discipline(
+                                selection.carInput,
+                                origin: .catalog(selection),
+                                thumbnailData: nil
+                            )
+                        },
+                        onEditValues: {
+                            step = .catalogEdit(selection)
+                        }
+                    )
+                case .catalogEdit(let selection):
+                    ManualEntryView(
+                        draft: ManualEntryDraft(car: selection.carInput),
+                        onCancel: { step = .catalogReview(selection) },
+                        onContinue: { input in
+                            step = .discipline(
+                                input,
+                                origin: .manual(input),
+                                thumbnailData: nil
+                            )
                         }
                     )
                 case .ocrReview(let draft):

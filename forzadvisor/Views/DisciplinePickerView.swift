@@ -62,6 +62,7 @@ private struct CarSummaryHeader: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
+                    ForzAdvisorPill(title: car.game.shortTitle, tint: ForzAdvisorTheme.accent)
                     ForzAdvisorPill(title: "\(car.performanceClass.rawValue) \(car.performanceIndex)")
                     ForzAdvisorPill(title: car.drivetrain.rawValue, tint: ForzAdvisorTheme.warmAccent)
                     ForzAdvisorPill(title: "\(car.weightPounds) lb")

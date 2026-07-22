@@ -118,17 +118,41 @@ enum DrivingDiscipline: String, CaseIterable, Codable, Identifiable, Sendable {
 }
 
 struct CarInput: Codable, Equatable, Sendable {
-    var game: ForzaGame
-    var year: Int?
-    var make: String
-    var model: String
-    var weightPounds: Int
-    var frontWeightPercent: Double
-    var performanceIndex: Int
-    var performanceClass: PerformanceClass
-    var drivetrain: Drivetrain
-    var peakHorsepower: Int?
-    var peakTorqueFootPounds: Int?
+    var game: ForzaGame {
+        didSet { clearCatalogReferenceIfChanged(from: oldValue, to: game) }
+    }
+    var year: Int? {
+        didSet { clearCatalogReferenceIfChanged(from: oldValue, to: year) }
+    }
+    var make: String {
+        didSet { clearCatalogReferenceIfChanged(from: oldValue, to: make) }
+    }
+    var model: String {
+        didSet { clearCatalogReferenceIfChanged(from: oldValue, to: model) }
+    }
+    var weightPounds: Int {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: weightPounds) }
+    }
+    var frontWeightPercent: Double {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: frontWeightPercent) }
+    }
+    var performanceIndex: Int {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: performanceIndex) }
+    }
+    var performanceClass: PerformanceClass {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: performanceClass) }
+    }
+    var drivetrain: Drivetrain {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: drivetrain) }
+    }
+    var peakHorsepower: Int? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: peakHorsepower) }
+    }
+    var peakTorqueFootPounds: Int? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: peakTorqueFootPounds) }
+    }
+    var catalogReference: CatalogCarReference?
+    var catalogValuesModified: Bool
 
     enum CodingKeys: String, CodingKey {
         case game
@@ -142,6 +166,8 @@ struct CarInput: Codable, Equatable, Sendable {
         case drivetrain
         case peakHorsepower
         case peakTorqueFootPounds
+        case catalogReference
+        case catalogValuesModified
     }
 
     init(
@@ -155,7 +181,9 @@ struct CarInput: Codable, Equatable, Sendable {
         performanceClass: PerformanceClass,
         drivetrain: Drivetrain,
         peakHorsepower: Int?,
-        peakTorqueFootPounds: Int?
+        peakTorqueFootPounds: Int?,
+        catalogReference: CatalogCarReference? = nil,
+        catalogValuesModified: Bool = false
     ) {
         self.game = game
         self.year = year
@@ -168,6 +196,8 @@ struct CarInput: Codable, Equatable, Sendable {
         self.drivetrain = drivetrain
         self.peakHorsepower = peakHorsepower
         self.peakTorqueFootPounds = peakTorqueFootPounds
+        self.catalogReference = catalogReference
+        self.catalogValuesModified = catalogReference != nil && catalogValuesModified
     }
 
     init(from decoder: Decoder) throws {
@@ -183,6 +213,31 @@ struct CarInput: Codable, Equatable, Sendable {
         drivetrain = try container.decode(Drivetrain.self, forKey: .drivetrain)
         peakHorsepower = try container.decodeIfPresent(Int.self, forKey: .peakHorsepower)
         peakTorqueFootPounds = try container.decodeIfPresent(Int.self, forKey: .peakTorqueFootPounds)
+        catalogReference = try container.decodeIfPresent(CatalogCarReference.self, forKey: .catalogReference)
+        let decodedCatalogValuesModified = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .catalogValuesModified
+        ) ?? false
+        catalogValuesModified = catalogReference != nil && decodedCatalogValuesModified
+    }
+
+    private mutating func clearCatalogReferenceIfChanged<Value: Equatable>(
+        from oldValue: Value,
+        to newValue: Value
+    ) {
+        if oldValue != newValue {
+            catalogReference = nil
+            catalogValuesModified = false
+        }
+    }
+
+    private mutating func markCatalogValuesModifiedIfChanged<Value: Equatable>(
+        from oldValue: Value,
+        to newValue: Value
+    ) {
+        if catalogReference != nil, oldValue != newValue {
+            catalogValuesModified = true
+        }
     }
 
     var displayName: String {

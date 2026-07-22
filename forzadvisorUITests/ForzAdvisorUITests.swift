@@ -47,7 +47,7 @@ final class ForzAdvisorUITests: XCTestCase {
         keyboardDoneButton.tap()
 
         app.swipeUp()
-        app.textFields["manualEntryPerformanceIndexField"].enterText("789")
+        app.textFields["manualEntryPerformanceIndexField"].enterText("689")
         if keyboardDoneButton.waitForExistence(timeout: 2) {
             keyboardDoneButton.tap()
         }
@@ -91,6 +91,60 @@ final class ForzAdvisorUITests: XCTestCase {
 
         let adjustmentChangeRow = app.descendants(matching: .any)["adjustmentChangeRow"].firstMatch
         XCTAssertTrue(app.waitForVisibleElement(adjustmentChangeRow, timeout: 15))
+    }
+
+    @MainActor
+    func testCatalogTuneCanBeSavedAndReopened() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15))
+
+        let garageHome = app.descendants(matching: .any)["garageHome"].firstMatch
+        XCTAssertTrue(garageHome.waitForExistence(timeout: 15))
+        garageHome.descendants(matching: .button)["newTuneButton"].tap()
+
+        let catalogButton = app.buttons["catalogEntryButton"]
+        XCTAssertTrue(catalogButton.waitForExistence(timeout: 5))
+        catalogButton.tap()
+
+        XCTAssertTrue(app.descendants(matching: .any)["catalogPicker"].firstMatch.waitForExistence(timeout: 5))
+        let searchField = app.textFields["catalogSearchField"]
+        XCTAssertTrue(searchField.waitForExistence(timeout: 5))
+        searchField.enterText("Supra")
+
+        let supraRow = app.buttons["catalogCarRow-fh6-2020-toyota-gr-supra"]
+        XCTAssertTrue(supraRow.waitForExistence(timeout: 5))
+        supraRow.tap()
+
+        XCTAssertTrue(app.descendants(matching: .any)["catalogVerificationBadge"].firstMatch.waitForExistence(timeout: 5))
+        let editValuesButton = app.buttons["catalogEditValuesButton"]
+        XCTAssertTrue(app.waitForVisibleElement(editValuesButton, timeout: 8))
+        editValuesButton.tap()
+        XCTAssertTrue(app.navigationBars["Manual Entry"].waitForExistence(timeout: 5))
+        app.navigationBars["Manual Entry"].buttons["Cancel"].tap()
+        XCTAssertTrue(app.navigationBars["Review Car"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["catalogVerificationBadge"].firstMatch.waitForExistence(timeout: 5))
+
+        let provenance = app.descendants(matching: .any)["catalogProvenance"].firstMatch
+        XCTAssertTrue(app.waitForVisibleElement(provenance, timeout: 8))
+        let useCarButton = app.buttons["catalogUseCarButton"]
+        XCTAssertTrue(app.waitForVisibleElement(useCarButton, timeout: 8))
+        useCarButton.tap()
+
+        let roadButton = app.buttons["disciplineButton-road"]
+        XCTAssertTrue(roadButton.waitForExistence(timeout: 5))
+        roadButton.tap()
+
+        let tuneIdentity = app.descendants(matching: .any)["tuneCatalogIdentity"].firstMatch
+        XCTAssertTrue(app.waitForVisibleElement(tuneIdentity, timeout: 10))
+        app.buttons["saveTuneButton"].tap()
+        app.buttons["doneTuneButton"].tap()
+
+        let savedTuneRow = app.buttons["savedTuneRow"].firstMatch
+        XCTAssertTrue(savedTuneRow.waitForExistence(timeout: 5))
+        savedTuneRow.tap()
+        XCTAssertTrue(app.waitForVisibleElement(tuneIdentity, timeout: 10))
     }
 }
 

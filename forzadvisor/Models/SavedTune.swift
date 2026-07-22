@@ -75,12 +75,16 @@ final class SavedTune {
 
     @MainActor
     var carInput: CarInput? {
+        if let storedCar = tuneResult?.request.car {
+            return storedCar
+        }
+
         guard let performanceClass = PerformanceClass(rawValue: performanceClassRawValue),
               let drivetrain = Drivetrain(rawValue: drivetrainRawValue)
         else { return nil }
 
         return CarInput(
-            game: tuneResult?.request.car.game ?? .fh6,
+            game: .fh6,
             year: year,
             make: make,
             model: model,

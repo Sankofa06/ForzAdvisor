@@ -1,17 +1,41 @@
 import Foundation
 
 struct ManualEntryDraft: Equatable, Sendable {
-    var game: ForzaGame
-    var year: Int?
-    var make: String
-    var model: String
-    var weightPounds: Int?
-    var frontWeightPercent: Double?
-    var performanceIndex: Int?
-    var performanceClass: PerformanceClass?
-    var drivetrain: Drivetrain?
-    var peakHorsepower: Int?
-    var peakTorqueFootPounds: Int?
+    var game: ForzaGame {
+        didSet { clearCatalogReferenceIfChanged(from: oldValue, to: game) }
+    }
+    var year: Int? {
+        didSet { clearCatalogReferenceIfChanged(from: oldValue, to: year) }
+    }
+    var make: String {
+        didSet { clearCatalogReferenceIfChanged(from: oldValue, to: make) }
+    }
+    var model: String {
+        didSet { clearCatalogReferenceIfChanged(from: oldValue, to: model) }
+    }
+    var weightPounds: Int? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: weightPounds) }
+    }
+    var frontWeightPercent: Double? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: frontWeightPercent) }
+    }
+    var performanceIndex: Int? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: performanceIndex) }
+    }
+    var performanceClass: PerformanceClass? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: performanceClass) }
+    }
+    var drivetrain: Drivetrain? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: drivetrain) }
+    }
+    var peakHorsepower: Int? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: peakHorsepower) }
+    }
+    var peakTorqueFootPounds: Int? {
+        didSet { markCatalogValuesModifiedIfChanged(from: oldValue, to: peakTorqueFootPounds) }
+    }
+    var catalogReference: CatalogCarReference?
+    var catalogValuesModified: Bool
 
     static let empty = ManualEntryDraft()
 
@@ -26,7 +50,9 @@ struct ManualEntryDraft: Equatable, Sendable {
         performanceClass: PerformanceClass? = nil,
         drivetrain: Drivetrain? = nil,
         peakHorsepower: Int? = nil,
-        peakTorqueFootPounds: Int? = nil
+        peakTorqueFootPounds: Int? = nil,
+        catalogReference: CatalogCarReference? = nil,
+        catalogValuesModified: Bool = false
     ) {
         self.game = game
         self.year = year
@@ -39,6 +65,8 @@ struct ManualEntryDraft: Equatable, Sendable {
         self.drivetrain = drivetrain
         self.peakHorsepower = peakHorsepower
         self.peakTorqueFootPounds = peakTorqueFootPounds
+        self.catalogReference = catalogReference
+        self.catalogValuesModified = catalogReference != nil && catalogValuesModified
     }
 
     init(car: CarInput) {
@@ -53,7 +81,9 @@ struct ManualEntryDraft: Equatable, Sendable {
             performanceClass: car.performanceClass,
             drivetrain: car.drivetrain,
             peakHorsepower: car.peakHorsepower,
-            peakTorqueFootPounds: car.peakTorqueFootPounds
+            peakTorqueFootPounds: car.peakTorqueFootPounds,
+            catalogReference: car.catalogReference,
+            catalogValuesModified: car.catalogValuesModified
         )
     }
 
@@ -131,10 +161,31 @@ struct ManualEntryDraft: Equatable, Sendable {
             performanceClass: performanceClass,
             drivetrain: drivetrain,
             peakHorsepower: peakHorsepower,
-            peakTorqueFootPounds: peakTorqueFootPounds
+            peakTorqueFootPounds: peakTorqueFootPounds,
+            catalogReference: catalogReference,
+            catalogValuesModified: catalogValuesModified
         )
 
         return car.isValid ? car : nil
+    }
+
+    private mutating func clearCatalogReferenceIfChanged<Value: Equatable>(
+        from oldValue: Value,
+        to newValue: Value
+    ) {
+        if oldValue != newValue {
+            catalogReference = nil
+            catalogValuesModified = false
+        }
+    }
+
+    private mutating func markCatalogValuesModifiedIfChanged<Value: Equatable>(
+        from oldValue: Value,
+        to newValue: Value
+    ) {
+        if catalogReference != nil, oldValue != newValue {
+            catalogValuesModified = true
+        }
     }
 }
 

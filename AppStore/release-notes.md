@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 1.1.9 (Build 13) - 2026-07-22
+
+- Added a searchable starter catalog for Forza Horizon 5 and Forza Horizon 6 with reviewed stock values for six cars.
+- Added source links, catalog revision details, and clear verification status before tuning and after reopening a saved tune.
+- Preserved catalog origin when values are edited while clearly labeling modified data.
+- Added the internal capability foundation for future exact upgrade requirements without guessing unavailable parts.
+
 ## Version 1.1.8 (Build 12) - 2026-07-21
 
 - Added the game-aware tuning foundation for Forza Horizon 5 and Forza Horizon 6, including their distinct PI class bands.
@@ -34,17 +41,19 @@
 
 ## App Store What's New
 
-ForzAdvisor now understands the distinct FH5 and FH6 performance-class systems, supports D and R classes, and preserves existing X-class garage tunes. This foundation keeps future game-specific tuning rules from being mixed together.
+Choose a car from a new FH5/FH6 starter catalog and begin with reviewed stock values. Every catalog entry shows its verification status and sources, and saved tunes retain their catalog origin—even when you edit the values before tuning.
 
 ## TestFlight Notes
 
-This TestFlight build is ready for end-to-end tuning feedback. Please verify D, R, and X class entry where available; New Tune; localized manual entry; photo or screenshot OCR and retry; discipline selection; provider status; generated tune sections; saving; reopening; copying; editing saved tunes; and Guided Refinement changes.
+Please test New Tune -> Choose a Car with both FH5 and FH6. Verify search, stock values, source links, Edit Values and Cancel, discipline selection, generated-tune provenance, saving, and reopening from the Garage. The first catalog contains six community-crosschecked cars; confirm values in game and report discrepancies.
 
-Offline formula tuning is the default path and does not require an account or API key. Camera and photo import are optional. Screenshots are processed on device. Anthropic API mode requires the tester to provide their own API key in Settings.
+FH5 stock data is available, but offline FH5 tune generation remains intentionally unavailable until its separate ruleset is validated. FH6 offline formulas remain experimental; catalog provenance does not imply formula validation.
+
+Offline formula tuning does not require an account or API key. Camera and photo import are optional. Screenshots are processed on device. Anthropic API mode requires the tester to provide their own API key in Settings.
 
 ## Reviewer Notes
 
-No login is required. Reviewers can complete the core app flow through New Tune -> Enter Manually -> Next -> select any discipline -> Save. Camera and photo import are optional review paths.
+No login is required. Reviewers can complete the catalog flow through New Tune -> Choose a Car -> select an FH6 car -> Use This Car -> Road -> Save. Manual entry, camera, and photo import remain available.
 
 ## Previous TestFlight Notes
 
