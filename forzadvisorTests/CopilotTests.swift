@@ -52,7 +52,7 @@ final class CopilotTests: XCTestCase {
 
     func testEveryWorkflowPhaseAnswersEverySupportedIntent() {
         let engine = CopilotEngine()
-        XCTAssertEqual(CopilotPhase.allCases.count, 13)
+        XCTAssertEqual(CopilotPhase.allCases.count, 14)
 
         for phase in CopilotPhase.allCases {
             let context = syntheticContext(for: phase)
@@ -84,6 +84,7 @@ final class CopilotTests: XCTestCase {
             (.result(tune, savedTuneID: nil, adjustmentChanges: [], thumbnailData: nil, playerNotes: ""), .result),
             (.tirePressureCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""), .tirePressureCapture),
             (.upgradePartCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""), .upgradePartCapture),
+            (.recordTestDrive(tune, savedTuneID: UUID(), thumbnailData: nil, playerNotes: ""), .recordTestDrive),
             (.editSavedTune(tune, savedTuneID: UUID(), playerNotes: "", thumbnailData: nil), .editSavedTune)
         ]
         let factory = CopilotContextFactory()
@@ -105,6 +106,7 @@ final class CopilotTests: XCTestCase {
             .manualEntry(draft, thumbnailData: Data("secret-image".utf8)),
             .tirePressureCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""),
             .upgradePartCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""),
+            .recordTestDrive(tune, savedTuneID: UUID(), thumbnailData: nil, playerNotes: "secret-note"),
             .editSavedTune(tune, savedTuneID: UUID(), playerNotes: "secret-note", thumbnailData: nil)
         ]
 
@@ -299,7 +301,7 @@ final class CopilotTests: XCTestCase {
             projection: phase == .result ? projectionFacts(readyCount: 2, isSaved: true) : nil,
             cannotSeeUnsavedEdits: [
                 .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture,
-                .upgradePartCapture, .editSavedTune
+                .upgradePartCapture, .recordTestDrive, .editSavedTune
             ].contains(phase)
         )
     }

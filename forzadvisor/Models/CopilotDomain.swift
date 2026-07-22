@@ -21,6 +21,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
     case result
     case tirePressureCapture
     case upgradePartCapture
+    case recordTestDrive
     case editSavedTune
 
     var title: String {
@@ -37,6 +38,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
         case .result: "Tune Result"
         case .tirePressureCapture: "Tire Lab"
         case .upgradePartCapture: "Upgrade Lab"
+        case .recordTestDrive: "Record Test Drive"
         case .editSavedTune: "Edit Saved Tune"
         }
     }
@@ -257,6 +259,8 @@ struct CopilotEngine {
             return unsavedEditsMessage("Complete the exact game-build, tire compound, and front/rear range checklist, then submit through the validated button below.")
         case .upgradePartCapture:
             return unsavedEditsMessage("Confirm the stock-car attestation and every requested tuning-control part, then submit through the validated button below.")
+        case .recordTestDrive:
+            return unsavedEditsMessage("Describe this one session, confirm the tested setup, then explicitly opt in if you want to create reusable deidentified evidence.")
         case .editSavedTune:
             return unsavedEditsMessage("Use Save for metadata and notes. Use Save & Re-tune when the underlying screen recommends recalculating after material car changes.")
         }
@@ -266,7 +270,7 @@ struct CopilotEngine {
         switch context.phase {
         case .catalogPicker, .catalogReview:
             return "Treat the reviewed catalog as a starting point and confirm its stock facts in your current game build."
-        case .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture, .upgradePartCapture, .editSavedTune:
+        case .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture, .upgradePartCapture, .recordTestDrive, .editSavedTune:
             return unsavedEditsMessage("Trust only facts you personally confirm in the underlying screen and any validation it shows.")
         case .loading:
             guard let projection = context.projection else {
@@ -305,6 +309,8 @@ struct CopilotEngine {
             return unsavedEditsMessage("The underlying checklist identifies any missing build, compound, range, step, or attestation fact.")
         case .upgradePartCapture:
             return unsavedEditsMessage("The underlying checklist identifies any missing stock-car attestation or tuning-control part fact.")
+        case .recordTestDrive:
+            return unsavedEditsMessage("The underlying form identifies missing session facts, confirmations, symptoms, or reuse permission.")
         case .editSavedTune:
             return unsavedEditsMessage("The underlying form shows validation issues and whether material changes need Save & Re-tune.")
         }

@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 1.1.16 (Build 20) - 2026-07-22
+
+- Added Record Test Drive for eligible saved FH6 exact-stock tunes, with structured session conditions, verdicts, and handling feedback.
+- Added explicit, off-by-default permission for deidentified benchmark reuse plus deterministic JSON sharing through the system share sheet.
+- Bound validation records to the current verified tune revision, exact local tire and upgrade evidence, observed game build, and current FH6 ruleset.
+- Kept records local unless shared and excluded free-form track text, notes, screenshots, telemetry, device data, provider details, and internal tune identifiers.
+
 ## Version 1.1.15 (Build 19) - 2026-07-22
 
 - Tire Lab now records the stock car's forward gear count alongside the exact FH6 tire-pressure ranges, compound, and observed game build.
@@ -76,13 +83,15 @@
 
 ## App Store What's New
 
-FH6 Tune Lab now records the stock car's forward gear count with its tire-pressure ranges, compound, and game build. The app never guesses a missing count, and older tire observations remain safely readable until you re-verify them.
+Eligible saved FH6 exact-stock tunes can now record a structured test-drive result and share permissioned, deidentified validation JSON. Records stay local unless you share them and exclude notes, free-form locations, screenshots, telemetry, provider details, and internal tune IDs.
 
 ## TestFlight Notes
 
-Please test New Tune -> Choose a Car -> select an FH6 catalog car -> generate a tune -> Verify Tire Pressures. Confirm the forward-gear field starts blank, accepts the count shown on the transmission/gearing screen, excludes reverse, and blocks blank, fractional, or out-of-range values. After regeneration, reopen the saved tune and confirm the exact build still carries the observed gear count.
+Please test New Tune -> Choose a Car -> select an FH6 catalog car -> generate and save a tune -> verify every Upgrade Lab part and the Tire Lab ranges, compound, forward gear count, and game build. On the saved result, confirm Record Test Drive appears only after the exact-stock evidence is complete.
 
-If you use a locale with non-Latin numerals, please confirm the forward-gear field accepts your localized whole-number digits.
+In Record Test Drive, confirm the course is selected from controlled types, permission starts off, unmet requirements are explained, and Adjust or Reject requires handling feedback while Keep carries none. After creation, reopen the tune, share the latest validation JSON, and confirm deleting the local record warns that already-shared copies cannot be recalled.
+
+If you switch between comma-decimal and dot-decimal device regions, please confirm signed settings such as negative camber remain valid and thousands grouping remains correct.
 
 The searchable starter catalog remains available for both games with six community-crosschecked cars. Confirm catalog values in game and report discrepancies.
 
@@ -92,7 +101,7 @@ Offline formula tuning does not require an account or API key. Camera and photo 
 
 ## Reviewer Notes
 
-No login is required. Reviewers can complete the catalog flow through New Tune -> Choose a Car -> select an FH6 car -> Use This Car -> Road -> Save. Manual entry, camera, and photo import remain available.
+No login is required. Reviewers can complete the catalog flow through New Tune -> Choose a Car -> select an FH6 car -> Use This Car -> Road -> Save. Record Test Drive appears only after the saved FH6 stock build has complete local Upgrade Lab and Tire Lab verification. Manual entry, camera, and photo import remain available.
 
 ## Previous TestFlight Notes
 

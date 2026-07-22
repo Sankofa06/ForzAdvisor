@@ -22,11 +22,15 @@ struct TuneResultView: View {
     let onEdit: () -> Void
     let onVerifyTirePressures: (() -> Void)?
     let onVerifyUpgradeParts: (() -> Void)?
+    let latestValidationRecord: FirstPartyValidationRecord?
+    let onRecordTestDrive: (() -> Void)?
+    let onDeleteValidationRecord: (FirstPartyValidationRecord) -> Void
     let onFeedback: (TuneFeedback) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
     @State private var expandedSectionTitles = Set(TuneSection.menuOrder.map(\.title))
     @State private var copiedExport: CopiedExport?
+    @State private var recordPendingDeletion: FirstPartyValidationRecord?
 
     private var isAdjusting: Bool {
         activeFeedback != nil
@@ -208,6 +212,46 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
 
+            if !isStreaming,
+               onRecordTestDrive != nil || latestValidationRecord != nil {
+                Section("Accuracy Evidence") {
+                    if let onRecordTestDrive {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Button("Record Test Drive", action: onRecordTestDrive)
+                                .buttonStyle(.borderedProminent)
+                                .accessibilityIdentifier("recordTestDriveButton")
+                            Text("Create permission-clear evidence from one test session after applying every exported setting.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+
+                    if let record = latestValidationRecord,
+                       let json = record.deterministicJSONString {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Latest session recorded", systemImage: "checkmark.seal")
+                                .font(.subheadline.weight(.semibold))
+                            Text("\(record.session.courseType.title) · \(record.session.runCount) run\(record.session.runCount == 1 ? "" : "s") · \(record.outcome.verdict.rawValue.capitalized)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            ShareLink(item: json, subject: Text("ForzAdvisor validation record")) {
+                                Label("Share validation JSON", systemImage: "square.and.arrow.up")
+                                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("shareValidationRecordButton")
+                            Button("Delete latest local record", role: .destructive) {
+                                recordPendingDeletion = record
+                            }
+                            .accessibilityIdentifier("deleteValidationRecordButton")
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+                .forzAdvisorRowBackground()
+            }
+
             if isSaved && !isStreaming && !eligibleFeedback.isEmpty {
                 Section("Guided Refinement") {
                     GuidedRefinementView(
@@ -294,6 +338,24 @@ struct TuneResultView: View {
                     .disabled(isSaved || isAdjusting || isStreaming)
                     .accessibilityIdentifier("saveTuneButton")
             }
+        }
+        .alert(
+            "Delete local validation record?",
+            isPresented: Binding(
+                get: { recordPendingDeletion != nil },
+                set: { if !$0 { recordPendingDeletion = nil } }
+            ),
+            presenting: recordPendingDeletion
+        ) { record in
+            Button("Delete Local Record", role: .destructive) {
+                onDeleteValidationRecord(record)
+                recordPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                recordPendingDeletion = nil
+            }
+        } message: { _ in
+            Text("This removes only the local copy. It cannot recall JSON files you already shared.")
         }
     }
 

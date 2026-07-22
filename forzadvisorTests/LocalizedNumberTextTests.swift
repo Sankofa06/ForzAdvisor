@@ -20,6 +20,7 @@ final class LocalizedNumberTextTests: XCTestCase {
 
     func testGermanParsingRecognizesLocalizedGroupingSeparator() throws {
         XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("1.200", locale: germanLocale)), 1_200, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("-1.200", locale: germanLocale)), -1_200, accuracy: 0.0001)
     }
 
     func testGermanParsingFallsBackToInvariantDecimalDot() throws {
@@ -30,6 +31,18 @@ final class LocalizedNumberTextTests: XCTestCase {
         XCTAssertEqual(LocalizedNumberText.format(29, fractionDigits: 1, locale: usLocale), "29.0")
         XCTAssertEqual(LocalizedNumberText.format(1_200, fractionDigits: 0, locale: usLocale), "1,200")
         XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("1,200", locale: usLocale)), 1_200, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("+1,200", locale: usLocale)), 1_200, accuracy: 0.0001)
         XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("53.5", locale: usLocale)), 53.5, accuracy: 0.0001)
+    }
+
+    func testSignedDecimalCommaSurvivesLocaleSwitch() throws {
+        XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("-1,5", locale: usLocale)), -1.5, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("+1,5", locale: usLocale)), 1.5, accuracy: 0.0001)
+    }
+
+    func testParsingRejectsMalformedSigns() {
+        for text in ["--1,5", "+-1,5", "1-,5", "1,-5", "1,+5", "+", "-"] {
+            XCTAssertNil(LocalizedNumberText.parse(text, locale: usLocale), "Expected \(text) to be rejected")
+        }
     }
 }

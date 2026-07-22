@@ -127,6 +127,8 @@ enum TuneFieldID: Hashable, Sendable {
         case .differentialCenterBalance: "differentialCenterBalance"
         }
     }
+
+    var stableID: String { stableValue }
 }
 
 extension TuneFieldID: Codable {

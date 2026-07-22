@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-06-15
+Effective date: 2026-07-22
 
 Public URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
 
@@ -17,6 +17,12 @@ Camera photos and imported screenshots are processed on device with Apple's Visi
 On an eligible exact-build result, you can ask ForzAdvisor to prepare a verified build card locally and open the iOS system share sheet. The card includes the game, car identity, discipline, class and PI, drivetrain, observed game build, settings that passed local verification, and at most one tuning-control upgrade path.
 
 The shared card excludes garage notes, photos, screenshots, OCR content, API keys, provider details, internal identifiers, timestamps, and evidence or source records. ForzAdvisor does not send the card until you choose a destination in the system share sheet, and the app does not operate that destination or record share history, destinations, or analytics.
+
+For eligible saved exact-build tunes, you may also record one first-party test-drive session and explicitly opt in to deidentified benchmark reuse. The public JSON contains a submission UUID, creation timestamp, consent version, permission-receipt UUID, game and observed build with capture timestamp, allow-listed stock vehicle facts (including catalog ID, tire-compound ID and observed display name, and gear count), canonical shop availability, discipline, tune-generation timestamp, public ruleset versions, typed applied settings, controlled course type, surface, input type, run count, verdict, selected handling symptoms, confirmations, explicit unknowns and exclusions, and integrity fingerprints.
+
+The public JSON does not contain the local record UUID, raw tune UUID, internal revision link, free-form track or location text, garage or tune notes, attachments, lap time, telemetry, assists, weather, location, device identifiers, provider details, ruleset provenance or source records, or public attribution.
+
+Creating a validation record does not upload it. Sharing happens only when you choose the system share sheet, and ForzAdvisor keeps no share destination or history. You can delete the latest matching local record; deletion cannot recall a JSON file you already shared. The app makes no background-upload, receiver, or remote-revocation claim for these records.
 
 ## Offline And On-Device Tuning
 
@@ -36,7 +42,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes and locally stored validation records in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

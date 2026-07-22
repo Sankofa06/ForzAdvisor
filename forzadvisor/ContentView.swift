@@ -223,6 +223,28 @@ struct ContentView: View {
                             description: Text("Return to the tune and select a verified catalog car.")
                         )
                     }
+                case .recordTestDrive(let tune, let savedTuneID, let thumbnailData, let playerNotes):
+                    FirstPartyValidationCaptureView(
+                        tune: tune,
+                        onBack: {
+                            step = .result(
+                                tune,
+                                savedTuneID: savedTuneID,
+                                adjustmentChanges: [],
+                                thumbnailData: thumbnailData,
+                                playerNotes: playerNotes
+                            )
+                        },
+                        onSubmit: { capture in
+                            recordTestDrive(
+                                capture,
+                                for: tune,
+                                savedTuneID: savedTuneID,
+                                thumbnailData: thumbnailData,
+                                playerNotes: playerNotes
+                            )
+                        }
+                    )
                 case .editSavedTune(let tune, let savedTuneID, let playerNotes, let thumbnailData):
                     SavedTuneEditView(
                         draft: SavedTuneEditDraft(tune: tune, playerNotes: playerNotes),
@@ -325,6 +347,15 @@ struct ContentView: View {
         let resolvedSavedTuneID = isStreaming ? savedTuneID : (resolvedSavedTune?.id ?? savedTuneID)
         let resolvedThumbnailData = resolvedSavedTune?.thumbnailData ?? thumbnailData
         let resolvedPlayerNotes = resolvedSavedTune?.playerNotes ?? playerNotes
+        let persistedTune = resolvedSavedTune?.tuneResult
+        let validationEligibility = FirstPartyValidationRecordFactory().eligibility(
+            for: tune,
+            savedTune: persistedTune,
+            isStreaming: isStreaming
+        )
+        let latestValidationRecord = resolvedSavedTune?
+            .validationRecords(matching: tune)
+            .last
 
         TuneResultView(
             tune: tune,
@@ -381,11 +412,33 @@ struct ContentView: View {
                     playerNotes: resolvedPlayerNotes
                 )
             },
+            latestValidationRecord: latestValidationRecord,
+            onRecordTestDrive: validationEligibility.isSuccess && resolvedSavedTuneID != nil ? {
+                guard let resolvedSavedTuneID else { return }
+                tuneWorkflow.cancelAdjustment()
+                step = .recordTestDrive(
+                    tune,
+                    savedTuneID: resolvedSavedTuneID,
+                    thumbnailData: resolvedThumbnailData,
+                    playerNotes: resolvedPlayerNotes
+                )
+            } : nil,
+            onDeleteValidationRecord: { record in
+                guard let resolvedSavedTuneID else { return }
+                deleteValidationRecord(record, savedTuneID: resolvedSavedTuneID)
+            },
             onFeedback: { feedback in
                 guard let resolvedSavedTuneID else { return }
                 adjust(tune, savedTuneID: resolvedSavedTuneID, feedback: feedback)
             }
         )
+    }
+}
+
+private extension Result {
+    var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
     }
 }
 

@@ -40,7 +40,7 @@ enum TuneAdjustment: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-enum TuneFeedback: String, CaseIterable, Identifiable, Sendable {
+enum TuneFeedback: String, CaseIterable, Codable, Hashable, Identifiable, Sendable {
     case pushesWide
     case oversteersOnExit
     case snapsOnLift

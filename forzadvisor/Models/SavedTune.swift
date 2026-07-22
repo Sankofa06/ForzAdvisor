@@ -29,6 +29,7 @@ final class SavedTune {
 
     @Attribute(.externalStorage) private var tuneData: Data
     @Attribute(.externalStorage) var thumbnailData: Data?
+    @Attribute(.externalStorage) private var firstPartyValidationRecordsData: Data? = nil
 
     @MainActor
     init(
@@ -54,6 +55,7 @@ final class SavedTune {
         self.updatedAt = now
         self.tuneData = try Self.encoder.encode(tune)
         self.thumbnailData = thumbnailData
+        self.firstPartyValidationRecordsData = nil
     }
 
     @MainActor
@@ -126,6 +128,68 @@ final class SavedTune {
         }
     }
 
+    @MainActor
+    var firstPartyValidationRecords: [FirstPartyValidationRecord] {
+        (try? decodedValidationRecords()) ?? []
+    }
+
+    @MainActor
+    func validationRecords(matching tune: TuneResult) -> [FirstPartyValidationRecord] {
+        guard let fingerprint = FirstPartyValidationRecordFactory().revisionFingerprint(for: tune) else {
+            return []
+        }
+        return firstPartyValidationRecords
+            .filter {
+                $0.tuneRevisionFingerprint == fingerprint
+                    && FirstPartyValidationRecordFactory().isValid($0)
+            }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    @MainActor
+    func appendValidationRecord(_ record: FirstPartyValidationRecord) throws {
+        guard FirstPartyValidationRecordFactory().isValid(record) else {
+            throw FirstPartyValidationError.invalidStoredRecord
+        }
+        var records = try decodedValidationRecords()
+        guard !records.contains(where: { $0.recordID == record.recordID }) else { return }
+        records.append(record)
+        firstPartyValidationRecordsData = try Self.encoder.encode(records)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteValidationRecord(id: UUID) throws -> Bool {
+        var records = try decodedValidationRecords()
+        let priorCount = records.count
+        records.removeAll { $0.recordID == id }
+        guard records.count != priorCount else { return false }
+        firstPartyValidationRecordsData = records.isEmpty ? nil : try Self.encoder.encode(records)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
+    private func decodedValidationRecords() throws -> [FirstPartyValidationRecord] {
+        guard let firstPartyValidationRecordsData else { return [] }
+        do {
+            return try Self.decoder.decode(
+                [FirstPartyValidationRecord].self,
+                from: firstPartyValidationRecordsData
+            )
+        } catch {
+            throw SavedTuneValidationRecordError.corruptStorage
+        }
+    }
+
+#if DEBUG
+    @MainActor
+    func replaceValidationRecordsDataForTesting(_ data: Data?) {
+        firstPartyValidationRecordsData = data
+    }
+#endif
+
     private static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -137,4 +201,12 @@ final class SavedTune {
         decoder.dateDecodingStrategy = .iso8601
         return decoder
     }()
+}
+
+enum SavedTuneValidationRecordError: LocalizedError, Equatable {
+    case corruptStorage
+
+    var errorDescription: String? {
+        "Stored validation records are corrupt. No records were changed."
+    }
 }

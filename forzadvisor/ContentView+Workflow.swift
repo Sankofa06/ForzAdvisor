@@ -255,6 +255,53 @@ extension ContentView {
         }
     }
 
+    func recordTestDrive(
+        _ capture: FirstPartyValidationCapture,
+        for tune: TuneResult,
+        savedTuneID: UUID,
+        thumbnailData: Data?,
+        playerNotes: String
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID),
+                  let persistedTune = savedTune.tuneResult else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            let record = try FirstPartyValidationRecordFactory().make(
+                tune: tune,
+                savedTune: persistedTune,
+                isStreaming: false,
+                capture: capture
+            )
+            try savedTune.appendValidationRecord(record)
+            try modelContext.save()
+            step = .result(
+                tune,
+                savedTuneID: savedTuneID,
+                adjustmentChanges: [],
+                thumbnailData: thumbnailData,
+                playerNotes: playerNotes
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteValidationRecord(
+        _ record: FirstPartyValidationRecord,
+        savedTuneID: UUID
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            _ = try savedTune.deleteValidationRecord(id: record.recordID)
+            try modelContext.save()
+        } catch {
+            errorMessage = "Could not delete this validation record: \(error.localizedDescription)"
+        }
+    }
+
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
         if let tune = savedTune.tuneResult {
@@ -378,6 +425,7 @@ enum WorkflowStep {
     case result(TuneResult, savedTuneID: UUID?, adjustmentChanges: [TuneAdjustmentChange], thumbnailData: Data?, playerNotes: String)
     case tirePressureCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
     case upgradePartCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
+    case recordTestDrive(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
     case editSavedTune(TuneResult, savedTuneID: UUID, playerNotes: String, thumbnailData: Data?)
 }
 

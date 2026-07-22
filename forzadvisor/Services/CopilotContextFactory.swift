@@ -45,6 +45,8 @@ struct CopilotContextFactory {
             return context(.tirePressureCapture, cannotSeeUnsavedEdits: true)
         case .upgradePartCapture:
             return context(.upgradePartCapture, cannotSeeUnsavedEdits: true)
+        case .recordTestDrive:
+            return context(.recordTestDrive, cannotSeeUnsavedEdits: true)
         case .editSavedTune:
             return context(.editSavedTune, cannotSeeUnsavedEdits: true)
         }
