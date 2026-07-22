@@ -111,6 +111,115 @@ final class TuneAccuracyContractTests: XCTestCase {
         XCTAssertEqual(decoded, snapshot)
     }
 
+    func testCapabilityOnlySnapshotCanRepresentAnUnknownGameBuild() throws {
+        var snapshot = validSnapshot()
+        snapshot.kind = .capabilityOnly
+        snapshot.gameBuild.version = nil
+        snapshot.gameBuild.capturedAt = nil
+        snapshot.tireCompound = nil
+        snapshot.gearCount = nil
+        snapshot.constraints = []
+        snapshot.evidenceSources = []
+
+        XCTAssertTrue(snapshot.isValid, "Unexpected issues: \(snapshot.validationIssues)")
+        XCTAssertFalse(snapshot.gameBuild.hasKnownVersion)
+        XCTAssertEqual(
+            try JSONDecoder().decode(VehicleBuildSnapshot.self, from: JSONEncoder().encode(snapshot)),
+            snapshot
+        )
+    }
+
+    func testExactObservationRequiresCompleteKnownGameBuild() {
+        var snapshot = validSnapshot()
+        snapshot.gameBuild.version = nil
+        snapshot.gameBuild.capturedAt = nil
+
+        XCTAssertTrue(snapshot.validationIssues.contains(.exactBuildObservationRequiresVersion))
+
+        snapshot.kind = .capabilityOnly
+        snapshot.constraints = []
+        snapshot.evidenceSources = []
+        snapshot.tireCompound = nil
+        snapshot.gearCount = nil
+        snapshot.gameBuild.version = "2026.07"
+
+        XCTAssertTrue(snapshot.validationIssues.contains(.incompleteGameBuildReference))
+    }
+
+    func testCapabilityOnlySnapshotRejectsExactDataButAcceptsVersionlessGlobalEvidence() {
+        var snapshot = validSnapshot()
+        snapshot.kind = .capabilityOnly
+        snapshot.gameBuild.version = nil
+        snapshot.gameBuild.capturedAt = nil
+        snapshot.tireCompound = nil
+        snapshot.gearCount = nil
+
+        XCTAssertTrue(snapshot.validationIssues.contains(.capabilityOnlyContainsExactBuildData))
+        XCTAssertTrue(snapshot.validationIssues.contains(.exactConstraintRequiresKnownBuild(.frontTirePressure)))
+        XCTAssertTrue(snapshot.validationIssues.contains(.exactEvidenceRequiresKnownBuild("capture.fh6.supra")))
+
+        var globalConstraint = tireConstraint()
+        globalConstraint.scope = .gameGlobal
+        globalConstraint.evidenceIDs = ["rules.fh6.global"]
+        snapshot.constraints = [globalConstraint]
+        snapshot.evidenceSources = [TuneDataProvenance(
+            id: "rules.fh6.global",
+            game: .fh6,
+            gameBuildVersion: nil,
+            scope: .gameGlobal,
+            source: "forzadvisor.rules",
+            version: "1",
+            capturedAt: Date(timeIntervalSinceReferenceDate: 20),
+            confidence: .high
+        )]
+
+        XCTAssertTrue(snapshot.isValid, "Unexpected issues: \(snapshot.validationIssues)")
+    }
+
+    func testCapabilityOnlySnapshotRejectsInstalledPartsAndTireCompound() {
+        var snapshot = validSnapshot()
+        snapshot.kind = .capabilityOnly
+        snapshot.gameBuild.version = nil
+        snapshot.gameBuild.capturedAt = nil
+        snapshot.gearCount = nil
+        snapshot.constraints = []
+        snapshot.evidenceSources = []
+        snapshot.tireCompound = nil
+        snapshot.capabilityProfile.parts = [TuneVehiclePart(
+            partID: .raceTransmission,
+            availability: .installed,
+            evidence: TuneEvidence(
+                confidence: .high,
+                source: "adversarial.payload",
+                version: "1"
+            )
+        )]
+
+        XCTAssertTrue(snapshot.validationIssues.contains(.capabilityOnlyContainsExactBuildData))
+
+        snapshot.capabilityProfile.parts = []
+        snapshot.tireCompound = TireCompoundReference(
+            id: "stock",
+            displayName: "Stock",
+            evidenceIDs: []
+        )
+
+        XCTAssertTrue(snapshot.validationIssues.contains(.capabilityOnlyContainsExactBuildData))
+    }
+
+    func testLegacySnapshotWithoutKindDecodesFailClosed() throws {
+        let encoded = try JSONEncoder().encode(validSnapshot())
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "kind")
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(VehicleBuildSnapshot.self, from: legacyData)
+
+        XCTAssertEqual(decoded.kind, .capabilityOnly)
+        XCTAssertFalse(decoded.isValid)
+        XCTAssertTrue(decoded.validationIssues.contains(.capabilityOnlyContainsExactBuildData))
+    }
+
     func testSnapshotRejectsIdentityDrivetrainCatalogAndSchemaMismatches() {
         var snapshot = validSnapshot()
         snapshot.schemaVersion = 99
@@ -358,6 +467,7 @@ final class TuneAccuracyContractTests: XCTestCase {
         return VehicleBuildSnapshot(
             schemaVersion: VehicleBuildSnapshot.currentSchemaVersion,
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000002")!,
+            kind: .exactBuildObservation,
             capturedAt: Date(timeIntervalSinceReferenceDate: 20),
             gameBuild: GameBuildReference(
                 game: .fh6,

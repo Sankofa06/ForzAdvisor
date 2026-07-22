@@ -16,9 +16,18 @@ extension ContentView {
         origin: InputOrigin,
         thumbnailData: Data?,
         saveTo savedTuneID: UUID? = nil,
-        playerNotes: String = ""
+        playerNotes: String = "",
+        preserving buildSnapshot: VehicleBuildSnapshot? = nil
     ) {
-        let request = TuneRequest(car: input, discipline: discipline)
+        let resolvedBuildSnapshot = origin.resolvedBuildSnapshot(
+            matching: input,
+            preserving: buildSnapshot
+        )
+        let request = TuneRequest(
+            car: input,
+            discipline: discipline,
+            buildSnapshot: resolvedBuildSnapshot
+        )
         step = .loading(
             request,
             thumbnailData: thumbnailData,
@@ -106,7 +115,8 @@ extension ContentView {
                 origin: .manual(draft.car),
                 thumbnailData: thumbnailData,
                 saveTo: savedTuneID,
-                playerNotes: draft.playerNotes
+                playerNotes: draft.playerNotes,
+                preserving: originalTune.request.buildSnapshot
             )
             return
         }
@@ -253,7 +263,8 @@ extension ContentView {
                 origin: origin,
                 thumbnailData: thumbnailData,
                 saveTo: savedTuneID,
-                playerNotes: playerNotes
+                playerNotes: playerNotes,
+                preserving: request.buildSnapshot
             )
         }
     }
@@ -307,6 +318,25 @@ enum InputOrigin {
         case .catalog(let selection):
             .catalogReview(selection)
         }
+    }
+
+    func buildSnapshot(matching input: CarInput, capturedAt: Date = .now) -> VehicleBuildSnapshot? {
+        guard case .catalog(let selection) = self,
+              input == selection.carInput else {
+            return nil
+        }
+        return selection.capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
+    }
+
+    func resolvedBuildSnapshot(
+        matching input: CarInput,
+        preserving snapshot: VehicleBuildSnapshot?,
+        capturedAt: Date = .now
+    ) -> VehicleBuildSnapshot? {
+        if snapshot?.isValid == true, snapshot?.matches(car: input) == true {
+            return snapshot
+        }
+        return buildSnapshot(matching: input, capturedAt: capturedAt)
     }
 }
 

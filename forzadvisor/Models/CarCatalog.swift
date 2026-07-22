@@ -141,4 +141,24 @@ struct CatalogCarSelection: Codable, Equatable, Sendable {
             catalogReference: reference
         )
     }
+
+    func capabilityOnlyBuildSnapshot(capturedAt: Date = .now) -> VehicleBuildSnapshot {
+        VehicleBuildSnapshot(
+            schemaVersion: VehicleBuildSnapshot.currentSchemaVersion,
+            id: UUID(),
+            kind: .capabilityOnly,
+            capturedAt: capturedAt,
+            gameBuild: GameBuildReference(
+                game: entry.game,
+                version: nil,
+                capturedAt: nil
+            ),
+            car: carInput,
+            capabilityProfile: entry.capabilityProfile,
+            tireCompound: nil,
+            gearCount: nil,
+            constraints: [],
+            evidenceSources: []
+        )
+    }
 }

@@ -305,8 +305,18 @@ struct TuneFieldConstraint: Codable, Equatable, Sendable {
 
 struct GameBuildReference: Codable, Equatable, Sendable {
     var game: ForzaGame
-    var version: String
-    var capturedAt: Date
+    var version: String?
+    var capturedAt: Date?
+
+    var hasKnownVersion: Bool {
+        version?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            && capturedAt != nil
+    }
+}
+
+enum VehicleBuildSnapshotKind: String, Codable, Sendable {
+    case capabilityOnly
+    case exactBuildObservation
 }
 
 struct TuneDataProvenance: Codable, Equatable, Identifiable, Sendable {
@@ -329,6 +339,11 @@ struct TireCompoundReference: Codable, Equatable, Sendable {
 enum VehicleBuildSnapshotIssue: Equatable, Sendable {
     case unsupportedSchema(Int)
     case invalidGameBuild
+    case incompleteGameBuildReference
+    case exactBuildObservationRequiresVersion
+    case exactConstraintRequiresKnownBuild(TuneFieldID)
+    case exactEvidenceRequiresKnownBuild(String)
+    case capabilityOnlyContainsExactBuildData
     case invalidCar
     case incompleteVehicleIdentity
     case invalidVehicleStatistics
@@ -353,6 +368,7 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
 
     var schemaVersion: Int
     var id: UUID
+    var kind: VehicleBuildSnapshotKind
     var capturedAt: Date
     var gameBuild: GameBuildReference
     var car: CarInput
@@ -362,12 +378,75 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
     var constraints: [TuneFieldConstraint]
     var evidenceSources: [TuneDataProvenance]
 
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case id
+        case kind
+        case capturedAt
+        case gameBuild
+        case car
+        case capabilityProfile
+        case tireCompound
+        case gearCount
+        case constraints
+        case evidenceSources
+    }
+
+    init(
+        schemaVersion: Int,
+        id: UUID,
+        kind: VehicleBuildSnapshotKind,
+        capturedAt: Date,
+        gameBuild: GameBuildReference,
+        car: CarInput,
+        capabilityProfile: TuneVehicleCapabilityProfile,
+        tireCompound: TireCompoundReference?,
+        gearCount: Int?,
+        constraints: [TuneFieldConstraint],
+        evidenceSources: [TuneDataProvenance]
+    ) {
+        self.schemaVersion = schemaVersion
+        self.id = id
+        self.kind = kind
+        self.capturedAt = capturedAt
+        self.gameBuild = gameBuild
+        self.car = car
+        self.capabilityProfile = capabilityProfile
+        self.tireCompound = tireCompound
+        self.gearCount = gearCount
+        self.constraints = constraints
+        self.evidenceSources = evidenceSources
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        id = try container.decode(UUID.self, forKey: .id)
+        kind = try container.decodeIfPresent(VehicleBuildSnapshotKind.self, forKey: .kind) ?? .capabilityOnly
+        capturedAt = try container.decode(Date.self, forKey: .capturedAt)
+        gameBuild = try container.decode(GameBuildReference.self, forKey: .gameBuild)
+        car = try container.decode(CarInput.self, forKey: .car)
+        capabilityProfile = try container.decode(TuneVehicleCapabilityProfile.self, forKey: .capabilityProfile)
+        tireCompound = try container.decodeIfPresent(TireCompoundReference.self, forKey: .tireCompound)
+        gearCount = try container.decodeIfPresent(Int.self, forKey: .gearCount)
+        constraints = try container.decode([TuneFieldConstraint].self, forKey: .constraints)
+        evidenceSources = try container.decode([TuneDataProvenance].self, forKey: .evidenceSources)
+    }
+
     var validationIssues: [VehicleBuildSnapshotIssue] {
         var issues: [VehicleBuildSnapshotIssue] = []
         if schemaVersion != Self.currentSchemaVersion {
             issues.append(.unsupportedSchema(schemaVersion))
         }
-        if normalized(gameBuild.version).isEmpty {
+        let hasVersion = normalized(gameBuild.version ?? "").isEmpty == false
+        let hasBuildCaptureDate = gameBuild.capturedAt != nil
+        if hasVersion != hasBuildCaptureDate {
+            issues.append(.incompleteGameBuildReference)
+        }
+        if kind == .exactBuildObservation && !gameBuild.hasKnownVersion {
+            issues.append(.exactBuildObservationRequiresVersion)
+        }
+        if gameBuild.version.map({ normalized($0) })?.isEmpty == true {
             issues.append(.invalidGameBuild)
         }
         if !car.isValid {
@@ -401,6 +480,13 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
         if let gearCount, !(1...10).contains(gearCount) {
             issues.append(.invalidGearCount(gearCount))
         }
+        if kind == .capabilityOnly {
+            if gearCount != nil
+                || tireCompound != nil
+                || capabilityProfile.parts.contains(where: { $0.availability == .installed }) {
+                issues.append(.capabilityOnlyContainsExactBuildData)
+            }
+        }
 
         var seenFields = Set<TuneFieldID>()
         for constraint in constraints {
@@ -419,6 +505,14 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
                     issues.append(.gearIndexExceedsCount(index: index, count: gearCount))
                 }
             }
+            if constraint.scope == .exactVehicleBuild {
+                if kind != .exactBuildObservation {
+                    issues.append(.capabilityOnlyContainsExactBuildData)
+                }
+                if !gameBuild.hasKnownVersion {
+                    issues.append(.exactConstraintRequiresKnownBuild(constraint.field))
+                }
+            }
         }
 
         var evidenceByID: [String: TuneDataProvenance] = [:]
@@ -434,10 +528,24 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
             if evidenceByID.updateValue(evidence, forKey: id) != nil {
                 issues.append(.duplicateEvidenceID(id))
             }
-            if evidence.game != car.game
-                || (evidence.scope == .exactVehicleBuild
-                    && evidence.gameBuildVersion != gameBuild.version) {
+            if evidence.game != car.game {
                 issues.append(.evidenceScopeMismatch(id))
+            }
+            switch evidence.scope {
+            case .exactVehicleBuild:
+                if kind != .exactBuildObservation {
+                    issues.append(.capabilityOnlyContainsExactBuildData)
+                }
+                if !gameBuild.hasKnownVersion {
+                    issues.append(.exactEvidenceRequiresKnownBuild(id))
+                } else if evidence.gameBuildVersion != gameBuild.version {
+                    issues.append(.evidenceScopeMismatch(id))
+                }
+            case .gameGlobal:
+                if let evidenceBuild = evidence.gameBuildVersion,
+                   evidenceBuild != gameBuild.version {
+                    issues.append(.evidenceScopeMismatch(id))
+                }
             }
         }
 

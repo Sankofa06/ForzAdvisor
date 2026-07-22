@@ -100,6 +100,75 @@ final class CarCatalogTests: XCTestCase {
         XCTAssertEqual(selection.reference.sources, entry.sources)
     }
 
+    func testUntouchedCatalogOriginCreatesCapabilityOnlyUnknownBuildSnapshot() throws {
+        let catalog = try loadedSnapshot()
+        let entry = try XCTUnwrap(catalog.entries.first { $0.id == "fh6-2020-toyota-gr-supra" })
+        let selection = catalog.selection(for: entry)
+        let capturedAt = Date(timeIntervalSinceReferenceDate: 42)
+
+        let snapshot = try XCTUnwrap(
+            InputOrigin.catalog(selection).buildSnapshot(matching: selection.carInput, capturedAt: capturedAt)
+        )
+
+        XCTAssertEqual(snapshot.kind, .capabilityOnly)
+        XCTAssertEqual(snapshot.capturedAt, capturedAt)
+        XCTAssertEqual(snapshot.car, selection.carInput)
+        XCTAssertEqual(snapshot.capabilityProfile, entry.capabilityProfile)
+        XCTAssertNil(snapshot.gameBuild.version)
+        XCTAssertNil(snapshot.gameBuild.capturedAt)
+        XCTAssertTrue(snapshot.constraints.isEmpty)
+        XCTAssertTrue(snapshot.evidenceSources.isEmpty)
+        XCTAssertTrue(snapshot.isValid, "Unexpected issues: \(snapshot.validationIssues)")
+    }
+
+    func testEditedCatalogManualAndOCROriginsDoNotCreateSnapshots() throws {
+        let catalog = try loadedSnapshot()
+        let entry = try XCTUnwrap(catalog.entries.first { $0.id == "fh6-2020-toyota-gr-supra" })
+        let selection = catalog.selection(for: entry)
+        var edited = selection.carInput
+        edited.weightPounds += 1
+
+        XCTAssertNil(InputOrigin.catalog(selection).buildSnapshot(matching: edited))
+        XCTAssertNil(InputOrigin.manual(selection.carInput).buildSnapshot(matching: selection.carInput))
+        XCTAssertNil(InputOrigin.ocr(OCRConfirmationDraft()).buildSnapshot(matching: selection.carInput))
+    }
+
+    func testRetryAndRetunePreserveOnlyMatchingSnapshot() throws {
+        let catalog = try loadedSnapshot()
+        let entry = try XCTUnwrap(catalog.entries.first { $0.id == "fh6-2020-toyota-gr-supra" })
+        let selection = catalog.selection(for: entry)
+        let preserved = selection.capabilityOnlyBuildSnapshot(
+            capturedAt: Date(timeIntervalSinceReferenceDate: 42)
+        )
+        let manualOrigin = InputOrigin.manual(selection.carInput)
+
+        XCTAssertEqual(
+            manualOrigin.resolvedBuildSnapshot(matching: selection.carInput, preserving: preserved),
+            preserved
+        )
+
+        var edited = selection.carInput
+        edited.peakHorsepower = (edited.peakHorsepower ?? 0) + 1
+        XCTAssertNil(manualOrigin.resolvedBuildSnapshot(matching: edited, preserving: preserved))
+
+        var invalid = preserved
+        invalid.kind = .exactBuildObservation
+        XCTAssertFalse(invalid.isValid)
+        XCTAssertNil(
+            manualOrigin.resolvedBuildSnapshot(matching: selection.carInput, preserving: invalid)
+        )
+
+        let catalogFallback = try XCTUnwrap(
+            InputOrigin.catalog(selection).resolvedBuildSnapshot(
+                matching: selection.carInput,
+                preserving: nil,
+                capturedAt: Date(timeIntervalSinceReferenceDate: 84)
+            )
+        )
+        XCTAssertEqual(catalogFallback.kind, .capabilityOnly)
+        XCTAssertEqual(catalogFallback.capturedAt, Date(timeIntervalSinceReferenceDate: 84))
+    }
+
     func testLegacyCarInputDecodesWithoutCatalogLineage() throws {
         let payload = """
         {
