@@ -306,6 +306,7 @@ enum ValidationIssue: Identifiable, Equatable {
 struct TuneRequest: Codable, Equatable, Sendable {
     var car: CarInput
     var discipline: DrivingDiscipline
+    var buildSnapshot: VehicleBuildSnapshot? = nil
 }
 
 struct TuneResult: Identifiable, Codable, Equatable, Sendable {
@@ -315,6 +316,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
     var notes: TuneNotes
     var generatedAt: Date = .now
     var providerInfo: TuneProviderInfo?
+    var rulesetReference: TuneRulesetReference?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -323,6 +325,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         case notes
         case generatedAt
         case providerInfo
+        case rulesetReference
     }
 
     init(
@@ -331,7 +334,8 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         sections: [TuneSection],
         notes: TuneNotes,
         generatedAt: Date = .now,
-        providerInfo: TuneProviderInfo? = nil
+        providerInfo: TuneProviderInfo? = nil,
+        rulesetReference: TuneRulesetReference? = nil
     ) {
         self.id = id
         self.request = request
@@ -339,6 +343,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         self.notes = notes
         self.generatedAt = generatedAt
         self.providerInfo = providerInfo
+        self.rulesetReference = rulesetReference
     }
 
     init(from decoder: Decoder) throws {
@@ -349,6 +354,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         notes = try container.decode(TuneNotes.self, forKey: .notes)
         generatedAt = try container.decode(Date.self, forKey: .generatedAt)
         providerInfo = try container.decodeIfPresent(TuneProviderInfo.self, forKey: .providerInfo)
+        rulesetReference = try container.decodeIfPresent(TuneRulesetReference.self, forKey: .rulesetReference)
     }
 }
 
@@ -365,6 +371,7 @@ struct TuneLine: Identifiable, Codable, Equatable, Sendable {
     var value: String
     var unit: String
     var detail: String?
+    var fieldID: TuneFieldID? = nil
 
     var copyText: String {
         unit.isEmpty ? "\(label): \(value)" : "\(label): \(value) \(unit)"
