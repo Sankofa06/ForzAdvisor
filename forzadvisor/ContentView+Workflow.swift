@@ -191,6 +191,38 @@ extension ContentView {
         )
     }
 
+    func eligibleTireCaptureSnapshot(for tune: TuneResult) -> VehicleBuildSnapshot? {
+        TirePressureCaptureEligibility().snapshot(for: tune)
+    }
+
+    func applyTirePressureCapture(
+        _ capture: TirePressureCapture,
+        to tune: TuneResult,
+        savedTuneID: UUID?,
+        thumbnailData: Data?,
+        playerNotes: String
+    ) {
+        guard let snapshot = eligibleTireCaptureSnapshot(for: tune) else {
+            errorMessage = "This tune is no longer eligible for stock tire verification."
+            return
+        }
+
+        do {
+            let exactSnapshot = try capture.exactBuildSnapshot(upgrading: snapshot)
+            generateTune(
+                for: tune.request.car,
+                discipline: tune.request.discipline,
+                origin: .manual(tune.request.car),
+                thumbnailData: thumbnailData,
+                saveTo: savedTuneID,
+                playerNotes: playerNotes,
+                preserving: exactSnapshot
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
         if let tune = savedTune.tuneResult {
@@ -312,6 +344,7 @@ enum WorkflowStep {
     case discipline(CarInput, origin: InputOrigin, thumbnailData: Data?)
     case loading(TuneRequest, thumbnailData: Data?, savedTuneID: UUID?, playerNotes: String, partialTune: TuneResult?)
     case result(TuneResult, savedTuneID: UUID?, adjustmentChanges: [TuneAdjustmentChange], thumbnailData: Data?, playerNotes: String)
+    case tirePressureCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
     case editSavedTune(TuneResult, savedTuneID: UUID, playerNotes: String, thumbnailData: Data?)
 }
 

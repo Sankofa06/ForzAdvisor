@@ -28,7 +28,7 @@ struct LocalSampleTuneProvider: TuneProvider {
             throw LocalTuneProviderError.unsupportedRuleset(request.car.game)
         }
         try await Task.sleep(for: .milliseconds(250))
-        return makeTune(for: request)
+        return FH6LocalTirePressureQuantizer().quantize(makeTune(for: request))
             .withProviderInfo(.direct(.offlineFormula))
     }
 

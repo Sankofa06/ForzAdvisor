@@ -20,6 +20,7 @@ struct TuneResultView: View {
     let onDone: () -> Void
     let onSave: () -> Void
     let onEdit: () -> Void
+    let onVerifyTirePressures: (() -> Void)?
     let onFeedback: (TuneFeedback) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
@@ -83,6 +84,23 @@ struct TuneResultView: View {
                     TuneCoverageView(report: report)
                 }
                 .forzAdvisorRowBackground()
+
+                if !isStreaming, let onVerifyTirePressures {
+                    Section("Tune Lab") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("Unlock verified tire settings", systemImage: "gauge.with.dots.needle.33percent")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Read the front and rear ranges from the FH6 tire-pressure screen. ForzAdvisor keeps the observation on this device and regenerates this tune against the exact sliders.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button("Verify Tire Pressures", action: onVerifyTirePressures)
+                                .buttonStyle(.borderedProminent)
+                                .accessibilityIdentifier("verifyTirePressuresButton")
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .forzAdvisorRowBackground()
+                }
 
                 if !isStreaming,
                    TuneClipboardFormatter.verifiedSettingsText(for: tune) != nil

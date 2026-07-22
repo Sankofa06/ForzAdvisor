@@ -190,6 +190,19 @@ final class ForzAdvisorUITests: XCTestCase {
 
         let tuneIdentity = app.descendants(matching: .any)["tuneCatalogIdentity"].firstMatch
         XCTAssertTrue(app.waitForVisibleElement(tuneIdentity, timeout: 10))
+
+        let verifyTiresButton = app.buttons["verifyTirePressuresButton"]
+        XCTAssertTrue(app.waitForVisibleElement(verifyTiresButton, timeout: 8))
+        verifyTiresButton.tap()
+        XCTAssertTrue(app.navigationBars["Verify Tires"].waitForExistence(timeout: 5))
+
+        let submitCaptureButton = app.buttons["submitTireCaptureButton"]
+        XCTAssertTrue(app.waitForVisibleElement(submitCaptureButton, timeout: 8))
+        submitCaptureButton.tap()
+        XCTAssertTrue(app.staticTexts["Check These Values"].waitForExistence(timeout: 5))
+        app.navigationBars["Verify Tires"].buttons["Back"].tap()
+        XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 5))
+
         app.buttons["saveTuneButton"].tap()
         app.buttons["doneTuneButton"].tap()
 

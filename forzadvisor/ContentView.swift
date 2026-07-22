@@ -161,6 +161,37 @@ struct ContentView: View {
                         thumbnailData: thumbnailData,
                         playerNotes: playerNotes
                     )
+                case .tirePressureCapture(let tune, let savedTuneID, let thumbnailData, let playerNotes):
+                    if let snapshot = tune.request.buildSnapshot {
+                        TirePressureCaptureView(
+                            tune: tune,
+                            snapshot: snapshot,
+                            onBack: {
+                                step = .result(
+                                    tune,
+                                    savedTuneID: savedTuneID,
+                                    adjustmentChanges: [],
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            },
+                            onSubmit: { capture in
+                                applyTirePressureCapture(
+                                    capture,
+                                    to: tune,
+                                    savedTuneID: savedTuneID,
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            }
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            "Build snapshot unavailable",
+                            systemImage: "exclamationmark.triangle",
+                            description: Text("Return to the tune and select a verified catalog car.")
+                        )
+                    }
                 case .editSavedTune(let tune, let savedTuneID, let playerNotes, let thumbnailData):
                     SavedTuneEditView(
                         draft: SavedTuneEditDraft(tune: tune, playerNotes: playerNotes),
@@ -265,6 +296,15 @@ struct ContentView: View {
                     savedTuneID: resolvedSavedTuneID,
                     playerNotes: resolvedPlayerNotes,
                     thumbnailData: resolvedThumbnailData
+                )
+            },
+            onVerifyTirePressures: eligibleTireCaptureSnapshot(for: tune) == nil ? nil : {
+                tuneWorkflow.cancelAdjustment()
+                step = .tirePressureCapture(
+                    tune,
+                    savedTuneID: resolvedSavedTuneID,
+                    thumbnailData: resolvedThumbnailData,
+                    playerNotes: resolvedPlayerNotes
                 )
             },
             onFeedback: { feedback in
