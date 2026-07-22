@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.1.12 (Build 16) - 2026-07-22
+
+- Added a local Upgrade Lab for FH5 and FH6 stock catalog cars that records which tuning-control parts the exact in-game upgrade shop offers.
+- Added up to three exact alternative tuning-control buy lists using only user-verified parts, with game-build checks and no invented PI, credit, entitlement, or performance claims.
+- Preserved verified tire observations and upgrade availability in either Tune Lab order, including saved-tune reopen and copyable build plans.
+
 ## Version 1.1.11 (Build 15) - 2026-07-22
 
 - Added an FH6 Tune Lab that records exact stock tire-pressure slider ranges locally and regenerates the tune against them.

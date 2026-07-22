@@ -192,6 +192,37 @@ struct ContentView: View {
                             description: Text("Return to the tune and select a verified catalog car.")
                         )
                     }
+                case .upgradePartCapture(let tune, let savedTuneID, let thumbnailData, let playerNotes):
+                    if let snapshot = tune.request.buildSnapshot {
+                        UpgradePartCaptureView(
+                            tune: tune,
+                            snapshot: snapshot,
+                            onBack: {
+                                step = .result(
+                                    tune,
+                                    savedTuneID: savedTuneID,
+                                    adjustmentChanges: [],
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            },
+                            onSubmit: { capture in
+                                applyUpgradePartCapture(
+                                    capture,
+                                    to: tune,
+                                    savedTuneID: savedTuneID,
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            }
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            "Build snapshot unavailable",
+                            systemImage: "exclamationmark.triangle",
+                            description: Text("Return to the tune and select a verified catalog car.")
+                        )
+                    }
                 case .editSavedTune(let tune, let savedTuneID, let playerNotes, let thumbnailData):
                     SavedTuneEditView(
                         draft: SavedTuneEditDraft(tune: tune, playerNotes: playerNotes),
@@ -301,6 +332,15 @@ struct ContentView: View {
             onVerifyTirePressures: eligibleTireCaptureSnapshot(for: tune) == nil ? nil : {
                 tuneWorkflow.cancelAdjustment()
                 step = .tirePressureCapture(
+                    tune,
+                    savedTuneID: resolvedSavedTuneID,
+                    thumbnailData: resolvedThumbnailData,
+                    playerNotes: resolvedPlayerNotes
+                )
+            },
+            onVerifyUpgradeParts: eligibleUpgradeCaptureSnapshot(for: tune) == nil ? nil : {
+                tuneWorkflow.cancelAdjustment()
+                step = .upgradePartCapture(
                     tune,
                     savedTuneID: resolvedSavedTuneID,
                     thumbnailData: resolvedThumbnailData,

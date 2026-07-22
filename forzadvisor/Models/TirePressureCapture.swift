@@ -31,6 +31,7 @@ enum TirePressureCaptureIssue: Error, LocalizedError, Equatable {
     case missingCatalogIdentity
     case modifiedCatalogIdentity
     case missingGameBuildVersion
+    case mismatchedGameBuild(expected: String, entered: String)
     case missingTireCompound
     case exactStockBuildNotConfirmed
     case localUseNotPermitted
@@ -57,6 +58,8 @@ enum TirePressureCaptureIssue: Error, LocalizedError, Equatable {
             "The selected catalog car was edited. Restore its stock catalog values before verifying it."
         case .missingGameBuildVersion:
             "Enter the exact game build version shown in FH6."
+        case .mismatchedGameBuild(let expected, let entered):
+            "The upgrade observation uses FH6 build \(expected), not \(entered). Use the same exact build."
         case .missingTireCompound:
             "Enter the tire compound shown for this stock build."
         case .exactStockBuildNotConfirmed:
@@ -200,8 +203,13 @@ struct TirePressureCapture: Codable, Equatable, Sendable {
         } else if snapshot.car.catalogValuesModified {
             issues.append(.modifiedCatalogIdentity)
         }
-        if normalized(gameBuildVersion).isEmpty {
+        let enteredBuild = normalized(gameBuildVersion)
+        if enteredBuild.isEmpty {
             issues.append(.missingGameBuildVersion)
+        } else if let knownBuild = snapshot.gameBuild.version.map(normalized),
+                  !knownBuild.isEmpty,
+                  knownBuild != enteredBuild {
+            issues.append(.mismatchedGameBuild(expected: knownBuild, entered: enteredBuild))
         }
         if normalized(tireCompound).isEmpty {
             issues.append(.missingTireCompound)

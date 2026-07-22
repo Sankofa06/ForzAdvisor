@@ -108,6 +108,7 @@ private struct TuneLineCopyRow: View {
         .buttonStyle(.plain)
         .disabled(isStreaming || !allowsCopy)
         .accessibilityElement(children: .ignore)
+        .accessibilityIdentifier(resultFieldAccessibilityIdentifier)
         .accessibilityLabel(line.label)
         .accessibilityValue(accessibilityValue)
         .accessibilityHint(accessibilityHint)
@@ -170,6 +171,14 @@ private struct TuneLineCopyRow: View {
             return "Copied to clipboard."
         }
         return "Copies this setting to the clipboard."
+    }
+
+    private var resultFieldAccessibilityIdentifier: String {
+        switch line.fieldID {
+        case .frontTirePressure: "tuneField-frontTirePressure"
+        case .rearTirePressure: "tuneField-rearTirePressure"
+        default: "tuneLine-\(line.id)"
+        }
     }
 }
 

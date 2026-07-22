@@ -21,6 +21,7 @@ struct TuneResultView: View {
     let onSave: () -> Void
     let onEdit: () -> Void
     let onVerifyTirePressures: (() -> Void)?
+    let onVerifyUpgradeParts: (() -> Void)?
     let onFeedback: (TuneFeedback) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
@@ -29,6 +30,10 @@ struct TuneResultView: View {
 
     private var isAdjusting: Bool {
         activeFeedback != nil
+    }
+
+    private var upgradePaths: [TuneControlUpgradePath] {
+        TuneControlUpgradePlanner().paths(for: tune)
     }
 
     var body: some View {
@@ -81,7 +86,10 @@ struct TuneResultView: View {
 
             if let report = tune.projectionReport {
                 Section("Tune Coverage") {
-                    TuneCoverageView(report: report)
+                    TuneCoverageView(
+                        report: report,
+                        showsAlternativePathSummary: !upgradePaths.isEmpty
+                    )
                 }
                 .forzAdvisorRowBackground()
 
@@ -98,6 +106,30 @@ struct TuneResultView: View {
                                 .accessibilityIdentifier("verifyTirePressuresButton")
                         }
                         .padding(.vertical, 4)
+                    }
+                    .forzAdvisorRowBackground()
+                }
+
+                if !isStreaming, let onVerifyUpgradeParts {
+                    Section("Upgrade Lab") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("Verify tuning-control upgrades", systemImage: "wrench.and.screwdriver")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Check the untouched stock car's upgrade shop in \(tune.request.car.game.shortTitle). ForzAdvisor will build exact alternative buy lists from only the parts you mark Offered.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button("Verify Upgrade Parts", action: onVerifyUpgradeParts)
+                                .buttonStyle(.borderedProminent)
+                                .accessibilityIdentifier("verifyUpgradePartsButton")
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .forzAdvisorRowBackground()
+                }
+
+                if !isStreaming, !upgradePaths.isEmpty {
+                    Section("Tuning-Control Upgrade Paths") {
+                        TuneControlUpgradePathsView(paths: upgradePaths)
                     }
                     .forzAdvisorRowBackground()
                 }
@@ -307,6 +339,7 @@ struct TuneResultView: View {
             )
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .accessibilityIdentifier(kind.accessibilityIdentifier)
     }
 
     private func expandedBinding(for section: TuneSection) -> Binding<Bool> {
@@ -325,10 +358,18 @@ struct TuneResultView: View {
 private enum CopiedExport {
     case verifiedSettings
     case buildPlan
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .verifiedSettings: "copyVerifiedSettingsButton"
+        case .buildPlan: "copyBuildPlanButton"
+        }
+    }
 }
 
 private struct TuneCoverageView: View {
     let report: TuneProjectionReport
+    let showsAlternativePathSummary: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -336,7 +377,11 @@ private struct TuneCoverageView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(report.readyCount > 0 ? ForzAdvisorTheme.accent : ForzAdvisorTheme.warning)
 
-            if !report.purchasePlan.isEmpty {
+            if showsAlternativePathSummary {
+                Text("Exact alternative buy lists are shown under Tuning-Control Upgrade Paths.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if !report.purchasePlan.isEmpty {
                 coverageGroup(title: "Buy to unlock") {
                     ForEach(report.purchasePlan, id: \.part.id) { item in
                         Text("\(item.part.label) — \(item.unlocks.map(\.projectionLabel).joined(separator: ", "))")

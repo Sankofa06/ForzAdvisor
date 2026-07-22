@@ -13,7 +13,7 @@ struct TirePressureCaptureView: View {
     let onBack: () -> Void
     let onSubmit: (TirePressureCapture) -> Void
 
-    @State private var gameBuildVersion = ""
+    @State private var gameBuildVersion: String
     @State private var tireCompound = ""
     @State private var frontMinimum = ""
     @State private var frontMaximum = ""
@@ -26,6 +26,19 @@ struct TirePressureCaptureView: View {
     @State private var exactStockBuildConfirmed = false
     @State private var localUsePermitted = false
     @State private var hasAttemptedSubmit = false
+
+    init(
+        tune: TuneResult,
+        snapshot: VehicleBuildSnapshot,
+        onBack: @escaping () -> Void,
+        onSubmit: @escaping (TirePressureCapture) -> Void
+    ) {
+        self.tune = tune
+        self.snapshot = snapshot
+        self.onBack = onBack
+        self.onSubmit = onSubmit
+        _gameBuildVersion = State(initialValue: snapshot.gameBuild.version ?? "")
+    }
 
     var body: some View {
         List {

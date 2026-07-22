@@ -26,6 +26,24 @@ enum TuneClipboardFormatter {
 
     static func buildPlanText(for tune: TuneResult) -> String? {
         let sanitized = TuneOutputProjector().project(tune)
+        let paths = TuneControlUpgradePlanner().paths(for: sanitized)
+        if !paths.isEmpty {
+            var lines = headerLines(for: sanitized)
+            lines.append("Tuning-control upgrade paths")
+            lines.append("Each path unlocks the same tune controls represented here. Pick one path; the alternatives are not cumulative.")
+            for (index, path) in paths.enumerated() {
+                lines.append("")
+                lines.append("Path \(index + 1)")
+                for item in path.items {
+                    lines.append("- \(item.part.category.label) > \(item.part.slot.label) > \(item.part.label)")
+                    lines.append("  Unlocks: \(item.unlocks.map(\.projectionLabel).joined(separator: ", "))")
+                }
+            }
+            lines.append("")
+            lines.append("These tuning-control paths do not predict PI, credits, entitlement, performance, or installation order. Confirm every item in your game build before buying.")
+            return lines.joined(separator: "\n")
+        }
+
         guard let report = sanitized.projectionReport,
               !report.purchasePlan.isEmpty || !report.confirmations.isEmpty else {
             return nil

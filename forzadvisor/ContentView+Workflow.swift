@@ -195,6 +195,10 @@ extension ContentView {
         TirePressureCaptureEligibility().snapshot(for: tune)
     }
 
+    func eligibleUpgradeCaptureSnapshot(for tune: TuneResult) -> VehicleBuildSnapshot? {
+        UpgradePartCaptureEligibility().snapshot(for: tune)
+    }
+
     func applyTirePressureCapture(
         _ capture: TirePressureCapture,
         to tune: TuneResult,
@@ -217,6 +221,34 @@ extension ContentView {
                 saveTo: savedTuneID,
                 playerNotes: playerNotes,
                 preserving: exactSnapshot
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func applyUpgradePartCapture(
+        _ capture: UpgradePartCapture,
+        to tune: TuneResult,
+        savedTuneID: UUID?,
+        thumbnailData: Data?,
+        playerNotes: String
+    ) {
+        guard let snapshot = eligibleUpgradeCaptureSnapshot(for: tune) else {
+            errorMessage = "This tune is no longer eligible for stock upgrade verification."
+            return
+        }
+
+        do {
+            let verifiedSnapshot = try capture.verifiedSnapshot(upgrading: snapshot)
+            generateTune(
+                for: tune.request.car,
+                discipline: tune.request.discipline,
+                origin: .manual(tune.request.car),
+                thumbnailData: thumbnailData,
+                saveTo: savedTuneID,
+                playerNotes: playerNotes,
+                preserving: verifiedSnapshot
             )
         } catch {
             errorMessage = error.localizedDescription
@@ -345,6 +377,7 @@ enum WorkflowStep {
     case loading(TuneRequest, thumbnailData: Data?, savedTuneID: UUID?, playerNotes: String, partialTune: TuneResult?)
     case result(TuneResult, savedTuneID: UUID?, adjustmentChanges: [TuneAdjustmentChange], thumbnailData: Data?, playerNotes: String)
     case tirePressureCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
+    case upgradePartCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
     case editSavedTune(TuneResult, savedTuneID: UUID, playerNotes: String, thumbnailData: Data?)
 }
 
