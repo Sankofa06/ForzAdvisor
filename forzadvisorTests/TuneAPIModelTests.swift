@@ -124,7 +124,7 @@ final class TuneAPIModelTests: XCTestCase {
     func testCompositeProviderFallsBackToLocalWithoutAPIKey() async throws {
         let provider = CompositeTuneProvider(
             configuration: TuneProviderConfiguration(mode: .anthropicAPI),
-            remoteProvider: TuneAPIClient(keychainStore: KeychainStore(service: "forzadvisor-tests-\(UUID().uuidString)")),
+            remoteProvider: TuneAPIClient(keychainStore: EmptyAPIKeyStore()),
             onDeviceProvider: UnavailableOnDeviceProvider(),
             localProvider: LocalSampleTuneProvider()
         )
@@ -193,7 +193,7 @@ final class TuneAPIModelTests: XCTestCase {
         let previous = try await LocalSampleTuneProvider().generateTune(for: request)
         let provider = CompositeTuneProvider(
             configuration: TuneProviderConfiguration(mode: .anthropicAPI),
-            remoteProvider: TuneAPIClient(keychainStore: KeychainStore(service: "forzadvisor-tests-\(UUID().uuidString)")),
+            remoteProvider: TuneAPIClient(keychainStore: EmptyAPIKeyStore()),
             onDeviceProvider: UnavailableOnDeviceProvider(),
             localProvider: LocalSampleTuneProvider()
         )
@@ -267,6 +267,16 @@ private struct FailingAPIKeyStore: APIKeyStoring {
             "Test Keychain read failure."
         }
     }
+}
+
+private struct EmptyAPIKeyStore: APIKeyStoring {
+    func readAPIKey() throws -> String? {
+        nil
+    }
+
+    func saveAPIKey(_ key: String) throws {}
+
+    func deleteAPIKey() throws {}
 }
 
 private struct UnexpectedURLSession: URLSessionProtocol {
