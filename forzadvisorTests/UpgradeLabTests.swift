@@ -259,6 +259,7 @@ final class UpgradeLabTests: XCTestCase {
         TirePressureCapture(
             gameBuildVersion: "test-build",
             tireCompound: "Stock",
+            gearCount: 6,
             front: TirePressureRangeCapture(
                 minimumPSI: 15,
                 maximumPSI: 40,

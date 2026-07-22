@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.1.15 (Build 19) - 2026-07-22
+
+- Tire Lab now records the stock car's forward gear count alongside the exact FH6 tire-pressure ranges, compound, and observed game build.
+- Gear count starts blank, accepts localized whole-number input, excludes reverse, and blocks verification instead of guessing when the value is missing or invalid.
+- Older tire observations remain readable but must be re-verified before they can supply the newly versioned gear-count evidence.
+
 ## Version 1.1.14 (Build 18) - 2026-07-22
 
 - Added a privacy-safe Share verified build action for exact observed game builds with at least one freshly verified setting.
@@ -70,11 +76,13 @@
 
 ## App Store What's New
 
-Choose FH5 or FH6 directly when entering a car manually or reviewing a screenshot. Your selected game and reviewed values now stay intact if you return from tune-type selection.
+FH6 Tune Lab now records the stock car's forward gear count with its tire-pressure ranges, compound, and game build. The app never guesses a missing count, and older tire observations remain safely readable until you re-verify them.
 
 ## TestFlight Notes
 
-Please test New Tune -> Enter Manually with both FH5 and FH6. Verify that each game's class and PI rules apply, then go Next and Back and confirm the selected game and values are preserved. If you import a screenshot, change the game during review and verify that Back from tune-type selection restores the edited review.
+Please test New Tune -> Choose a Car -> select an FH6 catalog car -> generate a tune -> Verify Tire Pressures. Confirm the forward-gear field starts blank, accepts the count shown on the transmission/gearing screen, excludes reverse, and blocks blank, fractional, or out-of-range values. After regeneration, reopen the saved tune and confirm the exact build still carries the observed gear count.
+
+If you use a locale with non-Latin numerals, please confirm the forward-gear field accepts your localized whole-number digits.
 
 The searchable starter catalog remains available for both games with six community-crosschecked cars. Confirm catalog values in game and report discrepancies.
 

@@ -102,7 +102,7 @@ struct TuneResultView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Label("Unlock verified tire settings", systemImage: "gauge.with.dots.needle.33percent")
                                 .font(.subheadline.weight(.semibold))
-                            Text("Read the front and rear ranges from the FH6 tire-pressure screen. ForzAdvisor keeps the observation on this device and regenerates this tune against the exact sliders.")
+                            Text("Read the forward gear count from the FH6 transmission/gearing screen and the front and rear ranges from the tire-pressure screen. ForzAdvisor keeps the observation on this device and regenerates this tune against the exact controls.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Button("Verify Tire Pressures", action: onVerifyTirePressures)

@@ -2,7 +2,8 @@
 //  TirePressureCaptureView.swift
 //  forzadvisor
 //
-//  A deliberately narrow Tune Lab capture for exact FH6 tire-pressure ranges.
+//  A deliberately narrow Tune Lab capture for exact FH6 tire-pressure ranges
+//  and forward gear count.
 //
 
 import SwiftUI
@@ -15,6 +16,7 @@ struct TirePressureCaptureView: View {
 
     @State private var gameBuildVersion: String
     @State private var tireCompound = ""
+    @State private var gearCount = ""
     @State private var frontMinimum = ""
     @State private var frontMaximum = ""
     @State private var frontStep = ""
@@ -66,7 +68,17 @@ struct TirePressureCaptureView: View {
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled()
                     .accessibilityIdentifier("tireCaptureCompound")
-                Text("Find the build version in FH6 settings. Use the compound name shown for this stock car, such as Stock or Street.")
+                HStack {
+                    Text("Forward gear count")
+                    Spacer()
+                    TextField("—", text: $gearCount)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 110)
+                        .accessibilityLabel("Forward gear count")
+                        .accessibilityIdentifier("tireCaptureGearCount")
+                }
+                Text("Find the build version in FH6 settings. Use the compound name shown for this stock car, such as Stock or Street. Enter the number of forward gears shown in the transmission/gearing screen; do not include reverse.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -137,6 +149,7 @@ struct TirePressureCaptureView: View {
         TirePressureCapture(
             gameBuildVersion: gameBuildVersion,
             tireCompound: tireCompound,
+            gearCount: Self.parsedGearCount(gearCount),
             front: TirePressureRangeCapture(
                 minimumPSI: parsed(frontMinimum),
                 maximumPSI: parsed(frontMaximum),
@@ -160,6 +173,16 @@ struct TirePressureCaptureView: View {
 
     private func parsed(_ text: String) -> Double {
         LocalizedNumberText.parse(text) ?? .nan
+    }
+
+    static func parsedGearCount(_ text: String) -> Int {
+        guard let value = LocalizedNumberText.parse(text),
+              value.isFinite,
+              value.rounded(.towardZero) == value,
+              (1...10).contains(value) else {
+            return 0
+        }
+        return Int(value)
     }
 
     private func pressureSection(

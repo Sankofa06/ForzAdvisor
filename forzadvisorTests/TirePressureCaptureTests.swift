@@ -38,7 +38,7 @@ final class TirePressureCaptureTests: XCTestCase {
         XCTAssertEqual(exact.capabilityProfile, base.capabilityProfile)
         XCTAssertEqual(exact.tireCompound?.displayName, "Stock Road")
         XCTAssertEqual(exact.tireCompound?.evidenceIDs, [evidenceID])
-        XCTAssertNil(exact.gearCount)
+        XCTAssertEqual(exact.gearCount, 6)
         XCTAssertTrue(exact.isValid, "Unexpected issues: \(exact.validationIssues)")
 
         let evidence = try XCTUnwrap(exact.evidenceSources.first { $0.id == evidenceID })
@@ -46,7 +46,8 @@ final class TirePressureCaptureTests: XCTestCase {
         XCTAssertEqual(evidence.gameBuildVersion, "1.2.3.4")
         XCTAssertEqual(evidence.scope, .exactVehicleBuild)
         XCTAssertEqual(evidence.source, TirePressureCapture.provenanceSource)
-        XCTAssertEqual(evidence.version, TirePressureCapture.provenanceVersion)
+        XCTAssertEqual(TirePressureCapture.provenanceVersion, "2")
+        XCTAssertEqual(evidence.version, "2")
         XCTAssertEqual(evidence.capturedAt, capturedAt)
         XCTAssertEqual(evidence.confidence, .medium)
         XCTAssertEqual(evidence.usagePermission, .permitted)
@@ -64,7 +65,8 @@ final class TirePressureCaptureTests: XCTestCase {
     }
 
     func testExactSnapshotRoundTripsThroughJSON() throws {
-        let exact = try validCapture().exactBuildSnapshot(
+        let capture = validCapture()
+        let exact = try capture.exactBuildSnapshot(
             upgrading: capabilitySnapshot(),
             capturedAt: capturedAt,
             snapshotID: exactSnapshotID,
@@ -74,6 +76,25 @@ final class TirePressureCaptureTests: XCTestCase {
         XCTAssertEqual(
             try JSONDecoder().decode(VehicleBuildSnapshot.self, from: JSONEncoder().encode(exact)),
             exact
+        )
+        XCTAssertEqual(
+            try JSONDecoder().decode(TirePressureCapture.self, from: JSONEncoder().encode(capture)),
+            capture
+        )
+    }
+
+    func testLegacyCaptureWithoutGearCountDecodesFailClosed() throws {
+        let data = try JSONEncoder().encode(validCapture())
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        object.removeValue(forKey: "gearCount")
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(TirePressureCapture.self, from: legacyData)
+
+        XCTAssertEqual(decoded.gearCount, 0)
+        XCTAssertEqual(
+            decoded.validationIssues(upgrading: try capabilitySnapshot()),
+            [.invalidGearCount(0)]
         )
     }
 
@@ -160,6 +181,45 @@ final class TirePressureCaptureTests: XCTestCase {
         )
     }
 
+    func testValidationRejectsInvalidGearCountsInStableOrder() throws {
+        for invalidCount in [0, 11] {
+            var capture = validCapture()
+            capture.gameBuildVersion = " "
+            capture.tireCompound = " "
+            capture.gearCount = invalidCount
+            capture.exactStockBuildConfirmed = false
+            capture.localUsePermitted = false
+
+            XCTAssertEqual(
+                capture.validationIssues(upgrading: try capabilitySnapshot()),
+                [
+                    .missingGameBuildVersion,
+                    .missingTireCompound,
+                    .invalidGearCount(invalidCount),
+                    .exactStockBuildNotConfirmed,
+                    .localUseNotPermitted
+                ]
+            )
+        }
+    }
+
+    func testTireLabGearCountEntryNormalizesAndFailsClosed() throws {
+        XCTAssertEqual(TirePressureCaptureView.parsedGearCount(" 6 "), 6)
+        XCTAssertEqual(TirePressureCaptureView.parsedGearCount("٦"), 6)
+
+        for invalidEntry in ["", "not-a-number", "6.5", "0", "11", "nan", "∞"] {
+            var capture = validCapture()
+            capture.gearCount = TirePressureCaptureView.parsedGearCount(invalidEntry)
+            let issues = capture.validationIssues(upgrading: try capabilitySnapshot())
+
+            XCTAssertEqual(issues, [.invalidGearCount(0)])
+            XCTAssertEqual(
+                issues.first?.localizedDescription,
+                "Forward gear count must be between 1 and 10, not 0."
+            )
+        }
+    }
+
     func testValidationRejectsNonFiniteValuesPerAxle() throws {
         var capture = validCapture()
         capture.front.minimumPSI = .nan
@@ -241,7 +301,9 @@ final class TirePressureCaptureTests: XCTestCase {
 
         let quantized = FH6LocalTirePressureQuantizer().quantize(candidate)
         let line = try XCTUnwrap(quantized.sections.first?.lines.first)
+        let evidence = try XCTUnwrap(request.buildSnapshot?.evidenceSources.first)
 
+        XCTAssertEqual(evidence.version, "2")
         XCTAssertEqual(line.value, LocalizedNumberText.format(27, fractionDigits: 1))
         XCTAssertEqual(
             line.detail,
@@ -288,6 +350,22 @@ final class TirePressureCaptureTests: XCTestCase {
         var request = try exactRequest()
         var snapshot = try XCTUnwrap(request.buildSnapshot)
         snapshot.evidenceSources[0].source = "third-party.fixture"
+        XCTAssertTrue(snapshot.isValid, "Unexpected issues: \(snapshot.validationIssues)")
+        request.buildSnapshot = snapshot
+        let candidate = rawTune(request: request, lines: [
+            TuneLine(label: "Front pressure", value: "26.75", unit: "PSI", fieldID: .frontTirePressure)
+        ])
+
+        let unchanged = FH6LocalTirePressureQuantizer().quantize(candidate)
+
+        XCTAssertEqual(unchanged, candidate)
+        XCTAssertNil(unchanged.rulesetReference)
+    }
+
+    func testQuantizerDoesNotTrustLegacyV1CaptureEvidenceAsV2() throws {
+        var request = try exactRequest()
+        var snapshot = try XCTUnwrap(request.buildSnapshot)
+        snapshot.evidenceSources[0].version = "1"
         XCTAssertTrue(snapshot.isValid, "Unexpected issues: \(snapshot.validationIssues)")
         request.buildSnapshot = snapshot
         let candidate = rawTune(request: request, lines: [
@@ -353,6 +431,7 @@ final class TirePressureCaptureTests: XCTestCase {
         TirePressureCapture(
             gameBuildVersion: gameBuildVersion,
             tireCompound: tireCompound,
+            gearCount: 6,
             front: TirePressureRangeCapture(
                 minimumPSI: 15,
                 maximumPSI: 40,

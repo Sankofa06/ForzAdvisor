@@ -33,6 +33,7 @@ enum TirePressureCaptureIssue: Error, LocalizedError, Equatable {
     case missingGameBuildVersion
     case mismatchedGameBuild(expected: String, entered: String)
     case missingTireCompound
+    case invalidGearCount(Int)
     case exactStockBuildNotConfirmed
     case localUseNotPermitted
     case nonFiniteValue(TirePressureCaptureAxle)
@@ -62,6 +63,8 @@ enum TirePressureCaptureIssue: Error, LocalizedError, Equatable {
             "The upgrade observation uses FH6 build \(expected), not \(entered). Use the same exact build."
         case .missingTireCompound:
             "Enter the tire compound shown for this stock build."
+        case .invalidGearCount(let count):
+            "Forward gear count must be between 1 and 10, not \(count)."
         case .exactStockBuildNotConfirmed:
             "Confirm that the in-game stock build exactly matches the selected catalog car."
         case .localUseNotPermitted:
@@ -102,10 +105,11 @@ enum TirePressureCaptureError: Error, LocalizedError {
 
 struct TirePressureCapture: Codable, Equatable, Sendable {
     static let provenanceSource = "forzadvisor.local.user-observation"
-    static let provenanceVersion = "1"
+    static let provenanceVersion = "2"
 
     var gameBuildVersion: String
     var tireCompound: String
+    var gearCount: Int
     var front: TirePressureRangeCapture
     var rear: TirePressureRangeCapture
     var exactStockBuildConfirmed: Bool
@@ -168,7 +172,7 @@ struct TirePressureCapture: Codable, Equatable, Sendable {
                 displayName: normalizedCompound,
                 evidenceIDs: [normalizedEvidenceID]
             ),
-            gearCount: snapshot.gearCount,
+            gearCount: gearCount,
             constraints: preservedConstraints + [
                 constraint(for: .frontTirePressure, range: front, evidenceID: normalizedEvidenceID),
                 constraint(for: .rearTirePressure, range: rear, evidenceID: normalizedEvidenceID)
@@ -213,6 +217,9 @@ struct TirePressureCapture: Codable, Equatable, Sendable {
         }
         if normalized(tireCompound).isEmpty {
             issues.append(.missingTireCompound)
+        }
+        if !(1...10).contains(gearCount) {
+            issues.append(.invalidGearCount(gearCount))
         }
         if !exactStockBuildConfirmed {
             issues.append(.exactStockBuildNotConfirmed)
@@ -288,5 +295,28 @@ struct TirePressureCapture: Codable, Equatable, Sendable {
 
     private func normalized(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+extension TirePressureCapture {
+    private enum CodingKeys: String, CodingKey {
+        case gameBuildVersion
+        case tireCompound
+        case gearCount
+        case front
+        case rear
+        case exactStockBuildConfirmed
+        case localUsePermitted
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        gameBuildVersion = try container.decode(String.self, forKey: .gameBuildVersion)
+        tireCompound = try container.decode(String.self, forKey: .tireCompound)
+        gearCount = try container.decodeIfPresent(Int.self, forKey: .gearCount) ?? 0
+        front = try container.decode(TirePressureRangeCapture.self, forKey: .front)
+        rear = try container.decode(TirePressureRangeCapture.self, forKey: .rear)
+        exactStockBuildConfirmed = try container.decode(Bool.self, forKey: .exactStockBuildConfirmed)
+        localUsePermitted = try container.decode(Bool.self, forKey: .localUsePermitted)
     }
 }
