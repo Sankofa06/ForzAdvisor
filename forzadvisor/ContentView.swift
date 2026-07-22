@@ -17,7 +17,7 @@ struct ContentView: View {
     @State var step: WorkflowStep = .home
     @State var errorMessage: String?
     @State var errorRecovery: ErrorRecovery?
-    @State var isShowingSettings = false
+    @State var rootSheet: RootSheet?
     @State var catalogResult = BundledCarCatalog.load()
     @StateObject var tuneWorkflow = TuneWorkflowController()
 
@@ -38,7 +38,7 @@ struct ContentView: View {
                         },
                         onOpenTune: open,
                         onDeleteTune: delete,
-                        onSettings: { isShowingSettings = true }
+                        onSettings: { rootSheet = .settings }
                     )
                 case .newTune:
                     NewTuneStartView(
@@ -271,11 +271,45 @@ struct ContentView: View {
             } message: {
                 Text(errorMessage ?? "Try again from the discipline picker.")
             }
-            .sheet(isPresented: $isShowingSettings) {
-                SettingsView(keychainStore: keychainStore)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        rootSheet = .copilot
+                    } label: {
+                        Image(systemName: "sparkles")
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    .accessibilityLabel("Open contextual Copilot")
+                    .accessibilityHint("Shows guidance for the current workflow step")
+                    .accessibilityIdentifier("copilotButton")
+                }
+            }
+            .sheet(item: $rootSheet) { sheet in
+                switch sheet {
+                case .settings:
+                    SettingsView(keychainStore: keychainStore)
+                case .copilot:
+                    CopilotSheet(
+                        context: copilotContext,
+                        onClose: { rootSheet = nil }
+                    )
+                }
             }
             .tint(ForzAdvisorTheme.accent)
         }
+    }
+
+    private var copilotContext: CopilotContext {
+        CopilotContextFactory().make(
+            step: step,
+            savedTuneCount: savedTunes.count,
+            catalogCarCount: catalogCarCount
+        )
+    }
+
+    private var catalogCarCount: Int {
+        guard case .success(let snapshot) = catalogResult else { return 0 }
+        return snapshot.entries.count
     }
 
     @ViewBuilder
@@ -353,4 +387,11 @@ struct ContentView: View {
             }
         )
     }
+}
+
+enum RootSheet: String, CaseIterable, Identifiable {
+    case settings
+    case copilot
+
+    var id: String { rawValue }
 }

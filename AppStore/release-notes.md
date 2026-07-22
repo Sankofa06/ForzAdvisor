@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.1.13 (Build 17) - 2026-07-22
+
+- Added a Contextual Copilot that is available throughout the tuning workflow and explains the safest next step for the current screen.
+- Added local, deterministic answers for trust, missing verification, and privacy without sending Copilot questions to a model or network service.
+- Kept Copilot guidance fail-closed: it summarizes verified status and eligibility without reading unsaved form edits, exposing raw tune values, or inventing parts, prices, PI, or performance claims.
+
 ## Version 1.1.12 (Build 16) - 2026-07-22
 
 - Added a local Upgrade Lab for FH5 and FH6 stock catalog cars that records which tuning-control parts the exact in-game upgrade shop offers.
