@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "id": "metadata.fh5.hokihoshi-basics-video",
+      "source": {
+        "id": "youtube.hokihoshi.fh5-basics",
+        "kind": "youtube",
+        "game": "fh5",
+        "url": "https://www.youtube.com/watch?v=nvSOOu_4XRw",
+        "publisher": "HokiHoshi",
+        "publishedAt": null,
+        "retrievedAt": "2026-07-22T00:00:00Z",
+        "gameVersion": null,
+        "contentFingerprint": "metadata-only:youtube:nvSOOu_4XRw",
+        "derivativeOfSourceID": null,
+        "extractionMethod": "metadataOnly",
+        "reviewerIDs": [],
+        "coverage": "opaque",
+        "usagePermission": "metadataOnly",
+        "permissionBasis": "publicAvailability",
+        "license": null,
+        "permissionEvidenceID": null
+      },
+      "context": null,
+      "fields": [],
+      "unknowns": [
+        {
+          "path": "context",
+          "reason": "Metadata record only; no car, build, or tune values extracted.",
+          "note": null
+        },
+        {
+          "path": "source.gameVersion",
+          "reason": "Not captured.",
+          "note": null
+        }
+      ]
+    },
+    {
+      "id": "metadata.fh6.reddit-tuning-discussion",
+      "source": {
+        "id": "reddit.forzahorizon.fh6-tuning-discussion",
+        "kind": "reddit",
+        "game": "fh6",
+        "url": "https://www.reddit.com/r/ForzaHorizon/comments/1tt8mx6/how_to_get_into_tuning_and_car_setup/",
+        "publisher": "r/ForzaHorizon community",
+        "publishedAt": null,
+        "retrievedAt": "2026-07-22T00:00:00Z",
+        "gameVersion": null,
+        "contentFingerprint": "metadata-only:reddit:1tt8mx6",
+        "derivativeOfSourceID": null,
+        "extractionMethod": "metadataOnly",
+        "reviewerIDs": [],
+        "coverage": "opaque",
+        "usagePermission": "metadataOnly",
+        "permissionBasis": "publicAvailability",
+        "license": null,
+        "permissionEvidenceID": null
+      },
+      "context": null,
+      "fields": [],
+      "unknowns": [
+        {
+          "path": "context",
+          "reason": "Metadata record only; no car, build, or tune values extracted.",
+          "note": null
+        },
+        {
+          "path": "source.gameVersion",
+          "reason": "Not captured.",
+          "note": null
+        }
+      ]
+    }
+  ]
+}
