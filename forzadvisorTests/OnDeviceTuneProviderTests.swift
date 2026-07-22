@@ -110,6 +110,14 @@ final class OnDeviceTuneProviderTests: XCTestCase {
         XCTAssertEqual(TuneProviderMode.onDeviceFoundationModel.rawValue, "onDeviceFoundationModel")
         XCTAssertEqual(TuneProviderMode.anthropicAPI.rawValue, "anthropicAPI")
     }
+
+    func testUnsupportedOperatingSystemAvailabilityExplainsRequirement() {
+        let availability = OnDeviceModelAvailability.unsupportedOperatingSystem
+
+        XCTAssertFalse(availability.isAvailable)
+        XCTAssertEqual(availability.title, "Requires iOS 26.4")
+        XCTAssertEqual(availability.detail, "Update to iOS 26.4 or later to use on-device generation.")
+    }
 }
 
 private struct PromptTestUnavailableOnDeviceProvider: OnDeviceTuneProviding {

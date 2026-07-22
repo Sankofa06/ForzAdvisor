@@ -14,6 +14,7 @@ import FoundationModels
 
 enum OnDeviceModelAvailability {
     case available
+    case unsupportedOperatingSystem
     case deviceNotEligible
     case appleIntelligenceNotEnabled
     case modelNotReady
@@ -30,6 +31,8 @@ enum OnDeviceModelAvailability {
         switch self {
         case .available:
             "Available"
+        case .unsupportedOperatingSystem:
+            "Requires iOS 26.4"
         case .deviceNotEligible:
             "Device not eligible"
         case .appleIntelligenceNotEnabled:
@@ -45,6 +48,8 @@ enum OnDeviceModelAvailability {
         switch self {
         case .available:
             "On-device generation can stream private tune output."
+        case .unsupportedOperatingSystem:
+            "Update to iOS 26.4 or later to use on-device generation."
         case .deviceNotEligible:
             "This device cannot run Apple Intelligence models."
         case .appleIntelligenceNotEnabled:
@@ -58,18 +63,21 @@ enum OnDeviceModelAvailability {
 
     static func current() -> OnDeviceModelAvailability {
         #if canImport(FoundationModels)
-        switch SystemLanguageModel.default.availability {
-        case .available:
-            return .available
-        case .unavailable(.deviceNotEligible):
-            return .deviceNotEligible
-        case .unavailable(.appleIntelligenceNotEnabled):
-            return .appleIntelligenceNotEnabled
-        case .unavailable(.modelNotReady):
-            return .modelNotReady
-        @unknown default:
-            return .frameworkUnavailable
+        if #available(iOS 26.4, *) {
+            switch SystemLanguageModel.default.availability {
+            case .available:
+                return .available
+            case .unavailable(.deviceNotEligible):
+                return .deviceNotEligible
+            case .unavailable(.appleIntelligenceNotEnabled):
+                return .appleIntelligenceNotEnabled
+            case .unavailable(.modelNotReady):
+                return .modelNotReady
+            @unknown default:
+                return .frameworkUnavailable
+            }
         }
+        return .unsupportedOperatingSystem
         #else
         return .frameworkUnavailable
         #endif

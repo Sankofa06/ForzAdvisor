@@ -1,5 +1,10 @@
 # Release Notes
 
+## Version 1.1.7 (Build 11) - 2026-07-21
+
+- Expanded app compatibility to iOS 17 and later while preserving the offline-first tuning workflow.
+- Kept optional on-device generation safely isolated to supported iOS versions, with clearer fallback status on older devices.
+
 ## Version 1.1.6 (Build 10) - 2026-07-16
 
 - Made manual entry safer with blank required fields, clearer validation, keyboard controls, and easier class and drivetrain selection.

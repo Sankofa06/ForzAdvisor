@@ -29,6 +29,9 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
         guard currentAvailability.isAvailable else {
             throw OnDeviceTuneError.unavailable(currentAvailability)
         }
+        guard #available(iOS 26.4, *) else {
+            throw OnDeviceTuneError.unavailable(.unsupportedOperatingSystem)
+        }
 
         let baseline = try await baselineProvider.generateTune(for: request)
         let prompt = try promptBuilder.prompt(for: request, baseline: baseline)
@@ -87,6 +90,11 @@ struct FoundationModelTuneProvider: OnDeviceTuneProviding {
     }
 
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
+        let currentAvailability = availability
+        guard currentAvailability.isAvailable else {
+            throw OnDeviceTuneError.unavailable(currentAvailability)
+        }
+
         var result = try await baselineProvider.adjustTune(previous: tune, adjustment: adjustment)
         result.tune = result.tune.withProviderInfo(.fallback(
             requestedMode: .onDeviceFoundationModel,
