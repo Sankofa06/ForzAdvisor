@@ -50,9 +50,8 @@ enum TuningKnowledgeBase {
     }
 
     static func alignment(for request: TuneRequest) -> AlignmentBaseline {
-        let car = request.car
-
-        if request.discipline == .drag {
+        switch request.discipline {
+        case .drag:
             return AlignmentBaseline(
                 frontCamber: -0.3,
                 rearCamber: 0.2,
@@ -60,9 +59,7 @@ enum TuningKnowledgeBase {
                 rearToe: 0,
                 caster: 7
             )
-        }
-
-        if request.discipline == .drift {
+        case .drift:
             return AlignmentBaseline(
                 frontCamber: -5,
                 rearCamber: -1,
@@ -70,36 +67,47 @@ enum TuningKnowledgeBase {
                 rearToe: -0.1,
                 caster: 7
             )
-        }
-
-        let classExtra = classCamberExtra(for: car.performanceClass)
-        let frontBase: Double
-        let rearBase: Double
-        let caster: Double
-
-        switch request.discipline {
         case .road:
-            frontBase = -0.9
-            rearBase = -0.5
-            caster = 6.8
+            return standardAlignment(
+                for: request,
+                frontBase: -0.9,
+                rearBase: -0.5,
+                caster: 6.8
+            )
         case .touge:
-            frontBase = -1.2
-            rearBase = -0.7
-            caster = 7
+            return standardAlignment(
+                for: request,
+                frontBase: -1.2,
+                rearBase: -0.7,
+                caster: 7
+            )
         case .dirt:
-            frontBase = -0.7
-            rearBase = -0.5
-            caster = 5.8
+            return standardAlignment(
+                for: request,
+                frontBase: -0.7,
+                rearBase: -0.5,
+                caster: 5.8
+            )
         case .crossCountry:
-            frontBase = -0.6
-            rearBase = -0.4
-            caster = 5.5
-        case .drag, .drift:
-            fatalError("Handled above.")
+            return standardAlignment(
+                for: request,
+                frontBase: -0.6,
+                rearBase: -0.4,
+                caster: 5.5
+            )
         }
+    }
+
+    private static func standardAlignment(
+        for request: TuneRequest,
+        frontBase: Double,
+        rearBase: Double,
+        caster: Double
+    ) -> AlignmentBaseline {
+        let classExtra = classCamberExtra(for: request.car.performanceClass)
 
         let frontToe = request.discipline == .touge ? 0.1 : 0
-        let rearToe = request.discipline == .touge && car.drivetrain == .rwd ? -0.1 : 0
+        let rearToe = request.discipline == .touge && request.car.drivetrain == .rwd ? -0.1 : 0
 
         return AlignmentBaseline(
             frontCamber: clamp(frontBase + classExtra, -2.0, -0.3),

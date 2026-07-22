@@ -33,19 +33,23 @@ final class ForzAdvisorUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Manual Entry"].waitForExistence(timeout: 5))
 
         let nextButton = app.buttons["manualEntryNextButton"]
+        let keyboardDoneButton = app.buttons["manualEntryKeyboardDoneButton"]
         XCTAssertTrue(nextButton.waitForExistence(timeout: 5))
         XCTAssertFalse(nextButton.isEnabled)
 
         app.textFields["manualEntryYearField"].enterText("1997")
         app.textFields["manualEntryMakeField"].enterText("Mazda")
         app.textFields["manualEntryModelField"].enterText("Miata")
-        app.textFields["manualEntryWeightField"].enterText("2345")
-        app.textFields["manualEntryFrontWeightField"].enterText("55")
-
-        let keyboardDoneButton = app.buttons["manualEntryKeyboardDoneButton"]
         XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
         keyboardDoneButton.tap()
-
+        app.swipeUp()
+        app.textFields["manualEntryWeightField"].enterText("2345")
+        XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
+        keyboardDoneButton.tap()
+        app.swipeUp()
+        app.textFields["manualEntryFrontWeightField"].enterText("55")
+        XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
+        keyboardDoneButton.tap()
         app.swipeUp()
         app.textFields["manualEntryPerformanceIndexField"].enterText("689")
         if keyboardDoneButton.waitForExistence(timeout: 2) {
@@ -91,6 +95,57 @@ final class ForzAdvisorUITests: XCTestCase {
 
         let adjustmentChangeRow = app.descendants(matching: .any)["adjustmentChangeRow"].firstMatch
         XCTAssertTrue(app.waitForVisibleElement(adjustmentChangeRow, timeout: 15))
+    }
+
+    @MainActor
+    func testManualGameSelectionSurvivesDisciplineRoundTrip() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing"]
+        app.launch()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15))
+
+        let garageHome = app.descendants(matching: .any)["garageHome"].firstMatch
+        XCTAssertTrue(garageHome.waitForExistence(timeout: 15))
+        garageHome.descendants(matching: .button)["newTuneButton"].tap()
+        app.buttons["manualEntryButton"].tap()
+
+        let fh5Button = app.buttons["manualEntryGame-fh5"]
+        XCTAssertTrue(fh5Button.waitForExistence(timeout: 5))
+        fh5Button.tap()
+        XCTAssertEqual(fh5Button.value as? String, "Selected")
+
+        let keyboardDoneButton = app.buttons["manualEntryKeyboardDoneButton"]
+        app.textFields["manualEntryYearField"].enterText("1997")
+        app.textFields["manualEntryMakeField"].enterText("Mazda")
+        app.textFields["manualEntryModelField"].enterText("Miata")
+        XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
+        keyboardDoneButton.tap()
+        app.swipeUp()
+        app.textFields["manualEntryWeightField"].enterText("2345")
+        XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
+        keyboardDoneButton.tap()
+        app.swipeUp()
+        app.textFields["manualEntryFrontWeightField"].enterText("55")
+        XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
+        keyboardDoneButton.tap()
+        app.swipeUp()
+        app.textFields["manualEntryPerformanceIndexField"].enterText("789")
+        if keyboardDoneButton.waitForExistence(timeout: 2) {
+            keyboardDoneButton.tap()
+        }
+        app.buttons["manualEntryClass-A"].tap()
+        app.buttons["manualEntryDrivetrain-RWD"].tap()
+
+        let nextButton = app.buttons["manualEntryNextButton"]
+        XCTAssertTrue(nextButton.waitUntilEnabled(timeout: 3))
+        nextButton.tap()
+
+        XCTAssertTrue(app.buttons["disciplineButton-road"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["FH5"].waitForExistence(timeout: 5))
+        app.navigationBars["Pick Tune Type"].buttons["Back"].tap()
+
+        XCTAssertTrue(fh5Button.waitForExistence(timeout: 5))
+        XCTAssertEqual(fh5Button.value as? String, "Selected")
     }
 
     @MainActor

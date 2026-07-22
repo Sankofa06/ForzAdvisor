@@ -58,6 +58,27 @@ final class TuningDomainTests: XCTestCase {
         XCTAssertEqual(draft.confirmedCarInput()?.game, .fh5)
     }
 
+    func testManualGameSelectionUsesSelectedGamesValidationAndSurvivesBackNavigation() throws {
+        var draft = ManualEntryDraft(car: SampleTuningData.starterCar)
+        draft.game = .fh5
+        draft.performanceClass = .r
+        draft.performanceIndex = 950
+
+        XCTAssertTrue(draft.validationIssues.contains(.unsupportedPerformanceClass(.fh5, .r)))
+        XCTAssertNil(draft.confirmedCarInput())
+
+        draft.performanceClass = .a
+        draft.performanceIndex = 750
+        let input = try XCTUnwrap(draft.confirmedCarInput())
+        XCTAssertEqual(input.game, .fh5)
+
+        guard case .manualEntry(let restoredDraft, _) = InputOrigin.manual(input).previousStep(thumbnailData: nil) else {
+            return XCTFail("Manual origin did not restore manual entry.")
+        }
+        XCTAssertEqual(restoredDraft.game, .fh5)
+        XCTAssertEqual(restoredDraft.confirmedCarInput()?.game, .fh5)
+    }
+
     func testManualEntryDraftStartsIncompleteWithoutSampleIdentity() {
         let draft = ManualEntryDraft.empty
 

@@ -11,7 +11,7 @@ import SwiftUI
 struct OCRConfirmationView: View {
     let onBack: () -> Void
     let onUseManualEntry: (OCRConfirmationDraft) -> Void
-    let onContinue: (CarInput) -> Void
+    let onContinue: (CarInput, OCRConfirmationDraft) -> Void
 
     @State private var draft: OCRConfirmationDraft
 
@@ -19,7 +19,7 @@ struct OCRConfirmationView: View {
         draft: OCRConfirmationDraft,
         onBack: @escaping () -> Void,
         onUseManualEntry: @escaping (OCRConfirmationDraft) -> Void,
-        onContinue: @escaping (CarInput) -> Void
+        onContinue: @escaping (CarInput, OCRConfirmationDraft) -> Void
     ) {
         self._draft = State(initialValue: draft)
         self.onBack = onBack
@@ -38,6 +38,10 @@ struct OCRConfirmationView: View {
             }
 
             Section("Car") {
+                ForzaGamePicker(
+                    selection: $draft.game,
+                    accessibilityPrefix: "ocrConfirmationGame"
+                )
                 TextField("Year", text: optionalNumberText($draft.year))
                     .keyboardType(.numberPad)
                 TextField("Make", text: $draft.make)
@@ -122,9 +126,10 @@ struct OCRConfirmationView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Next") {
                     if let car = draft.confirmedCarInput() {
-                        onContinue(car)
+                        onContinue(car, draft)
                     }
                 }
+                .accessibilityIdentifier("ocrConfirmationNextButton")
                 .disabled(draft.confirmedCarInput() == nil)
             }
         }

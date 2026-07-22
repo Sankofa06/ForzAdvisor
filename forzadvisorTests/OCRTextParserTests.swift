@@ -126,4 +126,31 @@ final class OCRTextParserTests: XCTestCase {
         XCTAssertTrue(fallback.validationIssues.contains(.missingPerformanceClass))
         XCTAssertTrue(fallback.validationIssues.contains(.missingDrivetrain))
     }
+
+    func testSelectedGameControlsOCRValidationAndSurvivesWorkflowTransitions() throws {
+        var draft = OCRConfirmationDraft()
+        draft.game = .fh5
+        draft.year = 2020
+        draft.make = "Toyota"
+        draft.model = "GR Supra"
+        draft.weightPounds = 3_397
+        draft.frontWeightPercent = 51
+        draft.performanceClass = .r
+        draft.performanceIndex = 950
+        draft.drivetrain = .rwd
+
+        XCTAssertNil(draft.confirmedCarInput())
+
+        draft.performanceClass = .a
+        draft.performanceIndex = 731
+        let input = try XCTUnwrap(draft.confirmedCarInput())
+        XCTAssertEqual(input.game, .fh5)
+        XCTAssertEqual(draft.manualEntryFallback().game, .fh5)
+
+        guard case .ocrReview(let restoredDraft) = InputOrigin.ocr(draft).previousStep(thumbnailData: nil) else {
+            return XCTFail("OCR origin did not restore OCR review.")
+        }
+        XCTAssertEqual(restoredDraft.game, .fh5)
+        XCTAssertEqual(restoredDraft.confirmedCarInput()?.game, .fh5)
+    }
 }

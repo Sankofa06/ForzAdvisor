@@ -99,11 +99,11 @@ struct ContentView: View {
                         onUseManualEntry: { draft in
                             step = .manualEntry(draft.manualEntryFallback(), thumbnailData: draft.thumbnailData)
                         },
-                        onContinue: { input in
+                        onContinue: { input, confirmedDraft in
                             step = .discipline(
                                 input,
-                                origin: .ocr(draft),
-                                thumbnailData: draft.thumbnailData
+                                origin: .ocr(confirmedDraft),
+                                thumbnailData: confirmedDraft.thumbnailData
                             )
                         }
                     )

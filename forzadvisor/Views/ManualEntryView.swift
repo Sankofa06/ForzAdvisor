@@ -24,6 +24,10 @@ struct ManualEntryView: View {
     var body: some View {
         Form {
             Section("Car") {
+                ForzaGamePicker(
+                    selection: $draft.game,
+                    accessibilityPrefix: "manualEntryGame"
+                )
                 TextField("Year", text: optionalNumberText($draft.year))
                     .keyboardType(.numberPad)
                     .focused($focusedField, equals: .year)

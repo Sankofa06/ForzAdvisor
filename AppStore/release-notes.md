@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.1.10 (Build 14) - 2026-07-22
+
+- Added an explicit FH5/FH6 selector to manual entry and screenshot review.
+- Preserved the selected game and reviewed OCR values when returning from tune-type selection.
+- Removed a defensive crash path from discipline-specific alignment generation without changing existing tune values.
+
 ## Version 1.1.9 (Build 13) - 2026-07-22
 
 - Added a searchable starter catalog for Forza Horizon 5 and Forza Horizon 6 with reviewed stock values for six cars.
@@ -41,11 +47,13 @@
 
 ## App Store What's New
 
-Choose a car from a new FH5/FH6 starter catalog and begin with reviewed stock values. Every catalog entry shows its verification status and sources, and saved tunes retain their catalog origin—even when you edit the values before tuning.
+Choose FH5 or FH6 directly when entering a car manually or reviewing a screenshot. Your selected game and reviewed values now stay intact if you return from tune-type selection.
 
 ## TestFlight Notes
 
-Please test New Tune -> Choose a Car with both FH5 and FH6. Verify search, stock values, source links, Edit Values and Cancel, discipline selection, generated-tune provenance, saving, and reopening from the Garage. The first catalog contains six community-crosschecked cars; confirm values in game and report discrepancies.
+Please test New Tune -> Enter Manually with both FH5 and FH6. Verify that each game's class and PI rules apply, then go Next and Back and confirm the selected game and values are preserved. If you import a screenshot, change the game during review and verify that Back from tune-type selection restores the edited review.
+
+The searchable starter catalog remains available for both games with six community-crosschecked cars. Confirm catalog values in game and report discrepancies.
 
 FH5 stock data is available, but offline FH5 tune generation remains intentionally unavailable until its separate ruleset is validated. FH6 offline formulas remain experimental; catalog provenance does not imply formula validation.
 
