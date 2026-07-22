@@ -145,16 +145,24 @@ extension TuneAPITune {
     private var tiresSection: TuneSection? {
         guard let tires else { return nil }
         return section("Tires", "circle.dashed", [
-            line("Front pressure", tires.frontPsi, "PSI"),
-            line("Rear pressure", tires.rearPsi, "PSI")
+            line("Front pressure", tires.frontPsi, "PSI", fieldID: .frontTirePressure),
+            line("Rear pressure", tires.rearPsi, "PSI", fieldID: .rearTirePressure)
         ])
     }
 
     private var gearingSection: TuneSection? {
         guard let gearing else { return nil }
-        var lines = [line("Final drive", gearing.finalDrive, "")]
+        var lines = [line("Final drive", gearing.finalDrive, "", fieldID: .finalDrive)]
         if let gears = gearing.gears, !gears.isEmpty {
-            lines.append(TuneLine(label: "Individual gears", value: gears.map { formatted($0) }.joined(separator: " / "), unit: "", detail: nil))
+            lines.append(contentsOf: gears.enumerated().map { index, value in
+                TuneLine(
+                    label: "Gear \(index + 1)",
+                    value: formatted(value),
+                    unit: "",
+                    detail: nil,
+                    fieldID: .gearRatio(index + 1)
+                )
+            })
         }
         return section("Gearing", "gearshape.2", lines)
     }
@@ -162,68 +170,68 @@ extension TuneAPITune {
     private var alignmentSection: TuneSection? {
         guard let alignment else { return nil }
         return section("Alignment", "arrow.left.and.right", [
-            line("Front camber", alignment.frontCamber, "deg"),
-            line("Rear camber", alignment.rearCamber, "deg"),
-            line("Front toe", alignment.frontToe, "deg"),
-            line("Rear toe", alignment.rearToe, "deg"),
-            line("Caster", alignment.caster, "deg")
+            line("Front camber", alignment.frontCamber, "deg", fieldID: .frontCamber),
+            line("Rear camber", alignment.rearCamber, "deg", fieldID: .rearCamber),
+            line("Front toe", alignment.frontToe, "deg", fieldID: .frontToe),
+            line("Rear toe", alignment.rearToe, "deg", fieldID: .rearToe),
+            line("Caster", alignment.caster, "deg", fieldID: .caster)
         ])
     }
 
     private var antirollBarSection: TuneSection? {
         guard let antirollBars else { return nil }
         return section("Antiroll Bars", "arrow.up.left.and.arrow.down.right", [
-            line("Front", antirollBars.front, ""),
-            line("Rear", antirollBars.rear, "")
+            line("Front", antirollBars.front, "", fieldID: .frontARB),
+            line("Rear", antirollBars.rear, "", fieldID: .rearARB)
         ])
     }
 
     private var springSection: TuneSection? {
         guard let springs else { return nil }
         return section("Springs", "waveform.path.ecg", [
-            line("Front rate", springs.frontRate, "lb/in", digits: 0),
-            line("Rear rate", springs.rearRate, "lb/in", digits: 0),
-            line("Front ride height", springs.frontRideHeight, "in"),
-            line("Rear ride height", springs.rearRideHeight, "in")
+            line("Front rate", springs.frontRate, "lb/in", fieldID: .frontSpringRate, digits: 0),
+            line("Rear rate", springs.rearRate, "lb/in", fieldID: .rearSpringRate, digits: 0),
+            line("Front ride height", springs.frontRideHeight, "in", fieldID: .frontRideHeight),
+            line("Rear ride height", springs.rearRideHeight, "in", fieldID: .rearRideHeight)
         ])
     }
 
     private var dampingSection: TuneSection? {
         guard let damping else { return nil }
         return section("Damping", "slider.horizontal.3", [
-            line("Front rebound", damping.frontRebound, ""),
-            line("Rear rebound", damping.rearRebound, ""),
-            line("Front bump", damping.frontBump, ""),
-            line("Rear bump", damping.rearBump, "")
+            line("Front rebound", damping.frontRebound, "", fieldID: .frontRebound),
+            line("Rear rebound", damping.rearRebound, "", fieldID: .rearRebound),
+            line("Front bump", damping.frontBump, "", fieldID: .frontBump),
+            line("Rear bump", damping.rearBump, "", fieldID: .rearBump)
         ])
     }
 
     private var aeroSection: TuneSection? {
         guard let aero else { return nil }
         return section("Aero", "wind", [
-            line("Front", aero.frontPounds, "lb", digits: 0),
-            line("Rear", aero.rearPounds, "lb", digits: 0)
+            line("Front", aero.frontPounds, "lb", fieldID: .frontAero, digits: 0),
+            line("Rear", aero.rearPounds, "lb", fieldID: .rearAero, digits: 0)
         ])
     }
 
     private var brakeSection: TuneSection? {
         guard let brakes else { return nil }
         return section("Brakes", "exclamationmark.octagon", [
-            line("Balance", brakes.balancePercent, "%", digits: 0),
-            line("Pressure", brakes.pressurePercent, "%", digits: 0)
+            line("Balance", brakes.balancePercent, "%", fieldID: .brakeBalance, digits: 0),
+            line("Pressure", brakes.pressurePercent, "%", fieldID: .brakePressure, digits: 0)
         ])
     }
 
     private var differentialSection: TuneSection? {
         guard let differential else { return nil }
         return section("Differential", "point.3.connected.trianglepath.dotted", [
-            line("Accel", differential.accelPercent, "%", digits: 0),
-            line("Decel", differential.decelPercent, "%", digits: 0),
-            line("Front accel", differential.frontAccelPercent, "%", digits: 0),
-            line("Front decel", differential.frontDecelPercent, "%", digits: 0),
-            line("Rear accel", differential.rearAccelPercent, "%", digits: 0),
-            line("Rear decel", differential.rearDecelPercent, "%", digits: 0),
-            line("Center balance", differential.centerBalanceRearPercent, "% rear", digits: 0)
+            line("Accel", differential.accelPercent, "%", fieldID: .differentialAcceleration, digits: 0),
+            line("Decel", differential.decelPercent, "%", fieldID: .differentialDeceleration, digits: 0),
+            line("Front accel", differential.frontAccelPercent, "%", fieldID: .frontDifferentialAcceleration, digits: 0),
+            line("Front decel", differential.frontDecelPercent, "%", fieldID: .frontDifferentialDeceleration, digits: 0),
+            line("Rear accel", differential.rearAccelPercent, "%", fieldID: .rearDifferentialAcceleration, digits: 0),
+            line("Rear decel", differential.rearDecelPercent, "%", fieldID: .rearDifferentialDeceleration, digits: 0),
+            line("Center balance", differential.centerBalanceRearPercent, "% rear", fieldID: .differentialCenterBalance, digits: 0)
         ])
     }
 
@@ -233,9 +241,21 @@ extension TuneAPITune {
         return TuneSection(title: title, symbolName: symbolName, lines: resolvedLines)
     }
 
-    private func line(_ label: String, _ value: Double?, _ unit: String, digits: Int = 1) -> TuneLine? {
+    private func line(
+        _ label: String,
+        _ value: Double?,
+        _ unit: String,
+        fieldID: TuneFieldID,
+        digits: Int = 1
+    ) -> TuneLine? {
         guard let value else { return nil }
-        return TuneLine(label: label, value: formatted(value, digits: digits), unit: unit, detail: nil)
+        return TuneLine(
+            label: label,
+            value: formatted(value, digits: digits),
+            unit: unit,
+            detail: nil,
+            fieldID: fieldID
+        )
     }
 
     private func formatted(_ value: Double, digits: Int = 1) -> String {

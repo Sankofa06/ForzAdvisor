@@ -25,7 +25,11 @@ extension Array where Element == TuneLine {
 
         for partialLine in self {
             if let lineIndex = mergedLines.firstIndex(where: { $0.label == partialLine.label }) {
-                mergedLines[lineIndex] = partialLine
+                var replacement = partialLine
+                if replacement.fieldID == nil {
+                    replacement.fieldID = mergedLines[lineIndex].fieldID
+                }
+                mergedLines[lineIndex] = replacement
             } else {
                 mergedLines.append(partialLine)
             }

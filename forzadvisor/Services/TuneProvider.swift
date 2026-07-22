@@ -87,43 +87,43 @@ struct LocalSampleTuneProvider: TuneProvider {
 
         let sections = [
             TuneSection(title: "Tires", symbolName: "circle.dashed", lines: [
-                line("Front pressure", tires.frontPsi, "PSI", detail: tires.detail),
-                line("Rear pressure", tires.rearPsi, "PSI", detail: tires.detail)
+                line("Front pressure", tires.frontPsi, "PSI", fieldID: .frontTirePressure, detail: tires.detail),
+                line("Rear pressure", tires.rearPsi, "PSI", fieldID: .rearTirePressure, detail: tires.detail)
             ]),
             TuneSection(title: "Gearing", symbolName: "gearshape.2", lines: [
-                line("Final drive", finalDrive, "", digits: 2),
+                line("Final drive", finalDrive, "", fieldID: .finalDrive, digits: 2),
                 TuneLine(label: "Individual gears", value: "Stock baseline", unit: "", detail: "Scale final drive first; only adjust gears after limiter checks.")
             ]),
             TuneSection(title: "Alignment", symbolName: "arrow.left.and.right", lines: [
-                line("Front camber", alignment.frontCamber, "deg"),
-                line("Rear camber", alignment.rearCamber, "deg"),
-                line("Front toe", alignment.frontToe, "deg"),
-                line("Rear toe", alignment.rearToe, "deg"),
-                line("Caster", alignment.caster, "deg")
+                line("Front camber", alignment.frontCamber, "deg", fieldID: .frontCamber),
+                line("Rear camber", alignment.rearCamber, "deg", fieldID: .rearCamber),
+                line("Front toe", alignment.frontToe, "deg", fieldID: .frontToe),
+                line("Rear toe", alignment.rearToe, "deg", fieldID: .rearToe),
+                line("Caster", alignment.caster, "deg", fieldID: .caster)
             ]),
             TuneSection(title: "Antiroll Bars", symbolName: "arrow.up.left.and.arrow.down.right", lines: [
-                line("Front", antirollBars.front, ""),
-                line("Rear", antirollBars.rear, "")
+                line("Front", antirollBars.front, "", fieldID: .frontARB),
+                line("Rear", antirollBars.rear, "", fieldID: .rearARB)
             ]),
             TuneSection(title: "Springs", symbolName: "waveform.path.ecg", lines: [
-                line("Front rate", springs.frontRate, "lb/in", digits: 0),
-                line("Rear rate", springs.rearRate, "lb/in", digits: 0),
-                line("Front ride height", rideHeight.front, "in"),
-                line("Rear ride height", rideHeight.rear, "in")
+                line("Front rate", springs.frontRate, "lb/in", fieldID: .frontSpringRate, digits: 0),
+                line("Rear rate", springs.rearRate, "lb/in", fieldID: .rearSpringRate, digits: 0),
+                line("Front ride height", rideHeight.front, "in", fieldID: .frontRideHeight),
+                line("Rear ride height", rideHeight.rear, "in", fieldID: .rearRideHeight)
             ]),
             TuneSection(title: "Damping", symbolName: "slider.horizontal.3", lines: [
-                line("Front rebound", damping.frontRebound, "", detail: "Road baseline keeps bump near 40% of rebound; off-road and drag are exceptions."),
-                line("Rear rebound", damping.rearRebound, "", detail: "Match the stiffer spring end with slightly more damping."),
-                line("Front bump", damping.frontBump, ""),
-                line("Rear bump", damping.rearBump, "")
+                line("Front rebound", damping.frontRebound, "", fieldID: .frontRebound, detail: "Road baseline keeps bump near 40% of rebound; off-road and drag are exceptions."),
+                line("Rear rebound", damping.rearRebound, "", fieldID: .rearRebound, detail: "Match the stiffer spring end with slightly more damping."),
+                line("Front bump", damping.frontBump, "", fieldID: .frontBump),
+                line("Rear bump", damping.rearBump, "", fieldID: .rearBump)
             ]),
             TuneSection(title: "Aero", symbolName: "wind", lines: [
-                line("Front", aero.front, "lb", digits: 0, detail: aeroDetail(for: request.discipline)),
-                line("Rear", aero.rear, "lb", digits: 0, detail: aeroDetail(for: request.discipline))
+                line("Front", aero.front, "lb", fieldID: .frontAero, digits: 0, detail: aeroDetail(for: request.discipline)),
+                line("Rear", aero.rear, "lb", fieldID: .rearAero, digits: 0, detail: aeroDetail(for: request.discipline))
             ]),
             TuneSection(title: "Brakes", symbolName: "exclamationmark.octagon", lines: [
-                line("Balance", brakes.balancePercent, "%", digits: 0, detail: brakeDetail(for: request.discipline)),
-                line("Pressure", brakes.pressurePercent, "%", digits: 0)
+                line("Balance", brakes.balancePercent, "%", fieldID: .brakeBalance, digits: 0, detail: brakeDetail(for: request.discipline)),
+                line("Pressure", brakes.pressurePercent, "%", fieldID: .brakePressure, digits: 0)
             ]),
             TuneSection(title: "Differential", symbolName: "point.3.connected.trianglepath.dotted", lines: diffLines(for: differential))
         ]
@@ -142,13 +142,13 @@ struct LocalSampleTuneProvider: TuneProvider {
 
     private func diffLines(for differential: DifferentialBaseline) -> [TuneLine] {
         [
-            line("Accel", differential.accel, "%", digits: 0),
-            line("Decel", differential.decel, "%", digits: 0),
-            line("Front accel", differential.frontAccel, "%", digits: 0),
-            line("Front decel", differential.frontDecel, "%", digits: 0),
-            line("Rear accel", differential.rearAccel, "%", digits: 0),
-            line("Rear decel", differential.rearDecel, "%", digits: 0),
-            line("Center balance", differential.centerBalance, "% rear", digits: 0)
+            line("Accel", differential.accel, "%", fieldID: .differentialAcceleration, digits: 0),
+            line("Decel", differential.decel, "%", fieldID: .differentialDeceleration, digits: 0),
+            line("Front accel", differential.frontAccel, "%", fieldID: .frontDifferentialAcceleration, digits: 0),
+            line("Front decel", differential.frontDecel, "%", fieldID: .frontDifferentialDeceleration, digits: 0),
+            line("Rear accel", differential.rearAccel, "%", fieldID: .rearDifferentialAcceleration, digits: 0),
+            line("Rear decel", differential.rearDecel, "%", fieldID: .rearDifferentialDeceleration, digits: 0),
+            line("Center balance", differential.centerBalance, "% rear", fieldID: .differentialCenterBalance, digits: 0)
         ].compactMap { $0 }
     }
 
@@ -189,18 +189,32 @@ struct LocalSampleTuneProvider: TuneProvider {
             : "baseline: FH6 tarmac setup with conservative diff lock."
     }
 
-    private func line(_ label: String, _ value: Double, _ unit: String, digits: Int = 1, detail: String? = nil) -> TuneLine {
+    private func line(
+        _ label: String,
+        _ value: Double,
+        _ unit: String,
+        fieldID: TuneFieldID,
+        digits: Int = 1,
+        detail: String? = nil
+    ) -> TuneLine {
         TuneLine(
             label: label,
             value: LocalizedNumberText.format(value, fractionDigits: digits),
             unit: unit,
-            detail: detail
+            detail: detail,
+            fieldID: fieldID
         )
     }
 
-    private func line(_ label: String, _ value: Double?, _ unit: String, digits: Int = 1) -> TuneLine? {
+    private func line(
+        _ label: String,
+        _ value: Double?,
+        _ unit: String,
+        fieldID: TuneFieldID,
+        digits: Int = 1
+    ) -> TuneLine? {
         guard let value else { return nil }
-        return line(label, value, unit, digits: digits, detail: nil)
+        return line(label, value, unit, fieldID: fieldID, digits: digits, detail: nil)
     }
 
 }

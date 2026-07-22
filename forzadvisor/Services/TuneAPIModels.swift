@@ -142,7 +142,22 @@ struct TuneAPIGearing: Codable, Equatable {
     init?(section: TuneSection?) {
         guard let section else { return nil }
         self.finalDrive = section.number("Final drive")
-        self.gears = nil
+        let indexedGears = section.lines.compactMap { line -> (Int, Double)? in
+            guard case .gearRatio(let index) = line.fieldID,
+                  let value = line.numericValue else {
+                return nil
+            }
+            return (index, value)
+        }
+        .sorted { $0.0 < $1.0 }
+        guard !indexedGears.isEmpty else {
+            self.gears = nil
+            return
+        }
+        let expectedIndices = Array(1...indexedGears.count)
+        self.gears = indexedGears.map(\.0) == expectedIndices
+            ? indexedGears.map(\.1)
+            : nil
     }
 }
 
