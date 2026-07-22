@@ -88,13 +88,10 @@ final class ForzAdvisorUITests: XCTestCase {
 
         XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["1997 Mazda Miata"].waitForExistence(timeout: 5))
-
-        let feedbackButton = app.buttons["feedbackButton-pushesWide"]
-        XCTAssertTrue(feedbackButton.waitForExistence(timeout: 5))
-        feedbackButton.tap()
-
-        let adjustmentChangeRow = app.descendants(matching: .any)["adjustmentChangeRow"].firstMatch
-        XCTAssertTrue(app.waitForVisibleElement(adjustmentChangeRow, timeout: 15))
+        XCTAssertTrue(
+            app.descendants(matching: .any)["tuneCoverage"].firstMatch.waitForExistence(timeout: 5)
+        )
+        XCTAssertFalse(app.buttons["feedbackButton-pushesWide"].exists)
     }
 
     @MainActor

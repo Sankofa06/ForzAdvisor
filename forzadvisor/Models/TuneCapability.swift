@@ -45,6 +45,34 @@ struct TuneEvidence: Codable, Equatable, Sendable {
     var confidence: TuneEvidenceConfidence
     var source: String
     var version: String
+    var usagePermission: TuneDataUsagePermission
+
+    enum CodingKeys: String, CodingKey {
+        case confidence, source, version, usagePermission
+    }
+
+    init(
+        confidence: TuneEvidenceConfidence,
+        source: String,
+        version: String,
+        usagePermission: TuneDataUsagePermission = .unknown
+    ) {
+        self.confidence = confidence
+        self.source = source
+        self.version = version
+        self.usagePermission = usagePermission
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        confidence = try container.decode(TuneEvidenceConfidence.self, forKey: .confidence)
+        source = try container.decode(String.self, forKey: .source)
+        version = try container.decode(String.self, forKey: .version)
+        usagePermission = try container.decodeIfPresent(
+            TuneDataUsagePermission.self,
+            forKey: .usagePermission
+        ) ?? .unknown
+    }
 }
 
 struct TuneVehicleIdentity: Codable, Equatable, Sendable {

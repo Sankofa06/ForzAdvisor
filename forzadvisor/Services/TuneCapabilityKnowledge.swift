@@ -25,13 +25,15 @@ struct TuneCapabilityKnowledge: Codable, Equatable, Sendable {
             TuneEvidence(
                 confidence: .high,
                 source: "forzadvisor.fh5.global-upgrade-unlocks",
-                version: "2026.07.1"
+                version: "2026.07.1",
+                usagePermission: .permitted
             )
         case .fh6:
             TuneEvidence(
                 confidence: .medium,
                 source: "forzadvisor.fh6.global-upgrade-unlocks",
-                version: "2026.07.1"
+                version: "2026.07.1",
+                usagePermission: .permitted
             )
         }
 

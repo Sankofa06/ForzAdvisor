@@ -86,8 +86,9 @@ extension ContentView {
         }
 
         do {
+            let persistedTune = TuneOutputProjector().project(tune)
             modelContext.insert(try SavedTune(
-                tune: tune,
+                tune: persistedTune,
                 playerNotes: playerNotes,
                 thumbnailData: thumbnailData
             ))
@@ -122,16 +123,19 @@ extension ContentView {
         }
 
         let updatedTune = draft.metadataUpdatedTune(from: originalTune)
+        let resultTune = originalTune.projectionReport == nil
+            ? updatedTune
+            : TuneOutputProjector().project(updatedTune)
 
         do {
             try updateSavedTune(
                 savedTuneID: savedTuneID,
-                with: updatedTune,
+                with: resultTune,
                 playerNotes: draft.playerNotes,
                 thumbnailData: thumbnailData
             )
             step = .result(
-                updatedTune,
+                resultTune,
                 savedTuneID: savedTuneID,
                 adjustmentChanges: [],
                 thumbnailData: thumbnailData,
@@ -190,8 +194,11 @@ extension ContentView {
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
         if let tune = savedTune.tuneResult {
+            let displayTune = tune.projectionReport == nil
+                ? tune
+                : TuneOutputProjector().project(tune)
             step = .result(
-                tune,
+                displayTune,
                 savedTuneID: savedTune.id,
                 adjustmentChanges: [],
                 thumbnailData: savedTune.thumbnailData,
@@ -211,8 +218,12 @@ extension ContentView {
         guard let savedTune = try savedTune(for: savedTuneID) else {
             throw ContentWorkflowError.missingSavedTune
         }
+        let persistedTune = savedTune.tuneResult?.projectionReport == nil
+            && tune.projectionReport == nil
+            ? tune
+            : TuneOutputProjector().project(tune)
         try savedTune.update(
-            with: tune,
+            with: persistedTune,
             playerNotes: playerNotes,
             thumbnailData: thumbnailData
         )
@@ -278,15 +289,15 @@ extension ContentView {
         tuneWorkflow.cancelActiveTuneWork()
     }
 
-    func makeTuneProvider() -> CompositeTuneProvider {
-        CompositeTuneProvider(
+    func makeTuneProvider() -> any TuneProvider {
+        CapabilityProjectingTuneProvider(base: CompositeTuneProvider(
             configuration: TuneProviderConfiguration(
                 mode: tuneProviderMode
             ),
             remoteProvider: TuneAPIClient(keychainStore: keychainStore),
             onDeviceProvider: FoundationModelTuneProvider(),
             localProvider: LocalSampleTuneProvider()
-        )
+        ))
     }
 }
 

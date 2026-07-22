@@ -170,7 +170,8 @@ final class TuneAccuracyContractTests: XCTestCase {
             source: "forzadvisor.rules",
             version: "1",
             capturedAt: Date(timeIntervalSinceReferenceDate: 20),
-            confidence: .high
+            confidence: .high,
+            usagePermission: .permitted
         )]
 
         XCTAssertTrue(snapshot.isValid, "Unexpected issues: \(snapshot.validationIssues)")
@@ -205,6 +206,70 @@ final class TuneAccuracyContractTests: XCTestCase {
         )
 
         XCTAssertTrue(snapshot.validationIssues.contains(.capabilityOnlyContainsExactBuildData))
+    }
+
+    func testSnapshotRejectsAmbiguousCapabilityFactsAndUnpermittedProvenance() {
+        var snapshot = validSnapshot()
+        let evidence = TuneEvidence(confidence: .high, source: "fixture.parts", version: "1")
+        let duplicatedPart = TuneVehiclePart(
+            partID: .raceSuspension,
+            availability: .available,
+            evidence: evidence
+        )
+        let duplicatedStockSetting = StockAdjustableSetting(
+            setting: .frontARB,
+            evidence: evidence
+        )
+        snapshot.capabilityProfile.parts = [duplicatedPart, duplicatedPart]
+        snapshot.capabilityProfile.stockAdjustableSettings = [
+            duplicatedStockSetting,
+            duplicatedStockSetting
+        ]
+        snapshot.evidenceSources[0].usagePermission = .unknown
+
+        let issues = snapshot.validationIssues
+        XCTAssertTrue(issues.contains(.duplicatePartID(.raceSuspension)))
+        XCTAssertTrue(issues.contains(.duplicateStockAdjustableSetting(.frontARB)))
+        XCTAssertTrue(issues.contains(.invalidPartEvidence(.raceSuspension)))
+        XCTAssertTrue(issues.contains(.invalidStockAdjustableEvidence(.frontARB)))
+        XCTAssertTrue(issues.contains(.invalidEvidence("capture.fh6.supra")))
+        XCTAssertFalse(snapshot.isValid)
+    }
+
+    func testLegacyCapabilityEvidenceWithoutUsagePermissionDecodesFailClosed() throws {
+        let evidence = TuneEvidence(
+            confidence: .high,
+            source: "fixture.parts",
+            version: "1",
+            usagePermission: .permitted
+        )
+        let encoded = try JSONEncoder().encode(evidence)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "usagePermission")
+
+        let decoded = try JSONDecoder().decode(
+            TuneEvidence.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+
+        XCTAssertEqual(decoded.usagePermission, .unknown)
+    }
+
+    func testLegacyProvenanceWithoutUsagePermissionDecodesFailClosed() throws {
+        let encoded = try JSONEncoder().encode(validSnapshot())
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        var sources = try XCTUnwrap(object["evidenceSources"] as? [[String: Any]])
+        sources[0].removeValue(forKey: "usagePermission")
+        object["evidenceSources"] = sources
+
+        let decoded = try JSONDecoder().decode(
+            VehicleBuildSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+
+        XCTAssertEqual(decoded.evidenceSources[0].usagePermission, .unknown)
+        XCTAssertFalse(decoded.isValid)
+        XCTAssertTrue(decoded.validationIssues.contains(.invalidEvidence("capture.fh6.supra")))
     }
 
     func testLegacySnapshotWithoutKindDecodesFailClosed() throws {
@@ -462,7 +527,8 @@ final class TuneAccuracyContractTests: XCTestCase {
             source: "forzadvisor.user-capture",
             version: "1",
             capturedAt: Date(timeIntervalSinceReferenceDate: 20),
-            confidence: .high
+            confidence: .high,
+            usagePermission: .permitted
         )
         return VehicleBuildSnapshot(
             schemaVersion: VehicleBuildSnapshot.currentSchemaVersion,

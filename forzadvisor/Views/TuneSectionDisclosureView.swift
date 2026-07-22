@@ -12,6 +12,7 @@ import UIKit
 struct TuneSectionDisclosureView: View {
     let section: TuneSection
     let isStreaming: Bool
+    var allowsCopy = true
     @Binding var isExpanded: Bool
     @Binding var copiedLineID: TuneLine.ID?
 
@@ -26,6 +27,7 @@ struct TuneSectionDisclosureView: View {
                     TuneLineCopyRow(
                         line: line,
                         isStreaming: isStreaming,
+                        allowsCopy: allowsCopy,
                         copiedLineID: $copiedLineID
                     )
 
@@ -66,11 +68,12 @@ private struct TuneLineCopyRow: View {
 
     let line: TuneLine
     let isStreaming: Bool
+    let allowsCopy: Bool
     @Binding var copiedLineID: TuneLine.ID?
 
     var body: some View {
         Button {
-            guard !isStreaming else { return }
+            guard !isStreaming, allowsCopy else { return }
             UIPasteboard.general.string = line.copyText
             copiedLineID = line.id
             UIAccessibility.post(
@@ -103,7 +106,7 @@ private struct TuneLineCopyRow: View {
             .padding(.vertical, 8)
         }
         .buttonStyle(.plain)
-        .disabled(isStreaming)
+        .disabled(isStreaming || !allowsCopy)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(line.label)
         .accessibilityValue(accessibilityValue)
@@ -159,6 +162,9 @@ private struct TuneLineCopyRow: View {
     private var accessibilityHint: String {
         if isStreaming {
             return "Values are still streaming."
+        }
+        if !allowsCopy {
+            return "This legacy value is unverified and cannot be copied."
         }
         if copiedLineID == line.id {
             return "Copied to clipboard."

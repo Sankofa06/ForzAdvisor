@@ -317,6 +317,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
     var generatedAt: Date = .now
     var providerInfo: TuneProviderInfo?
     var rulesetReference: TuneRulesetReference?
+    var projectionReport: TuneProjectionReport?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -326,6 +327,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         case generatedAt
         case providerInfo
         case rulesetReference
+        case projectionReport
     }
 
     init(
@@ -335,7 +337,8 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         notes: TuneNotes,
         generatedAt: Date = .now,
         providerInfo: TuneProviderInfo? = nil,
-        rulesetReference: TuneRulesetReference? = nil
+        rulesetReference: TuneRulesetReference? = nil,
+        projectionReport: TuneProjectionReport? = nil
     ) {
         self.id = id
         self.request = request
@@ -344,6 +347,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         self.generatedAt = generatedAt
         self.providerInfo = providerInfo
         self.rulesetReference = rulesetReference
+        self.projectionReport = projectionReport
     }
 
     init(from decoder: Decoder) throws {
@@ -355,6 +359,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         generatedAt = try container.decode(Date.self, forKey: .generatedAt)
         providerInfo = try container.decodeIfPresent(TuneProviderInfo.self, forKey: .providerInfo)
         rulesetReference = try container.decodeIfPresent(TuneRulesetReference.self, forKey: .rulesetReference)
+        projectionReport = try container.decodeIfPresent(TuneProjectionReport.self, forKey: .projectionReport)
     }
 }
 

@@ -319,6 +319,12 @@ enum VehicleBuildSnapshotKind: String, Codable, Sendable {
     case exactBuildObservation
 }
 
+enum TuneDataUsagePermission: String, Codable, Sendable {
+    case permitted
+    case unknown
+    case prohibited
+}
+
 struct TuneDataProvenance: Codable, Equatable, Identifiable, Sendable {
     var id: String
     var game: ForzaGame
@@ -328,6 +334,49 @@ struct TuneDataProvenance: Codable, Equatable, Identifiable, Sendable {
     var version: String
     var capturedAt: Date
     var confidence: TuneEvidenceConfidence
+    var usagePermission: TuneDataUsagePermission
+
+    enum CodingKeys: String, CodingKey {
+        case id, game, gameBuildVersion, scope, source, version, capturedAt, confidence, usagePermission
+    }
+
+    init(
+        id: String,
+        game: ForzaGame,
+        gameBuildVersion: String?,
+        scope: TuneConstraintScope,
+        source: String,
+        version: String,
+        capturedAt: Date,
+        confidence: TuneEvidenceConfidence,
+        usagePermission: TuneDataUsagePermission = .unknown
+    ) {
+        self.id = id
+        self.game = game
+        self.gameBuildVersion = gameBuildVersion
+        self.scope = scope
+        self.source = source
+        self.version = version
+        self.capturedAt = capturedAt
+        self.confidence = confidence
+        self.usagePermission = usagePermission
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        game = try container.decode(ForzaGame.self, forKey: .game)
+        gameBuildVersion = try container.decodeIfPresent(String.self, forKey: .gameBuildVersion)
+        scope = try container.decode(TuneConstraintScope.self, forKey: .scope)
+        source = try container.decode(String.self, forKey: .source)
+        version = try container.decode(String.self, forKey: .version)
+        capturedAt = try container.decode(Date.self, forKey: .capturedAt)
+        confidence = try container.decode(TuneEvidenceConfidence.self, forKey: .confidence)
+        usagePermission = try container.decodeIfPresent(
+            TuneDataUsagePermission.self,
+            forKey: .usagePermission
+        ) ?? .unknown
+    }
 }
 
 struct TireCompoundReference: Codable, Equatable, Sendable {
@@ -361,6 +410,10 @@ enum VehicleBuildSnapshotIssue: Equatable, Sendable {
     case danglingEvidenceID(String)
     case evidenceScopeMismatch(String)
     case invalidTireCompound
+    case duplicatePartID(TunePartID)
+    case invalidPartEvidence(TunePartID)
+    case duplicateStockAdjustableSetting(TuneSetting)
+    case invalidStockAdjustableEvidence(TuneSetting)
 }
 
 struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
@@ -488,6 +541,32 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
             }
         }
 
+        var seenPartIDs = Set<TunePartID>()
+        for part in capabilityProfile.parts {
+            if !seenPartIDs.insert(part.partID).inserted {
+                issues.append(.duplicatePartID(part.partID))
+            }
+            if normalized(part.evidence.source).isEmpty
+                || normalized(part.evidence.version).isEmpty
+                || part.evidence.confidence == .low
+                || part.evidence.usagePermission != .permitted {
+                issues.append(.invalidPartEvidence(part.partID))
+            }
+        }
+
+        var seenStockSettings = Set<TuneSetting>()
+        for setting in capabilityProfile.stockAdjustableSettings {
+            if !seenStockSettings.insert(setting.setting).inserted {
+                issues.append(.duplicateStockAdjustableSetting(setting.setting))
+            }
+            if normalized(setting.evidence.source).isEmpty
+                || normalized(setting.evidence.version).isEmpty
+                || setting.evidence.confidence == .low
+                || setting.evidence.usagePermission != .permitted {
+                issues.append(.invalidStockAdjustableEvidence(setting.setting))
+            }
+        }
+
         var seenFields = Set<TuneFieldID>()
         for constraint in constraints {
             if !seenFields.insert(constraint.field).inserted {
@@ -521,6 +600,8 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
             if id.isEmpty
                 || normalized(evidence.source).isEmpty
                 || normalized(evidence.version).isEmpty
+                || evidence.confidence == .low
+                || evidence.usagePermission != .permitted
                 || (evidence.scope == .exactVehicleBuild
                     && normalized(evidence.gameBuildVersion ?? "").isEmpty) {
                 issues.append(.invalidEvidence(id))

@@ -9,6 +9,48 @@
 import Foundation
 
 enum TuneClipboardFormatter {
+    static func verifiedSettingsText(for tune: TuneResult) -> String? {
+        let sanitized = TuneOutputProjector().project(tune)
+        guard sanitized.projectionReport?.readyCount ?? 0 > 0,
+              !sanitized.sections.isEmpty else {
+            return nil
+        }
+
+        var lines = headerLines(for: sanitized)
+        lines.append("Verified settings")
+        lines.append(contentsOf: sanitized.sections.flatMap { section in
+            sectionTextLines(for: section) + [""]
+        })
+        return lines.dropLast().joined(separator: "\n")
+    }
+
+    static func buildPlanText(for tune: TuneResult) -> String? {
+        let sanitized = TuneOutputProjector().project(tune)
+        guard let report = sanitized.projectionReport,
+              !report.purchasePlan.isEmpty || !report.confirmations.isEmpty else {
+            return nil
+        }
+
+        var lines = headerLines(for: sanitized)
+        if !report.purchasePlan.isEmpty {
+            lines.append("Buy these upgrades")
+            for item in report.purchasePlan {
+                let unlocks = item.unlocks.map(\.projectionLabel).joined(separator: ", ")
+                lines.append("- \(item.part.category.label) > \(item.part.slot.label) > \(item.part.label)")
+                lines.append("  Unlocks: \(unlocks)")
+            }
+        }
+        if !report.confirmations.isEmpty {
+            if !report.purchasePlan.isEmpty { lines.append("") }
+            lines.append("Confirm in game")
+            for confirmation in report.confirmations {
+                let candidates = confirmation.candidateParts.map(\.label).joined(separator: " or ")
+                lines.append("- \(confirmation.setting.projectionLabel): \(candidates)")
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
+
     static func fullTuneText(for tune: TuneResult, playerNotes: String = "") -> String {
         var lines = [
             tune.request.car.displayName,
@@ -47,6 +89,14 @@ enum TuneClipboardFormatter {
                 ? "\(line.label): \(line.value)"
                 : "\(line.label): \(line.value) \(line.unit)"
         }
+    }
+
+    private static func headerLines(for tune: TuneResult) -> [String] {
+        [
+            tune.request.car.displayName,
+            "\(tune.request.discipline.title) | \(tune.request.car.performanceClass.rawValue) \(tune.request.car.performanceIndex) | \(tune.request.car.drivetrain.rawValue)",
+            ""
+        ]
     }
 
     private static func providerText(for providerInfo: TuneProviderInfo?) -> String {

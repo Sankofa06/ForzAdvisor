@@ -24,7 +24,7 @@ struct TuneResultView: View {
 
     @State private var copiedLineID: TuneLine.ID?
     @State private var expandedSectionTitles = Set(TuneSection.menuOrder.map(\.title))
-    @State private var didCopyFullTune = false
+    @State private var copiedExport: CopiedExport?
 
     private var isAdjusting: Bool {
         activeFeedback != nil
@@ -78,25 +78,48 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
 
-            Section {
-                Button {
-                    UIPasteboard.general.string = TuneClipboardFormatter.fullTuneText(
-                        for: tune,
-                        playerNotes: playerNotes
-                    )
-                    copiedLineID = nil
-                    didCopyFullTune = true
-                } label: {
-                    Label(
-                        didCopyFullTune ? "Copied full tune" : "Copy full tune",
-                        systemImage: didCopyFullTune ? "checkmark" : "doc.on.doc"
-                    )
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            if let report = tune.projectionReport {
+                Section("Tune Coverage") {
+                    TuneCoverageView(report: report)
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(isStreaming)
+                .forzAdvisorRowBackground()
+
+                if !isStreaming,
+                   TuneClipboardFormatter.verifiedSettingsText(for: tune) != nil
+                    || TuneClipboardFormatter.buildPlanText(for: tune) != nil {
+                    Section("Take It To The Game") {
+                        if let verifiedText = TuneClipboardFormatter.verifiedSettingsText(for: tune) {
+                            exportButton(
+                                title: "Copy verified settings",
+                                copiedTitle: "Copied verified settings",
+                                text: verifiedText,
+                                kind: .verifiedSettings,
+                                prominent: true
+                            )
+                        }
+                        if let buildPlanText = TuneClipboardFormatter.buildPlanText(for: tune) {
+                            exportButton(
+                                title: "Copy build plan",
+                                copiedTitle: "Copied build plan",
+                                text: buildPlanText,
+                                kind: .buildPlan,
+                                prominent: false
+                            )
+                        }
+                    }
+                    .forzAdvisorRowBackground()
+                }
+            } else {
+                Section("Unverified Legacy Tune") {
+                    Label(
+                        "These saved values predate verification. Review them in game before use; copying and guided refinement are disabled.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(ForzAdvisorTheme.warning)
+                }
+                .forzAdvisorRowBackground()
             }
-            .forzAdvisorRowBackground()
 
             if isStreaming {
                 Section {
@@ -112,9 +135,10 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
 
-            if isSaved && !isStreaming {
+            if isSaved && !isStreaming && !eligibleFeedback.isEmpty {
                 Section("Guided Refinement") {
                     GuidedRefinementView(
+                        feedbackOptions: eligibleFeedback,
                         activeFeedback: activeFeedback,
                         onFeedback: onFeedback
                     )
@@ -132,30 +156,33 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
 
-            Section {
-                HStack(spacing: 10) {
-                    Button("Expand all") {
-                        expandedSectionTitles = Set(displaySections.map(\.title))
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(isStreaming)
+            if !displaySections.isEmpty {
+                Section {
+                    HStack(spacing: 10) {
+                        Button("Expand all") {
+                            expandedSectionTitles = Set(displaySections.map(\.title))
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isStreaming)
 
-                    Button("Collapse all") {
-                        expandedSectionTitles.removeAll()
+                        Button("Collapse all") {
+                            expandedSectionTitles.removeAll()
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isStreaming)
                     }
-                    .buttonStyle(.bordered)
-                    .disabled(isStreaming)
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .font(.caption.weight(.semibold))
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .forzAdvisorRowBackground()
             }
-            .forzAdvisorRowBackground()
 
             ForEach(displaySections) { section in
                 Section {
                     TuneSectionDisclosureView(
                         section: section,
                         isStreaming: isStreaming,
+                        allowsCopy: tune.projectionReport != nil,
                         isExpanded: expandedBinding(for: section),
                         copiedLineID: $copiedLineID
                     )
@@ -190,7 +217,7 @@ struct TuneResultView: View {
                     Button("Edit", action: onEdit)
                         .disabled(isAdjusting || isStreaming)
                 }
-                Button(isSaved ? "Saved" : "Save", action: onSave)
+                Button(isSaved ? "Saved" : saveButtonTitle, action: onSave)
                     .disabled(isSaved || isAdjusting || isStreaming)
                     .accessibilityIdentifier("saveTuneButton")
             }
@@ -198,13 +225,69 @@ struct TuneResultView: View {
     }
 
     private var displaySections: [TuneSection] {
-        guard isStreaming else { return tune.sections }
-        return TuneSection.menuOrder.map { item in
-            tune.section(item.title) ?? TuneSection(
-                title: item.title,
-                symbolName: item.symbolName,
-                lines: []
+        tune.sections
+    }
+
+    private var eligibleFeedback: [TuneFeedback] {
+        let ready = tune.projectionReport?.readyFieldIDs ?? []
+        return TuneFeedback.allCases.filter {
+            !ready.intersection($0.adjustment.affectedFields).isEmpty
+        }
+    }
+
+    private var saveButtonTitle: String {
+        let report = tune.projectionReport
+        let hasPlan = !(report?.purchasePlan.isEmpty ?? true)
+            || !(report?.confirmations.isEmpty ?? true)
+        if report?.readyCount == 0, hasPlan {
+            return "Save Plan"
+        }
+        return "Save"
+    }
+
+    @ViewBuilder
+    private func exportButton(
+        title: String,
+        copiedTitle: String,
+        text: String,
+        kind: CopiedExport,
+        prominent: Bool
+    ) -> some View {
+        if prominent {
+            exportActionButton(
+                title: title,
+                copiedTitle: copiedTitle,
+                text: text,
+                kind: kind
             )
+            .buttonStyle(.borderedProminent)
+        } else {
+            exportActionButton(
+                title: title,
+                copiedTitle: copiedTitle,
+                text: text,
+                kind: kind
+            )
+            .buttonStyle(.bordered)
+        }
+    }
+
+    private func exportActionButton(
+        title: String,
+        copiedTitle: String,
+        text: String,
+        kind: CopiedExport
+    ) -> some View {
+        Button {
+            UIPasteboard.general.string = text
+            copiedLineID = nil
+            copiedExport = kind
+        } label: {
+            Label(
+                copiedExport == kind ? copiedTitle : title,
+                systemImage: copiedExport == kind ? "checkmark" : "doc.on.doc"
+            )
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -217,6 +300,67 @@ struct TuneResultView: View {
             } else {
                 expandedSectionTitles.remove(section.title)
             }
+        }
+    }
+}
+
+private enum CopiedExport {
+    case verifiedSettings
+    case buildPlan
+}
+
+private struct TuneCoverageView: View {
+    let report: TuneProjectionReport
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(summary, systemImage: report.readyCount > 0 ? "checkmark.shield" : "shield.lefthalf.filled")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(report.readyCount > 0 ? ForzAdvisorTheme.accent : ForzAdvisorTheme.warning)
+
+            if !report.purchasePlan.isEmpty {
+                coverageGroup(title: "Buy to unlock") {
+                    ForEach(report.purchasePlan, id: \.part.id) { item in
+                        Text("\(item.part.label) — \(item.unlocks.map(\.projectionLabel).joined(separator: ", "))")
+                    }
+                }
+            }
+
+            if !report.confirmations.isEmpty {
+                coverageGroup(title: "Confirm installed or available in game") {
+                    ForEach(report.confirmations, id: \.setting.id) { item in
+                        Text("\(item.setting.projectionLabel): \(item.candidateParts.map(\.label).joined(separator: " or "))")
+                    }
+                }
+            }
+
+            if report.requiresInGameConfirmation {
+                Text("Exact tuning-screen ranges are still needed before withheld numbers can be trusted.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityIdentifier("tuneCoverage")
+    }
+
+    private var summary: String {
+        if report.readyCount == 0 {
+            return "No generated settings verified yet"
+        }
+        return "\(report.readyCount) verified setting\(report.readyCount == 1 ? "" : "s")"
+    }
+
+    private func coverageGroup<Content: View>(
+        title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            content()
+                .font(.caption)
         }
     }
 }
@@ -247,6 +391,7 @@ private struct ProviderStatusView: View {
 }
 
 private struct GuidedRefinementView: View {
+    let feedbackOptions: [TuneFeedback]
     let activeFeedback: TuneFeedback?
     let onFeedback: (TuneFeedback) -> Void
 
@@ -259,7 +404,7 @@ private struct GuidedRefinementView: View {
                 .foregroundStyle(.secondary)
 
             VStack(spacing: 8) {
-                ForEach(TuneFeedback.allCases) { feedback in
+                ForEach(feedbackOptions) { feedback in
                     Button {
                         onFeedback(feedback)
                     } label: {
