@@ -87,6 +87,7 @@ enum FH5ControlledExperimentIssue: Error, LocalizedError, Equatable {
     case stockValuesNotRestored
     case authorshipNotConfirmed
     case localStorageNotPermitted
+    case reuseNotPermitted
     case invalidStoredRecord
 
     var errorDescription: String? {
@@ -125,6 +126,8 @@ enum FH5ControlledExperimentIssue: Error, LocalizedError, Equatable {
             "Confirm that you personally completed and observed this experiment."
         case .localStorageNotPermitted:
             "Allow ForzAdvisor to keep this experiment locally with the saved plan."
+        case .reuseNotPermitted:
+            "Allow deidentified calibration reuse before sharing this experiment."
         case .invalidStoredRecord:
             "This stored FH5 experiment failed its integrity checks."
         }
@@ -137,6 +140,19 @@ struct FH5ControlledExperimentRecord: Codable, Equatable, Identifiable, Sendable
     static let currentProtocolVersion = "fh5-abba-one-step-v1"
     static let route = "Horizon Test Track"
     static let sequence = ["A", "B", "B", "A"]
+    static let privacyExclusions = [
+        "local record ID",
+        "saved tune ID and plan fingerprint",
+        "Research Lab record ID and content fingerprint",
+        "generated tune values",
+        "provider and ruleset data",
+        "lap times and telemetry",
+        "free-form notes",
+        "screenshots and OCR",
+        "device identifiers and location",
+        "analytics and share destination",
+        "public attribution"
+    ]
 
     struct Change: Codable, Equatable, Sendable {
         let field: TuneFieldID
@@ -188,6 +204,83 @@ struct FH5ControlledExperimentRecord: Codable, Equatable, Identifiable, Sendable
     let targetSymptom: TuneFeedback
     let outcome: FH5ExperimentOutcome
     let attestations: Attestations
+    let contentFingerprint: String
+
+    var canExport: Bool {
+        (try? publicExport()) != nil
+    }
+
+    func deterministicJSON() throws -> Data {
+        guard FH5ControlledExperimentFactory().isValid(self) else {
+            throw FH5ControlledExperimentIssue.invalidStoredRecord
+        }
+        guard attestations.deidentifiedReusePermitted else {
+            throw FH5ControlledExperimentIssue.reuseNotPermitted
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [
+            .prettyPrinted,
+            .sortedKeys,
+            .withoutEscapingSlashes
+        ]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(publicExport())
+    }
+
+    var deterministicJSONString: String? {
+        guard let data = try? deterministicJSON() else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    func publicExport() throws -> FH5ControlledExperimentExport {
+        let factory = FH5ControlledExperimentFactory()
+        guard factory.isValid(self) else {
+            throw FH5ControlledExperimentIssue.invalidStoredRecord
+        }
+        guard attestations.deidentifiedReusePermitted else {
+            throw FH5ControlledExperimentIssue.reuseNotPermitted
+        }
+        let export = FH5ControlledExperimentExport(
+            schemaVersion: schemaVersion,
+            consentVersion: consentVersion,
+            protocolVersion: protocolVersion,
+            submissionID: submissionID,
+            permissionReceiptID: permissionReceiptID,
+            createdAt: createdAt,
+            game: game,
+            measurementFingerprint: measurementFingerprint,
+            context: context,
+            change: change,
+            targetSymptom: targetSymptom,
+            outcome: outcome,
+            attestations: attestations,
+            privacyExclusions: Self.privacyExclusions,
+            contentFingerprint: try factory.publicSemanticFingerprint(
+                for: self
+            )
+        )
+        guard factory.isValid(export) else {
+            throw FH5ControlledExperimentIssue.invalidStoredRecord
+        }
+        return export
+    }
+}
+
+struct FH5ControlledExperimentExport: Codable, Equatable, Sendable {
+    let schemaVersion: Int
+    let consentVersion: String
+    let protocolVersion: String
+    let submissionID: UUID
+    let permissionReceiptID: UUID
+    let createdAt: Date
+    let game: ForzaGame
+    let measurementFingerprint: String
+    let context: FH5ControlledExperimentRecord.Context
+    let change: FH5ControlledExperimentRecord.Change
+    let targetSymptom: TuneFeedback
+    let outcome: FH5ExperimentOutcome
+    let attestations: FH5ControlledExperimentRecord.Attestations
+    let privacyExclusions: [String]
     let contentFingerprint: String
 }
 
@@ -435,6 +528,67 @@ struct FH5ControlledExperimentFactory {
         return expected == record.contentFingerprint
     }
 
+    func isValid(_ export: FH5ControlledExperimentExport) -> Bool {
+        guard export.schemaVersion
+                == FH5ControlledExperimentRecord.currentSchemaVersion,
+              export.consentVersion
+                == FH5ControlledExperimentRecord.currentConsentVersion,
+              export.protocolVersion
+                == FH5ControlledExperimentRecord.currentProtocolVersion,
+              export.game == .fh5,
+              isSHA256Fingerprint(export.measurementFingerprint),
+              export.context.route == FH5ControlledExperimentRecord.route,
+              export.context.sequence
+                == FH5ControlledExperimentRecord.sequence,
+              (1...10).contains(export.context.forwardGearCount),
+              export.context.vehicle.stock,
+              isCanonical(export.context.gameVersion, maximumLength: 120),
+              isCanonical(
+                export.context.tireCompoundDisplayName,
+                maximumLength: 120
+              ),
+              isCanonical(
+                export.context.vehicle.catalogID,
+                maximumLength: 160
+              ),
+              isCanonical(
+                export.context.vehicle.catalogRevision,
+                maximumLength: 160
+              ),
+              isCanonical(export.context.vehicle.make, maximumLength: 120),
+              isCanonical(export.context.vehicle.model, maximumLength: 160),
+              export.context.vehicle.year > 0,
+              export.context.vehicle.weightPounds > 0,
+              export.context.vehicle.frontWeightPercent >= 0,
+              export.context.vehicle.frontWeightPercent <= 100,
+              export.context.vehicle.peakHorsepower > 0,
+              export.context.vehicle.peakTorqueFootPounds > 0,
+              export.change.unit == export.change.field.expectedUnit,
+              candidateIssue(
+                candidate: export.change.candidateValue,
+                minimum: export.change.minimum,
+                maximum: export.change.maximum,
+                step: export.change.step,
+                current: export.change.baselineValue
+              ) == nil,
+              export.attestations.sameRouteAndConditions,
+              export.attestations.sameAssistsAndInput,
+              export.attestations.onlyDeclaredFieldChanged,
+              export.attestations.sequenceCompleted,
+              export.attestations.stockValuesRestored,
+              export.attestations.firstPartyAuthorship,
+              export.attestations.localStoragePermitted,
+              export.attestations.deidentifiedReusePermitted,
+              export.privacyExclusions
+                == FH5ControlledExperimentRecord.privacyExclusions,
+              isSHA256Fingerprint(export.contentFingerprint),
+              let expected = try? publicSemanticFingerprint(for: export)
+        else {
+            return false
+        }
+        return expected == export.contentFingerprint
+    }
+
     func matches(
         _ record: FH5ControlledExperimentRecord,
         tune: TuneResult,
@@ -492,6 +646,49 @@ struct FH5ControlledExperimentFactory {
             matches($0, tune: tune, researchRecord: researchRecord)
         }
         return .unregistered(matchingRecordCount: count)
+    }
+
+    func publicSemanticFingerprint(
+        for record: FH5ControlledExperimentRecord
+    ) throws -> String {
+        try publicSemanticFingerprint(
+            schemaVersion: record.schemaVersion,
+            consentVersion: record.consentVersion,
+            protocolVersion: record.protocolVersion,
+            submissionID: record.submissionID,
+            permissionReceiptID: record.permissionReceiptID,
+            createdAt: record.createdAt,
+            game: record.game,
+            measurementFingerprint: record.measurementFingerprint,
+            context: record.context,
+            change: record.change,
+            targetSymptom: record.targetSymptom,
+            outcome: record.outcome,
+            attestations: record.attestations,
+            privacyExclusions: FH5ControlledExperimentRecord
+                .privacyExclusions
+        )
+    }
+
+    func publicSemanticFingerprint(
+        for export: FH5ControlledExperimentExport
+    ) throws -> String {
+        try publicSemanticFingerprint(
+            schemaVersion: export.schemaVersion,
+            consentVersion: export.consentVersion,
+            protocolVersion: export.protocolVersion,
+            submissionID: export.submissionID,
+            permissionReceiptID: export.permissionReceiptID,
+            createdAt: export.createdAt,
+            game: export.game,
+            measurementFingerprint: export.measurementFingerprint,
+            context: export.context,
+            change: export.change,
+            targetSymptom: export.targetSymptom,
+            outcome: export.outcome,
+            attestations: export.attestations,
+            privacyExclusions: export.privacyExclusions
+        )
     }
 
     private func validateAttestations(
@@ -601,6 +798,23 @@ struct FH5ControlledExperimentFactory {
         let attestations: FH5ControlledExperimentRecord.Attestations
     }
 
+    private struct PublicSemanticPayload: Codable {
+        let schemaVersion: Int
+        let consentVersion: String
+        let protocolVersion: String
+        let submissionID: UUID
+        let permissionReceiptID: UUID
+        let createdAt: Date
+        let game: ForzaGame
+        let measurementFingerprint: String
+        let context: FH5ControlledExperimentRecord.Context
+        let change: FH5ControlledExperimentRecord.Change
+        let targetSymptom: TuneFeedback
+        let outcome: FH5ExperimentOutcome
+        let attestations: FH5ControlledExperimentRecord.Attestations
+        let privacyExclusions: [String]
+    }
+
     private func contentFingerprint(
         schemaVersion: Int,
         consentVersion: String,
@@ -640,5 +854,65 @@ struct FH5ControlledExperimentFactory {
         encoder.dateEncodingStrategy = .iso8601
         let digest = SHA256.hash(data: try encoder.encode(payload))
         return digest.map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func publicSemanticFingerprint(
+        schemaVersion: Int,
+        consentVersion: String,
+        protocolVersion: String,
+        submissionID: UUID,
+        permissionReceiptID: UUID,
+        createdAt: Date,
+        game: ForzaGame,
+        measurementFingerprint: String,
+        context: FH5ControlledExperimentRecord.Context,
+        change: FH5ControlledExperimentRecord.Change,
+        targetSymptom: TuneFeedback,
+        outcome: FH5ExperimentOutcome,
+        attestations: FH5ControlledExperimentRecord.Attestations,
+        privacyExclusions: [String]
+    ) throws -> String {
+        let payload = PublicSemanticPayload(
+            schemaVersion: schemaVersion,
+            consentVersion: consentVersion,
+            protocolVersion: protocolVersion,
+            submissionID: submissionID,
+            permissionReceiptID: permissionReceiptID,
+            createdAt: createdAt,
+            game: game,
+            measurementFingerprint: measurementFingerprint,
+            context: context,
+            change: change,
+            targetSymptom: targetSymptom,
+            outcome: outcome,
+            attestations: attestations,
+            privacyExclusions: privacyExclusions
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [
+            .sortedKeys,
+            .withoutEscapingSlashes
+        ]
+        encoder.dateEncodingStrategy = .iso8601
+        let digest = SHA256.hash(data: try encoder.encode(payload))
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func isSHA256Fingerprint(_ value: String) -> Bool {
+        value.count == Self.fingerprintLength
+            && value.allSatisfy { $0.isHexDigit && !$0.isUppercase }
+    }
+
+    private func isCanonical(
+        _ value: String,
+        maximumLength: Int
+    ) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty
+            && trimmed == value
+            && value.count <= maximumLength
+            && !value.unicodeScalars.contains {
+                CharacterSet.controlCharacters.contains($0)
+            }
     }
 }

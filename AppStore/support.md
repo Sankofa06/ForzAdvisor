@@ -62,7 +62,7 @@ Review labels one record as a single raw observation, exact repeated records fro
 
 Outcome Lab appears only after a matching FH5 Research Lab record and complete Upgrade Lab observation exist. It guides a fixed A-B-B-A Horizon Test Track experiment: stock, one user-selected slider step, the same one-step variant again, then stock again. Route, conditions, assists, input, and every other setting must stay unchanged, and the tested slider must be restored to stock before saving.
 
-The record remains local calibration evidence. It stores no lap times, telemetry, screenshots, location, or free-form notes; it does not register a ruleset or unlock numeric FH5 tuning. Optional deidentified calibration reuse is off by default.
+The record remains calibration evidence. It stores no lap times, telemetry, screenshots, location, or free-form notes; it does not register a ruleset or unlock numeric FH5 tuning. Deidentified calibration reuse is off by default. If you enable it before saving, the latest eligible experiment offers Share deidentified experiment JSON through the iOS system share sheet. The allow-listed copy omits the local experiment ID, saved tune ID and plan fingerprint, Research Lab record ID and content fingerprint, generated tune values, provider and ruleset data, device identifiers, location, analytics, and public attribution; it retains a menu-measurement fingerprint to bind the observed controls. ForzAdvisor does not upload experiments in the background or import shared experiment JSON, and deleting the local record cannot recall a copy already shared.
 
 ### How do I delete a tune?
 

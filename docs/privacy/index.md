@@ -36,7 +36,9 @@ Deidentified structured reuse and JSON sharing are off by default for each FH5 o
 
 On a matching saved FH5 catalog plan, Research Review can locally import the exact allow-listed JSON after you confirm direct receipt from the observer and permission for deidentified structured reuse. The canonical JSON, integrity-binding fields, and local review time are stored in a separate on-device queue. UUIDs and hashes bind the exact reviewed bytes but do not authenticate identity. Review compares exact raw observations without averaging values, contacting a provider, creating a ruleset, or enabling numeric FH5 tuning. Imported review entries can be deleted locally.
 
-For a matching saved FH5 plan with complete Research Lab and Upgrade Lab evidence, Outcome Lab can store one local paired-experiment record in a separate evidence queue. The record binds to the exact plan and menu-measurement fingerprints and includes platform, game build, allow-listed stock vehicle facts, tire name, gear count, one adjustable field's observed range/step/stock value, a one-step candidate value, surface, input type, target handling symptom, comparative outcome, the fixed A-B-B-A protocol, required confirmations, and random integrity identifiers. It excludes lap times, telemetry, free-form notes, screenshots, location, device identifiers, analytics, provider data, and public attribution. Optional deidentified calibration reuse is off by default, and this release does not upload or publicly export these records.
+For a matching saved FH5 plan with complete Research Lab and Upgrade Lab evidence, Outcome Lab can store one local paired-experiment record in a separate evidence queue. The record binds to the exact plan and menu-measurement fingerprints and includes platform, game build, allow-listed stock vehicle facts, tire name, gear count, capture time, one adjustable field's observed range/step/stock value, a one-step candidate value, surface, input type, target handling symptom, comparative outcome, the fixed A-B-B-A protocol, required confirmations, and random integrity identifiers.
+
+Optional deidentified calibration reuse and JSON sharing are off by default for each experiment. If you explicitly enable them before saving, the system share sheet can send an allow-listed JSON copy that excludes the local record ID, saved tune ID and plan fingerprint, Research Lab record ID and content fingerprint, generated tune values, provider and ruleset data, lap times, telemetry, free-form notes, screenshots, OCR, device identifiers, location, analytics, share destination, and public attribution. A separate public fingerprint covers only exported fields. ForzAdvisor does not upload experiments in the background, import experiment JSON, or record sharing destinations. Deleting the local experiment cannot recall a copy already shared.
 
 Outcome Lab evidence cannot approve a ruleset, change a saved plan, unlock numeric FH5 tuning, or set its own acceptance threshold. Deleting a local experiment removes only that local evidence record.
 
@@ -58,7 +60,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes, locally stored validation records, imported FH6 Validation Review entries, locally stored FH5 Research Lab observations, and imported FH5 Research Review entries in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, locally stored validation records, imported FH6 Validation Review entries, locally stored FH5 Research Lab observations, imported FH5 Research Review entries, and local FH5 Outcome Lab experiments in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

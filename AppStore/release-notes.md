@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.8.0 (Build 28) - 2026-07-23
+
+- Added user-initiated sharing for FH5 Outcome Lab experiments only when deidentified calibration reuse was explicitly enabled before saving.
+- Added a deterministic, allow-listed JSON record with a separate public semantic fingerprint while excluding the local experiment ID, saved tune ID and plan fingerprint, Research Lab record ID and content fingerprint, generated tune values, provider and ruleset data, notes, screenshots, telemetry, device identifiers, location, analytics, share destination, and public attribution.
+- Kept the production FH5 ruleset registry empty: exported experiments remain calibration evidence only and cannot be imported, promote a ruleset, or unlock numeric FH5 tuning.
+
 ## Version 1.7.0 (Build 27) - 2026-07-23
 
 - Added FH5 Outcome Lab for a fixed A-B-B-A Horizon Test Track experiment that compares stock with one user-selected legal slider step.
@@ -126,9 +132,15 @@
 
 ## App Store What's New
 
-FH6 Validation Review now lets you import exact, permission-bound ForzAdvisor Test Drive JSON for the current saved setup. Review shows observed outcomes and test conditions only; it never changes settings or promotes the experimental ruleset.
+FH5 Outcome Lab can now share an explicitly permitted, deidentified paired-experiment JSON copy through the iOS system share sheet. The export omits local record, tune, plan, and Research Lab record linkage while retaining a menu-measurement fingerprint. It remains calibration evidence only and cannot unlock numeric FH5 tuning.
 
 ## TestFlight Notes
+
+Complete Research Lab and Upgrade Lab for the same saved FH5 plan, then open Outcome Lab. Leave deidentified calibration reuse off, save the experiment, and confirm the result says JSON sharing is unavailable. Delete the experiment, repeat the fixed A-B-B-A run, enable reuse before saving, and confirm Share deidentified experiment JSON opens the system share sheet.
+
+Inspect the shared JSON and confirm it contains the declared stock context, observed one-step change, protocol, target symptom, outcome, attestations, privacy exclusion list, random submission and permission receipt identifiers, and public content fingerprint. It must not contain the local experiment ID, saved tune ID or plan fingerprint, Research Lab record ID or content fingerprint, generated tune values, provider or ruleset data, notes, screenshots, OCR, telemetry, device identifiers, location, analytics, share destination, or public attribution.
+
+Confirm sharing does not change the saved plan or readiness state, there is no experiment importer or background upload, and numeric FH5 settings remain unavailable.
 
 Create and save an eligible exact-build FH6 tune, then open Accuracy Evidence -> Open Validation Review. Paste exact JSON shared from Record Test Drive for that same build and tune. Confirm validation succeeds only for canonical JSON matching the current game build, catalog car, verified shop availability, discipline, current ruleset, and applied settings.
 
@@ -162,7 +174,7 @@ No login is required. On an eligible saved exact-build FH6 tune, Accuracy Eviden
 
 Beta Validation Missions is always visible in the garage and derives its current list locally from eligible saved setups. Empty garages receive FH5 and FH6 starter missions. Saved setups may receive Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, or Record Test Drive missions only when their existing workflow eligibility passes. The board does not create evidence or tuning claims, and its optional progress share contains aggregate counts only.
 
-To review the FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road, then save the plan. The app creates a local build plan with no numeric tuning values and offers Research Lab for first-party stock-menu evidence plus Upgrade Lab for user-confirmed purchase paths. After both are complete, Outcome Lab can record a one-step paired experiment without promoting it into a tune. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
+To review the FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road, then save the plan. The app creates a local build plan with no numeric tuning values and offers Research Lab for first-party stock-menu evidence plus Upgrade Lab for user-confirmed purchase paths. After both are complete, Outcome Lab can record a one-step paired experiment and, only with explicit per-record reuse permission, share an allow-listed JSON copy without promoting it into a tune. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
 
 ## Previous TestFlight Notes
 

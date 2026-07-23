@@ -38,7 +38,7 @@ The mission board does not upload progress or create evidence by itself. Share B
 
 After a matching Research Lab record and complete Upgrade Lab observation exist, Outcome Lab guides a fixed A-B-B-A Horizon Test Track experiment. You compare stock with one user-selected slider step while keeping the route, conditions, assists, input, and every other setting unchanged, then restore the stock value.
 
-The result remains local calibration evidence. It does not generate a tune, collect lap times or telemetry, register a ruleset, or unlock numeric FH5 settings. Optional deidentified calibration reuse is off by default.
+The result remains calibration evidence. It does not generate a tune, collect lap times or telemetry, register a ruleset, or unlock numeric FH5 settings. Deidentified calibration reuse is off by default. When enabled before saving, the latest eligible record can be shared as allow-listed JSON through the iOS system share sheet. The app has no background experiment uploader or importer, and deleting the local record cannot recall a copy already shared.
 
 ### How do I delete a tune?
 

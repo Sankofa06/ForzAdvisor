@@ -54,3 +54,14 @@ exists. Its versioned `fh5-abba-one-step-v1` protocol:
 These records are evidence, not tune recommendations. They cannot register a
 ruleset, set their own acceptance threshold, pass the controlled-outcome gate,
 or make numeric FH5 output available.
+
+Deidentified calibration reuse is optional and off by default for each record.
+When explicitly permitted before saving, the app may create a user-initiated,
+allow-listed JSON export with a public semantic fingerprint. The export omits
+the local experiment ID, saved tune ID and plan fingerprint, Research Lab
+record ID and content fingerprint, generated tune values, provider and ruleset
+data, notes, screenshots, telemetry, device identifiers, location, analytics,
+share destination, and public attribution. It retains the menu-measurement fingerprint that binds
+the observed controls. Exporting a record does not make it promotion-eligible:
+schema-v1 experiments have no registered ruleset binding and remain calibration
+evidence only.

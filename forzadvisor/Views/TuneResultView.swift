@@ -797,6 +797,36 @@ private struct FH5ControlledExperimentSummary: View {
                     )
                     .font(.caption)
                     .foregroundStyle(ForzAdvisorTheme.warning)
+
+                    if let json = record.deterministicJSONString {
+                        ShareLink(
+                            item: json,
+                            subject: Text(
+                                "ForzAdvisor FH5 paired experiment"
+                            )
+                        ) {
+                            Label(
+                                "Share deidentified experiment JSON",
+                                systemImage: "square.and.arrow.up"
+                            )
+                            .frame(
+                                maxWidth: .infinity,
+                                minHeight: 44,
+                                alignment: .leading
+                            )
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier(
+                            "shareFH5ControlledExperimentButton"
+                        )
+                    } else {
+                        Text(
+                            "JSON sharing is unavailable because deidentified calibration reuse was not enabled for this record."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+
                     Button(
                         "Delete latest local experiment",
                         role: .destructive

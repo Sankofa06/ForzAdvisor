@@ -175,7 +175,7 @@ struct FH5ControlledExperimentCaptureView: View {
                 )
             }
 
-            Section("Local Evidence Permission") {
+            Section("Evidence Permissions") {
                 Toggle(
                     "Keep this experiment with the saved plan",
                     isOn: $localStoragePermitted
@@ -185,7 +185,7 @@ struct FH5ControlledExperimentCaptureView: View {
                     isOn: $deidentifiedReusePermitted
                 )
                 Text(
-                    "Reuse is optional and off by default. This slice stores the record locally; it does not upload or publish it."
+                    "Reuse is optional and off by default. Turning it on only makes an allow-listed JSON copy eligible to share later. ForzAdvisor keeps the record local and never uploads it in the background; sharing is always a separate action."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
