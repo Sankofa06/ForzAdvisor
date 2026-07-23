@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.8.2 (Build 30) - 2026-07-23
+
+- Added a local schema-v2 contract that binds controlled FH5 outcomes to one exact registry-backed generated-candidate artifact while preserving existing schema-v1 Outcome Lab records and exports.
+- Added a deterministic evaluator for the declared 10/8/0/2/two-UTC-day experimental threshold, with fail-closed checks for malformed evidence and record, submission, permission-receipt, content, or semantic replay.
+- Kept candidate generation, candidate-bound collection, public schema-v2 export, the production registry, and every FH5 numeric output route unavailable in release builds.
+
 ## Version 1.8.1 (Build 29) - 2026-07-23
 
 - Added a closed, code-owned FH5 experimental algorithm registration contract that binds one exact ruleset to explicitly permitted source manifests and their deterministic fingerprint.
@@ -138,11 +144,11 @@
 
 ## App Store What's New
 
-FH5 numeric-tuning safeguards now require a code-owned experimental algorithm registration and a fixed controlled-outcome policy before any future candidate can advance. Numeric FH5 tuning remains locked in this build.
+FH5 numeric safeguards now bind controlled outcomes to one exact candidate and reject malformed or replayed evidence. Numeric FH5 tuning remains locked.
 
 ## TestFlight Notes
 
-Regression focus for build 29: repeat the FH5 catalog, Research Lab, Upgrade Lab, and Outcome Lab paths below and confirm they behave exactly as in build 28. No FH5 numeric settings, provider attribution, or ruleset reference may appear. Outcome Lab schema-v1 experiments remain calibration evidence and cannot satisfy the new candidate-bound threshold.
+Regression focus for build 30: repeat the FH5 catalog, Research Lab, Upgrade Lab, and Outcome Lab paths below and confirm they behave exactly as in build 29. No FH5 numeric settings, provider attribution, ruleset reference, generated candidate, or candidate-bound collection UI may appear. Normal Outcome Lab experiments must remain schema-v1 calibration evidence and retain the existing deidentified export behavior.
 
 Complete Research Lab and Upgrade Lab for the same saved FH5 plan, then open Outcome Lab. Leave deidentified calibration reuse off, save the experiment, and confirm the result says JSON sharing is unavailable. Delete the experiment, repeat the fixed A-B-B-A run, enable reuse before saving, and confirm Share deidentified experiment JSON opens the system share sheet.
 

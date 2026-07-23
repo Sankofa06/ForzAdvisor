@@ -214,10 +214,21 @@ nonisolated struct FH5RulesetCandidateBinding: Codable, Equatable, Sendable {
     let outcomePolicyVersion: String
     let generatedCandidateFingerprint: String
 
+    var isStructurallyValid: Bool {
+        rulesetReference.isValid
+            && rulesetReference.game == .fh5
+            && rulesetReference.id == algorithmID.rawValue
+            && rulesetReference.validationStatus == .experimental
+            && isSHA256Fingerprint(sourceManifestFingerprint)
+            && !outcomePolicyVersion.isEmpty
+            && isSHA256Fingerprint(generatedCandidateFingerprint)
+    }
+
     func isValid(
         for registration: FH5NumericRulesetRegistration
     ) -> Bool {
-        registration.isValid
+        isStructurallyValid
+            && registration.isValid
             && algorithmID == registration.algorithmID
             && rulesetReference == registration.reference
             && sourceManifestFingerprint
@@ -283,7 +294,7 @@ nonisolated struct FH5TrustedNumericRulesetRegistry: Sendable {
 }
 
 struct FH5NumericReadinessPolicy {
-    static let currentVersion = "fh5-numeric-readiness-v2"
+    static let currentVersion = "fh5-numeric-readiness-v3"
 
     private let registry: FH5TrustedNumericRulesetRegistry
 
@@ -298,6 +309,7 @@ struct FH5NumericReadinessPolicy {
         researchRecords: [FH5ResearchObservationRecord],
         reviewReport: FH5ResearchReviewReport,
         candidateAlgorithmID: FH5ExperimentalAlgorithmID? = nil,
+        candidateBinding: FH5RulesetCandidateBinding? = nil,
         controlledOutcomeReport: FH5ControlledOutcomePolicyReport = .empty
     ) -> FH5NumericReadinessAssessment {
         let exactContext = hasExactStockContext(tune)
@@ -315,8 +327,12 @@ struct FH5NumericReadinessPolicy {
             for: candidateAlgorithmID
         )
         let hasRegisteredRuleset = registeredRuleset != nil
-        let hasControlledOutcomes = hasRegisteredRuleset
-            && controlledOutcomeReport.passes
+        let hasControlledOutcomes = registeredRuleset.map {
+            controlledOutcomeReport.authorizes(
+                registration: $0,
+                candidateBinding: candidateBinding
+            )
+        } ?? false
 
         return FH5NumericReadinessAssessment(
             policyVersion: Self.currentVersion,
@@ -456,6 +472,12 @@ struct FH5NumericReadinessPolicy {
     ) -> String {
         if complete {
             return "The registered ruleset passed its declared controlled-outcome policy."
+        }
+        if report.state == .blocked {
+            return "Candidate-bound outcome evidence has an integrity conflict and cannot be promoted."
+        }
+        if report.state == .pending {
+            return "\(report.matchingRecordCount) exact candidate-bound experiments qualify; the declared threshold is not complete."
         }
         if report.matchingRecordCount > 0 {
             let noun = report.matchingRecordCount == 1 ? "experiment" : "experiments"

@@ -1,6 +1,6 @@
 # FH5 Numeric Readiness Policy
 
-Policy version: `fh5-numeric-readiness-v2`
+Policy version: `fh5-numeric-readiness-v3`
 
 FH5 numeric tuning is a separate product capability from FH5 build planning and
 Research Lab. It remains unavailable until every gate below is machine-checkable
@@ -31,10 +31,10 @@ controlled-outcome policy and independent review. Agreement with public tunes
 alone is not validation, and public Reddit or YouTube values are not reusable
 without compatible rights or explicit permission.
 
-Until a registry entry and outcome policy exist, all FH5 requests remain
-provider-independent, numeric-free build plans. Manual, OCR, edited, legacy,
-missing-snapshot, and malformed inputs must fail closed to that same plan-only
-result.
+Until a production registry entry and separately reviewed activation route
+exist, all FH5 requests remain provider-independent, numeric-free build plans.
+Manual, OCR, edited, legacy, missing-snapshot, and malformed inputs must fail
+closed to that same plan-only result.
 
 ## Registration and experimental threshold
 
@@ -63,16 +63,36 @@ The only supported experimental threshold is
 - explicit deidentified reuse permission on every counted record.
 
 This threshold is a conservative experimental smoke gate, not scientific
-validation. A future evaluator must fail closed on collisions or replay across
-submission ID, permission receipt ID, and semantic fingerprint. Every counted
-record must match the exact algorithm, ruleset reference, source-manifest
-fingerprint, policy version, generated candidate fingerprint, plan, measured
-menu, field, direction, value, test context, and protocol.
+validation. The local evaluator fails closed on invalid claimed evidence and
+duplicate record, submission, permission-receipt, content, or experiment
+semantic fingerprints. Its administrative replay audit includes every
+candidate-bound-shaped record, even when the record is malformed or its binding
+is not registered; those records can block a collision but never count toward a
+threshold. Genuine unbound schema-v1 calibration evidence stays outside this
+audit. Every counted record must match the exact algorithm, ruleset reference,
+source-manifest fingerprint, policy version, generated candidate fingerprint,
+plan, measured menu, field, direction, value, test context, and protocol.
 
-No evaluator, production registration, FH5 numeric generator, or activation
-route exists yet. Even a test-injected valid registration can complete only the
-rights gate; controlled outcomes remain blocked, and the provider and output
-projector continue to strip every FH5 numeric setting.
+Candidate-bound records use internal schema v2. Their constructor requires a
+separately created, registry-valid generated-candidate artifact and rejects any
+capture whose exact context, field, direction, or value differs from that
+artifact. The artifact fingerprint covers the exact ruleset, source manifest,
+policy, plan, Research record, menu measurement, vehicle and test context,
+field, range, step, baseline, candidate, unit, and target symptom. This slice
+provides only a Debug test artifact producer; release builds have no artifact
+producer, generator, or UI collection route. Existing and normal Outcome Lab
+records remain unbound schema v1 calibration evidence.
+
+The evaluator is order-independent, counts only reuse-permitted exact matches,
+combines `noClearDifference` and `inconclusive` as nondecisive outcomes, and
+uses fixed Gregorian UTC dates. A passing report authorizes only its exact
+registration and candidate binding; it cannot be replayed for another
+candidate.
+
+The production registry remains empty, the app has no FH5 numeric generator,
+and no activation route exists. A fully qualifying test-injected registration
+and candidate can exercise the readiness contract, but the production provider
+and output projector continue to strip every FH5 numeric setting.
 
 ## Paired experiment collection
 
@@ -102,4 +122,6 @@ data, notes, screenshots, telemetry, device identifiers, location, analytics,
 share destination, and public attribution. It retains the menu-measurement
 fingerprint that binds the observed controls. Exporting a record does not make
 it promotion-eligible: schema-v1 experiments have no app-assigned candidate
-binding and remain calibration evidence only.
+binding and remain calibration evidence only. Candidate-bound schema-v2 records
+stay local and cannot use this schema-v1 export; a separate consented export
+contract would be required before they could leave the device.

@@ -74,14 +74,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.8.1
-- Current project build: 29
+- Current project version: 1.8.2
+- Current project build: 30
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-FH5 numeric safeguards now require a code-owned experimental ruleset registration and fixed controlled-outcome policy. Numeric FH5 tuning remains locked.
+FH5 numeric safeguards now bind controlled outcomes to one exact candidate and reject malformed or replayed evidence. Numeric FH5 tuning remains locked.
 
 ## Export Compliance Notes
 
