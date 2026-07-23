@@ -11,6 +11,14 @@ import XCTest
 
 @MainActor
 final class CarCatalogTests: XCTestCase {
+    func testFH5CatalogReviewExplainsProviderIndependentPlanOnlyBehavior() {
+        XCTAssertEqual(
+            CarCatalogReviewView.fh5PlanOnlyMessage,
+            "FH5 uses a provider-independent local build planner. It creates upgrade paths only and does not generate numeric tuning settings."
+        )
+        XCTAssertFalse(CarCatalogReviewView.fh5PlanOnlyMessage.contains("Settings"))
+    }
+
     func testRealBundleLoadsVersionedCatalogResource() throws {
         let snapshot = try loadedSnapshot()
 

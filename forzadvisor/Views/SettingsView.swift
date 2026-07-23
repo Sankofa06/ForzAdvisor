@@ -89,7 +89,7 @@ struct SettingsView: View {
                 Section("Privacy") {
                     Label("Offline by default", systemImage: "lock.shield")
                         .foregroundStyle(ForzAdvisorTheme.success)
-                    Text("Screenshots are processed on device. API mode sends confirmed car details and notes to Anthropic using your saved key; screenshots are not uploaded.")
+                    Text("Screenshots are processed on device. For FH6, API mode sends confirmed car details and notes to Anthropic using your saved key; screenshots are not uploaded. FH5 build plans stay local.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -188,19 +188,19 @@ private struct ProviderStatusRow: View {
     private var statusText: String {
         switch mode {
         case .offlineFormula:
-            "Offline formulas ready."
+            "FH6 offline formulas ready; FH5 local build planner ready."
         case .onDeviceFoundationModel:
             onDeviceAvailability.isAvailable
-                ? "On-device model ready."
-                : "\(onDeviceAvailability.title); using offline formulas."
+                ? "FH6 on-device model ready; FH5 remains local and plan-only."
+                : "\(onDeviceAvailability.title); FH6 uses offline formulas and FH5 remains local and plan-only."
         case .anthropicAPI:
             switch apiKeyStatus {
             case .configured:
-                "API key saved; remote tuning ready."
+                "API key saved for FH6; FH5 remains local and plan-only."
             case .missing:
-                "No API key saved; using offline formulas."
+                "No API key saved; FH6 uses offline formulas and FH5 remains local and plan-only."
             case .readFailed:
-                "Could not read API key; using offline formulas."
+                "Could not read API key; FH6 uses offline formulas and FH5 remains local and plan-only."
             }
         }
     }

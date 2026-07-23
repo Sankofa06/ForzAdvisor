@@ -1,18 +1,18 @@
 # ForzAdvisor Release Checklist
 
-Last updated: 2026-07-16
+Last updated: 2026-07-22
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are prepared for the current `1.1.6` app state. The warning-free build, unit suite, and end-to-end UI smoke are clean. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.2.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.1.6`.
-- Current project build is `10`.
+- Current project version is `1.2.0`.
+- Current project build is `21`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -40,17 +40,17 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 
 - The app is an unofficial companion tool. Keep the disclaimer in metadata, support, privacy policy, screenshots, and Settings.
 - Do not use official game logos or screenshots without legal clearance.
-- Offline formula tuning is the default and requires no account or API key.
-- Optional on-device model assistance falls back to offline formulas when unavailable.
-- Optional Anthropic API mode requires a user-supplied API key. Reviewers can complete the core flow offline without an API key.
+- FH5 catalog build planning stays local, does not use numeric formulas or the selected provider, and requires no account or API key.
+- FH6 offline formula tuning is the default numeric provider and requires no account or API key.
+- Optional on-device model assistance and user-key Anthropic API mode apply to FH6 generation; reviewers can complete both catalog flows offline.
 - Screenshots and camera photos are processed locally for OCR. Current code does not upload screenshot images.
 
 ## Local Verification Plan
 
 - Run `git diff --check`.
-- Run a clean warning-free Xcode build using stable Xcode.
-- Run the focused unit test suite.
-- Run the automated tune, save, reopen, and refinement UI smoke.
+- Run a clean warning-free headless Xcode build using stable `/Applications/Xcode.app`.
+- Run focused and full non-UI unit tests on one fixed headless simulator with parallel testing disabled.
+- Do not run UI tests or focus Xcode, Simulator, or Device Hub unless explicitly required; use `simctl` screenshots for visual verification.
 
 ## Human-Approved Release Steps
 

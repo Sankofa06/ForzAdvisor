@@ -290,6 +290,41 @@ final class CopilotTests: XCTestCase {
         XCTAssertNotEqual(saved, eligible)
     }
 
+    func testLegacyProjectionFactsAndContextDecodeAsNumericTune() throws {
+        let facts = projectionFacts(readyCount: 2, isSaved: true)
+        var factsObject = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(facts)) as? [String: Any]
+        )
+        factsObject.removeValue(forKey: "resultPurpose")
+        let legacyFactsData = try JSONSerialization.data(withJSONObject: factsObject)
+        let decodedFacts = try JSONDecoder().decode(
+            CopilotProjectionFacts.self,
+            from: legacyFactsData
+        )
+
+        XCTAssertEqual(decodedFacts.resultPurpose, .numericTune)
+        XCTAssertEqual(decodedFacts.readyCount, facts.readyCount)
+        XCTAssertEqual(decodedFacts.isSaved, facts.isSaved)
+        let reencodedFacts = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(decodedFacts)) as? [String: Any]
+        )
+        XCTAssertEqual(reencodedFacts["resultPurpose"] as? String, TuneResultPurpose.numericTune.rawValue)
+
+        let context = resultContext(facts)
+        var contextObject = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(context)) as? [String: Any]
+        )
+        var projectionObject = try XCTUnwrap(contextObject["projection"] as? [String: Any])
+        projectionObject.removeValue(forKey: "resultPurpose")
+        contextObject["projection"] = projectionObject
+        let legacyContextData = try JSONSerialization.data(withJSONObject: contextObject)
+        let decodedContext = try JSONDecoder().decode(CopilotContext.self, from: legacyContextData)
+
+        XCTAssertEqual(decodedContext.projection?.resultPurpose, .numericTune)
+        XCTAssertEqual(decodedContext.phase, context.phase)
+        XCTAssertEqual(decodedContext.projection?.readyCount, facts.readyCount)
+    }
+
     private func syntheticContext(for phase: CopilotPhase) -> CopilotContext {
         CopilotContext(
             phase: phase,

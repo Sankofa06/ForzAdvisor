@@ -50,16 +50,19 @@ extension ContentView {
                 )
             },
             onSuccess: { tune in
+                let resultTune: TuneResult
                 if let savedTuneID {
-                    try updateSavedTune(
+                    resultTune = try updateSavedTune(
                         savedTuneID: savedTuneID,
                         with: tune,
                         playerNotes: playerNotes,
                         thumbnailData: thumbnailData
                     )
+                } else {
+                    resultTune = TuneResultBoundarySanitizer().sanitize(tune)
                 }
                 step = .result(
-                    tune,
+                    resultTune,
                     savedTuneID: savedTuneID,
                     adjustmentChanges: [],
                     thumbnailData: thumbnailData,
@@ -86,7 +89,7 @@ extension ContentView {
         }
 
         do {
-            let persistedTune = TuneOutputProjector().project(tune)
+            let persistedTune = TuneResultBoundarySanitizer().sanitize(tune)
             modelContext.insert(try SavedTune(
                 tune: persistedTune,
                 playerNotes: playerNotes,
@@ -123,19 +126,16 @@ extension ContentView {
         }
 
         let updatedTune = draft.metadataUpdatedTune(from: originalTune)
-        let resultTune = originalTune.projectionReport == nil
-            ? updatedTune
-            : TuneOutputProjector().project(updatedTune)
 
         do {
-            try updateSavedTune(
+            let persistedTune = try updateSavedTune(
                 savedTuneID: savedTuneID,
-                with: resultTune,
+                with: updatedTune,
                 playerNotes: draft.playerNotes,
                 thumbnailData: thumbnailData
             )
             step = .result(
-                resultTune,
+                persistedTune,
                 savedTuneID: savedTuneID,
                 adjustmentChanges: [],
                 thumbnailData: thumbnailData,
@@ -167,10 +167,11 @@ extension ContentView {
                 guard let resolvedSavedTune = try savedTune(for: savedTuneID) else {
                     throw ContentWorkflowError.missingSavedTune
                 }
-                try resolvedSavedTune.update(with: result.tune)
+                let resultTune = TuneResultBoundarySanitizer().sanitize(result.tune)
+                try resolvedSavedTune.update(with: resultTune)
                 try modelContext.save()
                 step = .result(
-                    result.tune,
+                    resultTune,
                     savedTuneID: savedTuneID,
                     adjustmentChanges: result.changes,
                     thumbnailData: resolvedSavedTune.thumbnailData,
@@ -305,9 +306,7 @@ extension ContentView {
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
         if let tune = savedTune.tuneResult {
-            let displayTune = tune.projectionReport == nil
-                ? tune
-                : TuneOutputProjector().project(tune)
+            let displayTune = TuneResultBoundarySanitizer().sanitize(tune)
             step = .result(
                 displayTune,
                 savedTuneID: savedTune.id,
@@ -325,20 +324,18 @@ extension ContentView {
         with tune: TuneResult,
         playerNotes: String,
         thumbnailData: Data?
-    ) throws {
+    ) throws -> TuneResult {
         guard let savedTune = try savedTune(for: savedTuneID) else {
             throw ContentWorkflowError.missingSavedTune
         }
-        let persistedTune = savedTune.tuneResult?.projectionReport == nil
-            && tune.projectionReport == nil
-            ? tune
-            : TuneOutputProjector().project(tune)
+        let persistedTune = TuneResultBoundarySanitizer().sanitize(tune)
         try savedTune.update(
             with: persistedTune,
             playerNotes: playerNotes,
             thumbnailData: thumbnailData
         )
         try modelContext.save()
+        return persistedTune
     }
 
     func savedTune(for id: UUID) throws -> SavedTune? {

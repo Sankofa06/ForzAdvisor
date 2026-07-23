@@ -19,6 +19,17 @@ struct TuneOutputProjector {
             projected.request = authoritativeRequest
         }
 
+        let withholdsNumericCandidates = candidate.purpose == .fh5BuildPlan
+            || projected.request.car.game == .fh5
+        projected.purpose = projected.request.car.game == .fh5
+            ? .fh5BuildPlan
+            : .numericTune
+        if withholdsNumericCandidates {
+            projected.sections = []
+            projected.providerInfo = nil
+            projected.rulesetReference = nil
+        }
+
         let context = projectionContext(for: projected.request)
         let snapshot = trustedSnapshot(for: projected.request)
         let priorReport = reusableReport(
@@ -35,7 +46,7 @@ struct TuneOutputProjector {
         let capabilityBySetting = Dictionary(
             uniqueKeysWithValues: (resolution?.settings ?? []).map { ($0.setting, $0) }
         )
-        let rawLines = candidate.sections.flatMap { section in
+        let rawLines = (withholdsNumericCandidates ? [] : candidate.sections).flatMap { section in
             section.lines.map { (section: section, line: $0) }
         }
         let typedLines = rawLines.compactMap { item -> (TuneFieldID, TuneSection, TuneLine)? in
@@ -93,11 +104,16 @@ struct TuneOutputProjector {
             }
         )
 
-        let invalidRuleset = candidate.rulesetReference.map {
-            !$0.isValid || $0.game != projected.request.car.game
-        } ?? false
-        if invalidRuleset {
-            projected.rulesetReference = nil
+        let invalidRuleset: Bool
+        if withholdsNumericCandidates {
+            invalidRuleset = false
+        } else {
+            invalidRuleset = candidate.rulesetReference.map {
+                !$0.isValid || $0.game != projected.request.car.game
+            } ?? false
+            if invalidRuleset {
+                projected.rulesetReference = nil
+            }
         }
 
         let newDiagnostics = rawLines.compactMap { item -> TuneProjectionDiagnostic? in
@@ -320,6 +336,15 @@ struct TuneOutputProjector {
     }
 
     private func deterministicNotes(for tune: TuneResult) -> TuneNotes {
+        if tune.purpose == .fh5BuildPlan {
+            return TuneNotes(
+                bias: "This FH5 result is a local build plan and contains no numeric tuning settings.",
+                ifPushesWide: "Numeric FH5 handling advice is withheld until a separate validated FH5 ruleset exists.",
+                ifSnapsOnLift: "Do not infer tuning values from this plan.",
+                retuneTrigger: "Rebuild the plan after verifying upgrade availability for the exact untouched stock car."
+            )
+        }
+
         let report = tune.projectionReport
         let readyCount = report?.readyCount ?? 0
         return TuneNotes(

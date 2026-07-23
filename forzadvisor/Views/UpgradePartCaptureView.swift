@@ -118,7 +118,7 @@ struct UpgradePartCaptureView: View {
             }
 
             Section {
-                Button("Verify and Regenerate") {
+                Button(tune.purpose == .fh5BuildPlan ? "Verify and Rebuild Plan" : "Verify and Regenerate") {
                     hasAttemptedSubmit = true
                     guard validationMessages.isEmpty else { return }
                     onSubmit(capture)

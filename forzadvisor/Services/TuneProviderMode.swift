@@ -26,11 +26,11 @@ enum TuneProviderMode: String, CaseIterable, Codable, Identifiable, Sendable {
     var detail: String {
         switch self {
         case .offlineFormula:
-            "Uses deterministic local formulas. Fastest and always available."
+            "Uses deterministic local formulas for FH6. FH5 uses the local plan-only build planner."
         case .onDeviceFoundationModel:
-            "Uses Apple Intelligence on this device with formula fallback."
+            "Uses Apple Intelligence for FH6 with formula fallback. FH5 remains local and plan-only."
         case .anthropicAPI:
-            "Uses the saved Anthropic key with formula fallback."
+            "Uses the saved Anthropic key for FH6 with formula fallback. FH5 remains local and plan-only."
         }
     }
 

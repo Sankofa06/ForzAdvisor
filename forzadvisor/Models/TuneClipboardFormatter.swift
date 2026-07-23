@@ -29,8 +29,17 @@ enum TuneClipboardFormatter {
         let paths = TuneControlUpgradePlanner().paths(for: sanitized)
         if !paths.isEmpty {
             var lines = headerLines(for: sanitized)
+            if sanitized.purpose == .fh5BuildPlan {
+                lines.append("FH5 local build plan — no numeric tuning settings")
+                lines.append("This plan was rebuilt from the upgrade availability you verified for this stock catalog car.")
+                lines.append("")
+            }
             lines.append("Tuning-control upgrade paths")
-            lines.append("Each path unlocks the same tune controls represented here. Pick one path; the alternatives are not cumulative.")
+            lines.append(
+                sanitized.purpose == .fh5BuildPlan
+                    ? "Each path unlocks the same represented tuning controls. Pick one path; the alternatives are not cumulative."
+                    : "Each path unlocks the same tune controls represented here. Pick one path; the alternatives are not cumulative."
+            )
             for (index, path) in paths.enumerated() {
                 lines.append("")
                 lines.append("Path \(index + 1)")
@@ -50,6 +59,11 @@ enum TuneClipboardFormatter {
         }
 
         var lines = headerLines(for: sanitized)
+        if sanitized.purpose == .fh5BuildPlan {
+            lines.append("FH5 local build plan — no numeric tuning settings")
+            lines.append("Verify every requested upgrade in Upgrade Lab, then rebuild this plan for exact paths.")
+            lines.append("")
+        }
         if !report.purchasePlan.isEmpty {
             lines.append("Buy these upgrades")
             for item in report.purchasePlan {
@@ -70,22 +84,34 @@ enum TuneClipboardFormatter {
     }
 
     static func fullTuneText(for tune: TuneResult, playerNotes: String = "") -> String {
+        let exportTune = tune.request.car.game == .fh5 || tune.purpose == .fh5BuildPlan
+            ? TuneOutputProjector().project(tune)
+            : tune
+
+        if exportTune.purpose == .fh5BuildPlan {
+            return buildPlanText(for: exportTune)
+                ?? (headerLines(for: exportTune) + [
+                    "FH5 local build plan — no numeric tuning settings",
+                    "Numeric FH5 settings remain unavailable pending a separate validated ruleset."
+                ]).joined(separator: "\n")
+        }
+
         var lines = [
-            tune.request.car.displayName,
-            "\(tune.request.discipline.title) | \(tune.request.car.performanceClass.rawValue) \(tune.request.car.performanceIndex) | \(tune.request.car.drivetrain.rawValue)",
-            providerText(for: tune.providerInfo),
+            exportTune.request.car.displayName,
+            "\(exportTune.request.discipline.title) | \(exportTune.request.car.performanceClass.rawValue) \(exportTune.request.car.performanceIndex) | \(exportTune.request.car.drivetrain.rawValue)",
+            providerText(for: exportTune),
             ""
         ]
 
-        lines.append(contentsOf: tune.sections.flatMap { section in
+        lines.append(contentsOf: exportTune.sections.flatMap { section in
             sectionTextLines(for: section) + [""]
         })
 
         lines.append("Notes")
-        lines.append("Bias: \(tune.notes.bias)")
-        lines.append("If pushes wide: \(tune.notes.ifPushesWide)")
-        lines.append("If snaps on lift: \(tune.notes.ifSnapsOnLift)")
-        lines.append("Retune: \(tune.notes.retuneTrigger)")
+        lines.append("Bias: \(exportTune.notes.bias)")
+        lines.append("If pushes wide: \(exportTune.notes.ifPushesWide)")
+        lines.append("If snaps on lift: \(exportTune.notes.ifSnapsOnLift)")
+        lines.append("Retune: \(exportTune.notes.retuneTrigger)")
 
         let trimmedNotes = playerNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedNotes.isEmpty {
@@ -117,7 +143,11 @@ enum TuneClipboardFormatter {
         ]
     }
 
-    private static func providerText(for providerInfo: TuneProviderInfo?) -> String {
+    private static func providerText(for tune: TuneResult) -> String {
+        if tune.purpose == .fh5BuildPlan {
+            return "Provider: Local FH5 build planner - No formulas, model, API, or numeric tuning values were used."
+        }
+        let providerInfo = tune.providerInfo
         guard let providerInfo else {
             return "Provider: Provider not recorded - This saved tune was created before provider tracking."
         }

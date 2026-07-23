@@ -73,7 +73,7 @@ struct TuneResultView: View {
                         Text("\(tune.request.discipline.title) - \(tune.request.car.performanceClass.rawValue) \(tune.request.car.performanceIndex) - \(tune.request.car.drivetrain.rawValue)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                        ProviderStatusView(providerInfo: tune.providerInfo)
+                        ProviderStatusView(tune: tune)
                     }
                 }
                 .padding(.vertical, 4)
@@ -93,10 +93,24 @@ struct TuneResultView: View {
             }
 
             if let report = tune.projectionReport {
+                if tune.purpose == .fh5BuildPlan {
+                    Section("FH5 Plan-Only Result") {
+                        Label(
+                            "Numeric FH5 tuning settings are unavailable until a separate validated FH5 ruleset exists. This local result is a build plan only.",
+                            systemImage: "exclamationmark.shield"
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(ForzAdvisorTheme.warning)
+                        .accessibilityIdentifier("fh5PlanOnlyCaution")
+                    }
+                    .forzAdvisorRowBackground()
+                }
+
                 Section("Tune Coverage") {
                     TuneCoverageView(
                         report: report,
-                        showsAlternativePathSummary: !upgradePaths.isEmpty
+                        showsAlternativePathSummary: !upgradePaths.isEmpty,
+                        isPlanOnly: tune.purpose == .fh5BuildPlan
                     )
                 }
                 .forzAdvisorRowBackground()
@@ -307,13 +321,15 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
 
-            Section("Notes") {
-                NoteRow(title: "Bias", text: tune.notes.bias)
-                NoteRow(title: "If pushes wide", text: tune.notes.ifPushesWide)
-                NoteRow(title: "If snaps on lift", text: tune.notes.ifSnapsOnLift)
-                NoteRow(title: "Retune", text: tune.notes.retuneTrigger)
+            if tune.purpose != .fh5BuildPlan {
+                Section("Notes") {
+                    NoteRow(title: "Bias", text: tune.notes.bias)
+                    NoteRow(title: "If pushes wide", text: tune.notes.ifPushesWide)
+                    NoteRow(title: "If snaps on lift", text: tune.notes.ifSnapsOnLift)
+                    NoteRow(title: "Retune", text: tune.notes.retuneTrigger)
+                }
+                .forzAdvisorRowBackground()
             }
-            .forzAdvisorRowBackground()
 
             if !playerNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Section("Garage Notes") {
@@ -322,7 +338,7 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
         }
-        .navigationTitle("Tune")
+        .navigationTitle(tune.purpose == .fh5BuildPlan ? "Build Plan" : "Tune")
         .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -371,6 +387,9 @@ struct TuneResultView: View {
     }
 
     private var saveButtonTitle: String {
+        if tune.purpose == .fh5BuildPlan {
+            return "Save Plan"
+        }
         let report = tune.projectionReport
         let hasPlan = !(report?.purchasePlan.isEmpty ?? true)
             || !(report?.confirmations.isEmpty ?? true)
@@ -455,6 +474,7 @@ private enum CopiedExport {
 private struct TuneCoverageView: View {
     let report: TuneProjectionReport
     let showsAlternativePathSummary: Bool
+    let isPlanOnly: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -493,6 +513,9 @@ private struct TuneCoverageView: View {
     }
 
     private var summary: String {
+        if isPlanOnly {
+            return "Build planning only — no numeric settings included"
+        }
         if report.readyCount == 0 {
             return "No generated settings verified yet"
         }
@@ -514,27 +537,45 @@ private struct TuneCoverageView: View {
 }
 
 private struct ProviderStatusView: View {
-    let providerInfo: TuneProviderInfo?
+    let tune: TuneResult
+
+    private var statusTitle: String {
+        tune.purpose == .fh5BuildPlan
+            ? "Local FH5 build planner"
+            : tune.providerInfo?.statusTitle ?? "Provider not recorded"
+    }
+
+    private var statusDetail: String {
+        tune.purpose == .fh5BuildPlan
+            ? "Created locally without formulas, a model, an API, or numeric tuning values."
+            : tune.providerInfo?.statusDetail ?? "This saved tune was created before provider tracking."
+    }
+
+    private var symbolName: String {
+        tune.purpose == .fh5BuildPlan
+            ? "wrench.and.screwdriver"
+            : tune.providerInfo?.symbolName ?? "questionmark.circle"
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: providerInfo?.symbolName ?? "questionmark.circle")
+            Image(systemName: symbolName)
                 .font(.caption.weight(.semibold))
                 .frame(width: 16)
             VStack(alignment: .leading, spacing: 2) {
-                Text(providerInfo?.statusTitle ?? "Provider not recorded")
+                Text(statusTitle)
                     .font(.caption.weight(.semibold))
-                Text(providerInfo?.statusDetail ?? "This saved tune was created before provider tracking.")
+                Text(statusDetail)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .foregroundStyle(providerInfo?.fallbackReason == nil ? ForzAdvisorTheme.accent : ForzAdvisorTheme.warning)
+        .foregroundStyle(tune.providerInfo?.fallbackReason == nil ? ForzAdvisorTheme.accent : ForzAdvisorTheme.warning)
         .accessibilityIdentifier("providerStatus")
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(providerInfo?.statusTitle ?? "Provider not recorded")
-        .accessibilityValue(providerInfo?.statusDetail ?? "This saved tune was created before provider tracking.")
+        .accessibilityLabel(statusTitle)
+        .accessibilityValue(statusDetail)
     }
 }
 

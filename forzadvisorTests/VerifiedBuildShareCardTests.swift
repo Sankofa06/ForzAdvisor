@@ -75,13 +75,10 @@ final class VerifiedBuildShareCardTests: XCTestCase {
         ))
     }
 
-    func testEligibleFH5CardUsesShortGameTitle() throws {
+    func testFH5CandidateCannotProduceVerifiedShareCard() throws {
         let tune = try projectedTune(game: .fh5, partAvailability: .unavailable)
 
-        let card = try XCTUnwrap(factory.make(for: tune, isStreaming: false))
-
-        XCTAssertTrue(card.text.contains("\nFH5 | 2020 Toyota GR Supra\n"))
-        XCTAssertEqual(card.subject, "Verified FH5 build — 2020 Toyota GR Supra")
+        XCTAssertNil(factory.make(for: tune, isStreaming: false))
     }
 
     func testEligibleCardWithoutExactUpgradePathOmitsPathSection() throws {

@@ -99,6 +99,7 @@ struct CopilotCountFact: Codable, Equatable, Sendable {
 }
 
 struct CopilotProjectionFacts: Codable, Equatable, Sendable {
+    var resultPurpose: TuneResultPurpose = .numericTune
     let readyCount: Int
     let blockedByStatus: [CopilotCountFact]
     let blockedByReason: [CopilotCountFact]
@@ -107,6 +108,49 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
     let exactUpgradePathCount: Int?
     let isSaved: Bool?
     let isStreaming: Bool
+}
+
+extension CopilotProjectionFacts {
+    private enum CodingKeys: String, CodingKey {
+        case resultPurpose
+        case readyCount
+        case blockedByStatus
+        case blockedByReason
+        case tireLabEligible
+        case upgradeLabEligible
+        case exactUpgradePathCount
+        case isSaved
+        case isStreaming
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        resultPurpose = try container.decodeIfPresent(
+            TuneResultPurpose.self,
+            forKey: .resultPurpose
+        ) ?? .numericTune
+        readyCount = try container.decode(Int.self, forKey: .readyCount)
+        blockedByStatus = try container.decode([CopilotCountFact].self, forKey: .blockedByStatus)
+        blockedByReason = try container.decode([CopilotCountFact].self, forKey: .blockedByReason)
+        tireLabEligible = try container.decodeIfPresent(Bool.self, forKey: .tireLabEligible)
+        upgradeLabEligible = try container.decodeIfPresent(Bool.self, forKey: .upgradeLabEligible)
+        exactUpgradePathCount = try container.decodeIfPresent(Int.self, forKey: .exactUpgradePathCount)
+        isSaved = try container.decodeIfPresent(Bool.self, forKey: .isSaved)
+        isStreaming = try container.decode(Bool.self, forKey: .isStreaming)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(resultPurpose, forKey: .resultPurpose)
+        try container.encode(readyCount, forKey: .readyCount)
+        try container.encode(blockedByStatus, forKey: .blockedByStatus)
+        try container.encode(blockedByReason, forKey: .blockedByReason)
+        try container.encodeIfPresent(tireLabEligible, forKey: .tireLabEligible)
+        try container.encodeIfPresent(upgradeLabEligible, forKey: .upgradeLabEligible)
+        try container.encodeIfPresent(exactUpgradePathCount, forKey: .exactUpgradePathCount)
+        try container.encodeIfPresent(isSaved, forKey: .isSaved)
+        try container.encode(isStreaming, forKey: .isStreaming)
+    }
 }
 
 struct CopilotFact: Identifiable, Codable, Equatable, Sendable {
@@ -150,6 +194,10 @@ struct CopilotContext: Identifiable, Codable, Equatable, Sendable {
             result.append(CopilotFact(label: "Reviewed cars loaded", value: "\(catalogCarCount)"))
         }
         if let projection {
+            result.append(CopilotFact(
+                label: "Result type",
+                value: projection.resultPurpose == .fh5BuildPlan ? "FH5 build plan" : "Numeric tune"
+            ))
             result.append(CopilotFact(label: "Ready settings", value: "\(projection.readyCount)"))
             result.append(contentsOf: projection.blockedByStatus.map {
                 CopilotFact(label: $0.label, value: "\($0.count)")
@@ -281,6 +329,9 @@ struct CopilotEngine {
             guard let projection = context.projection else {
                 return "This result has no verified projection report, so Copilot does not claim any tune setting is ready."
             }
+            if projection.resultPurpose == .fh5BuildPlan {
+                return "Trust only the catalog identity, locally recorded upgrade availability, and exact buy paths shown by this plan. It is not a verified numeric tune and contains no tuning values."
+            }
             return "Trust only the \(projection.readyCount) settings marked ready by the projection report. Withheld settings remain labeled by status and reason."
         case .home, .newTune, .discipline:
             return "Trust the current workflow label and the facts shown in the underlying screen. Copilot provides process guidance, not new car or tune claims."
@@ -330,6 +381,18 @@ struct CopilotEngine {
         if projection.isStreaming {
             return "Wait for generation to finish. Closing this sheet does not cancel generation."
         }
+        if projection.resultPurpose == .fh5BuildPlan {
+            if projection.upgradeLabEligible == true {
+                return "Open Upgrade Lab to verify offered parts and rebuild the FH5 build plan."
+            }
+            if let exactUpgradePathCount = projection.exactUpgradePathCount,
+               exactUpgradePathCount > 0 {
+                return projection.isSaved == true
+                    ? "Copy the FH5 build plan when you are ready to use one of its exact paths."
+                    : "Copy the FH5 build plan and save it so you can reopen the exact paths later."
+            }
+            return "Save the FH5 build plan. Numeric tuning settings remain unavailable pending a separate validated FH5 ruleset."
+        }
         if projection.tireLabEligible == true {
             return "Open Tire Lab from the underlying result to verify the exact stock tire-pressure ranges."
         }
@@ -348,6 +411,16 @@ struct CopilotEngine {
     private func resultMissing(_ projection: CopilotProjectionFacts?) -> String {
         guard let projection else {
             return "A verified projection report is missing, so every tune setting remains untrusted."
+        }
+        if projection.resultPurpose == .fh5BuildPlan {
+            if projection.upgradeLabEligible == true {
+                return "Verified upgrade-shop availability is still missing. Use Upgrade Lab; numeric FH5 settings remain unavailable pending a separate validated ruleset."
+            }
+            if let exactUpgradePathCount = projection.exactUpgradePathCount,
+               exactUpgradePathCount > 0 {
+                return "No numeric FH5 settings are included. A separate validated FH5 ruleset is still missing; the \(exactUpgradePathCount) exact build paths are plan-only."
+            }
+            return "Numeric FH5 settings and a complete verified upgrade path are missing. This result remains plan-only."
         }
         var details = projection.blockedByStatus.map { "\($0.label): \($0.count)" }
         details.append(contentsOf: projection.blockedByReason.map { "\($0.label): \($0.count)" })

@@ -98,6 +98,7 @@ struct CopilotContextFactory {
         }
 
         return CopilotProjectionFacts(
+            resultPurpose: tune.request.car.game == .fh5 ? .fh5BuildPlan : .numericTune,
             readyCount: report.readyCount,
             blockedByStatus: statusCounts(in: report),
             blockedByReason: reasonCounts(in: report),

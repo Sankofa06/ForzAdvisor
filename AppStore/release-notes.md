@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 1.2.0 (Build 21) - 2026-07-22
+
+- Added a provider-independent local FH5 build planner for untouched stock cars selected from the reviewed catalog.
+- Added Upgrade Lab verification and up to three exact tuning-control purchase paths using only parts the player confirms are offered in their game build.
+- Kept numeric FH5 tuning, guided refinement, verified tune sharing, and test-drive validation unavailable until a separate FH5 ruleset is validated.
+- Hardened saved-tune compatibility so legacy or malformed FH5 results cannot expose stale numeric settings, while valid legacy FH6 tunes remain unchanged.
+
 ## Version 1.1.16 (Build 20) - 2026-07-22
 
 - Added Record Test Drive for eligible saved FH6 exact-stock tunes, with structured session conditions, verdicts, and handling feedback.
@@ -83,25 +90,23 @@
 
 ## App Store What's New
 
-Eligible saved FH6 exact-stock tunes can now record a structured test-drive result and share permissioned, deidentified validation JSON. Records stay local unless you share them and exclude notes, free-form locations, screenshots, telemetry, provider details, and internal tune IDs.
+Choose an untouched FH5 stock car from the reviewed catalog to create a local build plan, verify which tuning-control upgrades are offered, and compare up to three exact purchase paths. Numeric FH5 settings remain withheld until a separate FH5 ruleset is validated.
 
 ## TestFlight Notes
 
-Please test New Tune -> Choose a Car -> select an FH6 catalog car -> generate and save a tune -> verify every Upgrade Lab part and the Tire Lab ranges, compound, forward gear count, and game build. On the saved result, confirm Record Test Drive appears only after the exact-stock evidence is complete.
+Please test New Tune -> Choose a Car -> select an FH5 catalog car -> Use This Car -> choose a discipline. Confirm the result is clearly labeled Build Plan, contains no numeric tuning settings, and offers Upgrade Lab without contacting the selected model or API provider.
 
-In Record Test Drive, confirm the course is selected from controlled types, permission starts off, unmet requirements are explained, and Adjust or Reject requires handling feedback while Keep carries none. After creation, reopen the tune, share the latest validation JSON, and confirm deleting the local record warns that already-shared copies cannot be recalled.
+In Upgrade Lab, enter the exact FH5 game build, confirm the untouched stock car, and mark every listed part Offered or Not offered. When all parts are offered, confirm the rebuilt plan shows three deterministic alternatives and that Copy build plan includes only the exact verified paths. Save, reopen, and confirm the same paths remain available.
 
-If you switch between comma-decimal and dot-decimal device regions, please confirm signed settings such as negative camber remain valid and thousands grouping remains correct.
+Please also confirm manual, OCR, edited-catalog, and otherwise unverified FH5 inputs still refuse numeric generation. Existing FH6 catalog, manual, Tire Lab, refinement, sharing, and Record Test Drive workflows should behave unchanged.
 
-The searchable starter catalog remains available for both games with six community-crosschecked cars. Confirm catalog values in game and report discrepancies.
+The starter catalog contains six community-crosschecked cars across both games. Confirm catalog values and upgrade availability in game and report discrepancies. FH6 formulas remain experimental; catalog provenance does not validate formula accuracy.
 
-FH5 stock data is available, but offline FH5 tune generation remains intentionally unavailable until its separate ruleset is validated. FH6 offline formulas remain experimental; catalog provenance does not imply formula validation.
-
-Offline formula tuning does not require an account or API key. Camera and photo import are optional. Screenshots are processed on device. Anthropic API mode requires the tester to provide their own API key in Settings.
+Offline use requires no account or API key. FH5 build plans stay local. Camera and photo import are optional, screenshots are processed on device, and Anthropic API mode requires the tester to provide their own key for FH6.
 
 ## Reviewer Notes
 
-No login is required. Reviewers can complete the catalog flow through New Tune -> Choose a Car -> select an FH6 car -> Use This Car -> Road -> Save. Record Test Drive appears only after the saved FH6 stock build has complete local Upgrade Lab and Tire Lab verification. Manual entry, camera, and photo import remain available.
+No login is required. To review the new FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road. The app creates a local build plan with no numeric tuning values and offers Upgrade Lab for user-confirmed purchase paths. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
 
 ## Previous TestFlight Notes
 

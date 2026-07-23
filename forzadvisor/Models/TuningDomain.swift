@@ -309,12 +309,18 @@ struct TuneRequest: Codable, Equatable, Sendable {
     var buildSnapshot: VehicleBuildSnapshot? = nil
 }
 
+enum TuneResultPurpose: String, Codable, Equatable, Sendable {
+    case numericTune
+    case fh5BuildPlan
+}
+
 struct TuneResult: Identifiable, Codable, Equatable, Sendable {
     var id = UUID()
     var request: TuneRequest
     var sections: [TuneSection]
     var notes: TuneNotes
     var generatedAt: Date = .now
+    var purpose: TuneResultPurpose
     var providerInfo: TuneProviderInfo?
     var rulesetReference: TuneRulesetReference?
     var projectionReport: TuneProjectionReport?
@@ -325,6 +331,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         case sections
         case notes
         case generatedAt
+        case purpose
         case providerInfo
         case rulesetReference
         case projectionReport
@@ -336,6 +343,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         sections: [TuneSection],
         notes: TuneNotes,
         generatedAt: Date = .now,
+        purpose: TuneResultPurpose = .numericTune,
         providerInfo: TuneProviderInfo? = nil,
         rulesetReference: TuneRulesetReference? = nil,
         projectionReport: TuneProjectionReport? = nil
@@ -345,6 +353,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         self.sections = sections
         self.notes = notes
         self.generatedAt = generatedAt
+        self.purpose = purpose
         self.providerInfo = providerInfo
         self.rulesetReference = rulesetReference
         self.projectionReport = projectionReport
@@ -357,6 +366,7 @@ struct TuneResult: Identifiable, Codable, Equatable, Sendable {
         sections = try container.decode([TuneSection].self, forKey: .sections)
         notes = try container.decode(TuneNotes.self, forKey: .notes)
         generatedAt = try container.decode(Date.self, forKey: .generatedAt)
+        purpose = try container.decodeIfPresent(TuneResultPurpose.self, forKey: .purpose) ?? .numericTune
         providerInfo = try container.decodeIfPresent(TuneProviderInfo.self, forKey: .providerInfo)
         rulesetReference = try container.decodeIfPresent(TuneRulesetReference.self, forKey: .rulesetReference)
         projectionReport = try container.decodeIfPresent(TuneProjectionReport.self, forKey: .projectionReport)

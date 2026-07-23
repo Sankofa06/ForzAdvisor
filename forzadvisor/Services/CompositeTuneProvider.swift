@@ -37,6 +37,10 @@ struct CompositeTuneProvider: TuneProvider {
     }
 
     func generateTune(for request: TuneRequest, onPartial: TuneProgressHandler?) async throws -> TuneResult {
+        if let fh5Plan = try FH5BuildPlanRouter().route(request) {
+            return fh5Plan
+        }
+
         switch configuration.mode {
         case .offlineFormula:
             return try await localProvider.generateTune(for: request, onPartial: onPartial)
@@ -95,6 +99,11 @@ struct CompositeTuneProvider: TuneProvider {
     }
 
     func adjustTune(previous tune: TuneResult, adjustment: TuneAdjustment) async throws -> TuneAdjustmentResult {
+        guard tune.request.car.game != .fh5,
+              tune.purpose != .fh5BuildPlan else {
+            throw LocalTuneProviderError.unsupportedRuleset(.fh5)
+        }
+
         switch configuration.mode {
         case .offlineFormula:
             var result = try await localProvider.adjustTune(previous: tune, adjustment: adjustment)
@@ -215,5 +224,35 @@ struct CompositeTuneProvider: TuneProvider {
         if Task.isCancelled {
             throw CancellationError()
         }
+    }
+}
+
+struct FH5BuildPlanRouter {
+    func route(_ request: TuneRequest) throws -> TuneResult? {
+        guard request.car.game == .fh5 else { return nil }
+        guard request.car.catalogReference != nil,
+              !request.car.catalogValuesModified,
+              let snapshot = request.buildSnapshot,
+              snapshot.kind == .capabilityOnly,
+              snapshot.isValid,
+              snapshot.matches(car: request.car),
+              snapshot.car.catalogReference == request.car.catalogReference,
+              !snapshot.car.catalogValuesModified else {
+            throw LocalTuneProviderError.unsupportedRuleset(.fh5)
+        }
+
+        return TuneResult(
+            request: request,
+            sections: [],
+            notes: TuneNotes(
+                bias: "",
+                ifPushesWide: "",
+                ifSnapsOnLift: "",
+                retuneTrigger: ""
+            ),
+            purpose: .fh5BuildPlan,
+            providerInfo: nil,
+            rulesetReference: nil
+        )
     }
 }

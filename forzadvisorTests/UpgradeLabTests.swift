@@ -226,6 +226,9 @@ final class UpgradeLabTests: XCTestCase {
         XCTAssertTrue(text.contains("Path 2"))
         XCTAssertTrue(text.contains("Path 3"))
         XCTAssertTrue(text.contains("Drivetrain > Transmission > Sport Transmission"))
+        XCTAssertTrue(text.contains(
+            "Each path unlocks the same tune controls represented here. Pick one path; the alternatives are not cumulative."
+        ))
         XCTAssertTrue(text.contains("do not predict PI, credits, entitlement, performance, or installation order"))
         XCTAssertFalse(text.contains("Buy these upgrades"))
     }

@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct CarCatalogReviewView: View {
+    static let fh5PlanOnlyMessage = "FH5 uses a provider-independent local build planner. It creates upgrade paths only and does not generate numeric tuning settings."
+
     let selection: CatalogCarSelection
     let onBack: () -> Void
     let onUseCar: () -> Void
@@ -57,7 +59,7 @@ struct CarCatalogReviewView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 if selection.entry.game == .fh5 {
-                    Text("FH5 stock data is available. Tune generation depends on the provider selected in Settings.")
+                    Text(Self.fh5PlanOnlyMessage)
                         .font(.caption)
                         .foregroundStyle(ForzAdvisorTheme.warning)
                 }
