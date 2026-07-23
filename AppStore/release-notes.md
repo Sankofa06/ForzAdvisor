@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.2.1 (Build 22) - 2026-07-22
+
+- Added FH5 Research Lab for complete, manually entered first-party observations of an untouched stock car's tuning menu, stored separately from the plan without contacting a tuning provider.
+- Added off-by-default permission for deidentified structured observation reuse and deterministic JSON sharing, while keeping the record explicitly evidence-only.
+- Bound observations to the current saved catalog plan and exact matching Upgrade Lab game build so stale evidence cannot surface or be shared.
+
 ## Version 1.2.0 (Build 21) - 2026-07-22
 
 - Added a provider-independent local FH5 build planner for untouched stock cars selected from the reviewed catalog.
@@ -90,11 +96,13 @@
 
 ## App Store What's New
 
-Choose an untouched FH5 stock car from the reviewed catalog to create a local build plan, verify which tuning-control upgrades are offered, and compare up to three exact purchase paths. Numeric FH5 settings remain withheld until a separate FH5 ruleset is validated.
+Choose an untouched FH5 stock car from the reviewed catalog to create a local build plan, record its stock tuning menu as first-party evidence, verify offered tuning-control upgrades, and compare up to three exact purchase paths. Numeric FH5 settings remain withheld until a separate FH5 ruleset is validated.
 
 ## TestFlight Notes
 
 Please test New Tune -> Choose a Car -> select an FH5 catalog car -> Use This Car -> choose a discipline. Confirm the result is clearly labeled Build Plan, contains no numeric tuning settings, and offers Upgrade Lab without contacting the selected model or API provider.
+
+Save the plan, open FH5 Research Lab, and confirm every expected control requires Adjustable, Shown locked, or Not shown. For Adjustable, enter the observed minimum, maximum, step, and restored current value. Confirm incomplete or contradictory observations cannot save, reuse/JSON sharing starts off, and returning to the plan does not expose numeric FH5 tune settings.
 
 In Upgrade Lab, enter the exact FH5 game build, confirm the untouched stock car, and mark every listed part Offered or Not offered. When all parts are offered, confirm the rebuilt plan shows three deterministic alternatives and that Copy build plan includes only the exact verified paths. Save, reopen, and confirm the same paths remain available.
 
@@ -102,11 +110,11 @@ Please also confirm manual, OCR, edited-catalog, and otherwise unverified FH5 in
 
 The starter catalog contains six community-crosschecked cars across both games. Confirm catalog values and upgrade availability in game and report discrepancies. FH6 formulas remain experimental; catalog provenance does not validate formula accuracy.
 
-Offline use requires no account or API key. FH5 build plans stay local. Camera and photo import are optional, screenshots are processed on device, and Anthropic API mode requires the tester to provide their own key for FH6.
+Offline use requires no account or API key. FH5 build plans and Research Lab observations stay local unless the user explicitly shares an eligible deidentified JSON record. Camera and photo import are optional, screenshots are processed on device, and Anthropic API mode requires the tester to provide their own key for FH6.
 
 ## Reviewer Notes
 
-No login is required. To review the new FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road. The app creates a local build plan with no numeric tuning values and offers Upgrade Lab for user-confirmed purchase paths. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
+No login is required. To review the new FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road, then save the plan. The app creates a local build plan with no numeric tuning values and offers Research Lab for first-party stock-menu evidence plus Upgrade Lab for user-confirmed purchase paths. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
 
 ## Previous TestFlight Notes
 

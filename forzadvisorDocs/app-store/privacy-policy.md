@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-06-15
+Effective date: 2026-07-22
 
 Public URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
 
@@ -11,6 +11,14 @@ ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains 
 ForzAdvisor can process car details, tune settings, player notes, camera photos, imported screenshots, and saved tune history. By default, this information stays on your device and is used to generate, display, save, search, copy, and adjust tunes.
 
 Camera photos and imported screenshots are processed on device with Apple's Vision OCR. If you save a tune after photo or screenshot entry, the app may save a small local thumbnail with that tune so you can recognize it later.
+
+## User-Initiated Sharing
+
+On eligible exact-build results, ForzAdvisor can prepare verified build cards and first-party validation JSON locally, then open the iOS system share sheet. Sharing occurs only after you choose a destination, and the app does not record share destinations or history.
+
+For an eligible saved FH5 untouched-stock catalog plan, Research Lab can store a complete first-party tuning-menu observation in a separate local record. It can include platform, exact game version, reviewed stock-car facts, complete matching Upgrade Lab availability, tire compound, forward gear count, control availability, and allowed manually entered slider values. The workflow does not call a tuning provider, create a numeric tune, or upload anything.
+
+Deidentified structured reuse and JSON sharing are off by default for every FH5 observation. Its allow-listed export excludes local tune and record identifiers, screenshots, OCR, thumbnails, notes, discipline, generated tune values, catalog source URLs, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, history, and share destination. Its public content fingerprint covers only approved exported semantic fields and is separate from local integrity. The app surfaces or shares an observation only while it matches the current saved plan and catalog revision. Local deletion cannot recall a JSON file already shared.
 
 ## Offline And On-Device Tuning
 
@@ -30,7 +38,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes and locally stored validation or FH5 Research Lab records in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

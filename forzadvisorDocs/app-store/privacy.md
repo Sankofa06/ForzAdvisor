@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Review Notes
 
-Last updated: 2026-06-15
+Last updated: 2026-07-22
 
 ## Privacy Manifest
 
@@ -20,6 +20,8 @@ Declared collected data:
 - Used for tracking: false
 
 Reason: optional Anthropic API mode can send reviewed car details, selected discipline, current tune details for adjustments, and player notes to Anthropic to generate or refine a tune. Screenshots and camera photos are processed on device and are not uploaded by the current app code.
+
+FH5 Research Lab observations are manually entered and stored locally in a separate saved-plan record. The workflow does not contact a tune provider or upload the observation. A complete Upgrade Lab observation locks capture to its exact game build, and only records matching the current saved plan and catalog revision are surfaced or shared. Deidentified structured JSON sharing is off by default and requires explicit per-record permission; its allow-list excludes screenshots, OCR, notes, tune identifiers, generated tune values, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, and share destinations. The public content fingerprint covers only exported semantic fields and does not expose the local integrity fingerprint.
 
 Tracking:
 
@@ -54,6 +56,7 @@ Do not mark photos/videos as collected for the current build unless the app chan
 - No embedded third-party SDKs are present in the repository.
 - Optional remote tune generation calls Anthropic's API directly with the user's saved API key.
 - Optional on-device model assistance uses Apple Foundation Models when available and falls back to offline formulas.
+- FH5 Research Lab records and exports are generated locally. The app has no background uploader, receiver, or remote-revocation mechanism for them.
 
 ## Sources
 

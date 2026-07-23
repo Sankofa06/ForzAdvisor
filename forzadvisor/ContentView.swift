@@ -223,6 +223,37 @@ struct ContentView: View {
                             description: Text("Return to the tune and select a verified catalog car.")
                         )
                     }
+                case .fh5ResearchCapture(let tune, let savedTuneID, let thumbnailData, let playerNotes):
+                    if let snapshot = tune.request.buildSnapshot {
+                        FH5ResearchCaptureView(
+                            tune: tune,
+                            snapshot: snapshot,
+                            onBack: {
+                                step = .result(
+                                    tune,
+                                    savedTuneID: savedTuneID,
+                                    adjustmentChanges: [],
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            },
+                            onSubmit: { capture in
+                                recordFH5ResearchObservation(
+                                    capture,
+                                    for: tune,
+                                    savedTuneID: savedTuneID,
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            }
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            "Catalog snapshot unavailable",
+                            systemImage: "exclamationmark.triangle",
+                            description: Text("Return to the saved FH5 plan and choose an untouched catalog car.")
+                        )
+                    }
                 case .recordTestDrive(let tune, let savedTuneID, let thumbnailData, let playerNotes):
                     FirstPartyValidationCaptureView(
                         tune: tune,
@@ -325,8 +356,30 @@ struct ContentView: View {
         CopilotContextFactory().make(
             step: step,
             savedTuneCount: savedTunes.count,
-            catalogCarCount: catalogCarCount
+            catalogCarCount: catalogCarCount,
+            fh5ResearchLabEligible: currentFH5ResearchLabEligible,
+            fh5ObservationRecorded: currentFH5ObservationRecorded
         )
+    }
+
+    private var currentFH5ResearchLabEligible: Bool {
+        guard case .result(let tune, let savedTuneID, _, _, _) = step,
+              let savedTune = resolvedSavedTune(for: tune, savedTuneID: savedTuneID) else {
+            return false
+        }
+        return CopilotContextFactory().fh5ResearchLabEligibility(
+            for: tune,
+            persistedTune: savedTune.tuneResult,
+            isStreaming: false
+        )
+    }
+
+    private var currentFH5ObservationRecorded: Bool {
+        guard case .result(let tune, let savedTuneID, _, _, _) = step,
+              let savedTune = resolvedSavedTune(for: tune, savedTuneID: savedTuneID) else {
+            return false
+        }
+        return !savedTune.fh5ResearchObservationRecords(matching: tune).isEmpty
     }
 
     private var catalogCarCount: Int {
@@ -355,6 +408,14 @@ struct ContentView: View {
         )
         let latestValidationRecord = resolvedSavedTune?
             .validationRecords(matching: tune)
+            .last
+        let researchEligibility = FH5ResearchEligibility().snapshot(
+            for: tune,
+            savedTune: persistedTune,
+            isStreaming: isStreaming
+        )
+        let latestResearchRecord = resolvedSavedTune?
+            .fh5ResearchObservationRecords(matching: tune)
             .last
 
         TuneResultView(
@@ -411,6 +472,21 @@ struct ContentView: View {
                     thumbnailData: resolvedThumbnailData,
                     playerNotes: resolvedPlayerNotes
                 )
+            },
+            latestFH5ResearchRecord: latestResearchRecord,
+            onOpenFH5Research: researchEligibility.isSuccess && resolvedSavedTuneID != nil ? {
+                guard let resolvedSavedTuneID else { return }
+                tuneWorkflow.cancelAdjustment()
+                step = .fh5ResearchCapture(
+                    tune,
+                    savedTuneID: resolvedSavedTuneID,
+                    thumbnailData: resolvedThumbnailData,
+                    playerNotes: resolvedPlayerNotes
+                )
+            } : nil,
+            onDeleteFH5ResearchRecord: { record in
+                guard let resolvedSavedTuneID else { return }
+                deleteFH5ResearchObservationRecord(record, savedTuneID: resolvedSavedTuneID)
             },
             latestValidationRecord: latestValidationRecord,
             onRecordTestDrive: validationEligibility.isSuccess && resolvedSavedTuneID != nil ? {

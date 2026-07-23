@@ -30,6 +30,7 @@ final class SavedTune {
     @Attribute(.externalStorage) private var tuneData: Data
     @Attribute(.externalStorage) var thumbnailData: Data?
     @Attribute(.externalStorage) private var firstPartyValidationRecordsData: Data? = nil
+    @Attribute(.externalStorage) private var fh5ResearchObservationRecordsData: Data? = nil
 
     @MainActor
     init(
@@ -56,6 +57,7 @@ final class SavedTune {
         self.tuneData = try Self.encoder.encode(tune)
         self.thumbnailData = thumbnailData
         self.firstPartyValidationRecordsData = nil
+        self.fh5ResearchObservationRecordsData = nil
     }
 
     @MainActor
@@ -171,6 +173,60 @@ final class SavedTune {
     }
 
     @MainActor
+    var fh5ResearchObservationRecords: [FH5ResearchObservationRecord] {
+        (try? decodedFH5ResearchObservationRecords()) ?? []
+    }
+
+    @MainActor
+    func fh5ResearchObservationRecords(
+        matching tune: TuneResult
+    ) -> [FH5ResearchObservationRecord] {
+        let factory = FH5ResearchObservationFactory()
+        guard let currentTune = tuneResult,
+              factory.planRevisionFingerprint(for: currentTune)
+                == factory.planRevisionFingerprint(for: tune) else {
+            return []
+        }
+        return fh5ResearchObservationRecords
+            .filter { factory.matches($0, tune: currentTune) }
+            .sorted { $0.capturedAt < $1.capturedAt }
+    }
+
+    @MainActor
+    func appendFH5ResearchObservationRecord(
+        _ record: FH5ResearchObservationRecord
+    ) throws {
+        guard let currentTune = tuneResult,
+              FH5ResearchObservationFactory().matches(record, tune: currentTune) else {
+            throw FH5ResearchIssue.invalidStoredRecord
+        }
+        var records = try decodedFH5ResearchObservationRecords()
+        guard !records.contains(where: {
+            $0.recordID == record.recordID
+                || $0.contentFingerprint == record.contentFingerprint
+        }) else {
+            return
+        }
+        records.append(record)
+        fh5ResearchObservationRecordsData = try Self.encoder.encode(records)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteFH5ResearchObservationRecord(id: UUID) throws -> Bool {
+        var records = try decodedFH5ResearchObservationRecords()
+        let priorCount = records.count
+        records.removeAll { $0.recordID == id }
+        guard records.count != priorCount else { return false }
+        fh5ResearchObservationRecordsData = records.isEmpty
+            ? nil
+            : try Self.encoder.encode(records)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
     private func decodedValidationRecords() throws -> [FirstPartyValidationRecord] {
         guard let firstPartyValidationRecordsData else { return [] }
         do {
@@ -183,10 +239,38 @@ final class SavedTune {
         }
     }
 
+    @MainActor
+    private func decodedFH5ResearchObservationRecords() throws
+        -> [FH5ResearchObservationRecord] {
+        guard let fh5ResearchObservationRecordsData else { return [] }
+        do {
+            let records = try Self.decoder.decode(
+                [FH5ResearchObservationRecord].self,
+                from: fh5ResearchObservationRecordsData
+            )
+            guard records.allSatisfy(FH5ResearchObservationFactory().isValid) else {
+                throw SavedTuneFH5ResearchRecordError.corruptStorage
+            }
+            return records
+        } catch {
+            throw SavedTuneFH5ResearchRecordError.corruptStorage
+        }
+    }
+
 #if DEBUG
+    @MainActor
+    func replaceTuneDataForTesting(_ data: Data) {
+        tuneData = data
+    }
+
     @MainActor
     func replaceValidationRecordsDataForTesting(_ data: Data?) {
         firstPartyValidationRecordsData = data
+    }
+
+    @MainActor
+    func replaceFH5ResearchObservationRecordsDataForTesting(_ data: Data?) {
+        fh5ResearchObservationRecordsData = data
     }
 #endif
 
@@ -208,5 +292,13 @@ enum SavedTuneValidationRecordError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         "Stored validation records are corrupt. No records were changed."
+    }
+}
+
+enum SavedTuneFH5ResearchRecordError: LocalizedError, Equatable {
+    case corruptStorage
+
+    var errorDescription: String? {
+        "Stored FH5 research observations are corrupt. The plan and other evidence were not changed."
     }
 }

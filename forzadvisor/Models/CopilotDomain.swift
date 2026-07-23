@@ -21,6 +21,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
     case result
     case tirePressureCapture
     case upgradePartCapture
+    case fh5ResearchCapture
     case recordTestDrive
     case editSavedTune
 
@@ -38,6 +39,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
         case .result: "Tune Result"
         case .tirePressureCapture: "Tire Lab"
         case .upgradePartCapture: "Upgrade Lab"
+        case .fh5ResearchCapture: "FH5 Research Lab"
         case .recordTestDrive: "Record Test Drive"
         case .editSavedTune: "Edit Saved Tune"
         }
@@ -105,9 +107,37 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
     let blockedByReason: [CopilotCountFact]
     let tireLabEligible: Bool?
     let upgradeLabEligible: Bool?
+    let fh5ResearchLabEligible: Bool?
+    let fh5ObservationRecorded: Bool?
     let exactUpgradePathCount: Int?
     let isSaved: Bool?
     let isStreaming: Bool
+
+    init(
+        resultPurpose: TuneResultPurpose = .numericTune,
+        readyCount: Int,
+        blockedByStatus: [CopilotCountFact],
+        blockedByReason: [CopilotCountFact],
+        tireLabEligible: Bool?,
+        upgradeLabEligible: Bool?,
+        fh5ResearchLabEligible: Bool? = nil,
+        fh5ObservationRecorded: Bool? = nil,
+        exactUpgradePathCount: Int?,
+        isSaved: Bool?,
+        isStreaming: Bool
+    ) {
+        self.resultPurpose = resultPurpose
+        self.readyCount = readyCount
+        self.blockedByStatus = blockedByStatus
+        self.blockedByReason = blockedByReason
+        self.tireLabEligible = tireLabEligible
+        self.upgradeLabEligible = upgradeLabEligible
+        self.fh5ResearchLabEligible = fh5ResearchLabEligible
+        self.fh5ObservationRecorded = fh5ObservationRecorded
+        self.exactUpgradePathCount = exactUpgradePathCount
+        self.isSaved = isSaved
+        self.isStreaming = isStreaming
+    }
 }
 
 extension CopilotProjectionFacts {
@@ -118,6 +148,8 @@ extension CopilotProjectionFacts {
         case blockedByReason
         case tireLabEligible
         case upgradeLabEligible
+        case fh5ResearchLabEligible
+        case fh5ObservationRecorded
         case exactUpgradePathCount
         case isSaved
         case isStreaming
@@ -134,6 +166,8 @@ extension CopilotProjectionFacts {
         blockedByReason = try container.decode([CopilotCountFact].self, forKey: .blockedByReason)
         tireLabEligible = try container.decodeIfPresent(Bool.self, forKey: .tireLabEligible)
         upgradeLabEligible = try container.decodeIfPresent(Bool.self, forKey: .upgradeLabEligible)
+        fh5ResearchLabEligible = try container.decodeIfPresent(Bool.self, forKey: .fh5ResearchLabEligible)
+        fh5ObservationRecorded = try container.decodeIfPresent(Bool.self, forKey: .fh5ObservationRecorded)
         exactUpgradePathCount = try container.decodeIfPresent(Int.self, forKey: .exactUpgradePathCount)
         isSaved = try container.decodeIfPresent(Bool.self, forKey: .isSaved)
         isStreaming = try container.decode(Bool.self, forKey: .isStreaming)
@@ -147,6 +181,8 @@ extension CopilotProjectionFacts {
         try container.encode(blockedByReason, forKey: .blockedByReason)
         try container.encodeIfPresent(tireLabEligible, forKey: .tireLabEligible)
         try container.encodeIfPresent(upgradeLabEligible, forKey: .upgradeLabEligible)
+        try container.encodeIfPresent(fh5ResearchLabEligible, forKey: .fh5ResearchLabEligible)
+        try container.encodeIfPresent(fh5ObservationRecorded, forKey: .fh5ObservationRecorded)
         try container.encodeIfPresent(exactUpgradePathCount, forKey: .exactUpgradePathCount)
         try container.encodeIfPresent(isSaved, forKey: .isSaved)
         try container.encode(isStreaming, forKey: .isStreaming)
@@ -220,6 +256,18 @@ struct CopilotContext: Identifiable, Codable, Equatable, Sendable {
                     result.append(CopilotFact(
                         label: "Upgrade Lab",
                         value: upgradeLabEligible ? "Eligible" : "Not eligible"
+                    ))
+                }
+                if let researchEligible = projection.fh5ResearchLabEligible {
+                    result.append(CopilotFact(
+                        label: "FH5 Research Lab",
+                        value: researchEligible ? "Eligible" : "Not eligible"
+                    ))
+                }
+                if projection.fh5ObservationRecorded == true {
+                    result.append(CopilotFact(
+                        label: "FH5 stock evidence",
+                        value: "Recorded"
                     ))
                 }
                 if let exactUpgradePathCount = projection.exactUpgradePathCount {
@@ -307,6 +355,8 @@ struct CopilotEngine {
             return unsavedEditsMessage("Complete the exact game-build, tire compound, and front/rear range checklist, then submit through the validated button below.")
         case .upgradePartCapture:
             return unsavedEditsMessage("Confirm the stock-car attestation and every requested tuning-control part, then submit through the validated button below.")
+        case .fh5ResearchCapture:
+            return unsavedEditsMessage("Record every FH5 control as Adjustable, Shown locked, or Not shown, restore moved sliders, and save the raw observation.")
         case .recordTestDrive:
             return unsavedEditsMessage("Describe this one session, confirm the tested setup, then explicitly opt in if you want to create reusable deidentified evidence.")
         case .editSavedTune:
@@ -318,7 +368,7 @@ struct CopilotEngine {
         switch context.phase {
         case .catalogPicker, .catalogReview:
             return "Treat the reviewed catalog as a starting point and confirm its stock facts in your current game build."
-        case .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture, .upgradePartCapture, .recordTestDrive, .editSavedTune:
+        case .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .recordTestDrive, .editSavedTune:
             return unsavedEditsMessage("Trust only facts you personally confirm in the underlying screen and any validation it shows.")
         case .loading:
             guard let projection = context.projection else {
@@ -330,6 +380,9 @@ struct CopilotEngine {
                 return "This result has no verified projection report, so Copilot does not claim any tune setting is ready."
             }
             if projection.resultPurpose == .fh5BuildPlan {
+                if projection.fh5ObservationRecorded == true {
+                    return "Trust the saved record only as raw first-party FH5 stock-menu evidence. It is not a tune and does not make numeric FH5 settings ready."
+                }
                 return "Trust only the catalog identity, locally recorded upgrade availability, and exact buy paths shown by this plan. It is not a verified numeric tune and contains no tuning values."
             }
             return "Trust only the \(projection.readyCount) settings marked ready by the projection report. Withheld settings remain labeled by status and reason."
@@ -360,6 +413,8 @@ struct CopilotEngine {
             return unsavedEditsMessage("The underlying checklist identifies any missing build, compound, range, step, or attestation fact.")
         case .upgradePartCapture:
             return unsavedEditsMessage("The underlying checklist identifies any missing stock-car attestation or tuning-control part fact.")
+        case .fh5ResearchCapture:
+            return unsavedEditsMessage("The underlying checklist identifies missing tri-state decisions, slider values, context, restoration, or permission.")
         case .recordTestDrive:
             return unsavedEditsMessage("The underlying form identifies missing session facts, confirmations, symptoms, or reuse permission.")
         case .editSavedTune:
@@ -382,6 +437,12 @@ struct CopilotEngine {
             return "Wait for generation to finish. Closing this sheet does not cancel generation."
         }
         if projection.resultPurpose == .fh5BuildPlan {
+            if projection.fh5ObservationRecorded == true {
+                return "The raw FH5 stock-menu evidence is recorded. It is not a tune, and numeric FH5 tuning remains unavailable."
+            }
+            if projection.fh5ResearchLabEligible == true {
+                return "Open FH5 Research Lab to record the untouched stock tuning menu as first-party evidence."
+            }
             if projection.upgradeLabEligible == true {
                 return "Open Upgrade Lab to verify offered parts and rebuild the FH5 build plan."
             }
@@ -413,6 +474,12 @@ struct CopilotEngine {
             return "A verified projection report is missing, so every tune setting remains untrusted."
         }
         if projection.resultPurpose == .fh5BuildPlan {
+            if projection.fh5ObservationRecorded == true {
+                return "The stock-menu observation is recorded, but it is raw evidence only. A validated numeric FH5 ruleset is still missing."
+            }
+            if projection.fh5ResearchLabEligible == true {
+                return "A first-party stock-menu observation is still missing. Research Lab can record it without creating a tune."
+            }
             if projection.upgradeLabEligible == true {
                 return "Verified upgrade-shop availability is still missing. Use Upgrade Lab; numeric FH5 settings remain unavailable pending a separate validated ruleset."
             }

@@ -256,6 +256,53 @@ extension ContentView {
         }
     }
 
+    func recordFH5ResearchObservation(
+        _ capture: FH5ResearchCapture,
+        for tune: TuneResult,
+        savedTuneID: UUID,
+        thumbnailData: Data?,
+        playerNotes: String
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID),
+                  let persistedTune = savedTune.tuneResult else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            let record = try FH5ResearchObservationFactory().make(
+                tune: tune,
+                savedTune: persistedTune,
+                isStreaming: false,
+                capture: capture
+            )
+            try savedTune.appendFH5ResearchObservationRecord(record)
+            try modelContext.save()
+            step = .result(
+                TuneResultBoundarySanitizer().sanitize(tune),
+                savedTuneID: savedTuneID,
+                adjustmentChanges: [],
+                thumbnailData: thumbnailData,
+                playerNotes: playerNotes
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteFH5ResearchObservationRecord(
+        _ record: FH5ResearchObservationRecord,
+        savedTuneID: UUID
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            _ = try savedTune.deleteFH5ResearchObservationRecord(id: record.recordID)
+            try modelContext.save()
+        } catch {
+            errorMessage = "Could not delete this FH5 observation: \(error.localizedDescription)"
+        }
+    }
+
     func recordTestDrive(
         _ capture: FirstPartyValidationCapture,
         for tune: TuneResult,
@@ -422,6 +469,7 @@ enum WorkflowStep {
     case result(TuneResult, savedTuneID: UUID?, adjustmentChanges: [TuneAdjustmentChange], thumbnailData: Data?, playerNotes: String)
     case tirePressureCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
     case upgradePartCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
+    case fh5ResearchCapture(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
     case recordTestDrive(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
     case editSavedTune(TuneResult, savedTuneID: UUID, playerNotes: String, thumbnailData: Data?)
 }

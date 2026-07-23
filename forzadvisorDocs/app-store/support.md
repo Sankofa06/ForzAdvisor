@@ -30,6 +30,14 @@ Open a generated or saved tune and tap Copy full tune. Individual tune lines can
 
 Open a saved tune and use Guided Refinement to request changes such as more rotation, more stability, softer, stiffer, more top speed, or more acceleration.
 
+### What is FH5 Research Lab?
+
+Research Lab appears on an eligible saved FH5 build plan for an untouched stock car from the reviewed catalog. In Horizon Test Track, use English units and record every expected tuning control as Adjustable, Shown locked, or Not shown. Enter slider bounds, step, and restored current values only when the control is adjustable.
+
+The observation is raw first-party evidence, not a tune, and it does not enable numeric FH5 settings or contact a tuning provider. Deidentified structured JSON reuse is off by default and must be enabled for that record before sharing.
+
+A complete Upgrade Lab observation locks Research Lab to the same exact game build. Saved observations appear and can be shared only while they match the current saved plan, catalog car, and catalog revision.
+
 ### How do I delete a tune?
 
 Open the garage, swipe left on a saved tune, and tap Delete.

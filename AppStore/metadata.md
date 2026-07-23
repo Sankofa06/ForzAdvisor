@@ -62,8 +62,8 @@ Suggested FH5 review path:
 5. Tap Use This Car.
 6. Choose Road.
 7. Review the local Build Plan and its explicit no-numeric-settings notice.
-8. Open Upgrade Lab to record offered parts, or save the initial plan.
-9. Return to the garage and reopen the saved plan.
+8. Save the plan, then open FH5 Research Lab to record the untouched stock tuning menu as raw first-party evidence.
+9. Open Upgrade Lab to record offered parts, or return to the garage and reopen the saved plan.
 
 No account or API key is required. FH5 build planning is local and does not use the provider selected in Settings. For an FH6 numeric result, select an FH6 catalog car or use manual entry. Camera access is optional and only used for on-device OCR; photo import uses the system picker. Optional on-device AI and user-key Anthropic API modes apply to FH6 generation.
 
@@ -71,14 +71,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.2.0
-- Current project build: 21
+- Current project version: 1.2.1
+- Current project build: 22
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-FH5 catalog cars now produce local build plans with no numeric tuning settings. Verify offered tuning-control upgrades, compare up to three exact purchase paths, and save or copy the result. Existing FH6 tuning workflows remain available.
+Saved FH5 catalog plans can now record the untouched stock tuning menu as first-party Research Lab evidence with optional deidentified JSON sharing. Numeric FH5 settings remain withheld; Upgrade Lab purchase paths and existing FH6 tuning workflows remain available.
 
 ## Export Compliance Notes
 

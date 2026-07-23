@@ -11,7 +11,9 @@ struct CopilotContextFactory {
     func make(
         step: WorkflowStep,
         savedTuneCount: Int,
-        catalogCarCount: Int
+        catalogCarCount: Int,
+        fh5ResearchLabEligible: Bool = false,
+        fh5ObservationRecorded: Bool = false
     ) -> CopilotContext {
         switch step {
         case .home:
@@ -40,11 +42,19 @@ struct CopilotContextFactory {
                 }
             )
         case .result(let tune, let savedTuneID, _, _, _):
-            return resultContext(tune, phase: .result, isSaved: savedTuneID != nil)
+            return resultContext(
+                tune,
+                phase: .result,
+                isSaved: savedTuneID != nil,
+                fh5ResearchLabEligible: fh5ResearchLabEligible,
+                fh5ObservationRecorded: fh5ObservationRecorded
+            )
         case .tirePressureCapture:
             return context(.tirePressureCapture, cannotSeeUnsavedEdits: true)
         case .upgradePartCapture:
             return context(.upgradePartCapture, cannotSeeUnsavedEdits: true)
+        case .fh5ResearchCapture:
+            return context(.fh5ResearchCapture, cannotSeeUnsavedEdits: true)
         case .recordTestDrive:
             return context(.recordTestDrive, cannotSeeUnsavedEdits: true)
         case .editSavedTune:
@@ -56,13 +66,21 @@ struct CopilotContextFactory {
         _ tune: TuneResult,
         phase: CopilotPhase,
         isSaved: Bool,
+        fh5ResearchLabEligible: Bool = false,
+        fh5ObservationRecorded: Bool = false,
         cannotSeeUnsavedEdits: Bool = false
     ) -> CopilotContext {
         context(
             phase,
             car: tune.request.car,
             discipline: tune.request.discipline,
-            projection: projectionFacts(for: tune, isSaved: isSaved, isStreaming: false),
+            projection: projectionFacts(
+                for: tune,
+                isSaved: isSaved,
+                isStreaming: false,
+                fh5ResearchLabEligible: fh5ResearchLabEligible,
+                fh5ObservationRecorded: fh5ObservationRecorded
+            ),
             cannotSeeUnsavedEdits: cannotSeeUnsavedEdits
         )
     }
@@ -91,7 +109,9 @@ struct CopilotContextFactory {
     private func projectionFacts(
         for tune: TuneResult,
         isSaved: Bool,
-        isStreaming: Bool
+        isStreaming: Bool,
+        fh5ResearchLabEligible: Bool = false,
+        fh5ObservationRecorded: Bool = false
     ) -> CopilotProjectionFacts? {
         guard let report = tune.projectionReport else {
             return nil
@@ -104,10 +124,24 @@ struct CopilotContextFactory {
             blockedByReason: reasonCounts(in: report),
             tireLabEligible: isStreaming ? nil : TirePressureCaptureEligibility().snapshot(for: tune) != nil,
             upgradeLabEligible: isStreaming ? nil : UpgradePartCaptureEligibility().snapshot(for: tune) != nil,
+            fh5ResearchLabEligible: isStreaming ? nil : fh5ResearchLabEligible,
+            fh5ObservationRecorded: isStreaming ? nil : fh5ObservationRecorded,
             exactUpgradePathCount: isStreaming ? nil : TuneControlUpgradePlanner().paths(for: tune).count,
             isSaved: isStreaming ? nil : isSaved,
             isStreaming: isStreaming
         )
+    }
+
+    func fh5ResearchLabEligibility(
+        for tune: TuneResult,
+        persistedTune: TuneResult?,
+        isStreaming: Bool
+    ) -> Bool {
+        FH5ResearchEligibility().snapshot(
+            for: tune,
+            savedTune: persistedTune,
+            isStreaming: isStreaming
+        ).isSuccess
     }
 
     private func statusCounts(in report: TuneProjectionReport) -> [CopilotCountFact] {
@@ -147,5 +181,12 @@ struct CopilotContextFactory {
             let count = report.fields.filter { $0.reason == reason }.count
             return count == 0 ? nil : CopilotCountFact(label: label, count: count)
         }
+    }
+}
+
+private extension Result {
+    var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
     }
 }

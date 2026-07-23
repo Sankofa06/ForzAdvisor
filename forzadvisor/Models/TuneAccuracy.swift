@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum TuneFieldID: Hashable, Sendable {
+nonisolated enum TuneFieldID: Hashable, Sendable {
     case frontTirePressure
     case rearTirePressure
     case finalDrive

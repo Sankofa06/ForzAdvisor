@@ -22,6 +22,9 @@ struct TuneResultView: View {
     let onEdit: () -> Void
     let onVerifyTirePressures: (() -> Void)?
     let onVerifyUpgradeParts: (() -> Void)?
+    let latestFH5ResearchRecord: FH5ResearchObservationRecord?
+    let onOpenFH5Research: (() -> Void)?
+    let onDeleteFH5ResearchRecord: (FH5ResearchObservationRecord) -> Void
     let latestValidationRecord: FirstPartyValidationRecord?
     let onRecordTestDrive: (() -> Void)?
     let onDeleteValidationRecord: (FirstPartyValidationRecord) -> Void
@@ -31,6 +34,7 @@ struct TuneResultView: View {
     @State private var expandedSectionTitles = Set(TuneSection.menuOrder.map(\.title))
     @State private var copiedExport: CopiedExport?
     @State private var recordPendingDeletion: FirstPartyValidationRecord?
+    @State private var researchRecordPendingDeletion: FH5ResearchObservationRecord?
 
     private var isAdjusting: Bool {
         activeFeedback != nil
@@ -114,6 +118,69 @@ struct TuneResultView: View {
                     )
                 }
                 .forzAdvisorRowBackground()
+
+                if !isStreaming,
+                   onOpenFH5Research != nil || latestFH5ResearchRecord != nil {
+                    Section("FH5 Research Lab") {
+                        if let onOpenFH5Research {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Label(
+                                    "Record the untouched stock tuning menu",
+                                    systemImage: "checklist.checked"
+                                )
+                                .font(.subheadline.weight(.semibold))
+                                Text("Use Horizon Test Track with English units to record raw first-party control availability and slider ranges. This evidence is not a tune.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Button("Open FH5 Research Lab", action: onOpenFH5Research)
+                                    .buttonStyle(.borderedProminent)
+                                    .accessibilityIdentifier("openFH5ResearchLabButton")
+                            }
+                            .padding(.vertical, 2)
+                        }
+
+                        if let record = latestFH5ResearchRecord {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Label("Latest stock observation recorded", systemImage: "checkmark.seal")
+                                    .font(.subheadline.weight(.semibold))
+                                Text(
+                                    "\(record.platform.title) · \(record.gameVersion) · \(record.forwardGearCount) forward gears"
+                                )
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                Text("Raw evidence recorded. Numeric FH5 tuning remains unavailable.")
+                                    .font(.caption)
+                                    .foregroundStyle(ForzAdvisorTheme.warning)
+
+                                if let json = record.deterministicJSONString {
+                                    ShareLink(
+                                        item: json,
+                                        subject: Text("ForzAdvisor FH5 stock observation")
+                                    ) {
+                                        Label(
+                                            "Share deidentified observation JSON",
+                                            systemImage: "square.and.arrow.up"
+                                        )
+                                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .accessibilityIdentifier("shareFH5ResearchObservationButton")
+                                } else {
+                                    Text("JSON sharing is unavailable because deidentified structured reuse was not enabled for this record.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Button("Delete latest local observation", role: .destructive) {
+                                    researchRecordPendingDeletion = record
+                                }
+                                .accessibilityIdentifier("deleteFH5ResearchObservationButton")
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                    .forzAdvisorRowBackground()
+                }
 
                 if !isStreaming, let onVerifyTirePressures {
                     Section("Tune Lab") {
@@ -372,6 +439,24 @@ struct TuneResultView: View {
             }
         } message: { _ in
             Text("This removes only the local copy. It cannot recall JSON files you already shared.")
+        }
+        .alert(
+            "Delete local FH5 observation?",
+            isPresented: Binding(
+                get: { researchRecordPendingDeletion != nil },
+                set: { if !$0 { researchRecordPendingDeletion = nil } }
+            ),
+            presenting: researchRecordPendingDeletion
+        ) { record in
+            Button("Delete Local Observation", role: .destructive) {
+                onDeleteFH5ResearchRecord(record)
+                researchRecordPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                researchRecordPendingDeletion = nil
+            }
+        } message: { _ in
+            Text("This removes only the local record. JSON copies you already shared cannot be recalled.")
         }
     }
 

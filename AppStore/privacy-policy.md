@@ -24,6 +24,10 @@ The public JSON does not contain the local record UUID, raw tune UUID, internal 
 
 Creating a validation record does not upload it. Sharing happens only when you choose the system share sheet, and ForzAdvisor keeps no share destination or history. You can delete the latest matching local record; deletion cannot recall a JSON file you already shared. The app makes no background-upload, receiver, or remote-revocation claim for these records.
 
+For an eligible saved FH5 untouched-stock catalog plan, Research Lab can store a complete first-party tuning-menu observation in a separate local record. It includes the selected platform, exact game version, reviewed stock-car facts, complete matching Upgrade Lab availability when present, tire-compound display name, forward gear count, each expected control's adjustable, locked, or not-shown state, and allowed manually entered slider values. This workflow does not call a tuning provider, create a numeric tune, or upload anything.
+
+Deidentified structured reuse and JSON sharing are off by default for each FH5 observation. If explicitly enabled before saving, the allow-listed JSON excludes the local record and tune identifiers, screenshots, OCR, thumbnails, notes, discipline, generated tune values, catalog source URLs, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, history, and share destination. Its public content fingerprint covers only approved exported semantic fields and is separate from the local integrity fingerprint. An observation is surfaced and shareable only while it matches the current saved plan and catalog revision. Deleting it locally cannot recall a JSON file already shared.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.
@@ -42,7 +46,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes and locally stored validation records in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, locally stored validation records, and locally stored FH5 Research Lab observations in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

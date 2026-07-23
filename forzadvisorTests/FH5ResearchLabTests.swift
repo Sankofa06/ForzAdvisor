@@ -1,0 +1,1049 @@
+//
+//  FH5ResearchLabTests.swift
+//  forzadvisorTests
+//
+//  Fail-closed contracts for first-party FH5 stock tuning-menu observations.
+//
+
+import SwiftData
+import XCTest
+@testable import forzadvisor
+
+final class FH5ResearchLabTests: XCTestCase {
+    private let capturedAt = Date(timeIntervalSinceReferenceDate: 1_000)
+    private let recordID = UUID(uuidString: "10000000-0000-0000-0000-000000000001")!
+    private let submissionID = UUID(uuidString: "20000000-0000-0000-0000-000000000002")!
+    private let permissionID = UUID(uuidString: "30000000-0000-0000-0000-000000000003")!
+    private let snapshotID = UUID(uuidString: "40000000-0000-0000-0000-000000000004")!
+
+    func testEligibilityRequiresSavedUntouchedCatalogPlanAndFailsClosed() async throws {
+        let plan = try await makePlan()
+        let eligibility = FH5ResearchEligibility()
+
+        XCTAssertSuccess(eligibility.snapshot(for: plan, savedTune: plan, isStreaming: false))
+        XCTAssertFailure(
+            eligibility.snapshot(for: plan, savedTune: nil, isStreaming: false),
+            .notSaved
+        )
+        XCTAssertFailure(
+            eligibility.snapshot(for: plan, savedTune: plan, isStreaming: true),
+            .streaming
+        )
+
+        var edited = plan
+        edited.request.car.weightPounds += 1
+        XCTAssertFailure(
+            eligibility.snapshot(for: edited, savedTune: edited, isStreaming: false),
+            .invalidCapabilitySnapshot
+        )
+
+        var manual = plan
+        manual.request.car.catalogReference = nil
+        manual.request.buildSnapshot?.car.catalogReference = nil
+        XCTAssertFailure(
+            eligibility.snapshot(for: manual, savedTune: manual, isStreaming: false),
+            .missingCatalogIdentity
+        )
+
+        var exact = plan
+        exact.request.buildSnapshot?.kind = .exactBuildObservation
+        XCTAssertFailure(
+            eligibility.snapshot(for: exact, savedTune: exact, isStreaming: false),
+            .invalidCapabilitySnapshot
+        )
+
+        var numeric = plan
+        numeric.sections = [TuneSection(
+            title: "Forged",
+            symbolName: "xmark",
+            lines: [TuneLine(label: "Forbidden", value: "31.73", unit: "PSI")]
+        )]
+        XCTAssertFailure(
+            eligibility.snapshot(for: numeric, savedTune: numeric, isStreaming: false),
+            .numericOrProviderPayload
+        )
+
+        var stale = plan
+        stale.generatedAt = capturedAt
+        XCTAssertFailure(
+            eligibility.snapshot(for: plan, savedTune: stale, isStreaming: false),
+            .staleSavedRevision
+        )
+    }
+
+    func testExpectedControlMatricesAreExactForEveryDrivetrainAndGearCount() {
+        for drivetrain in Drivetrain.allCases {
+            for gearCount in [1, 6, 10] {
+                let expected = TuneFieldID.expectedFields(
+                    drivetrain: drivetrain,
+                    gearCount: gearCount
+                )
+                let capture = validCapture(
+                    drivetrain: drivetrain,
+                    gearCount: gearCount,
+                    availability: .notShown
+                )
+                XCTAssertTrue(
+                    FH5ResearchObservationFactory()
+                        .validationIssues(capture: capture, drivetrain: drivetrain)
+                        .isEmpty
+                )
+                XCTAssertEqual(capture.controls.map(\.field), expected)
+                XCTAssertEqual(Set(capture.controls.map(\.field)).count, expected.count)
+                XCTAssertEqual(
+                    expected.filter { $0.gearIndex != nil },
+                    (1...gearCount).map(TuneFieldID.gearRatio)
+                )
+
+                let differential = expected.filter {
+                    $0.projectionSectionTitle == "Differential"
+                }
+                switch drivetrain {
+                case .fwd:
+                    XCTAssertEqual(differential, [
+                        .frontDifferentialAcceleration,
+                        .frontDifferentialDeceleration
+                    ])
+                case .rwd:
+                    XCTAssertEqual(differential, [
+                        .differentialAcceleration,
+                        .differentialDeceleration
+                    ])
+                case .awd:
+                    XCTAssertEqual(differential, [
+                        .frontDifferentialAcceleration,
+                        .frontDifferentialDeceleration,
+                        .rearDifferentialAcceleration,
+                        .rearDifferentialDeceleration,
+                        .differentialCenterBalance
+                    ])
+                }
+            }
+        }
+    }
+
+    func testControlValidationRejectsMissingDuplicateUnexpectedAndForbiddenPayloads() {
+        let factory = FH5ResearchObservationFactory()
+        let valid = validCapture(drivetrain: .rwd, gearCount: 6, availability: .notShown)
+        let first = valid.controls[0]
+
+        var controls = valid.controls
+        controls.removeFirst()
+        XCTAssertTrue(factory.validationIssues(
+            capture: replacing(valid, controls: controls),
+            drivetrain: .rwd
+        ).contains(.missingField(first.field)))
+
+        controls = valid.controls + [first]
+        XCTAssertTrue(factory.validationIssues(
+            capture: replacing(valid, controls: controls),
+            drivetrain: .rwd
+        ).contains(.duplicateField(first.field)))
+
+        controls = valid.controls + [
+            FH5TuneFieldObservation(
+                field: .frontDifferentialAcceleration,
+                availability: .notShown
+            ),
+            FH5TuneFieldObservation(field: .gearRatio(7), availability: .notShown)
+        ]
+        let unexpected = factory.validationIssues(
+            capture: replacing(valid, controls: controls),
+            drivetrain: .rwd
+        )
+        XCTAssertTrue(unexpected.contains(.unexpectedField(.frontDifferentialAcceleration)))
+        XCTAssertTrue(unexpected.contains(.unexpectedField(.gearRatio(7))))
+
+        controls = valid.controls
+        controls[0] = FH5TuneFieldObservation(
+            field: first.field,
+            availability: .notShown,
+            current: 30,
+            unit: first.field.expectedUnit
+        )
+        XCTAssertTrue(factory.validationIssues(
+            capture: replacing(valid, controls: controls),
+            drivetrain: .rwd
+        ).contains(.forbiddenNumericPayload(first.field)))
+
+        controls[0] = FH5TuneFieldObservation(
+            field: first.field,
+            availability: .shownLocked,
+            minimum: 15,
+            current: 30,
+            unit: first.field.expectedUnit
+        )
+        XCTAssertTrue(factory.validationIssues(
+            capture: replacing(valid, controls: controls),
+            drivetrain: .rwd
+        ).contains(.forbiddenNumericPayload(first.field)))
+    }
+
+    func testAdjustableNumericValidationRejectsEveryAdversarialShape() {
+        let factory = FH5ResearchObservationFactory()
+        let base = validCapture(drivetrain: .rwd, gearCount: 6, availability: .adjustable)
+        let field = base.controls[0].field
+
+        func issues(_ observation: FH5TuneFieldObservation) -> [FH5ResearchIssue] {
+            var controls = base.controls
+            controls[0] = observation
+            return factory.validationIssues(
+                capture: replacing(base, controls: controls),
+                drivetrain: .rwd
+            )
+        }
+
+        XCTAssertTrue(issues(FH5TuneFieldObservation(
+            field: field,
+            availability: .adjustable
+        )).contains(.missingAdjustablePayload(field)))
+        XCTAssertTrue(issues(adjustable(field, minimum: .nan)).contains(.nonFiniteValue(field)))
+        XCTAssertTrue(issues(adjustable(field, minimum: 100, maximum: 100)).contains(.invalidRange(field)))
+        XCTAssertTrue(issues(adjustable(field, step: 0)).contains(.invalidStep(field)))
+        XCTAssertTrue(issues(adjustable(field, current: 101)).contains(.currentOutOfRange(field)))
+        XCTAssertTrue(issues(adjustable(field, maximum: 99.5)).contains(.valueOffLattice(field)))
+        XCTAssertTrue(issues(adjustable(
+            field,
+            unit: field.expectedUnit == .psi ? .ratio : .psi
+        )).contains(.wrongUnit(field)))
+
+        var invalidGearCount = base
+        invalidGearCount = FH5ResearchCapture(
+            platform: invalidGearCount.platform,
+            gameVersion: invalidGearCount.gameVersion,
+            tireCompoundDisplayName: invalidGearCount.tireCompoundDisplayName,
+            forwardGearCount: 11,
+            controls: invalidGearCount.controls,
+            exactUntouchedStockConfirmed: true,
+            allSlidersRestoredConfirmed: true,
+            personallyReadFromGameConfirmed: true,
+            firstPartyAuthorshipConfirmed: true,
+            localStoragePermitted: true
+        )
+        XCTAssertEqual(
+            factory.validationIssues(capture: invalidGearCount, drivetrain: .rwd).first,
+            .invalidGearCount
+        )
+    }
+
+    func testFactoryCreatesDetachedProvisionalSnapshotAndCanonicalExport() async throws {
+        let plan = try await makePlan(upgradeBuild: "3.688.109.0")
+        var capture = validCapture(
+            drivetrain: plan.request.car.drivetrain,
+            gearCount: 6,
+            availability: .adjustable,
+            build: "  3.688.109.0  ",
+            reuse: true
+        )
+        capture = replacing(capture, controls: Array(capture.controls.reversed()))
+
+        let record = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: capture,
+            recordID: recordID,
+            submissionID: submissionID,
+            permissionReceiptID: permissionID,
+            capturedAt: capturedAt,
+            snapshotID: snapshotID
+        )
+        let expected = TuneFieldID.expectedFields(
+            drivetrain: plan.request.car.drivetrain,
+            gearCount: 6
+        )
+
+        XCTAssertTrue(FH5ResearchObservationFactory().isValid(record))
+        XCTAssertEqual(record.game, .fh5)
+        XCTAssertEqual(record.gameVersion, "3.688.109.0")
+        XCTAssertEqual(record.controls.map(\.field), expected)
+        XCTAssertEqual(record.contentFingerprint.count, 64)
+        XCTAssertTrue(record.canExport)
+        XCTAssertEqual(record.internalValidationSnapshot.kind, .exactBuildObservation)
+        XCTAssertEqual(record.internalValidationSnapshot.constraints.count, expected.count)
+        XCTAssertTrue(record.internalValidationSnapshot.constraints.allSatisfy {
+            $0.scope == .exactVehicleBuild && $0.verification == .provisional
+        })
+        XCTAssertFalse(record.internalValidationSnapshot.constraints.contains {
+            $0.verification == .productionEligible
+        })
+        XCTAssertEqual(
+            Set(record.internalValidationSnapshot.capabilityProfile.parts.map(\.partID)),
+            Set(TunePartID.allCases)
+        )
+        XCTAssertEqual(
+            Set(record.internalValidationSnapshot.capabilityProfile.stockAdjustableSettings.map(\.setting)),
+            Set(expected.map(\.setting))
+        )
+
+        let first = try record.deterministicJSON()
+        let second = try record.deterministicJSON()
+        XCTAssertEqual(first, second)
+        let json = try XCTUnwrap(String(data: first, encoding: .utf8))
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: first) as? [String: Any]
+        )
+        XCTAssertFalse(json.contains(recordID.uuidString))
+        XCTAssertFalse(json.contains(plan.id.uuidString))
+        XCTAssertNil(object["discipline"])
+        XCTAssertFalse(json.contains("\"providerInfo\""))
+        XCTAssertFalse(json.contains("\"rulesetReference\""))
+        XCTAssertFalse(json.contains("\"planRevisionFingerprint\""))
+        XCTAssertFalse(json.contains("\"internalValidationSnapshot\""))
+        XCTAssertFalse(json.contains("\"screenshots\""))
+        XCTAssertFalse(json.contains("\"sourceURLs\""))
+        XCTAssertTrue(json.contains("\"contentFingerprint\""))
+        XCTAssertNil(object["upgradeParts"])
+        XCTAssertEqual(Set(object.keys), Set([
+            "schemaVersion",
+            "consentVersion",
+            "submissionID",
+            "permissionReceiptID",
+            "capturedAt",
+            "game",
+            "platform",
+            "gameVersion",
+            "unitScope",
+            "vehicle",
+            "tireCompoundDisplayName",
+            "forwardGearCount",
+            "controls",
+            "attestations",
+            "unknowns",
+            "privacyExclusions",
+            "contentFingerprint"
+        ]))
+        XCTAssertNoThrow(try record.publicExport())
+    }
+
+    func testReusePermissionDefaultsOffAndExportFailsClosed() async throws {
+        let plan = try await makePlan()
+        let capture = validCapture(
+            drivetrain: plan.request.car.drivetrain,
+            gearCount: 6,
+            availability: .notShown
+        )
+        XCTAssertFalse(capture.deidentifiedStructuredReusePermitted)
+
+        let record = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: capture,
+            capturedAt: capturedAt
+        )
+        XCTAssertTrue(FH5ResearchObservationFactory().isValid(record))
+        XCTAssertFalse(record.canExport)
+        XCTAssertNil(record.deterministicJSONString)
+        XCTAssertThrowsError(try record.deterministicJSON()) {
+            XCTAssertEqual($0 as? FH5ResearchIssue, .reuseNotPermitted)
+        }
+        XCTAssertThrowsError(try record.publicExport()) {
+            XCTAssertEqual($0 as? FH5ResearchIssue, .reuseNotPermitted)
+        }
+    }
+
+    func testPublicSemanticFingerprintExcludesLocalUpgradeAvailability() async throws {
+        let offeredPlan = try await makePlan(upgradeBuild: "matching-build")
+        var unavailablePlan = offeredPlan
+        for index in try XCTUnwrap(
+            unavailablePlan.request.buildSnapshot
+        ).capabilityProfile.parts.indices {
+            unavailablePlan.request.buildSnapshot?
+                .capabilityProfile.parts[index].availability = .unavailable
+        }
+        XCTAssertTrue(try XCTUnwrap(unavailablePlan.request.buildSnapshot).isValid)
+
+        let capture = validCapture(
+            drivetrain: offeredPlan.request.car.drivetrain,
+            gearCount: 6,
+            availability: .adjustable,
+            build: "matching-build",
+            reuse: true
+        )
+        let factory = FH5ResearchObservationFactory()
+        let offered = try factory.make(
+            tune: offeredPlan,
+            savedTune: offeredPlan,
+            isStreaming: false,
+            capture: capture,
+            recordID: recordID,
+            submissionID: submissionID,
+            permissionReceiptID: permissionID,
+            capturedAt: capturedAt,
+            snapshotID: snapshotID
+        )
+        let unavailable = try factory.make(
+            tune: unavailablePlan,
+            savedTune: unavailablePlan,
+            isStreaming: false,
+            capture: capture,
+            recordID: UUID(),
+            submissionID: submissionID,
+            permissionReceiptID: permissionID,
+            capturedAt: capturedAt,
+            snapshotID: UUID()
+        )
+
+        XCTAssertNotEqual(offered.upgradeParts, unavailable.upgradeParts)
+        XCTAssertNotEqual(offered.contentFingerprint, unavailable.contentFingerprint)
+        let offeredExport = try offered.publicExport()
+        let unavailableExport = try unavailable.publicExport()
+        XCTAssertEqual(offeredExport, unavailableExport)
+        XCTAssertEqual(
+            offeredExport.contentFingerprint,
+            unavailableExport.contentFingerprint
+        )
+        XCTAssertNotEqual(offeredExport.contentFingerprint, offered.contentFingerprint)
+        XCTAssertNotEqual(unavailableExport.contentFingerprint, unavailable.contentFingerprint)
+        XCTAssertEqual(try offered.deterministicJSON(), try unavailable.deterministicJSON())
+
+        var tamperedSnapshot = offered.internalValidationSnapshot
+        tamperedSnapshot.capabilityProfile.parts[0].availability = .unavailable
+        XCTAssertTrue(tamperedSnapshot.isValid)
+        XCTAssertFalse(factory.isValid(replacing(offered, snapshot: tamperedSnapshot)))
+    }
+
+    func testStockAdjustableOverridesRequireEveryApplicableField() async throws {
+        let plan = try await makePlan()
+        var capture = validCapture(
+            drivetrain: plan.request.car.drivetrain,
+            gearCount: 6,
+            availability: .adjustable
+        )
+        let rearCamberIndex = try XCTUnwrap(
+            capture.controls.firstIndex { $0.field == .rearCamber }
+        )
+        var controls = capture.controls
+        controls[rearCamberIndex] = FH5TuneFieldObservation(
+            field: .rearCamber,
+            availability: .shownLocked,
+            current: 0,
+            unit: .degrees
+        )
+        capture = replacing(capture, controls: controls)
+
+        let record = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: capture,
+            capturedAt: capturedAt
+        )
+        let settings = Set(
+            record.internalValidationSnapshot.capabilityProfile
+                .stockAdjustableSettings.map(\.setting)
+        )
+        XCTAssertFalse(settings.contains(.alignment))
+        XCTAssertTrue(settings.contains(.frontARB))
+        XCTAssertFalse(
+            record.internalValidationSnapshot.constraints.contains {
+                $0.field == .rearCamber
+            }
+        )
+    }
+
+    func testCompleteUpgradeObservationRequiresMatchingBuildAndIncompleteEvidenceDoesNotGate() async throws {
+        let plan = try await makePlan(upgradeBuild: "matching-build")
+        XCTAssertEqual(
+            FH5ResearchObservationFactory().verifiedUpgradeGameVersion(
+                in: try XCTUnwrap(plan.request.buildSnapshot)
+            ),
+            "matching-build"
+        )
+        let matching = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .notShown,
+                build: "matching-build"
+            ),
+            capturedAt: capturedAt
+        )
+        XCTAssertEqual(
+            matching.internalValidationSnapshot.capabilityProfile.parts.count,
+            TunePartID.allCases.count
+        )
+
+        XCTAssertThrowsError(try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .notShown,
+                build: "different-build"
+            ),
+            capturedAt: capturedAt
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5ResearchIssue,
+                .mismatchedGameVersion(
+                    expected: "matching-build",
+                    entered: "different-build"
+                )
+            )
+        }
+
+        var incomplete = try await makePlan()
+        let incompleteBuild = "partial-build"
+        let evidence = TuneEvidence(
+            confidence: .medium,
+            source: UpgradePartCapture.provenanceSource,
+            version: incompleteBuild,
+            usagePermission: .permitted
+        )
+        incomplete.request.buildSnapshot?.gameBuild = GameBuildReference(
+            game: .fh5,
+            version: incompleteBuild,
+            capturedAt: capturedAt
+        )
+        incomplete.request.buildSnapshot?.capabilityProfile.parts = [
+            TuneVehiclePart(
+                partID: TunePartID.allCases[0],
+                availability: .available,
+                evidence: evidence
+            )
+        ]
+        XCTAssertTrue(try XCTUnwrap(incomplete.request.buildSnapshot).isValid)
+        XCTAssertNil(FH5ResearchObservationFactory().verifiedUpgradeGameVersion(
+            in: try XCTUnwrap(incomplete.request.buildSnapshot)
+        ))
+        let independent = try FH5ResearchObservationFactory().make(
+            tune: incomplete,
+            savedTune: incomplete,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: incomplete.request.car.drivetrain,
+                gearCount: 6,
+                availability: .notShown,
+                build: "independently-observed-build"
+            ),
+            capturedAt: capturedAt
+        )
+        XCTAssertTrue(independent.upgradeParts.isEmpty)
+        XCTAssertTrue(independent.internalValidationSnapshot.capabilityProfile.parts.isEmpty)
+    }
+
+    @MainActor
+    func testSeparateSwiftDataBlobAppendDedupeReopenDeleteAndCorruptIsolation() async throws {
+        let plan = try await makePlan()
+        let capture = validCapture(
+            drivetrain: plan.request.car.drivetrain,
+            gearCount: 6,
+            availability: .notShown,
+            reuse: true
+        )
+        let record = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: capture,
+            recordID: recordID,
+            submissionID: submissionID,
+            permissionReceiptID: permissionID,
+            capturedAt: capturedAt,
+            snapshotID: snapshotID
+        )
+        let duplicateContent = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: capture,
+            recordID: UUID(),
+            submissionID: UUID(),
+            permissionReceiptID: UUID(),
+            capturedAt: capturedAt,
+            snapshotID: UUID()
+        )
+        XCTAssertEqual(record.contentFingerprint, duplicateContent.contentFingerprint)
+
+        let container = try ModelContainer(
+            for: SavedTune.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let context = ModelContext(container)
+        let saved = try SavedTune(tune: plan)
+        context.insert(saved)
+        try context.save()
+        XCTAssertTrue(saved.fh5ResearchObservationRecords.isEmpty)
+        let originalTune = try XCTUnwrap(saved.tuneResult)
+        let validationBlob = try JSONEncoder().encode([FirstPartyValidationRecord]())
+        saved.replaceValidationRecordsDataForTesting(validationBlob)
+
+        try saved.appendFH5ResearchObservationRecord(record)
+        try saved.appendFH5ResearchObservationRecord(record)
+        try saved.appendFH5ResearchObservationRecord(duplicateContent)
+        try context.save()
+        XCTAssertEqual(saved.fh5ResearchObservationRecords, [record])
+        XCTAssertEqual(saved.tuneResult, originalTune)
+        XCTAssertTrue(saved.firstPartyValidationRecords.isEmpty)
+
+        let reopened = try XCTUnwrap(
+            context.fetch(FetchDescriptor<SavedTune>()).first
+        )
+        XCTAssertEqual(reopened.fh5ResearchObservationRecords, [record])
+        XCTAssertEqual(reopened.tuneResult, originalTune)
+
+        XCTAssertTrue(try reopened.deleteFH5ResearchObservationRecord(id: recordID))
+        XCTAssertTrue(reopened.fh5ResearchObservationRecords.isEmpty)
+        XCTAssertEqual(reopened.tuneResult, originalTune)
+
+        reopened.replaceFH5ResearchObservationRecordsDataForTesting(Data("corrupt".utf8))
+        XCTAssertTrue(reopened.fh5ResearchObservationRecords.isEmpty)
+        XCTAssertEqual(reopened.tuneResult, originalTune)
+        XCTAssertTrue(reopened.firstPartyValidationRecords.isEmpty)
+        XCTAssertThrowsError(try reopened.appendFH5ResearchObservationRecord(record)) {
+            XCTAssertEqual($0 as? SavedTuneFH5ResearchRecordError, .corruptStorage)
+        }
+        XCTAssertEqual(reopened.tuneResult, originalTune)
+    }
+
+    @MainActor
+    func testStoredHistoryOnlySurfacesRecordsMatchingCurrentSavedPlan() async throws {
+        let plan = try await makePlan()
+        let record = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .notShown,
+                reuse: true
+            ),
+            capturedAt: capturedAt
+        )
+        let saved = try SavedTune(tune: plan)
+        try saved.appendFH5ResearchObservationRecord(record)
+        XCTAssertEqual(saved.fh5ResearchObservationRecords(matching: plan), [record])
+
+        var revisedCatalog = plan
+        let reference = try XCTUnwrap(revisedCatalog.request.car.catalogReference)
+        let revisedReference = CatalogCarReference(
+            entryID: reference.entryID,
+            revision: "\(reference.revision)-new",
+            reviewedAt: reference.reviewedAt.addingTimeInterval(1),
+            verificationStatus: reference.verificationStatus,
+            sources: reference.sources
+        )
+        revisedCatalog.request.car.catalogReference = revisedReference
+        revisedCatalog.request.buildSnapshot?.car.catalogReference = revisedReference
+        revisedCatalog.generatedAt = revisedCatalog.generatedAt.addingTimeInterval(1)
+        try saved.update(with: revisedCatalog)
+        XCTAssertEqual(saved.fh5ResearchObservationRecords, [record])
+        XCTAssertTrue(saved.fh5ResearchObservationRecords(matching: revisedCatalog).isEmpty)
+
+        let otherFH5Car = try await makePlan(fh5EntryOffset: 1)
+        try saved.update(with: otherFH5Car)
+        XCTAssertEqual(saved.fh5ResearchObservationRecords, [record])
+        XCTAssertTrue(saved.fh5ResearchObservationRecords(matching: otherFH5Car).isEmpty)
+
+        let fh6Tune = try await makeTune(game: .fh6)
+        try saved.update(with: fh6Tune)
+        XCTAssertEqual(saved.fh5ResearchObservationRecords, [record])
+        XCTAssertTrue(saved.fh5ResearchObservationRecords(matching: fh6Tune).isEmpty)
+
+        let recorded = !saved.fh5ResearchObservationRecords(matching: fh6Tune).isEmpty
+        let context = CopilotContextFactory().make(
+            step: .result(
+                fh6Tune,
+                savedTuneID: saved.id,
+                adjustmentChanges: [],
+                thumbnailData: nil,
+                playerNotes: ""
+            ),
+            savedTuneCount: 1,
+            catalogCarCount: 1,
+            fh5ObservationRecorded: recorded
+        )
+        XCTAssertFalse(recorded)
+        XCTAssertNotEqual(context.projection?.fh5ObservationRecorded, true)
+        XCTAssertFalse(context.facts.contains { $0.label == "FH5 stock evidence" })
+    }
+
+    func testDetachedSnapshotRejectsIndividuallyValidSemanticTampering() async throws {
+        let plan = try await makePlan(upgradeBuild: "matching-build")
+        let record = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable,
+                build: "matching-build",
+                reuse: true
+            ),
+            capturedAt: capturedAt,
+            snapshotID: snapshotID
+        )
+        let factory = FH5ResearchObservationFactory()
+
+        var carTamper = record.internalValidationSnapshot
+        carTamper.car.weightPounds += 1
+        XCTAssertTrue(carTamper.isValid)
+        XCTAssertFalse(factory.isValid(replacing(record, snapshot: carTamper)))
+
+        var constraintTamper = record.internalValidationSnapshot
+        constraintTamper.constraints[0].minimum -= constraintTamper.constraints[0].step
+        XCTAssertTrue(constraintTamper.isValid)
+        XCTAssertFalse(factory.isValid(replacing(record, snapshot: constraintTamper)))
+
+        var evidenceTamper = record.internalValidationSnapshot
+        let forgedEvidenceID = "fh5-research.forged-but-valid"
+        evidenceTamper.evidenceSources[0].id = forgedEvidenceID
+        for index in evidenceTamper.constraints.indices {
+            evidenceTamper.constraints[index].evidenceIDs = [forgedEvidenceID]
+        }
+        evidenceTamper.tireCompound?.evidenceIDs = [forgedEvidenceID]
+        XCTAssertTrue(evidenceTamper.isValid)
+        XCTAssertFalse(factory.isValid(replacing(record, snapshot: evidenceTamper)))
+
+        var tireTamper = record.internalValidationSnapshot
+        tireTamper.tireCompound?.id = "different-valid-tire-id"
+        XCTAssertTrue(tireTamper.isValid)
+        XCTAssertFalse(factory.isValid(replacing(record, snapshot: tireTamper)))
+
+        var stockSettingTamper = record.internalValidationSnapshot
+        stockSettingTamper.capabilityProfile.stockAdjustableSettings[0].evidence.version =
+            "different-valid-build"
+        XCTAssertTrue(stockSettingTamper.isValid)
+        XCTAssertFalse(factory.isValid(replacing(record, snapshot: stockSettingTamper)))
+
+        var partTamper = record.internalValidationSnapshot
+        partTamper.capabilityProfile.parts[0].availability =
+            partTamper.capabilityProfile.parts[0].availability == .available
+                ? .unavailable
+                : .available
+        XCTAssertTrue(partTamper.isValid)
+        XCTAssertFalse(factory.isValid(replacing(record, snapshot: partTamper)))
+    }
+
+    func testDetachedSnapshotCannotPromoteOrMutateFH5PlanBoundary() async throws {
+        let plan = try await makePlan()
+        let record = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable,
+                reuse: true
+            ),
+            capturedAt: capturedAt
+        )
+        var adversarial = plan
+        adversarial.request.buildSnapshot = record.internalValidationSnapshot
+        let projected = TuneResultBoundarySanitizer().sanitize(adversarial)
+
+        XCTAssertEqual(projected.purpose, .fh5BuildPlan)
+        XCTAssertTrue(projected.sections.isEmpty)
+        XCTAssertNil(projected.providerInfo)
+        XCTAssertNil(projected.rulesetReference)
+        XCTAssertEqual(projected.projectionReport?.readyCount, 0)
+        XCTAssertNil(TuneClipboardFormatter.verifiedSettingsText(for: projected))
+        XCTAssertNil(VerifiedBuildShareCardFactory().make(for: projected, isStreaming: false))
+        XCTAssertNil(TirePressureCaptureEligibility().snapshot(for: projected))
+        XCTAssertNil(UpgradePartCaptureEligibility().snapshot(for: projected))
+        XCTAssertFailure(
+            FirstPartyValidationRecordFactory().eligibility(
+                for: projected,
+                savedTune: projected,
+                isStreaming: false
+            ),
+            .incompleteStockContext
+        )
+    }
+
+    @MainActor
+    func testCopilotResearchEligibilityUsesPersistedCurrentRevisionAndFailsClosed() async throws {
+        let plan = try await makePlan()
+        let factory = CopilotContextFactory()
+        let step = WorkflowStep.result(
+            plan,
+            savedTuneID: plan.id,
+            adjustmentChanges: [],
+            thumbnailData: nil,
+            playerNotes: ""
+        )
+
+        XCTAssertTrue(factory.fh5ResearchLabEligibility(
+            for: plan,
+            persistedTune: plan,
+            isStreaming: false
+        ))
+        XCTAssertFalse(factory.fh5ResearchLabEligibility(
+            for: plan,
+            persistedTune: nil,
+            isStreaming: false
+        ))
+        XCTAssertFalse(factory.make(
+            step: step,
+            savedTuneCount: 1,
+            catalogCarCount: 1
+        ).projection?.fh5ResearchLabEligible ?? true)
+
+        var stale = plan
+        stale.generatedAt = stale.generatedAt.addingTimeInterval(1)
+        XCTAssertFalse(factory.fh5ResearchLabEligibility(
+            for: plan,
+            persistedTune: stale,
+            isStreaming: false
+        ))
+
+        var differentRevision = plan
+        let reference = try XCTUnwrap(differentRevision.request.car.catalogReference)
+        let changedReference = CatalogCarReference(
+            entryID: reference.entryID,
+            revision: "\(reference.revision)-different",
+            reviewedAt: reference.reviewedAt,
+            verificationStatus: reference.verificationStatus,
+            sources: reference.sources
+        )
+        differentRevision.request.car.catalogReference = changedReference
+        differentRevision.request.buildSnapshot?.car.catalogReference = changedReference
+        XCTAssertFalse(factory.fh5ResearchLabEligibility(
+            for: plan,
+            persistedTune: differentRevision,
+            isStreaming: false
+        ))
+
+        let fh6 = try await makeTune(game: .fh6)
+        XCTAssertFalse(factory.fh5ResearchLabEligibility(
+            for: fh6,
+            persistedTune: fh6,
+            isStreaming: false
+        ))
+
+        let corrupt = try SavedTune(tune: plan)
+        corrupt.replaceTuneDataForTesting(Data("corrupt tuneData".utf8))
+        XCTAssertNil(corrupt.tuneResult)
+        XCTAssertFalse(factory.fh5ResearchLabEligibility(
+            for: plan,
+            persistedTune: corrupt.tuneResult,
+            isStreaming: false
+        ))
+    }
+
+    func testCopilotTreatsRecordedObservationAsEvidenceRatherThanTuneReadiness() async throws {
+        let plan = try await makePlan()
+        let factory = CopilotContextFactory()
+        let step = WorkflowStep.result(
+            plan,
+            savedTuneID: plan.id,
+            adjustmentChanges: [],
+            thumbnailData: nil,
+            playerNotes: ""
+        )
+        let available = factory.make(
+            step: step,
+            savedTuneCount: 1,
+            catalogCarCount: 1,
+            fh5ResearchLabEligible: true
+        )
+        let recorded = factory.make(
+            step: step,
+            savedTuneCount: 1,
+            catalogCarCount: 1,
+            fh5ResearchLabEligible: true,
+            fh5ObservationRecorded: true
+        )
+        let engine = CopilotEngine()
+
+        XCTAssertEqual(available.projection?.resultPurpose, .fh5BuildPlan)
+        XCTAssertEqual(available.projection?.readyCount, 0)
+        XCTAssertEqual(available.projection?.fh5ResearchLabEligible, true)
+        XCTAssertTrue(
+            engine.response(to: .nextStep, in: available).message
+                .contains("Open FH5 Research Lab")
+        )
+
+        XCTAssertEqual(recorded.projection?.readyCount, 0)
+        XCTAssertEqual(recorded.projection?.fh5ObservationRecorded, true)
+        for intent in [CopilotIntent.nextStep, .trust, .missing] {
+            let message = engine.response(to: intent, in: recorded).message.lowercased()
+            XCTAssertTrue(
+                message.contains("evidence"),
+                "\(intent.rawValue) must identify the record as evidence: \(message)"
+            )
+            XCTAssertTrue(
+                message.contains("not a tune") || message.contains("numeric"),
+                "\(intent.rawValue) must preserve the numeric-tune boundary: \(message)"
+            )
+        }
+    }
+
+    private func makePlan(
+        upgradeBuild: String? = nil,
+        fh5EntryOffset: Int = 0
+    ) async throws -> TuneResult {
+        let catalog = try BundledCarCatalog.load().get()
+        let entries = catalog.entries.filter { $0.game == .fh5 }
+        let entry = entries[fh5EntryOffset]
+        let selection = catalog.selection(for: entry)
+        var snapshot = selection.capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
+        if let upgradeBuild {
+            snapshot = try UpgradePartCapture(
+                gameBuildVersion: upgradeBuild,
+                parts: TunePartID.allCases.map {
+                    UpgradePartCaptureValue(partID: $0, status: .offered)
+                },
+                exactStockBuildConfirmed: true,
+                localUsePermitted: true
+            ).verifiedSnapshot(upgrading: snapshot, capturedAt: capturedAt)
+        }
+        return try await CapabilityProjectingTuneProvider(base: CompositeTuneProvider())
+            .generateTune(for: TuneRequest(
+                car: selection.carInput,
+                discipline: .road,
+                buildSnapshot: snapshot
+            ))
+    }
+
+    private func makeTune(game: ForzaGame) async throws -> TuneResult {
+        let catalog = try BundledCarCatalog.load().get()
+        let entry = try XCTUnwrap(catalog.entries.first { $0.game == game })
+        let selection = catalog.selection(for: entry)
+        return try await CapabilityProjectingTuneProvider(base: LocalSampleTuneProvider())
+            .generateTune(for: TuneRequest(
+                car: selection.carInput,
+                discipline: .road,
+                buildSnapshot: selection.capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
+            ))
+    }
+
+    private func validCapture(
+        drivetrain: Drivetrain,
+        gearCount: Int,
+        availability: FH5TuneFieldAvailability,
+        build: String = "3.688.109.0",
+        reuse: Bool = false
+    ) -> FH5ResearchCapture {
+        FH5ResearchCapture(
+            platform: .xboxSeries,
+            gameVersion: build,
+            tireCompoundDisplayName: "Stock",
+            forwardGearCount: gearCount,
+            controls: TuneFieldID.expectedFields(
+                drivetrain: drivetrain,
+                gearCount: gearCount
+            ).map { field in
+                switch availability {
+                case .adjustable:
+                    adjustable(field)
+                case .shownLocked:
+                    FH5TuneFieldObservation(
+                        field: field,
+                        availability: .shownLocked,
+                        current: 50,
+                        unit: field.expectedUnit
+                    )
+                case .notShown:
+                    FH5TuneFieldObservation(field: field, availability: .notShown)
+                }
+            },
+            exactUntouchedStockConfirmed: true,
+            allSlidersRestoredConfirmed: true,
+            personallyReadFromGameConfirmed: true,
+            firstPartyAuthorshipConfirmed: true,
+            localStoragePermitted: true,
+            deidentifiedStructuredReusePermitted: reuse
+        )
+    }
+
+    private func adjustable(
+        _ field: TuneFieldID,
+        minimum: Double = 0,
+        maximum: Double = 100,
+        step: Double = 1,
+        current: Double = 50,
+        unit: TuneUnit? = nil
+    ) -> FH5TuneFieldObservation {
+        FH5TuneFieldObservation(
+            field: field,
+            availability: .adjustable,
+            minimum: minimum,
+            maximum: maximum,
+            step: step,
+            current: current,
+            unit: unit ?? field.expectedUnit
+        )
+    }
+
+    private func replacing(
+        _ capture: FH5ResearchCapture,
+        controls: [FH5TuneFieldObservation]
+    ) -> FH5ResearchCapture {
+        FH5ResearchCapture(
+            platform: capture.platform,
+            gameVersion: capture.gameVersion,
+            tireCompoundDisplayName: capture.tireCompoundDisplayName,
+            forwardGearCount: capture.forwardGearCount,
+            controls: controls,
+            exactUntouchedStockConfirmed: capture.exactUntouchedStockConfirmed,
+            allSlidersRestoredConfirmed: capture.allSlidersRestoredConfirmed,
+            personallyReadFromGameConfirmed: capture.personallyReadFromGameConfirmed,
+            firstPartyAuthorshipConfirmed: capture.firstPartyAuthorshipConfirmed,
+            localStoragePermitted: capture.localStoragePermitted,
+            deidentifiedStructuredReusePermitted:
+                capture.deidentifiedStructuredReusePermitted
+        )
+    }
+
+    private func replacing(
+        _ record: FH5ResearchObservationRecord,
+        snapshot: VehicleBuildSnapshot
+    ) -> FH5ResearchObservationRecord {
+        FH5ResearchObservationRecord(
+            schemaVersion: record.schemaVersion,
+            consentVersion: record.consentVersion,
+            recordID: record.recordID,
+            submissionID: record.submissionID,
+            permissionReceiptID: record.permissionReceiptID,
+            capturedAt: record.capturedAt,
+            game: record.game,
+            platform: record.platform,
+            gameVersion: record.gameVersion,
+            unitScope: record.unitScope,
+            vehicle: record.vehicle,
+            upgradeParts: record.upgradeParts,
+            tireCompoundDisplayName: record.tireCompoundDisplayName,
+            forwardGearCount: record.forwardGearCount,
+            controls: record.controls,
+            attestations: record.attestations,
+            unknowns: record.unknowns,
+            privacyExclusions: record.privacyExclusions,
+            contentFingerprint: record.contentFingerprint,
+            planRevisionFingerprint: record.planRevisionFingerprint,
+            internalValidationSnapshot: snapshot
+        )
+    }
+
+    private func XCTAssertSuccess<Success>(
+        _ result: Result<Success, FH5ResearchIssue>,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard case .success = result else {
+            return XCTFail("Expected success, received \(result)", file: file, line: line)
+        }
+    }
+
+    private func XCTAssertFailure<Success, Failure: Error & Equatable>(
+        _ result: Result<Success, Failure>,
+        _ expected: Failure,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard case .failure(let issue) = result else {
+            return XCTFail("Expected \(expected), received success", file: file, line: line)
+        }
+        XCTAssertEqual(issue, expected, file: file, line: line)
+    }
+}
