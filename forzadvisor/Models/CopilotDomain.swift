@@ -22,6 +22,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
     case tirePressureCapture
     case upgradePartCapture
     case fh5ResearchCapture
+    case fh5ControlledExperimentCapture
     case recordTestDrive
     case editSavedTune
 
@@ -40,6 +41,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
         case .tirePressureCapture: "Tire Lab"
         case .upgradePartCapture: "Upgrade Lab"
         case .fh5ResearchCapture: "FH5 Research Lab"
+        case .fh5ControlledExperimentCapture: "FH5 Outcome Lab"
         case .recordTestDrive: "Record Test Drive"
         case .editSavedTune: "Edit Saved Tune"
         }
@@ -357,6 +359,8 @@ struct CopilotEngine {
             return unsavedEditsMessage("Confirm the stock-car attestation and every requested tuning-control part, then submit through the validated button below.")
         case .fh5ResearchCapture:
             return unsavedEditsMessage("Record every FH5 control as Adjustable, Shown locked, or Not shown, restore moved sliders, and save the raw observation.")
+        case .fh5ControlledExperimentCapture:
+            return unsavedEditsMessage("Complete the fixed A-B-B-A sequence, keep every condition constant, restore the stock value, and record only the comparative outcome.")
         case .recordTestDrive:
             return unsavedEditsMessage("Describe this one session, confirm the tested setup, then explicitly opt in if you want to create reusable deidentified evidence.")
         case .editSavedTune:
@@ -368,7 +372,7 @@ struct CopilotEngine {
         switch context.phase {
         case .catalogPicker, .catalogReview:
             return "Treat the reviewed catalog as a starting point and confirm its stock facts in your current game build."
-        case .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .recordTestDrive, .editSavedTune:
+        case .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .fh5ControlledExperimentCapture, .recordTestDrive, .editSavedTune:
             return unsavedEditsMessage("Trust only facts you personally confirm in the underlying screen and any validation it shows.")
         case .loading:
             guard let projection = context.projection else {
@@ -415,6 +419,8 @@ struct CopilotEngine {
             return unsavedEditsMessage("The underlying checklist identifies any missing stock-car attestation or tuning-control part fact.")
         case .fh5ResearchCapture:
             return unsavedEditsMessage("The underlying checklist identifies missing tri-state decisions, slider values, context, restoration, or permission.")
+        case .fh5ControlledExperimentCapture:
+            return unsavedEditsMessage("The underlying protocol identifies missing one-variable, A-B-B-A, conditions, restoration, authorship, or storage confirmations.")
         case .recordTestDrive:
             return unsavedEditsMessage("The underlying form identifies missing session facts, confirmations, symptoms, or reuse permission.")
         case .editSavedTune:

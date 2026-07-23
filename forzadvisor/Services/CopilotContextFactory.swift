@@ -55,6 +55,11 @@ struct CopilotContextFactory {
             return context(.upgradePartCapture, cannotSeeUnsavedEdits: true)
         case .fh5ResearchCapture:
             return context(.fh5ResearchCapture, cannotSeeUnsavedEdits: true)
+        case .fh5ControlledExperimentCapture:
+            return context(
+                .fh5ControlledExperimentCapture,
+                cannotSeeUnsavedEdits: true
+            )
         case .recordTestDrive:
             return context(.recordTestDrive, cannotSeeUnsavedEdits: true)
         case .editSavedTune:

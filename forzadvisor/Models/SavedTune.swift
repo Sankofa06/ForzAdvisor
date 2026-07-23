@@ -32,6 +32,7 @@ final class SavedTune {
     @Attribute(.externalStorage) private var firstPartyValidationRecordsData: Data? = nil
     @Attribute(.externalStorage) private var fh5ResearchObservationRecordsData: Data? = nil
     @Attribute(.externalStorage) private var fh5ResearchReviewEntriesData: Data? = nil
+    @Attribute(.externalStorage) private var fh5ControlledExperimentRecordsData: Data? = nil
     @Attribute(.externalStorage) private var fh6ValidationReviewEntriesData: Data? = nil
 
     @MainActor
@@ -61,6 +62,7 @@ final class SavedTune {
         self.firstPartyValidationRecordsData = nil
         self.fh5ResearchObservationRecordsData = nil
         self.fh5ResearchReviewEntriesData = nil
+        self.fh5ControlledExperimentRecordsData = nil
         self.fh6ValidationReviewEntriesData = nil
     }
 
@@ -172,7 +174,8 @@ final class SavedTune {
             return SavedTuneBetaValidationEvidenceSnapshot(
                 validationRecordCount: validationRecords.count,
                 fh5ResearchObservationCount: 0,
-                fh5ResearchReviewCount: 0
+                fh5ResearchReviewCount: 0,
+                fh5ControlledExperimentCount: 0
             )
         }
         let researchRecords = try decodedFH5ResearchObservationRecords()
@@ -187,11 +190,23 @@ final class SavedTune {
                 }
                 return reviewIngestor.matchesSavedPlan(validated, tune: currentTune)
             }
+        let researchRecord = researchRecords.max { $0.capturedAt < $1.capturedAt }
+        let experimentFactory = FH5ControlledExperimentFactory()
+        let experimentRecords = try decodedFH5ControlledExperimentRecords()
+            .filter { record in
+                guard let researchRecord else { return false }
+                return experimentFactory.matches(
+                    record,
+                    tune: currentTune,
+                    researchRecord: researchRecord
+                )
+            }
 
         return SavedTuneBetaValidationEvidenceSnapshot(
             validationRecordCount: validationRecords.count,
             fh5ResearchObservationCount: researchRecords.count,
-            fh5ResearchReviewCount: reviewEntries.count
+            fh5ResearchReviewCount: reviewEntries.count,
+            fh5ControlledExperimentCount: experimentRecords.count
         )
     }
 
@@ -359,6 +374,77 @@ final class SavedTune {
     }
 
     @MainActor
+    var fh5ControlledExperimentRecords: [FH5ControlledExperimentRecord] {
+        (try? decodedFH5ControlledExperimentRecords()) ?? []
+    }
+
+    @MainActor
+    func fh5ControlledExperimentRecords(
+        matching tune: TuneResult,
+        researchRecord: FH5ResearchObservationRecord?
+    ) -> [FH5ControlledExperimentRecord] {
+        let researchFactory = FH5ResearchObservationFactory()
+        guard let currentTune = tuneResult,
+              researchFactory.planRevisionFingerprint(for: currentTune)
+                == researchFactory.planRevisionFingerprint(for: tune),
+              let researchRecord else {
+            return []
+        }
+        let factory = FH5ControlledExperimentFactory()
+        return fh5ControlledExperimentRecords
+            .filter {
+                factory.matches(
+                    $0,
+                    tune: currentTune,
+                    researchRecord: researchRecord
+                )
+            }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    @MainActor
+    func appendFH5ControlledExperimentRecord(
+        _ record: FH5ControlledExperimentRecord
+    ) throws {
+        guard let currentTune = tuneResult else {
+            throw FH5ControlledExperimentIssue.staleSavedRevision
+        }
+        let researchRecords = fh5ResearchObservationRecords(matching: currentTune)
+        guard let researchRecord = researchRecords.last,
+              FH5ControlledExperimentFactory().matches(
+                record,
+                tune: currentTune,
+                researchRecord: researchRecord
+              ) else {
+            throw FH5ControlledExperimentIssue.invalidStoredRecord
+        }
+        var records = try decodedFH5ControlledExperimentRecords()
+        guard !records.contains(where: {
+            $0.recordID == record.recordID
+                || $0.contentFingerprint == record.contentFingerprint
+        }) else {
+            return
+        }
+        records.append(record)
+        fh5ControlledExperimentRecordsData = try Self.encoder.encode(records)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteFH5ControlledExperimentRecord(id: UUID) throws -> Bool {
+        var records = try decodedFH5ControlledExperimentRecords()
+        let priorCount = records.count
+        records.removeAll { $0.recordID == id }
+        guard records.count != priorCount else { return false }
+        fh5ControlledExperimentRecordsData = records.isEmpty
+            ? nil
+            : try Self.encoder.encode(records)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
     func fh6ValidationReviewEntries(
         matching tune: TuneResult
     ) throws -> [FH6ValidationReviewEntry] {
@@ -512,6 +598,25 @@ final class SavedTune {
     }
 
     @MainActor
+    private func decodedFH5ControlledExperimentRecords() throws
+        -> [FH5ControlledExperimentRecord] {
+        guard let fh5ControlledExperimentRecordsData else { return [] }
+        do {
+            let records = try Self.decoder.decode(
+                [FH5ControlledExperimentRecord].self,
+                from: fh5ControlledExperimentRecordsData
+            )
+            guard records.allSatisfy(FH5ControlledExperimentFactory().isValid)
+            else {
+                throw SavedTuneFH5ControlledExperimentError.corruptStorage
+            }
+            return records
+        } catch {
+            throw SavedTuneFH5ControlledExperimentError.corruptStorage
+        }
+    }
+
+    @MainActor
     private func decodedFH6ValidationReviewEntries() throws
         -> [FH6ValidationReviewEntry] {
         guard let fh6ValidationReviewEntriesData else { return [] }
@@ -568,6 +673,11 @@ final class SavedTune {
     }
 
     @MainActor
+    func replaceFH5ControlledExperimentRecordsDataForTesting(_ data: Data?) {
+        fh5ControlledExperimentRecordsData = data
+    }
+
+    @MainActor
     func replaceFH6ValidationReviewEntriesDataForTesting(_ data: Data?) {
         fh6ValidationReviewEntriesData = data
     }
@@ -590,11 +700,13 @@ struct SavedTuneBetaValidationEvidenceSnapshot: Equatable, Sendable {
     let validationRecordCount: Int
     let fh5ResearchObservationCount: Int
     let fh5ResearchReviewCount: Int
+    let fh5ControlledExperimentCount: Int
 
     var totalRecordCount: Int {
         validationRecordCount
             + fh5ResearchObservationCount
             + fh5ResearchReviewCount
+            + fh5ControlledExperimentCount
     }
 }
 
@@ -611,5 +723,13 @@ enum SavedTuneFH5ResearchRecordError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         "Stored FH5 research observations are corrupt. The plan and other evidence were not changed."
+    }
+}
+
+enum SavedTuneFH5ControlledExperimentError: LocalizedError, Equatable {
+    case corruptStorage
+
+    var errorDescription: String? {
+        "Stored FH5 controlled experiments are corrupt. The plan and other evidence were not changed."
     }
 }

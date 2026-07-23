@@ -24,7 +24,7 @@ For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a 
 
 For FH5 catalog cars, ForzAdvisor creates a provider-independent local build plan without numeric tuning settings. Upgrade Lab records only the tuning-control parts you confirm are offered for the untouched stock car, then produces up to three exact alternative purchase paths. Numeric FH5 tuning stays unavailable until a separate FH5 ruleset is validated.
 
-Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. Beta Validation Missions turn eligible saved setups into exact local testing tasks for Research Lab, Tire Lab, Upgrade Lab, and Record Test Drive. Eligible exact FH6 builds can also use Guided Refinement, verified build sharing, and local Validation Review for permission-bound Test Drive exports that match the current setup.
+Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. Beta Validation Missions turn eligible saved setups into exact local testing tasks for Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, and Record Test Drive. FH5 Outcome Lab records a fixed one-variable A-B-B-A Test Track experiment as local calibration evidence without unlocking numeric tuning. Eligible exact FH6 builds can also use Guided Refinement, verified build sharing, and local Validation Review for permission-bound Test Drive exports that match the current setup.
 
 ForzAdvisor runs offline by default. FH5 build plans always stay local. Optional on-device AI can assist FH6 generation when Apple Foundation Models are available, and optional API mode lets advanced users connect their own Anthropic API key for FH6. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -63,7 +63,8 @@ Suggested FH5 review path:
 6. Choose Road.
 7. Review the local Build Plan and its explicit no-numeric-settings notice.
 8. Save the plan, then open FH5 Research Lab to record the untouched stock tuning menu as raw first-party evidence.
-9. Open Upgrade Lab to record offered parts, or return to the garage and reopen the saved plan.
+9. Open Upgrade Lab to record every offered-part decision.
+10. After both labs are complete, open FH5 Outcome Lab to record a fixed A-B-B-A one-step experiment, or return to the garage and reopen the saved plan.
 
 For FH6 Validation Review, save an eligible exact-build tune, record or receive a ForzAdvisor Test Drive JSON export for that exact setup, then open Accuracy Evidence -> Open Validation Review. Import requires local confirmation of direct receipt and reuse permission. Review reports outcomes and conditions only and does not change the tune.
 

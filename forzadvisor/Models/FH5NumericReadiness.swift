@@ -88,7 +88,7 @@ struct FH5NumericReadinessPolicy {
         researchRecords: [FH5ResearchObservationRecord],
         reviewReport: FH5ResearchReviewReport,
         candidateRuleset: TuneRulesetReference? = nil,
-        hasControlledOutcomeEvidence: Bool = false
+        controlledOutcomeReport: FH5ControlledOutcomePolicyReport = .empty
     ) -> FH5NumericReadinessAssessment {
         let exactContext = hasExactStockContext(tune)
         let matchingRecords = exactContext
@@ -102,7 +102,8 @@ struct FH5NumericReadinessPolicy {
             report: reviewReport
         )
         let hasRegisteredRuleset = registry.approves(candidateRuleset)
-        let hasControlledOutcomes = hasRegisteredRuleset && hasControlledOutcomeEvidence
+        let hasControlledOutcomes = hasRegisteredRuleset
+            && controlledOutcomeReport.passes
 
         return FH5NumericReadinessAssessment(
             policyVersion: Self.currentVersion,
@@ -137,12 +138,13 @@ struct FH5NumericReadinessPolicy {
                     pendingDetail: "No rights-cleared FH5 numeric ruleset is approved yet.",
                     incompleteState: .blocked
                 ),
-                item(
-                    .controlledOutcomes,
-                    complete: hasControlledOutcomes,
-                    completeDetail: "The registered ruleset passed its declared controlled-outcome policy.",
-                    pendingDetail: "Controlled Test Track outcome evidence is still required.",
-                    incompleteState: .blocked
+                FH5NumericReadinessItem(
+                    gate: .controlledOutcomes,
+                    state: hasControlledOutcomes ? .complete : .blocked,
+                    detail: controlledOutcomeDetail(
+                        report: controlledOutcomeReport,
+                        complete: hasControlledOutcomes
+                    )
                 )
             ]
         )
@@ -233,5 +235,19 @@ struct FH5NumericReadinessPolicy {
         case .blocked:
             "Conflicting measurements must be resolved; values are never averaged."
         }
+    }
+
+    private func controlledOutcomeDetail(
+        report: FH5ControlledOutcomePolicyReport,
+        complete: Bool
+    ) -> String {
+        if complete {
+            return "The registered ruleset passed its declared controlled-outcome policy."
+        }
+        if report.matchingRecordCount > 0 {
+            let noun = report.matchingRecordCount == 1 ? "experiment" : "experiments"
+            return "\(report.matchingRecordCount) matching paired \(noun) recorded; no promotion policy is registered yet."
+        }
+        return "Controlled A-B-B-A Test Track evidence and a registered promotion policy are still required."
     }
 }

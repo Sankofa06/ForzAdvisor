@@ -12,6 +12,8 @@ Camera photos and imported screenshots are processed on device with Apple's Visi
 
 Beta Validation Missions are calculated on device from the eligibility and completion state of saved setups. Mission state is not separately persisted, uploaded, or measured with analytics. Opening a mission only routes you to an existing capture workflow; it does not create an evidence record or tuning claim.
 
+FH5 Outcome Lab can store a local paired-experiment record after matching Research Lab and Upgrade Lab evidence exists. The record binds to the exact saved plan and observed menu, changes one adjustable control by one observed step in a fixed A-B-B-A Horizon Test Track protocol, and stores a target handling symptom, comparative outcome, surface, input type, required confirmations, and integrity identifiers. It excludes lap times, telemetry, notes, screenshots, location, device identifiers, analytics, provider data, and public attribution. Optional deidentified calibration reuse is off by default, and the current release does not upload or publicly export these records. They cannot create a ruleset or unlock numeric FH5 tuning.
+
 ## User-Initiated Beta Progress Sharing
 
 From Beta Validation Missions, you can open the iOS system share sheet with a progress summary containing only the number of saved setups, permission-bound evidence records, setups with exact upgrade paths, and currently available missions. It excludes car names, disciplines, tune values, notes, identifiers, screenshots, JSON, fingerprints, receipts, provider details, and ruleset details. Sharing is user-initiated, and ForzAdvisor does not record the destination or history.
@@ -34,7 +36,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes and local FH5 Outcome Lab experiments in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

@@ -35,3 +35,22 @@ Until a registry entry and outcome policy exist, all FH5 requests remain
 provider-independent, numeric-free build plans. Manual, OCR, edited, legacy,
 missing-snapshot, and malformed inputs must fail closed to that same plan-only
 result.
+
+## Paired experiment collection
+
+Outcome Lab may collect local calibration evidence before a promotion policy
+exists. Its versioned `fh5-abba-one-step-v1` protocol:
+
+- binds to the exact current saved plan and matching Research Lab measurements;
+- changes exactly one control recorded as Adjustable by exactly one observed
+  slider step;
+- fixes the run order to stock A, variant B, variant B, stock A on Horizon Test
+  Track;
+- requires the route, surface, conditions, assists, input, and every other
+  setting to remain unchanged;
+- records one target symptom and a comparative outcome only; and
+- requires the stock value to be restored before the record is saved.
+
+These records are evidence, not tune recommendations. They cannot register a
+ruleset, set their own acceptance threshold, pass the controlled-outcome gate,
+or make numeric FH5 output available.

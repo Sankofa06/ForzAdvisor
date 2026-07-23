@@ -54,6 +54,12 @@ A complete Upgrade Lab observation locks Research Lab to the same exact game bui
 
 On a matching saved FH5 catalog plan, paste an exact Research Lab JSON export into Research Review. The app validates the canonical record, requires confirmation of direct receipt and reuse permission, and stores it locally. It can label exact distinct sessions as replicated raw observations or show exact-value conflicts, but it never averages values, creates a ruleset, or enables numeric FH5 tuning.
 
+### What is FH5 Outcome Lab?
+
+After a matching Research Lab record and complete Upgrade Lab observation exist, Outcome Lab guides a fixed A-B-B-A Horizon Test Track experiment. Compare stock with one user-selected slider step while keeping route, conditions, assists, input, and every other setting unchanged, then restore the stock value.
+
+The result remains local calibration evidence. It does not generate a tune, collect lap times or telemetry, register a ruleset, or unlock numeric FH5 settings. Optional deidentified calibration reuse is off by default.
+
 ### How do I delete a tune?
 
 Open the garage, swipe left on a saved tune, and tap Delete.

@@ -42,6 +42,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - Do not use official game logos or screenshots without legal clearance.
 - FH5 catalog build planning stays local, does not use numeric formulas or the selected provider, and requires no account or API key.
 - FH5 Research Review stores exact permission-bound JSON locally, does not authenticate observer identity, and cannot promote evidence into numeric tuning or production constraints.
+- FH5 Outcome Lab stores exact-plan, one-variable A-B-B-A experiment evidence locally, requires stock restoration, and cannot register a ruleset or unlock numeric tuning.
 - FH6 Validation Review stores exact permission-bound Test Drive JSON in a separate local queue, requires the same eligible exact-build boundary as local Test Drive capture, and reports outcomes without modifying tunes or promoting the experimental ruleset.
 - Beta Validation Missions are derived locally from existing eligibility checks, create no records by themselves, and share aggregate counts only through a user-initiated system share sheet.
 - FH6 offline formula tuning is the default numeric provider and requires no account or API key.

@@ -36,6 +36,10 @@ Deidentified structured reuse and JSON sharing are off by default for each FH5 o
 
 On a matching saved FH5 catalog plan, Research Review can locally import the exact allow-listed JSON after you confirm direct receipt from the observer and permission for deidentified structured reuse. The canonical JSON, integrity-binding fields, and local review time are stored in a separate on-device queue. UUIDs and hashes bind the exact reviewed bytes but do not authenticate identity. Review compares exact raw observations without averaging values, contacting a provider, creating a ruleset, or enabling numeric FH5 tuning. Imported review entries can be deleted locally.
 
+For a matching saved FH5 plan with complete Research Lab and Upgrade Lab evidence, Outcome Lab can store one local paired-experiment record in a separate evidence queue. The record binds to the exact plan and menu-measurement fingerprints and includes platform, game build, allow-listed stock vehicle facts, tire name, gear count, one adjustable field's observed range/step/stock value, a one-step candidate value, surface, input type, target handling symptom, comparative outcome, the fixed A-B-B-A protocol, required confirmations, and random integrity identifiers. It excludes lap times, telemetry, free-form notes, screenshots, location, device identifiers, analytics, provider data, and public attribution. Optional deidentified calibration reuse is off by default, and this release does not upload or publicly export these records.
+
+Outcome Lab evidence cannot approve a ruleset, change a saved plan, unlock numeric FH5 tuning, or set its own acceptance threshold. Deleting a local experiment removes only that local evidence record.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.

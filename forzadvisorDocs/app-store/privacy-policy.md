@@ -28,6 +28,8 @@ Deidentified structured reuse and JSON sharing are off by default for every FH5 
 
 Research Review can store exact permission-bound FH5 observation JSON locally with a matching saved catalog plan after the reviewer confirms direct receipt and reuse permission. UUIDs and hashes bind the reviewed bytes but do not authenticate identity. The app reports exact raw repetition or conflict without averaging values, creating a ruleset, contacting a provider, or unlocking numeric FH5 tuning.
 
+Outcome Lab can store a local FH5 paired-experiment record after matching Research Lab and complete Upgrade Lab evidence exist. It binds to the exact saved plan and observed menu and records one legal slider-step change, the fixed A-B-B-A Horizon Test Track protocol, surface, input type, target symptom, comparative outcome, required confirmations, and integrity identifiers. It excludes lap times, telemetry, notes, screenshots, location, device identifiers, analytics, provider data, and public attribution. Optional deidentified calibration reuse is off by default; the current release does not upload or publicly export these records. They cannot register a ruleset or unlock numeric FH5 tuning.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.
@@ -46,7 +48,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes and locally stored validation, imported FH6 Validation Review, FH5 Research Lab, or imported FH5 Research Review records in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes and locally stored validation, imported FH6 Validation Review, FH5 Research Lab, imported FH5 Research Review, or FH5 Outcome Lab records in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

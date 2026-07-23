@@ -30,9 +30,15 @@ Open a saved tune and use Guided Refinement to request changes such as more rota
 
 ### What are Beta Validation Missions?
 
-Open Beta Validation Missions from the garage to see the next local testing tasks supported by your saved FH5 and FH6 setups. An empty garage offers one starter mission for each game. Eligible saved setups can offer Research Lab, Tire Lab, Upgrade Lab, or Record Test Drive missions, and completed or stale tasks disappear when you reopen the board.
+Open Beta Validation Missions from the garage to see the next local testing tasks supported by your saved FH5 and FH6 setups. An empty garage offers one starter mission for each game. Eligible saved setups can offer Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, or Record Test Drive missions, and completed or stale tasks disappear when you reopen the board.
 
 The mission board does not upload progress or create evidence by itself. Share Beta Progress opens the iOS system share sheet with aggregate counts only and excludes car names, tune values, notes, identifiers, screenshots, and analytics.
+
+### What is FH5 Outcome Lab?
+
+After a matching Research Lab record and complete Upgrade Lab observation exist, Outcome Lab guides a fixed A-B-B-A Horizon Test Track experiment. You compare stock with one user-selected slider step while keeping the route, conditions, assists, input, and every other setting unchanged, then restore the stock value.
+
+The result remains local calibration evidence. It does not generate a tune, collect lap times or telemetry, register a ruleset, or unlock numeric FH5 settings. Optional deidentified calibration reuse is off by default.
 
 ### How do I delete a tune?
 

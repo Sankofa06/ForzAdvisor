@@ -56,7 +56,8 @@ final class BetaValidationMissionTests: XCTestCase {
                 upgrades: true,
                 testDrive: false,
                 evidence: 2,
-                exactPaths: false
+                exactPaths: false,
+                experiment: true
             )
         ]
 
@@ -66,6 +67,7 @@ final class BetaValidationMissionTests: XCTestCase {
             board.missions.map(\.kind),
             [
                 .recordFH5Research,
+                .runFH5Experiment,
                 .verifyTireRanges,
                 .verifyUpgradeParts,
                 .verifyUpgradeParts,
@@ -82,7 +84,7 @@ final class BetaValidationMissionTests: XCTestCase {
                 savedSetupCount: 2,
                 evidenceRecordCount: 5,
                 exactUpgradePathSetupCount: 1,
-                availableMissionCount: 5
+                availableMissionCount: 6
             )
         )
         XCTAssertEqual(
@@ -277,7 +279,8 @@ final class BetaValidationMissionTests: XCTestCase {
         upgrades: Bool,
         testDrive: Bool,
         evidence: Int,
-        exactPaths: Bool
+        exactPaths: Bool,
+        experiment: Bool = false
     ) -> BetaValidationSetupFacts {
         BetaValidationSetupFacts(
             savedTuneID: id,
@@ -285,6 +288,7 @@ final class BetaValidationMissionTests: XCTestCase {
             carDisplayName: name,
             disciplineTitle: discipline,
             canRecordFH5Research: research,
+            canRunFH5Experiment: experiment,
             canVerifyTireRanges: tires,
             canVerifyUpgradeParts: upgrades,
             canRecordTestDrive: testDrive,

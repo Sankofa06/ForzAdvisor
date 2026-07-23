@@ -257,6 +257,35 @@ struct ContentView: View {
                             description: Text("Return to the saved FH5 plan and choose an untouched catalog car.")
                         )
                     }
+                case .fh5ControlledExperimentCapture(
+                    let tune,
+                    let savedTuneID,
+                    let researchRecord,
+                    let thumbnailData,
+                    let playerNotes
+                ):
+                    FH5ControlledExperimentCaptureView(
+                        tune: tune,
+                        researchRecord: researchRecord,
+                        onBack: {
+                            step = .result(
+                                tune,
+                                savedTuneID: savedTuneID,
+                                adjustmentChanges: [],
+                                thumbnailData: thumbnailData,
+                                playerNotes: playerNotes
+                            )
+                        },
+                        onSubmit: { capture in
+                            recordFH5ControlledExperiment(
+                                capture,
+                                for: tune,
+                                savedTuneID: savedTuneID,
+                                thumbnailData: thumbnailData,
+                                playerNotes: playerNotes
+                            )
+                        }
+                    )
                 case .recordTestDrive(let tune, let savedTuneID, let thumbnailData, let playerNotes):
                     FirstPartyValidationCaptureView(
                         tune: tune,
@@ -449,11 +478,30 @@ struct ContentView: View {
             .fh5ResearchReviewEntries(matching: tune) ?? []
         let researchReviewReport = resolvedSavedTune?
             .fh5ResearchReviewReport(matching: tune) ?? .empty
+        let experimentRecords = resolvedSavedTune?
+            .fh5ControlledExperimentRecords(
+                matching: tune,
+                researchRecord: latestResearchRecord
+            ) ?? []
+        let latestExperimentRecord = experimentRecords.last
+        let experimentEligibility = FH5ControlledExperimentFactory().eligibility(
+            tune: tune,
+            savedTune: persistedTune,
+            isStreaming: isStreaming,
+            researchRecords: researchRecords
+        )
+        let controlledOutcomeReport = FH5ControlledExperimentFactory()
+            .outcomePolicyReport(
+                records: experimentRecords,
+                tune: tune,
+                researchRecord: latestResearchRecord
+            )
         let fh5NumericReadiness = tune.request.car.game == .fh5
             ? FH5NumericReadinessPolicy().assess(
                 tune: tune,
                 researchRecords: researchRecords,
-                reviewReport: researchReviewReport
+                reviewReport: researchReviewReport,
+                controlledOutcomeReport: controlledOutcomeReport
             )
             : nil
 
@@ -545,6 +593,31 @@ struct ContentView: View {
                 guard let resolvedSavedTuneID else { return }
                 deleteFH5ResearchReviewEntry(
                     entry,
+                    savedTuneID: resolvedSavedTuneID
+                )
+            },
+            latestFH5ControlledExperimentRecord: latestExperimentRecord,
+            onOpenFH5ControlledExperiment:
+                experimentEligibility.isSuccess && resolvedSavedTuneID != nil
+                ? {
+                    guard let resolvedSavedTuneID,
+                          case .success(let researchRecord) = experimentEligibility else {
+                        return
+                    }
+                    tuneWorkflow.cancelAdjustment()
+                    step = .fh5ControlledExperimentCapture(
+                        tune,
+                        savedTuneID: resolvedSavedTuneID,
+                        researchRecord: researchRecord,
+                        thumbnailData: resolvedThumbnailData,
+                        playerNotes: resolvedPlayerNotes
+                    )
+                }
+                : nil,
+            onDeleteFH5ControlledExperimentRecord: { record in
+                guard let resolvedSavedTuneID else { return }
+                deleteFH5ControlledExperimentRecord(
+                    record,
                     savedTuneID: resolvedSavedTuneID
                 )
             },

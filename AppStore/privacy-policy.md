@@ -38,6 +38,8 @@ Deidentified structured reuse and JSON sharing are off by default for each FH5 o
 
 On a matching saved FH5 catalog plan, Research Review can locally import the exact allow-listed JSON after you confirm that you received it directly from the observer and checked permission for deidentified structured reuse. The app stores the canonical JSON, integrity-binding fields, and local review time in a separate on-device review queue. UUIDs and hashes bind the reviewed bytes but do not authenticate the observer's identity. Review compares exact raw observations without averaging values, contacting a provider, creating a ruleset, or enabling numeric FH5 tuning. You can delete imported review entries locally.
 
+For a matching saved FH5 plan with complete Research Lab and Upgrade Lab evidence, Outcome Lab can store one local paired-experiment record in a separate evidence queue. It binds to the exact saved-plan and menu-measurement fingerprints and includes allow-listed stock context, one adjustable field's observed range, step, and stock value, a one-step candidate value, surface, input type, target handling symptom, comparative outcome, the fixed A-B-B-A protocol, confirmations, and random integrity identifiers. It excludes lap times, telemetry, notes, screenshots, location, device identifiers, analytics, provider data, and public attribution. Optional deidentified calibration reuse is off by default, and the current release does not upload or publicly export these records. Outcome Lab evidence cannot register a ruleset, change the saved plan, set an acceptance threshold, or unlock numeric FH5 tuning.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.
@@ -56,7 +58,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes, locally stored validation records, imported FH6 Validation Review entries, locally stored FH5 Research Lab observations, and imported FH5 Research Review entries in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, locally stored validation records, imported FH6 Validation Review entries, locally stored FH5 Research Lab observations, imported FH5 Research Review entries, and local FH5 Outcome Lab experiments in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

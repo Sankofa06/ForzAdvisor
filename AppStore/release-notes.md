@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.7.0 (Build 27) - 2026-07-23
+
+- Added FH5 Outcome Lab for a fixed A-B-B-A Horizon Test Track experiment that compares stock with one user-selected legal slider step.
+- Bound each local experiment to the exact saved plan, matching Research Lab measurements, complete Upgrade Lab evidence, one target symptom, and required restoration and first-party confirmations.
+- Replaced the future outcome-evidence Boolean with a typed, code-owned policy report. Experiments remain calibration evidence only and cannot register a ruleset or unlock numeric FH5 tuning.
+
 ## Version 1.6.0 (Build 26) - 2026-07-23
 
 - Added an FH5 numeric-readiness checklist that shows the exact stock, Research Lab, Upgrade Lab, replication, rights, and controlled-outcome gates still required.
@@ -130,7 +136,7 @@ Confirm import stays disabled until direct receipt and deidentified structured r
 
 Try JSON from a different setup, FH5, a stale ruleset, or edited bytes and confirm it is rejected. Reimport an exact administrative copy and confirm it does not add another session. Conflicting submissions and reused permission receipts must be quarantined instead of influencing the outcome summary.
 
-From the garage, open Beta Validation Missions with an empty garage and confirm it offers one starter mission for FH5 and one for FH6. Save an FH5 plan or FH6 tune, reopen the mission board, and confirm it replaces the matching starter with only the eligible Research Lab, Tire Lab, Upgrade Lab, or Record Test Drive actions.
+From the garage, open Beta Validation Missions with an empty garage and confirm it offers one starter mission for FH5 and one for FH6. Save an FH5 plan or FH6 tune, reopen the mission board, and confirm it replaces the matching starter with only the eligible Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, or Record Test Drive actions.
 
 Open a saved-setup mission and confirm it enters the existing capture workflow for that exact setup. Complete the workflow, then reopen Beta Validation Missions and confirm the completed mission disappears. If a setup changes or is deleted while the board is open, the stale mission must fail safely instead of opening the wrong setup.
 
@@ -139,6 +145,8 @@ Use Share Beta Progress and confirm the preview contains only aggregate counts a
 Please also test New Tune -> Choose a Car -> select an FH5 catalog car -> Use This Car -> choose a discipline. Confirm the result is clearly labeled Build Plan, contains no numeric tuning settings, and offers Upgrade Lab without contacting the selected model or API provider.
 
 Save the plan, open FH5 Research Lab, and confirm every expected control requires Adjustable, Shown locked, or Not shown. For Adjustable, enter the observed minimum, maximum, step, and restored current value. Confirm incomplete or contradictory observations cannot save, reuse/JSON sharing starts off, and returning to the plan does not expose numeric FH5 tune settings.
+
+After completing Research Lab and Upgrade Lab for the same FH5 plan, open Outcome Lab. Confirm it shows the exact stock A value and a one-step B value, fixes the sequence to A-B-B-A on Horizon Test Track, and requires unchanged conditions, assists, input, every other setting, full sequence completion, stock restoration, authorship, and local storage permission. Save the result and confirm the readiness checklist reports the matching experiment but keeps controlled outcomes blocked.
 
 In Upgrade Lab, enter the exact FH5 game build, confirm the untouched stock car, and mark every listed part Offered or Not offered. When all parts are offered, confirm the rebuilt plan shows three deterministic alternatives and that Copy build plan includes only the exact verified paths. Save, reopen, and confirm the same paths remain available.
 
@@ -152,9 +160,9 @@ Offline use requires no account or API key. FH5 build plans and Research Lab obs
 
 No login is required. On an eligible saved exact-build FH6 tune, Accuracy Evidence includes Validation Review. It imports only exact ForzAdvisor Test Drive JSON matching that setup after a local direct-receipt and reuse-permission confirmation. Imported entries stay in a separate local queue, report outcome counts and conditions only, and cannot modify settings or promote the experimental ruleset.
 
-Beta Validation Missions is always visible in the garage and derives its current list locally from eligible saved setups. Empty garages receive FH5 and FH6 starter missions. Saved setups may receive Research Lab, Tire Lab, Upgrade Lab, or Record Test Drive missions only when their existing workflow eligibility passes. The board does not create evidence or tuning claims, and its optional progress share contains aggregate counts only.
+Beta Validation Missions is always visible in the garage and derives its current list locally from eligible saved setups. Empty garages receive FH5 and FH6 starter missions. Saved setups may receive Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, or Record Test Drive missions only when their existing workflow eligibility passes. The board does not create evidence or tuning claims, and its optional progress share contains aggregate counts only.
 
-To review the FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road, then save the plan. The app creates a local build plan with no numeric tuning values and offers Research Lab for first-party stock-menu evidence plus Upgrade Lab for user-confirmed purchase paths. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
+To review the FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road, then save the plan. The app creates a local build plan with no numeric tuning values and offers Research Lab for first-party stock-menu evidence plus Upgrade Lab for user-confirmed purchase paths. After both are complete, Outcome Lab can record a one-step paired experiment without promoting it into a tune. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
 
 ## Previous TestFlight Notes
 

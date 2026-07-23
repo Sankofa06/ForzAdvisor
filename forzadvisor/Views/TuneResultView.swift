@@ -29,6 +29,10 @@ struct TuneResultView: View {
     let fh5ResearchReviewEntries: [FH5ResearchReviewEntry]
     let onImportFH5ResearchReviewEntry: ((FH5ResearchReviewEntry) -> String?)?
     let onDeleteFH5ResearchReviewEntry: (FH5ResearchReviewEntry) -> Void
+    let latestFH5ControlledExperimentRecord: FH5ControlledExperimentRecord?
+    let onOpenFH5ControlledExperiment: (() -> Void)?
+    let onDeleteFH5ControlledExperimentRecord:
+        (FH5ControlledExperimentRecord) -> Void
     let latestValidationRecord: FirstPartyValidationRecord?
     let onRecordTestDrive: (() -> Void)?
     let onDeleteValidationRecord: (FirstPartyValidationRecord) -> Void
@@ -44,6 +48,8 @@ struct TuneResultView: View {
     @State private var copiedExport: CopiedExport?
     @State private var recordPendingDeletion: FirstPartyValidationRecord?
     @State private var researchRecordPendingDeletion: FH5ResearchObservationRecord?
+    @State private var experimentRecordPendingDeletion:
+        FH5ControlledExperimentRecord?
     @State private var showsFH5ResearchReview = false
     @State private var showsFH6ValidationReview = false
 
@@ -130,119 +136,24 @@ struct TuneResultView: View {
                 }
                 .forzAdvisorRowBackground()
 
-                if !isStreaming,
-                   onOpenFH5Research != nil
-                    || latestFH5ResearchRecord != nil
-                    || onImportFH5ResearchReviewEntry != nil {
-                    Section("FH5 Research Lab") {
-                        if let readiness = fh5NumericReadiness {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Label(
-                                    "Numeric readiness \(readiness.completedCount)/\(readiness.items.count)",
-                                    systemImage: "checklist"
-                                )
-                                .font(.subheadline.weight(.semibold))
-
-                                ForEach(readiness.items) { item in
-                                    HStack(alignment: .top, spacing: 8) {
-                                        Image(systemName: readinessSymbol(for: item.state))
-                                            .foregroundStyle(readinessColor(for: item.state))
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(item.gate.title)
-                                                .font(.caption.weight(.semibold))
-                                            Text(item.detail)
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                }
-
-                                Text("Menu evidence never becomes tune-quality evidence by itself. Numeric output stays locked until every gate passes.")
-                                    .font(.caption)
-                                    .foregroundStyle(ForzAdvisorTheme.warning)
-                            }
-                            .padding(.vertical, 2)
-                            .accessibilityIdentifier("fh5NumericReadiness")
-                        }
-
-                        if let onOpenFH5Research {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Label(
-                                    "Record the untouched stock tuning menu",
-                                    systemImage: "checklist.checked"
-                                )
-                                .font(.subheadline.weight(.semibold))
-                                Text("Use Horizon Test Track with English units to record raw first-party control availability and slider ranges. This evidence is not a tune.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Button("Open FH5 Research Lab", action: onOpenFH5Research)
-                                    .buttonStyle(.borderedProminent)
-                                    .accessibilityIdentifier("openFH5ResearchLabButton")
-                            }
-                            .padding(.vertical, 2)
-                        }
-
-                        if let record = latestFH5ResearchRecord {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label("Latest stock observation recorded", systemImage: "checkmark.seal")
-                                    .font(.subheadline.weight(.semibold))
-                                Text(
-                                    "\(record.platform.title) · \(record.gameVersion) · \(record.forwardGearCount) forward gears"
-                                )
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                Text("Raw evidence recorded. Numeric FH5 tuning remains unavailable.")
-                                    .font(.caption)
-                                    .foregroundStyle(ForzAdvisorTheme.warning)
-
-                                if let json = record.deterministicJSONString {
-                                    ShareLink(
-                                        item: json,
-                                        subject: Text("ForzAdvisor FH5 stock observation")
-                                    ) {
-                                        Label(
-                                            "Share deidentified observation JSON",
-                                            systemImage: "square.and.arrow.up"
-                                        )
-                                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .accessibilityIdentifier("shareFH5ResearchObservationButton")
-                                } else {
-                                    Text("JSON sharing is unavailable because deidentified structured reuse was not enabled for this record.")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Button("Delete latest local observation", role: .destructive) {
-                                    researchRecordPendingDeletion = record
-                                }
-                                .accessibilityIdentifier("deleteFH5ResearchObservationButton")
-                            }
-                            .padding(.vertical, 2)
-                        }
-
-                        if onImportFH5ResearchReviewEntry != nil {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Label(
-                                    "Compare permission-bound observations",
-                                    systemImage: "rectangle.stack.badge.checkmark"
-                                )
-                                .font(.subheadline.weight(.semibold))
-                                Text("Import exact ForzAdvisor JSON from other first-party sessions. Review reports only replicated or conflicting raw observations; they never unlock a tune.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Button("Open Research Review") {
-                                    showsFH5ResearchReview = true
-                                }
-                                .buttonStyle(.bordered)
-                                .accessibilityIdentifier("openFH5ResearchReviewButton")
-                            }
-                            .padding(.vertical, 2)
-                        }
+                FH5ResearchOutcomeSection(
+                    isStreaming: isStreaming,
+                    readiness: fh5NumericReadiness,
+                    onOpenResearch: onOpenFH5Research,
+                    researchRecord: latestFH5ResearchRecord,
+                    canOpenReview: onImportFH5ResearchReviewEntry != nil,
+                    onOpenReview: {
+                        showsFH5ResearchReview = true
+                    },
+                    experimentRecord: latestFH5ControlledExperimentRecord,
+                    onOpenExperiment: onOpenFH5ControlledExperiment,
+                    onRequestDeleteResearch: {
+                        researchRecordPendingDeletion = $0
+                    },
+                    onRequestDeleteExperiment: {
+                        experimentRecordPendingDeletion = $0
                     }
-                    .forzAdvisorRowBackground()
-                }
+                )
 
                 if !isStreaming, let onVerifyTirePressures {
                     Section("Tune Lab") {
@@ -285,50 +196,13 @@ struct TuneResultView: View {
                     .forzAdvisorRowBackground()
                 }
 
-                if !isStreaming,
-                   TuneClipboardFormatter.verifiedSettingsText(for: tune) != nil
-                    || TuneClipboardFormatter.buildPlanText(for: tune) != nil {
-                    Section("Take It To The Game") {
-                        if let verifiedText = TuneClipboardFormatter.verifiedSettingsText(for: tune) {
-                            exportButton(
-                                title: "Copy verified settings",
-                                copiedTitle: "Copied verified settings",
-                                text: verifiedText,
-                                kind: .verifiedSettings,
-                                prominent: true
-                            )
-                        }
-                        if let buildPlanText = TuneClipboardFormatter.buildPlanText(for: tune) {
-                            exportButton(
-                                title: "Copy build plan",
-                                copiedTitle: "Copied build plan",
-                                text: buildPlanText,
-                                kind: .buildPlan,
-                                prominent: false
-                            )
-                        }
-                        if let shareCard = verifiedBuildShareCard {
-                            VStack(alignment: .leading, spacing: 8) {
-                                ShareLink(
-                                    item: shareCard.text,
-                                    subject: Text(shareCard.subject)
-                                ) {
-                                    Label("Share verified build", systemImage: "square.and.arrow.up")
-                                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                                }
-                                .buttonStyle(.bordered)
-                                .accessibilityIdentifier("shareVerifiedBuildButton")
-                                .accessibilityHint("Opens the system share sheet with only this verified build card.")
-
-                                Text("Sharing sends this card to an app you choose. Garage notes and screenshots are excluded.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 2)
-                        }
-                    }
-                    .forzAdvisorRowBackground()
-                }
+                TuneExportSection(
+                    tune: tune,
+                    shareCard: verifiedBuildShareCard,
+                    isStreaming: isStreaming,
+                    copiedExport: $copiedExport,
+                    copiedLineID: $copiedLineID
+                )
             } else {
                 Section("Unverified Legacy Tune") {
                     Label(
@@ -355,138 +229,39 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
 
-            if !isStreaming,
-               onRecordTestDrive != nil
-                || latestValidationRecord != nil
-                || onImportFH6ValidationReviewEntry != nil {
-                Section("Accuracy Evidence") {
-                    if let onRecordTestDrive {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Button("Record Test Drive", action: onRecordTestDrive)
-                                .buttonStyle(.borderedProminent)
-                                .accessibilityIdentifier("recordTestDriveButton")
-                            Text("Create permission-clear evidence from one test session after applying every exported setting.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 2)
-                    }
+            FH6AccuracyEvidenceSection(
+                isStreaming: isStreaming,
+                onRecordTestDrive: onRecordTestDrive,
+                latestValidationRecord: latestValidationRecord,
+                canOpenValidationReview:
+                    onImportFH6ValidationReviewEntry != nil,
+                recordPendingDeletion: $recordPendingDeletion,
+                showsValidationReview: $showsFH6ValidationReview
+            )
 
-                    if let record = latestValidationRecord,
-                       let json = record.deterministicJSONString {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label("Latest session recorded", systemImage: "checkmark.seal")
-                                .font(.subheadline.weight(.semibold))
-                            Text("\(record.session.courseType.title) · \(record.session.runCount) run\(record.session.runCount == 1 ? "" : "s") · \(record.outcome.verdict.rawValue.capitalized)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            ShareLink(item: json, subject: Text("ForzAdvisor validation record")) {
-                                Label("Share validation JSON", systemImage: "square.and.arrow.up")
-                                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                            }
-                            .buttonStyle(.bordered)
-                            .accessibilityIdentifier("shareValidationRecordButton")
-                            Button("Delete latest local record", role: .destructive) {
-                                recordPendingDeletion = record
-                            }
-                            .accessibilityIdentifier("deleteValidationRecordButton")
-                        }
-                        .padding(.vertical, 2)
-                    }
+            GuidedRefinementSection(
+                isVisible:
+                    isSaved
+                    && !isStreaming
+                    && !eligibleFeedback.isEmpty,
+                feedbackOptions: eligibleFeedback,
+                activeFeedback: activeFeedback,
+                onFeedback: onFeedback
+            )
 
-                    if onImportFH6ValidationReviewEntry != nil {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label(
-                                "Review shared test-drive outcomes",
-                                systemImage: "rectangle.stack.badge.checkmark"
-                            )
-                            .font(.subheadline.weight(.semibold))
-                            Text("Import exact, permission-bound ForzAdvisor JSON for this saved setup. Review shows observed outcomes and conditions only; it never changes the tune.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Button("Open Validation Review") {
-                                showsFH6ValidationReview = true
-                            }
-                            .buttonStyle(.bordered)
-                            .accessibilityIdentifier("openFH6ValidationReviewButton")
-                        }
-                        .padding(.vertical, 2)
-                    }
-                }
-                .forzAdvisorRowBackground()
-            }
+            AdjustmentChangesSection(changes: adjustmentChanges)
 
-            if isSaved && !isStreaming && !eligibleFeedback.isEmpty {
-                Section("Guided Refinement") {
-                    GuidedRefinementView(
-                        feedbackOptions: eligibleFeedback,
-                        activeFeedback: activeFeedback,
-                        onFeedback: onFeedback
-                    )
-                    .padding(.vertical, 4)
-                }
-                .forzAdvisorRowBackground()
-            }
+            TuneSectionsGroup(
+                sections: displaySections,
+                isStreaming: isStreaming,
+                allowsCopy: tune.projectionReport != nil,
+                expandedSectionTitles: $expandedSectionTitles,
+                copiedLineID: $copiedLineID
+            )
 
-            if !adjustmentChanges.isEmpty {
-                Section("Last changes") {
-                    ForEach(adjustmentChanges) { change in
-                        AdjustmentChangeRow(change: change)
-                    }
-                }
-                .forzAdvisorRowBackground()
-            }
+            TuneNotesSection(tune: tune)
 
-            if !displaySections.isEmpty {
-                Section {
-                    HStack(spacing: 10) {
-                        Button("Expand all") {
-                            expandedSectionTitles = Set(displaySections.map(\.title))
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(isStreaming)
-
-                        Button("Collapse all") {
-                            expandedSectionTitles.removeAll()
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(isStreaming)
-                    }
-                    .font(.caption.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .forzAdvisorRowBackground()
-            }
-
-            ForEach(displaySections) { section in
-                Section {
-                    TuneSectionDisclosureView(
-                        section: section,
-                        isStreaming: isStreaming,
-                        allowsCopy: tune.projectionReport != nil,
-                        isExpanded: expandedBinding(for: section),
-                        copiedLineID: $copiedLineID
-                    )
-                }
-                .forzAdvisorRowBackground()
-            }
-
-            if tune.purpose != .fh5BuildPlan {
-                Section("Notes") {
-                    NoteRow(title: "Bias", text: tune.notes.bias)
-                    NoteRow(title: "If pushes wide", text: tune.notes.ifPushesWide)
-                    NoteRow(title: "If snaps on lift", text: tune.notes.ifSnapsOnLift)
-                    NoteRow(title: "Retune", text: tune.notes.retuneTrigger)
-                }
-                .forzAdvisorRowBackground()
-            }
-
-            if !playerNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Section("Garage Notes") {
-                    Text(playerNotes)
-                }
-                .forzAdvisorRowBackground()
-            }
+            GarageNotesSection(playerNotes: playerNotes)
         }
         .navigationTitle(tune.purpose == .fh5BuildPlan ? "Build Plan" : "Tune")
         .forzAdvisorScreenChrome()
@@ -541,6 +316,24 @@ struct TuneResultView: View {
         } message: { _ in
             Text("This removes only the local record. JSON copies you already shared cannot be recalled.")
         }
+        .alert(
+            "Delete local FH5 experiment?",
+            isPresented: Binding(
+                get: { experimentRecordPendingDeletion != nil },
+                set: { if !$0 { experimentRecordPendingDeletion = nil } }
+            ),
+            presenting: experimentRecordPendingDeletion
+        ) { record in
+            Button("Delete Local Experiment", role: .destructive) {
+                onDeleteFH5ControlledExperimentRecord(record)
+                experimentRecordPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                experimentRecordPendingDeletion = nil
+            }
+        } message: { _ in
+            Text("This removes only the local calibration record and does not change the saved FH5 plan.")
+        }
         .sheet(isPresented: $showsFH5ResearchReview) {
             if let onImportFH5ResearchReviewEntry {
                 FH5ResearchReviewView(
@@ -561,26 +354,6 @@ struct TuneResultView: View {
                     onDelete: onDeleteFH6ValidationReviewEntry
                 )
             }
-        }
-    }
-
-    private func readinessSymbol(
-        for state: FH5NumericReadinessState
-    ) -> String {
-        switch state {
-        case .complete: "checkmark.circle.fill"
-        case .pending: "circle.dotted"
-        case .blocked: "lock.circle.fill"
-        }
-    }
-
-    private func readinessColor(
-        for state: FH5NumericReadinessState
-    ) -> Color {
-        switch state {
-        case .complete: ForzAdvisorTheme.success
-        case .pending: .secondary
-        case .blocked: ForzAdvisorTheme.warning
         }
     }
 
@@ -606,6 +379,574 @@ struct TuneResultView: View {
             return "Save Plan"
         }
         return "Save"
+    }
+
+}
+
+private struct GuidedRefinementSection: View {
+    let isVisible: Bool
+    let feedbackOptions: [TuneFeedback]
+    let activeFeedback: TuneFeedback?
+    let onFeedback: (TuneFeedback) -> Void
+
+    var body: some View {
+        if isVisible {
+            Section("Guided Refinement") {
+                GuidedRefinementView(
+                    feedbackOptions: feedbackOptions,
+                    activeFeedback: activeFeedback,
+                    onFeedback: onFeedback
+                )
+                .padding(.vertical, 4)
+            }
+            .forzAdvisorRowBackground()
+        }
+    }
+}
+
+private struct AdjustmentChangesSection: View {
+    let changes: [TuneAdjustmentChange]
+
+    var body: some View {
+        if !changes.isEmpty {
+            Section("Last changes") {
+                ForEach(changes) { change in
+                    AdjustmentChangeRow(change: change)
+                }
+            }
+            .forzAdvisorRowBackground()
+        }
+    }
+}
+
+private struct TuneNotesSection: View {
+    let tune: TuneResult
+
+    var body: some View {
+        if tune.purpose != .fh5BuildPlan {
+            Section("Notes") {
+                NoteRow(title: "Bias", text: tune.notes.bias)
+                NoteRow(
+                    title: "If pushes wide",
+                    text: tune.notes.ifPushesWide
+                )
+                NoteRow(
+                    title: "If snaps on lift",
+                    text: tune.notes.ifSnapsOnLift
+                )
+                NoteRow(title: "Retune", text: tune.notes.retuneTrigger)
+            }
+            .forzAdvisorRowBackground()
+        }
+    }
+}
+
+private struct GarageNotesSection: View {
+    let playerNotes: String
+
+    var body: some View {
+        if !playerNotes.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ).isEmpty {
+            Section("Garage Notes") {
+                Text(playerNotes)
+            }
+            .forzAdvisorRowBackground()
+        }
+    }
+}
+
+private struct FH6AccuracyEvidenceSection: View {
+    let isStreaming: Bool
+    let onRecordTestDrive: (() -> Void)?
+    let latestValidationRecord: FirstPartyValidationRecord?
+    let canOpenValidationReview: Bool
+    @Binding var recordPendingDeletion: FirstPartyValidationRecord?
+    @Binding var showsValidationReview: Bool
+
+    var body: some View {
+        if !isStreaming,
+           onRecordTestDrive != nil
+            || latestValidationRecord != nil
+            || canOpenValidationReview {
+            Section("Accuracy Evidence") {
+                if let onRecordTestDrive {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Button(
+                            "Record Test Drive",
+                            action: onRecordTestDrive
+                        )
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("recordTestDriveButton")
+                        Text(
+                            "Create permission-clear evidence from one test session after applying every exported setting."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                if let record = latestValidationRecord,
+                   let json = record.deterministicJSONString {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(
+                            "Latest session recorded",
+                            systemImage: "checkmark.seal"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        Text(sessionSummary(for: record))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        ShareLink(
+                            item: json,
+                            subject: Text("ForzAdvisor validation record")
+                        ) {
+                            Label(
+                                "Share validation JSON",
+                                systemImage: "square.and.arrow.up"
+                            )
+                            .frame(
+                                maxWidth: .infinity,
+                                minHeight: 44,
+                                alignment: .leading
+                            )
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier(
+                            "shareValidationRecordButton"
+                        )
+                        Button(
+                            "Delete latest local record",
+                            role: .destructive
+                        ) {
+                            recordPendingDeletion = record
+                        }
+                        .accessibilityIdentifier(
+                            "deleteValidationRecordButton"
+                        )
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                if canOpenValidationReview {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(
+                            "Review shared test-drive outcomes",
+                            systemImage:
+                                "rectangle.stack.badge.checkmark"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        Text(
+                            "Import exact, permission-bound ForzAdvisor JSON for this saved setup. Review shows observed outcomes and conditions only; it never changes the tune."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Button("Open Validation Review") {
+                            showsValidationReview = true
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier(
+                            "openFH6ValidationReviewButton"
+                        )
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .forzAdvisorRowBackground()
+        }
+    }
+
+    private func sessionSummary(
+        for record: FirstPartyValidationRecord
+    ) -> String {
+        let session = record.session
+        let runSuffix = session.runCount == 1 ? "" : "s"
+        return "\(session.courseType.title) · \(session.runCount) run\(runSuffix) · \(record.outcome.verdict.rawValue.capitalized)"
+    }
+}
+
+private struct FH5ResearchOutcomeSection: View {
+    let isStreaming: Bool
+    let readiness: FH5NumericReadinessAssessment?
+    let onOpenResearch: (() -> Void)?
+    let researchRecord: FH5ResearchObservationRecord?
+    let canOpenReview: Bool
+    let onOpenReview: () -> Void
+    let experimentRecord: FH5ControlledExperimentRecord?
+    let onOpenExperiment: (() -> Void)?
+    let onRequestDeleteResearch: (FH5ResearchObservationRecord) -> Void
+    let onRequestDeleteExperiment: (FH5ControlledExperimentRecord) -> Void
+
+    var body: some View {
+        if !isStreaming,
+           onOpenResearch != nil || researchRecord != nil || canOpenReview {
+            Section("FH5 Research Lab") {
+                if let readiness {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label(
+                            "Numeric readiness \(readiness.completedCount)/\(readiness.items.count)",
+                            systemImage: "checklist"
+                        )
+                        .font(.subheadline.weight(.semibold))
+
+                        ForEach(readiness.items) { item in
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: readinessSymbol(for: item.state))
+                                    .foregroundStyle(readinessColor(for: item.state))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.gate.title)
+                                        .font(.caption.weight(.semibold))
+                                    Text(item.detail)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+
+                        Text(
+                            "Menu evidence never becomes tune-quality evidence by itself. Numeric output stays locked until every gate passes."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(ForzAdvisorTheme.warning)
+                    }
+                    .padding(.vertical, 2)
+                    .accessibilityIdentifier("fh5NumericReadiness")
+                }
+
+                if let onOpenResearch {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label(
+                            "Record the untouched stock tuning menu",
+                            systemImage: "checklist.checked"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        Text(
+                            "Use Horizon Test Track with English units to record raw first-party control availability and slider ranges. This evidence is not a tune."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Button(
+                            "Open FH5 Research Lab",
+                            action: onOpenResearch
+                        )
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("openFH5ResearchLabButton")
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                if let researchRecord {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(
+                            "Latest stock observation recorded",
+                            systemImage: "checkmark.seal"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        Text(
+                            "\(researchRecord.platform.title) · \(researchRecord.gameVersion) · \(researchRecord.forwardGearCount) forward gears"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Text(
+                            "Raw evidence recorded. Numeric FH5 tuning remains unavailable."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(ForzAdvisorTheme.warning)
+
+                        if let json = researchRecord.deterministicJSONString {
+                            ShareLink(
+                                item: json,
+                                subject: Text(
+                                    "ForzAdvisor FH5 stock observation"
+                                )
+                            ) {
+                                Label(
+                                    "Share deidentified observation JSON",
+                                    systemImage: "square.and.arrow.up"
+                                )
+                                .frame(
+                                    maxWidth: .infinity,
+                                    minHeight: 44,
+                                    alignment: .leading
+                                )
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier(
+                                "shareFH5ResearchObservationButton"
+                            )
+                        } else {
+                            Text(
+                                "JSON sharing is unavailable because deidentified structured reuse was not enabled for this record."
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        }
+
+                        Button(
+                            "Delete latest local observation",
+                            role: .destructive
+                        ) {
+                            onRequestDeleteResearch(researchRecord)
+                        }
+                        .accessibilityIdentifier(
+                            "deleteFH5ResearchObservationButton"
+                        )
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                if canOpenReview {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(
+                            "Compare permission-bound observations",
+                            systemImage: "rectangle.stack.badge.checkmark"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        Text(
+                            "Import exact ForzAdvisor JSON from other first-party sessions. Review reports only replicated or conflicting raw observations; they never unlock a tune."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Button("Open Research Review", action: onOpenReview)
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier(
+                                "openFH5ResearchReviewButton"
+                            )
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                FH5ControlledExperimentSummary(
+                    record: experimentRecord,
+                    onOpen: onOpenExperiment,
+                    onRequestDelete: onRequestDeleteExperiment
+                )
+            }
+            .forzAdvisorRowBackground()
+        }
+    }
+
+    private func readinessSymbol(
+        for state: FH5NumericReadinessState
+    ) -> String {
+        switch state {
+        case .complete: "checkmark.circle.fill"
+        case .pending: "circle.dotted"
+        case .blocked: "lock.circle.fill"
+        }
+    }
+
+    private func readinessColor(
+        for state: FH5NumericReadinessState
+    ) -> Color {
+        switch state {
+        case .complete: ForzAdvisorTheme.success
+        case .pending: .secondary
+        case .blocked: ForzAdvisorTheme.warning
+        }
+    }
+}
+
+private struct FH5ControlledExperimentSummary: View {
+    let record: FH5ControlledExperimentRecord?
+    let onOpen: (() -> Void)?
+    let onRequestDelete: (FH5ControlledExperimentRecord) -> Void
+
+    var body: some View {
+        Group {
+            if let onOpen {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(
+                        "Run one controlled paired experiment",
+                        systemImage: "testtube.2"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    Text(
+                        "Outcome Lab guides a fixed A-B-B-A Horizon Test Track test. It changes one adjustable control by one observed step, then requires a return to stock."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    Button("Open FH5 Outcome Lab", action: onOpen)
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier(
+                            "openFH5ControlledExperimentButton"
+                        )
+                }
+                .padding(.vertical, 2)
+            }
+
+            if let record {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(
+                        "Latest paired experiment recorded",
+                        systemImage: "checkmark.circle"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    Text(
+                        "\(record.change.field.projectionLabel): \(formatted(record.change.baselineValue, unit: record.change.unit)) → \(formatted(record.change.candidateValue, unit: record.change.unit))"
+                    )
+                    .font(.caption)
+                    Text(
+                        "\(record.targetSymptom.title) · \(record.outcome.title)"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    Text(
+                        "Calibration evidence only. No numeric ruleset or tune was promoted."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(ForzAdvisorTheme.warning)
+                    Button(
+                        "Delete latest local experiment",
+                        role: .destructive
+                    ) {
+                        onRequestDelete(record)
+                    }
+                    .accessibilityIdentifier(
+                        "deleteFH5ControlledExperimentButton"
+                    )
+                }
+                .padding(.vertical, 2)
+            }
+        }
+    }
+
+    private func formatted(_ value: Double, unit: TuneUnit) -> String {
+        let number = value.formatted(
+            .number.precision(.fractionLength(0...3))
+        )
+        return "\(number) \(unit.rawValue)"
+    }
+}
+
+private struct TuneSectionsGroup: View {
+    let sections: [TuneSection]
+    let isStreaming: Bool
+    let allowsCopy: Bool
+    @Binding var expandedSectionTitles: Set<String>
+    @Binding var copiedLineID: TuneLine.ID?
+
+    var body: some View {
+        Group {
+            if !sections.isEmpty {
+                Section {
+                    HStack(spacing: 10) {
+                        Button("Expand all") {
+                            expandedSectionTitles = Set(sections.map(\.title))
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isStreaming)
+
+                        Button("Collapse all") {
+                            expandedSectionTitles.removeAll()
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(isStreaming)
+                    }
+                    .font(.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .forzAdvisorRowBackground()
+            }
+
+            ForEach(sections) { section in
+                Section {
+                    TuneSectionDisclosureView(
+                        section: section,
+                        isStreaming: isStreaming,
+                        allowsCopy: allowsCopy,
+                        isExpanded: expandedBinding(for: section),
+                        copiedLineID: $copiedLineID
+                    )
+                }
+                .forzAdvisorRowBackground()
+            }
+        }
+    }
+
+    private func expandedBinding(for section: TuneSection) -> Binding<Bool> {
+        Binding {
+            expandedSectionTitles.contains(section.title)
+        } set: { isExpanded in
+            if isExpanded {
+                expandedSectionTitles.insert(section.title)
+            } else {
+                expandedSectionTitles.remove(section.title)
+            }
+        }
+    }
+}
+
+private struct TuneExportSection: View {
+    let tune: TuneResult
+    let shareCard: VerifiedBuildShareCard?
+    let isStreaming: Bool
+    @Binding var copiedExport: CopiedExport?
+    @Binding var copiedLineID: TuneLine.ID?
+
+    private var verifiedText: String? {
+        TuneClipboardFormatter.verifiedSettingsText(for: tune)
+    }
+
+    private var buildPlanText: String? {
+        TuneClipboardFormatter.buildPlanText(for: tune)
+    }
+
+    var body: some View {
+        if !isStreaming, verifiedText != nil || buildPlanText != nil {
+            Section("Take It To The Game") {
+                if let verifiedText {
+                    exportButton(
+                        title: "Copy verified settings",
+                        copiedTitle: "Copied verified settings",
+                        text: verifiedText,
+                        kind: .verifiedSettings,
+                        prominent: true
+                    )
+                }
+                if let buildPlanText {
+                    exportButton(
+                        title: "Copy build plan",
+                        copiedTitle: "Copied build plan",
+                        text: buildPlanText,
+                        kind: .buildPlan,
+                        prominent: false
+                    )
+                }
+                if let shareCard {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ShareLink(
+                            item: shareCard.text,
+                            subject: Text(shareCard.subject)
+                        ) {
+                            Label(
+                                "Share verified build",
+                                systemImage: "square.and.arrow.up"
+                            )
+                            .frame(
+                                maxWidth: .infinity,
+                                minHeight: 44,
+                                alignment: .leading
+                            )
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("shareVerifiedBuildButton")
+                        .accessibilityHint(
+                            "Opens the system share sheet with only this verified build card."
+                        )
+
+                        Text(
+                            "Sharing sends this card to an app you choose. Garage notes and screenshots are excluded."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .forzAdvisorRowBackground()
+        }
     }
 
     @ViewBuilder
@@ -653,18 +994,6 @@ struct TuneResultView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .accessibilityIdentifier(kind.accessibilityIdentifier)
-    }
-
-    private func expandedBinding(for section: TuneSection) -> Binding<Bool> {
-        Binding {
-            expandedSectionTitles.contains(section.title)
-        } set: { isExpanded in
-            if isExpanded {
-                expandedSectionTitles.insert(section.title)
-            } else {
-                expandedSectionTitles.remove(section.title)
-            }
-        }
     }
 }
 

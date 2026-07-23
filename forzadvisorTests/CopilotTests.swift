@@ -52,7 +52,7 @@ final class CopilotTests: XCTestCase {
 
     func testEveryWorkflowPhaseAnswersEverySupportedIntent() {
         let engine = CopilotEngine()
-        XCTAssertEqual(CopilotPhase.allCases.count, 15)
+        XCTAssertEqual(CopilotPhase.allCases.count, 16)
 
         for phase in CopilotPhase.allCases {
             let context = syntheticContext(for: phase)
@@ -336,7 +336,9 @@ final class CopilotTests: XCTestCase {
             projection: phase == .result ? projectionFacts(readyCount: 2, isSaved: true) : nil,
             cannotSeeUnsavedEdits: [
                 .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture,
-                .upgradePartCapture, .fh5ResearchCapture, .recordTestDrive, .editSavedTune
+                .upgradePartCapture, .fh5ResearchCapture,
+                .fh5ControlledExperimentCapture, .recordTestDrive,
+                .editSavedTune
             ].contains(phase)
         )
     }

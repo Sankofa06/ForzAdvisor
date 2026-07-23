@@ -13,6 +13,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
     case startFH5Plan
     case startFH6Tune
     case recordFH5Research
+    case runFH5Experiment
     case verifyTireRanges
     case verifyUpgradeParts
     case recordTestDrive
@@ -22,6 +23,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         case .startFH5Plan: "Create an FH5 build plan"
         case .startFH6Tune: "Create an FH6 tune"
         case .recordFH5Research: "Record FH5 stock controls"
+        case .runFH5Experiment: "Run an FH5 paired experiment"
         case .verifyTireRanges: "Verify FH6 tire ranges"
         case .verifyUpgradeParts: "Verify offered tuning parts"
         case .recordTestDrive: "Record an FH6 test drive"
@@ -32,6 +34,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         switch self {
         case .startFH5Plan, .startFH6Tune: "car.2"
         case .recordFH5Research: "list.clipboard"
+        case .runFH5Experiment: "testtube.2"
         case .verifyTireRanges: "gauge.with.dots.needle.50percent"
         case .verifyUpgradeParts: "wrench.and.screwdriver"
         case .recordTestDrive: "flag.checkered"
@@ -43,6 +46,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         case .startFH5Plan: 0
         case .startFH6Tune: 1
         case .recordFH5Research: 10
+        case .runFH5Experiment: 15
         case .verifyTireRanges: 20
         case .verifyUpgradeParts: 30
         case .recordTestDrive: 40
@@ -86,6 +90,8 @@ struct BetaValidationMission: Equatable, Identifiable, Sendable {
         switch kind {
         case .recordFH5Research:
             return "\(setup): capture the untouched stock tuning menu as raw evidence."
+        case .runFH5Experiment:
+            return "\(setup): compare stock with one slider step using a fixed A-B-B-A test."
         case .verifyTireRanges:
             return "\(setup): confirm exact stock tire-pressure bounds and game build."
         case .verifyUpgradeParts:
@@ -125,6 +131,7 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
     let carDisplayName: String
     let disciplineTitle: String
     let canRecordFH5Research: Bool
+    let canRunFH5Experiment: Bool
     let canVerifyTireRanges: Bool
     let canVerifyUpgradeParts: Bool
     let canRecordTestDrive: Bool
@@ -151,6 +158,9 @@ struct BetaValidationMissionPlanner {
         for setup in setups {
             if setup.canRecordFH5Research {
                 missions.append(mission(.recordFH5Research, setup: setup))
+            }
+            if setup.canRunFH5Experiment {
+                missions.append(mission(.runFH5Experiment, setup: setup))
             }
             if setup.canVerifyTireRanges {
                 missions.append(mission(.verifyTireRanges, setup: setup))
@@ -216,6 +226,20 @@ struct BetaValidationMissionPlanner {
         } else {
             validationEligible = false
         }
+        let experimentEligible: Bool
+        if tune.request.car.game == .fh5,
+           evidence.fh5ControlledExperimentCount == 0 {
+            let researchRecords = savedTune
+                .fh5ResearchObservationRecords(matching: tune)
+            experimentEligible = FH5ControlledExperimentFactory().eligibility(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                researchRecords: researchRecords
+            ).isSuccess
+        } else {
+            experimentEligible = false
+        }
 
         return BetaValidationSetupFacts(
             savedTuneID: savedTune.id,
@@ -223,6 +247,7 @@ struct BetaValidationMissionPlanner {
             carDisplayName: tune.request.car.displayName,
             disciplineTitle: tune.request.discipline.title,
             canRecordFH5Research: researchEligible,
+            canRunFH5Experiment: experimentEligible,
             canVerifyTireRanges:
                 TirePressureCaptureEligibility().snapshot(for: tune) != nil,
             canVerifyUpgradeParts:

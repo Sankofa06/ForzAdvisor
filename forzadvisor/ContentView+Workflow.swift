@@ -335,6 +335,56 @@ extension ContentView {
         }
     }
 
+    func recordFH5ControlledExperiment(
+        _ capture: FH5ControlledExperimentCapture,
+        for tune: TuneResult,
+        savedTuneID: UUID,
+        thumbnailData: Data?,
+        playerNotes: String
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID),
+                  let persistedTune = savedTune.tuneResult else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            let researchRecords = savedTune
+                .fh5ResearchObservationRecords(matching: persistedTune)
+            let record = try FH5ControlledExperimentFactory().make(
+                tune: tune,
+                savedTune: persistedTune,
+                isStreaming: false,
+                researchRecords: researchRecords,
+                capture: capture
+            )
+            try savedTune.appendFH5ControlledExperimentRecord(record)
+            try modelContext.save()
+            step = .result(
+                TuneResultBoundarySanitizer().sanitize(tune),
+                savedTuneID: savedTuneID,
+                adjustmentChanges: [],
+                thumbnailData: thumbnailData,
+                playerNotes: playerNotes
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteFH5ControlledExperimentRecord(
+        _ record: FH5ControlledExperimentRecord,
+        savedTuneID: UUID
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            _ = try savedTune.deleteFH5ControlledExperimentRecord(id: record.recordID)
+            try modelContext.save()
+        } catch {
+            errorMessage = "Could not delete this FH5 experiment: \(error.localizedDescription)"
+        }
+    }
+
     func recordTestDrive(
         _ capture: FirstPartyValidationCapture,
         for tune: TuneResult,
@@ -532,6 +582,25 @@ extension ContentView {
                         thumbnailData: savedTune.thumbnailData,
                         playerNotes: savedTune.playerNotes
                     )
+                case .runFH5Experiment:
+                    let researchRecords = savedTune
+                        .fh5ResearchObservationRecords(matching: tune)
+                    guard case .success(let researchRecord) =
+                        FH5ControlledExperimentFactory().eligibility(
+                            tune: tune,
+                            savedTune: tune,
+                            isStreaming: false,
+                            researchRecords: researchRecords
+                        ) else {
+                        throw ContentWorkflowError.staleBetaMission
+                    }
+                    step = .fh5ControlledExperimentCapture(
+                        tune,
+                        savedTuneID: savedTuneID,
+                        researchRecord: researchRecord,
+                        thumbnailData: savedTune.thumbnailData,
+                        playerNotes: savedTune.playerNotes
+                    )
                 case .verifyTireRanges:
                     step = .tirePressureCapture(
                         tune,
@@ -592,6 +661,7 @@ enum WorkflowStep {
     case tirePressureCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
     case upgradePartCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
     case fh5ResearchCapture(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
+    case fh5ControlledExperimentCapture(TuneResult, savedTuneID: UUID, researchRecord: FH5ResearchObservationRecord, thumbnailData: Data?, playerNotes: String)
     case recordTestDrive(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
     case editSavedTune(TuneResult, savedTuneID: UUID, playerNotes: String, thumbnailData: Data?)
 }

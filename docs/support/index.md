@@ -58,6 +58,12 @@ Open an eligible saved FH5 catalog plan and choose Research Review to paste an e
 
 One record remains a single raw observation. Exact repeats from distinct capture sessions are labeled replicated raw observations, while exact-value disagreements are labeled conflicting raw observations. Review never averages values, creates a ruleset, or unlocks numeric FH5 tuning.
 
+### What is FH5 Outcome Lab?
+
+Outcome Lab appears only after a matching FH5 Research Lab record and complete Upgrade Lab observation exist. It guides a fixed A-B-B-A Horizon Test Track experiment: stock, one user-selected slider step, the same one-step variant again, then stock again. The route, surface, conditions, assists, input device, and every other setting must stay unchanged, and the tested slider must be restored to stock before saving.
+
+The local record stores the exact plan and Research Lab fingerprints, the one declared change, one target handling symptom, the comparative result, and required confirmations. It does not generate a tune, upload telemetry, collect lap times or free-form notes, register a ruleset, or unlock numeric FH5 settings. Optional deidentified calibration reuse is off by default.
+
 ### How do I delete a tune?
 
 Open the garage, swipe left on a saved tune, and tap Delete.
