@@ -472,6 +472,64 @@ extension ContentView {
         errorRecovery = nil
     }
 
+    func openBetaValidationMission(_ mission: BetaValidationMission) {
+        rootSheet = nil
+        do {
+            let currentBoard = BetaValidationMissionPlanner().makeBoard(
+                savedTunes: savedTunes
+            )
+            guard currentBoard.missions.contains(mission) else {
+                throw ContentWorkflowError.staleBetaMission
+            }
+
+            cancelActiveTuneWork()
+            switch mission.destination {
+            case .catalog(let game):
+                step = .catalogPicker(initialGame: game)
+            case .savedTune(let savedTuneID, let kind):
+                guard let savedTune = try savedTune(for: savedTuneID),
+                      let storedTune = savedTune.tuneResult else {
+                    throw ContentWorkflowError.missingSavedTune
+                }
+                let tune = TuneResultBoundarySanitizer().sanitize(storedTune)
+                switch kind {
+                case .recordFH5Research:
+                    step = .fh5ResearchCapture(
+                        tune,
+                        savedTuneID: savedTuneID,
+                        thumbnailData: savedTune.thumbnailData,
+                        playerNotes: savedTune.playerNotes
+                    )
+                case .verifyTireRanges:
+                    step = .tirePressureCapture(
+                        tune,
+                        savedTuneID: savedTuneID,
+                        thumbnailData: savedTune.thumbnailData,
+                        playerNotes: savedTune.playerNotes
+                    )
+                case .verifyUpgradeParts:
+                    step = .upgradePartCapture(
+                        tune,
+                        savedTuneID: savedTuneID,
+                        thumbnailData: savedTune.thumbnailData,
+                        playerNotes: savedTune.playerNotes
+                    )
+                case .recordTestDrive:
+                    step = .recordTestDrive(
+                        tune,
+                        savedTuneID: savedTuneID,
+                        thumbnailData: savedTune.thumbnailData,
+                        playerNotes: savedTune.playerNotes
+                    )
+                case .startFH5Plan, .startFH6Tune:
+                    throw ContentWorkflowError.staleBetaMission
+                }
+            }
+        } catch {
+            errorMessage = "Could not open this beta mission: \(error.localizedDescription)"
+        }
+    }
+
     func cancelActiveTuneWork() {
         tuneWorkflow.cancelActiveTuneWork()
     }
@@ -560,11 +618,14 @@ struct ActiveTuneAdjustment {
 
 enum ContentWorkflowError: LocalizedError {
     case missingSavedTune
+    case staleBetaMission
 
     var errorDescription: String? {
         switch self {
         case .missingSavedTune:
             "The saved tune could not be found."
+        case .staleBetaMission:
+            "This mission is no longer eligible. Reopen Beta Missions for the current list."
         }
     }
 }

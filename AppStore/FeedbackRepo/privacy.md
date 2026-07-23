@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-06-15
+Effective date: 2026-07-23
 
 ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains how the app handles information in the current iPhone release.
 
@@ -9,6 +9,12 @@ ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains 
 ForzAdvisor can process car details, tune settings, player notes, camera photos, imported screenshots, and saved tune history. By default, this information stays on your device and is used to generate, display, save, search, copy, and adjust tunes.
 
 Camera photos and imported screenshots are processed on device with Apple's Vision OCR. If you save a tune after photo or screenshot entry, the app may save a small local thumbnail with that tune so you can recognize it later.
+
+Beta Validation Missions are calculated on device from the eligibility and completion state of saved setups. Mission state is not separately persisted, uploaded, or measured with analytics. Opening a mission only routes you to an existing capture workflow; it does not create an evidence record or tuning claim.
+
+## User-Initiated Beta Progress Sharing
+
+From Beta Validation Missions, you can open the iOS system share sheet with a progress summary containing only the number of saved setups, permission-bound evidence records, setups with exact upgrade paths, and currently available missions. It excludes car names, disciplines, tune values, notes, identifiers, screenshots, JSON, fingerprints, receipts, provider details, and ruleset details. Sharing is user-initiated, and ForzAdvisor does not record the destination or history.
 
 ## Offline And On-Device Tuning
 

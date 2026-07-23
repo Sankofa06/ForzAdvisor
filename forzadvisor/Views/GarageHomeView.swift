@@ -13,6 +13,8 @@ struct GarageHomeView: View {
     let onNewTune: () -> Void
     let onOpenTune: (SavedTune) -> Void
     let onDeleteTune: (SavedTune) -> Void
+    let betaMissionCount: Int
+    let onBetaMissions: () -> Void
     let onSettings: () -> Void
 
     @State private var searchText = ""
@@ -55,6 +57,38 @@ struct GarageHomeView: View {
                 .buttonStyle(.plain)
                 .listRowBackground(ForzAdvisorTheme.heroRowBackground)
             }
+
+            Section {
+                Button(action: onBetaMissions) {
+                    HStack(spacing: 14) {
+                        ForzAdvisorIcon(
+                            systemName: "checklist",
+                            tint: ForzAdvisorTheme.accent,
+                            size: 42
+                        )
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Beta Validation Missions")
+                                .font(.headline)
+                            Text(
+                                betaMissionCount == 1
+                                    ? "1 local testing mission ready"
+                                    : "\(betaMissionCount) local testing missions ready"
+                            )
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("betaValidationMissionsButton")
+                .accessibilityHint("Shows local testing tasks and aggregate progress.")
+            }
+            .forzAdvisorRowBackground()
 
             Section("Garage") {
                 if savedTunes.isEmpty {

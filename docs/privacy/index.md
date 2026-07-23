@@ -10,11 +10,15 @@ ForzAdvisor can process car details, tune settings, player notes, camera photos,
 
 Camera photos and imported screenshots are processed on device with Apple's Vision OCR. If you save a tune after photo or screenshot entry, the app may save a small local thumbnail with that tune so you can recognize it later.
 
+Beta Validation Missions are calculated on device from the eligibility and completion state of saved setups. Mission state is not separately persisted, uploaded, or measured with analytics. Opening a mission only routes you to an existing capture workflow; it does not create an evidence record or tuning claim.
+
 ## User-Initiated Sharing
 
 On an eligible exact-build result, you can ask ForzAdvisor to prepare a verified build card locally and open the iOS system share sheet. The card includes the game, car identity, discipline, class and PI, drivetrain, observed game build, settings that passed local verification, and at most one tuning-control upgrade path.
 
 The shared card excludes garage notes, photos, screenshots, OCR content, API keys, provider details, internal identifiers, timestamps, and evidence or source records. ForzAdvisor does not send the card until you choose a destination in the system share sheet, and the app does not operate that destination or record share history, destinations, or analytics.
+
+From Beta Validation Missions, you can also open the iOS system share sheet with a progress summary containing only the number of saved setups, permission-bound evidence records, setups with exact upgrade paths, and currently available missions. It excludes car names, disciplines, tune values, notes, identifiers, screenshots, JSON, fingerprints, receipts, provider details, and ruleset details. Sharing is user-initiated, and ForzAdvisor does not record the destination or history.
 
 For eligible saved exact-build tunes, you may also record one first-party test-drive session and explicitly opt in to deidentified benchmark reuse. The public JSON contains a submission UUID, creation timestamp, consent version, permission-receipt UUID, game and observed build with capture timestamp, allow-listed stock vehicle facts (including catalog ID, tire-compound ID and observed display name, and gear count), canonical shop availability, discipline, tune-generation timestamp, public ruleset versions, typed applied settings, controlled course type, surface, input type, run count, verdict, selected handling symptoms, confirmations, explicit unknowns and exclusions, and integrity fingerprints.
 

@@ -12,9 +12,13 @@ ForzAdvisor can process car details, tune settings, player notes, camera photos,
 
 Camera photos and imported screenshots are processed on device with Apple's Vision OCR. If you save a tune after photo or screenshot entry, the app may save a small local thumbnail with that tune so you can recognize it later.
 
+Beta Validation Missions are calculated on device from the eligibility and completion state of saved setups. Mission state is not separately persisted, uploaded, or measured with analytics. Opening a mission only routes you to an existing capture workflow; it does not create an evidence record or tuning claim.
+
 ## User-Initiated Sharing
 
 On eligible exact-build results, ForzAdvisor can prepare verified build cards and first-party validation JSON locally, then open the iOS system share sheet. Sharing occurs only after you choose a destination, and the app does not record share destinations or history.
+
+From Beta Validation Missions, ForzAdvisor can prepare an aggregate progress summary containing only counts of saved setups, permission-bound evidence records, setups with exact upgrade paths, and currently available missions. It excludes car names, disciplines, tune values, notes, identifiers, screenshots, JSON, fingerprints, receipts, provider details, and ruleset details. Sharing is user-initiated through the iOS system share sheet.
 
 For an eligible saved FH5 untouched-stock catalog plan, Research Lab can store a complete first-party tuning-menu observation in a separate local record. It can include platform, exact game version, reviewed stock-car facts, complete matching Upgrade Lab availability, tire compound, forward gear count, control availability, and allowed manually entered slider values. The workflow does not call a tuning provider, create a numeric tune, or upload anything.
 

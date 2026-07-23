@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata
 
-Last updated: 2026-07-22
+Last updated: 2026-07-23
 
 ## App Name
 
@@ -12,7 +12,7 @@ Photo-to-tune racing setups
 
 ## Promotional Text
 
-Choose a reviewed FH5 or FH6 stock car, build trustworthy tuning-control plans, save results locally, and use optional AI help for FH6 setups.
+Choose a reviewed FH5 or FH6 stock car, build trustworthy tuning-control plans, and follow local beta missions to improve the evidence.
 
 ## Description
 
@@ -24,7 +24,7 @@ For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a 
 
 For FH5 catalog cars, ForzAdvisor creates a provider-independent local build plan without numeric tuning settings. Upgrade Lab records only the tuning-control parts you confirm are offered for the untouched stock car, then produces up to three exact alternative purchase paths. Numeric FH5 tuning stays unavailable until a separate FH5 ruleset is validated.
 
-Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. Eligible exact FH6 builds can also use Tire Lab, Guided Refinement, verified build sharing, and structured Test Drive records.
+Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. Beta Validation Missions turn eligible saved setups into exact local testing tasks for Research Lab, Tire Lab, Upgrade Lab, and Record Test Drive. Eligible exact FH6 builds can also use Guided Refinement and verified build sharing.
 
 ForzAdvisor runs offline by default. FH5 build plans always stay local. Optional on-device AI can assist FH6 generation when Apple Foundation Models are available, and optional API mode lets advanced users connect their own Anthropic API key for FH6. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -71,14 +71,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.3.0
-- Current project build: 23
+- Current project version: 1.4.0
+- Current project build: 24
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-FH5 Research Review now validates and compares exact permission-bound Research Lab exports on a matching saved plan. It reports replicated or conflicting raw observations without averaging values or unlocking numeric FH5 tuning.
+Beta Validation Missions now turn eligible saved FH5 and FH6 setups into exact local testing steps. Optional progress sharing contains aggregate counts only and excludes car names, tune values, notes, identifiers, and screenshots.
 
 ## Export Compliance Notes
 

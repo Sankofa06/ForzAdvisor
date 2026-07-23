@@ -30,6 +30,12 @@ Open a generated or saved tune and tap Copy full tune. Individual tune lines can
 
 Open a saved tune and use Guided Refinement to request changes such as more rotation, more stability, softer, stiffer, more top speed, or more acceleration.
 
+### What are Beta Validation Missions?
+
+Open Beta Validation Missions from the garage to see exact local testing tasks supported by your saved FH5 and FH6 setups. An empty garage offers one starter mission for each game. Eligible saved setups can offer Research Lab, Tire Lab, Upgrade Lab, or Record Test Drive missions, and completed or stale tasks disappear when you reopen the board.
+
+The board does not upload progress or create evidence by itself. Share Beta Progress opens the iOS system share sheet with aggregate counts only and excludes car names, tune values, notes, identifiers, screenshots, and analytics.
+
 ### What is FH5 Research Lab?
 
 Research Lab appears on an eligible saved FH5 build plan for an untouched stock car from the reviewed catalog. In Horizon Test Track, use English units and record every expected tuning control as Adjustable, Shown locked, or Not shown. Enter slider bounds, step, and restored current values only when the control is adjustable.

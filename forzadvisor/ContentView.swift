@@ -38,6 +38,9 @@ struct ContentView: View {
                         },
                         onOpenTune: open,
                         onDeleteTune: delete,
+                        betaMissionCount:
+                            betaValidationMissionBoard.progress.availableMissionCount,
+                        onBetaMissions: { rootSheet = .betaMissions },
                         onSettings: { rootSheet = .settings }
                     )
                 case .newTune:
@@ -346,6 +349,11 @@ struct ContentView: View {
                         context: copilotContext,
                         onClose: { rootSheet = nil }
                     )
+                case .betaMissions:
+                    BetaValidationMissionsView(
+                        board: betaValidationMissionBoard,
+                        onSelect: openBetaValidationMission
+                    )
                 }
             }
             .tint(ForzAdvisorTheme.accent)
@@ -385,6 +393,10 @@ struct ContentView: View {
     private var catalogCarCount: Int {
         guard case .success(let snapshot) = catalogResult else { return 0 }
         return snapshot.entries.count
+    }
+
+    private var betaValidationMissionBoard: BetaValidationMissionBoard {
+        BetaValidationMissionPlanner().makeBoard(savedTunes: savedTunes)
     }
 
     @ViewBuilder
@@ -543,6 +555,7 @@ private extension Result {
 enum RootSheet: String, CaseIterable, Identifiable {
     case settings
     case copilot
+    case betaMissions
 
     var id: String { rawValue }
 }

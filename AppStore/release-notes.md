@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.4.0 (Build 24) - 2026-07-23
+
+- Added local Beta Validation Missions that turn eligible saved FH5 and FH6 setups into exact next testing steps.
+- Missions recheck the existing Research Lab, Tire Lab, Upgrade Lab, and Record Test Drive safety boundaries before opening a workflow.
+- Added an optional aggregate progress share containing counts only, with no car names, tune values, notes, identifiers, screenshots, or analytics.
+
 ## Version 1.3.0 (Build 23) - 2026-07-23
 
 - Added plan-scoped FH5 Research Review for exact permission-bound Research Lab JSON, stored separately from local author observations.
@@ -102,11 +108,17 @@
 
 ## App Store What's New
 
-Choose an untouched FH5 stock car from the reviewed catalog to create a local build plan, record its stock tuning menu as first-party evidence, verify offered tuning-control upgrades, and compare up to three exact purchase paths. Numeric FH5 settings remain withheld until a separate FH5 ruleset is validated.
+Beta Validation Missions now turn your saved FH5 and FH6 setups into exact local testing steps for Research Lab, Tire Lab, Upgrade Lab, and Record Test Drive. Share aggregate beta progress only when you choose, without exposing car names, tune values, notes, identifiers, or screenshots.
 
 ## TestFlight Notes
 
-Please test New Tune -> Choose a Car -> select an FH5 catalog car -> Use This Car -> choose a discipline. Confirm the result is clearly labeled Build Plan, contains no numeric tuning settings, and offers Upgrade Lab without contacting the selected model or API provider.
+From the garage, open Beta Validation Missions with an empty garage and confirm it offers one starter mission for FH5 and one for FH6. Save an FH5 plan or FH6 tune, reopen the mission board, and confirm it replaces the matching starter with only the eligible Research Lab, Tire Lab, Upgrade Lab, or Record Test Drive actions.
+
+Open a saved-setup mission and confirm it enters the existing capture workflow for that exact setup. Complete the workflow, then reopen Beta Validation Missions and confirm the completed mission disappears. If a setup changes or is deleted while the board is open, the stale mission must fail safely instead of opening the wrong setup.
+
+Use Share Beta Progress and confirm the preview contains only aggregate counts and the ForzAdvisor marketing link. It must not contain car names, disciplines, tune settings, notes, screenshots, tune or evidence identifiers, provider details, or analytics.
+
+Please also test New Tune -> Choose a Car -> select an FH5 catalog car -> Use This Car -> choose a discipline. Confirm the result is clearly labeled Build Plan, contains no numeric tuning settings, and offers Upgrade Lab without contacting the selected model or API provider.
 
 Save the plan, open FH5 Research Lab, and confirm every expected control requires Adjustable, Shown locked, or Not shown. For Adjustable, enter the observed minimum, maximum, step, and restored current value. Confirm incomplete or contradictory observations cannot save, reuse/JSON sharing starts off, and returning to the plan does not expose numeric FH5 tune settings.
 
@@ -120,7 +132,9 @@ Offline use requires no account or API key. FH5 build plans and Research Lab obs
 
 ## Reviewer Notes
 
-No login is required. To review the new FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road, then save the plan. The app creates a local build plan with no numeric tuning values and offers Research Lab for first-party stock-menu evidence plus Upgrade Lab for user-confirmed purchase paths. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
+No login is required. Beta Validation Missions is always visible in the garage and derives its current list locally from eligible saved setups. Empty garages receive FH5 and FH6 starter missions. Saved setups may receive Research Lab, Tire Lab, Upgrade Lab, or Record Test Drive missions only when their existing workflow eligibility passes. The board does not create evidence or tuning claims, and its optional progress share contains aggregate counts only.
+
+To review the FH5 flow, choose New Tune -> Choose a Car -> Forza Horizon 5 -> select a car -> Use This Car -> Road, then save the plan. The app creates a local build plan with no numeric tuning values and offers Research Lab for first-party stock-menu evidence plus Upgrade Lab for user-confirmed purchase paths. For numeric tuning, select an FH6 car instead. Manual entry, camera, and photo import remain available.
 
 ## Previous TestFlight Notes
 

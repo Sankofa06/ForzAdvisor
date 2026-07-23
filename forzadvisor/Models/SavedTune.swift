@@ -151,6 +151,49 @@ final class SavedTune {
     }
 
     @MainActor
+    func betaValidationEvidenceSnapshot(
+        matching tune: TuneResult
+    ) throws -> SavedTuneBetaValidationEvidenceSnapshot {
+        let validationFactory = FirstPartyValidationRecordFactory()
+        let validationFingerprint = validationFactory.revisionFingerprint(for: tune)
+        let validationRecords = try decodedValidationRecords()
+            .filter {
+                validationFingerprint != nil
+                    && $0.tuneRevisionFingerprint == validationFingerprint
+            }
+            .sorted { $0.createdAt < $1.createdAt }
+
+        let researchFactory = FH5ResearchObservationFactory()
+        guard let currentTune = tuneResult,
+              researchFactory.planRevisionFingerprint(for: currentTune)
+                == researchFactory.planRevisionFingerprint(for: tune) else {
+            return SavedTuneBetaValidationEvidenceSnapshot(
+                validationRecordCount: validationRecords.count,
+                fh5ResearchObservationCount: 0,
+                fh5ResearchReviewCount: 0
+            )
+        }
+        let researchRecords = try decodedFH5ResearchObservationRecords()
+            .filter { researchFactory.matches($0, tune: currentTune) }
+        let reviewIngestor = FH5ResearchReviewIngestor()
+        let reviewEntries = try decodedFH5ResearchReviewEntries()
+            .filter { entry in
+                guard let validated = try? reviewIngestor.validate(
+                    entry.canonicalExportJSON
+                ) else {
+                    return false
+                }
+                return reviewIngestor.matchesSavedPlan(validated, tune: currentTune)
+            }
+
+        return SavedTuneBetaValidationEvidenceSnapshot(
+            validationRecordCount: validationRecords.count,
+            fh5ResearchObservationCount: researchRecords.count,
+            fh5ResearchReviewCount: reviewEntries.count
+        )
+    }
+
+    @MainActor
     func appendValidationRecord(_ record: FirstPartyValidationRecord) throws {
         guard FirstPartyValidationRecordFactory().isValid(record) else {
             throw FirstPartyValidationError.invalidStoredRecord
@@ -317,10 +360,15 @@ final class SavedTune {
     private func decodedValidationRecords() throws -> [FirstPartyValidationRecord] {
         guard let firstPartyValidationRecordsData else { return [] }
         do {
-            return try Self.decoder.decode(
+            let records = try Self.decoder.decode(
                 [FirstPartyValidationRecord].self,
                 from: firstPartyValidationRecordsData
             )
+            guard records.allSatisfy(FirstPartyValidationRecordFactory().isValid)
+            else {
+                throw SavedTuneValidationRecordError.corruptStorage
+            }
+            return records
         } catch {
             throw SavedTuneValidationRecordError.corruptStorage
         }
@@ -410,6 +458,18 @@ final class SavedTune {
         decoder.dateDecodingStrategy = .iso8601
         return decoder
     }()
+}
+
+struct SavedTuneBetaValidationEvidenceSnapshot: Equatable, Sendable {
+    let validationRecordCount: Int
+    let fh5ResearchObservationCount: Int
+    let fh5ResearchReviewCount: Int
+
+    var totalRecordCount: Int {
+        validationRecordCount
+            + fh5ResearchObservationCount
+            + fh5ResearchReviewCount
+    }
 }
 
 enum SavedTuneValidationRecordError: LocalizedError, Equatable {
