@@ -26,6 +26,8 @@ For an eligible saved FH5 untouched-stock catalog plan, Research Lab can store a
 
 Deidentified structured reuse and JSON sharing are off by default for each FH5 observation. If you explicitly enable them before saving, the exported JSON uses an allow-list and excludes the local record and tune identifiers, screenshots, OCR, thumbnails, garage notes, discipline, generated tune values, catalog source URLs, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, history, and share destination. Its public content fingerprint covers only those approved exported semantic fields and is separate from the local integrity fingerprint. Deleting the local observation cannot recall a JSON file already shared.
 
+On a matching saved FH5 catalog plan, Research Review can locally import the exact allow-listed JSON after you confirm direct receipt from the observer and permission for deidentified structured reuse. The canonical JSON, integrity-binding fields, and local review time are stored in a separate on-device queue. UUIDs and hashes bind the exact reviewed bytes but do not authenticate identity. Review compares exact raw observations without averaging values, contacting a provider, creating a ruleset, or enabling numeric FH5 tuning. Imported review entries can be deleted locally.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.
@@ -44,7 +46,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes, locally stored validation records, and locally stored FH5 Research Lab observations in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, locally stored validation records, locally stored FH5 Research Lab observations, and imported FH5 Research Review entries in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

@@ -38,6 +38,10 @@ The observation is raw first-party evidence, not a tune, and it does not enable 
 
 A complete Upgrade Lab observation locks Research Lab to the same exact game build. Saved observations appear and can be shared only while they match the current saved plan, catalog car, and catalog revision.
 
+### What is FH5 Research Review?
+
+On a matching saved FH5 catalog plan, paste an exact Research Lab JSON export into Research Review. The app validates the canonical record, requires confirmation of direct receipt and reuse permission, and stores it locally. It can label exact distinct sessions as replicated raw observations or show exact-value conflicts, but it never averages values, creates a ruleset, or enables numeric FH5 tuning.
+
 ### How do I delete a tune?
 
 Open the garage, swipe left on a saved tune, and tap Delete.

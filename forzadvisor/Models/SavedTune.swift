@@ -31,6 +31,7 @@ final class SavedTune {
     @Attribute(.externalStorage) var thumbnailData: Data?
     @Attribute(.externalStorage) private var firstPartyValidationRecordsData: Data? = nil
     @Attribute(.externalStorage) private var fh5ResearchObservationRecordsData: Data? = nil
+    @Attribute(.externalStorage) private var fh5ResearchReviewEntriesData: Data? = nil
 
     @MainActor
     init(
@@ -58,6 +59,7 @@ final class SavedTune {
         self.thumbnailData = thumbnailData
         self.firstPartyValidationRecordsData = nil
         self.fh5ResearchObservationRecordsData = nil
+        self.fh5ResearchReviewEntriesData = nil
     }
 
     @MainActor
@@ -227,6 +229,91 @@ final class SavedTune {
     }
 
     @MainActor
+    var fh5ResearchReviewEntries: [FH5ResearchReviewEntry] {
+        (try? decodedFH5ResearchReviewEntries()) ?? []
+    }
+
+    @MainActor
+    func fh5ResearchReviewEntries(
+        matching tune: TuneResult
+    ) -> [FH5ResearchReviewEntry] {
+        let factory = FH5ResearchObservationFactory()
+        guard let currentTune = tuneResult,
+              let currentRevision = factory.planRevisionFingerprint(for: currentTune),
+              currentRevision == factory.planRevisionFingerprint(for: tune) else {
+            return []
+        }
+        let ingestor = FH5ResearchReviewIngestor()
+        return fh5ResearchReviewEntries.filter { entry in
+            guard let validated = try? ingestor.validate(entry.canonicalExportJSON) else {
+                return false
+            }
+            return ingestor.matchesSavedPlan(validated, tune: currentTune)
+        }
+    }
+
+    @MainActor
+    func fh5ResearchReviewReport(
+        matching tune: TuneResult
+    ) -> FH5ResearchReviewReport {
+        let matchingEntries = fh5ResearchReviewEntries(matching: tune)
+        return FH5ResearchReviewEvaluator().evaluate(
+            matchingEntries.map { entry in
+                FH5ResearchReviewInput(entry: entry)
+            }
+        )
+    }
+
+    @MainActor
+    func appendFH5ResearchReviewEntry(_ entry: FH5ResearchReviewEntry) throws {
+        guard entry.schemaVersion == FH5ResearchReviewEntry.currentSchemaVersion,
+              let currentTune = tuneResult else {
+            throw FH5ResearchReviewError.planMismatch
+        }
+        guard entry.hasConsistentLocalReviewTimestamp else {
+            throw FH5ResearchReviewError.permissionNotConfirmed
+        }
+        let ingestor = FH5ResearchReviewIngestor()
+        let validated = try ingestor.validate(entry.canonicalExportJSON)
+        guard ingestor.matchesSavedPlan(validated, tune: currentTune) else {
+            throw FH5ResearchReviewError.planMismatch
+        }
+        let bindingReport = FH5ResearchReviewEvaluator().evaluate([
+            FH5ResearchReviewInput(entry: entry)
+        ])
+        guard bindingReport.verifiedUniqueObservationCount == 1,
+              bindingReport.quarantinedCount == 0 else {
+            throw FH5ResearchReviewError.permissionNotConfirmed
+        }
+
+        var entries = try decodedFH5ResearchReviewEntries()
+        guard !entries.contains(where: {
+            $0.id == entry.id
+                || $0.permission.canonicalExportDigest
+                    == entry.permission.canonicalExportDigest
+        }) else {
+            return
+        }
+        entries.append(entry)
+        fh5ResearchReviewEntriesData = try Self.encoder.encode(entries)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteFH5ResearchReviewEntry(id: UUID) throws -> Bool {
+        var entries = try decodedFH5ResearchReviewEntries()
+        let priorCount = entries.count
+        entries.removeAll { $0.id == id }
+        guard entries.count != priorCount else { return false }
+        fh5ResearchReviewEntriesData = entries.isEmpty
+            ? nil
+            : try Self.encoder.encode(entries)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
     private func decodedValidationRecords() throws -> [FirstPartyValidationRecord] {
         guard let firstPartyValidationRecordsData else { return [] }
         do {
@@ -257,6 +344,39 @@ final class SavedTune {
         }
     }
 
+    @MainActor
+    private func decodedFH5ResearchReviewEntries() throws
+        -> [FH5ResearchReviewEntry] {
+        guard let fh5ResearchReviewEntriesData else { return [] }
+        do {
+            let entries = try Self.decoder.decode(
+                [FH5ResearchReviewEntry].self,
+                from: fh5ResearchReviewEntriesData
+            )
+            let ingestor = FH5ResearchReviewIngestor()
+            guard entries.allSatisfy({ entry in
+                guard entry.schemaVersion == FH5ResearchReviewEntry.currentSchemaVersion,
+                      entry.hasConsistentLocalReviewTimestamp,
+                      let validated = try? ingestor.validate(entry.canonicalExportJSON) else {
+                    return false
+                }
+                return entry.permission.submissionID == validated.export.submissionID
+                    && entry.permission.permissionReceiptID
+                        == validated.export.permissionReceiptID
+                    && entry.permission.consentVersion == validated.export.consentVersion
+                    && entry.permission.canonicalExportDigest
+                        == validated.canonicalExportDigest
+                    && entry.permission.contentFingerprint
+                        == validated.export.contentFingerprint
+            }) else {
+                throw FH5ResearchReviewError.corruptStorage
+            }
+            return entries
+        } catch {
+            throw FH5ResearchReviewError.corruptStorage
+        }
+    }
+
 #if DEBUG
     @MainActor
     func replaceTuneDataForTesting(_ data: Data) {
@@ -271,6 +391,11 @@ final class SavedTune {
     @MainActor
     func replaceFH5ResearchObservationRecordsDataForTesting(_ data: Data?) {
         fh5ResearchObservationRecordsData = data
+    }
+
+    @MainActor
+    func replaceFH5ResearchReviewEntriesDataForTesting(_ data: Data?) {
+        fh5ResearchReviewEntriesData = data
     }
 #endif
 

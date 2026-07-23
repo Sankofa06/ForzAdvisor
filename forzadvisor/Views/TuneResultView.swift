@@ -25,6 +25,9 @@ struct TuneResultView: View {
     let latestFH5ResearchRecord: FH5ResearchObservationRecord?
     let onOpenFH5Research: (() -> Void)?
     let onDeleteFH5ResearchRecord: (FH5ResearchObservationRecord) -> Void
+    let fh5ResearchReviewEntries: [FH5ResearchReviewEntry]
+    let onImportFH5ResearchReviewEntry: ((FH5ResearchReviewEntry) -> String?)?
+    let onDeleteFH5ResearchReviewEntry: (FH5ResearchReviewEntry) -> Void
     let latestValidationRecord: FirstPartyValidationRecord?
     let onRecordTestDrive: (() -> Void)?
     let onDeleteValidationRecord: (FirstPartyValidationRecord) -> Void
@@ -35,6 +38,7 @@ struct TuneResultView: View {
     @State private var copiedExport: CopiedExport?
     @State private var recordPendingDeletion: FirstPartyValidationRecord?
     @State private var researchRecordPendingDeletion: FH5ResearchObservationRecord?
+    @State private var showsFH5ResearchReview = false
 
     private var isAdjusting: Bool {
         activeFeedback != nil
@@ -120,7 +124,9 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
 
                 if !isStreaming,
-                   onOpenFH5Research != nil || latestFH5ResearchRecord != nil {
+                   onOpenFH5Research != nil
+                    || latestFH5ResearchRecord != nil
+                    || onImportFH5ResearchReviewEntry != nil {
                     Section("FH5 Research Lab") {
                         if let onOpenFH5Research {
                             VStack(alignment: .leading, spacing: 10) {
@@ -175,6 +181,25 @@ struct TuneResultView: View {
                                     researchRecordPendingDeletion = record
                                 }
                                 .accessibilityIdentifier("deleteFH5ResearchObservationButton")
+                            }
+                            .padding(.vertical, 2)
+                        }
+
+                        if onImportFH5ResearchReviewEntry != nil {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Label(
+                                    "Compare permission-bound observations",
+                                    systemImage: "rectangle.stack.badge.checkmark"
+                                )
+                                .font(.subheadline.weight(.semibold))
+                                Text("Import exact ForzAdvisor JSON from other first-party sessions. Review reports only replicated or conflicting raw observations; they never unlock a tune.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Button("Open Research Review") {
+                                    showsFH5ResearchReview = true
+                                }
+                                .buttonStyle(.bordered)
+                                .accessibilityIdentifier("openFH5ResearchReviewButton")
                             }
                             .padding(.vertical, 2)
                         }
@@ -457,6 +482,16 @@ struct TuneResultView: View {
             }
         } message: { _ in
             Text("This removes only the local record. JSON copies you already shared cannot be recalled.")
+        }
+        .sheet(isPresented: $showsFH5ResearchReview) {
+            if let onImportFH5ResearchReviewEntry {
+                FH5ResearchReviewView(
+                    tune: tune,
+                    entries: fh5ResearchReviewEntries,
+                    onImport: onImportFH5ResearchReviewEntry,
+                    onDelete: onDeleteFH5ResearchReviewEntry
+                )
+            }
         }
     }
 

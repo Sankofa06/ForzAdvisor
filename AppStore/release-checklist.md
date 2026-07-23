@@ -1,18 +1,18 @@
 # ForzAdvisor Release Checklist
 
-Last updated: 2026-07-22
+Last updated: 2026-07-23
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.2.1` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.3.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.2.1`.
-- Current project build is `22`.
+- Current project version is `1.3.0`.
+- Current project build is `23`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -41,6 +41,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - The app is an unofficial companion tool. Keep the disclaimer in metadata, support, privacy policy, screenshots, and Settings.
 - Do not use official game logos or screenshots without legal clearance.
 - FH5 catalog build planning stays local, does not use numeric formulas or the selected provider, and requires no account or API key.
+- FH5 Research Review stores exact permission-bound JSON locally, does not authenticate observer identity, and cannot promote evidence into numeric tuning or production constraints.
 - FH6 offline formula tuning is the default numeric provider and requires no account or API key.
 - Optional on-device model assistance and user-key Anthropic API mode apply to FH6 generation; reviewers can complete both catalog flows offline.
 - Screenshots and camera photos are processed locally for OCR. Current code does not upload screenshot images.

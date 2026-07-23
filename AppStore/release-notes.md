@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.3.0 (Build 23) - 2026-07-23
+
+- Added plan-scoped FH5 Research Review for exact permission-bound Research Lab JSON, stored separately from local author observations.
+- Added fail-closed canonical validation, payload bounds, fingerprint binding, replay quarantine, and exact build, platform, catalog, car, tire, drivetrain, and gear grouping.
+- Reports only single, replicated, or conflicting raw observations and never averages values, creates a ruleset, contacts a provider, or enables numeric FH5 tuning.
+
 ## Version 1.2.1 (Build 22) - 2026-07-22
 
 - Added FH5 Research Lab for complete, manually entered first-party observations of an untouched stock car's tuning menu, stored separately from the plan without contacting a tuning provider.

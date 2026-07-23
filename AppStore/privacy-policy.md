@@ -28,6 +28,8 @@ For an eligible saved FH5 untouched-stock catalog plan, Research Lab can store a
 
 Deidentified structured reuse and JSON sharing are off by default for each FH5 observation. If explicitly enabled before saving, the allow-listed JSON excludes the local record and tune identifiers, screenshots, OCR, thumbnails, notes, discipline, generated tune values, catalog source URLs, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, history, and share destination. Its public content fingerprint covers only approved exported semantic fields and is separate from the local integrity fingerprint. An observation is surfaced and shareable only while it matches the current saved plan and catalog revision. Deleting it locally cannot recall a JSON file already shared.
 
+On a matching saved FH5 catalog plan, Research Review can locally import the exact allow-listed JSON after you confirm that you received it directly from the observer and checked permission for deidentified structured reuse. The app stores the canonical JSON, integrity-binding fields, and local review time in a separate on-device review queue. UUIDs and hashes bind the reviewed bytes but do not authenticate the observer's identity. Review compares exact raw observations without averaging values, contacting a provider, creating a ruleset, or enabling numeric FH5 tuning. You can delete imported review entries locally.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.
@@ -46,7 +48,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes, locally stored validation records, and locally stored FH5 Research Lab observations in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, locally stored validation records, locally stored FH5 Research Lab observations, and imported FH5 Research Review entries in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

@@ -417,6 +417,8 @@ struct ContentView: View {
         let latestResearchRecord = resolvedSavedTune?
             .fh5ResearchObservationRecords(matching: tune)
             .last
+        let researchReviewEntries = resolvedSavedTune?
+            .fh5ResearchReviewEntries(matching: tune) ?? []
 
         TuneResultView(
             tune: tune,
@@ -487,6 +489,26 @@ struct ContentView: View {
             onDeleteFH5ResearchRecord: { record in
                 guard let resolvedSavedTuneID else { return }
                 deleteFH5ResearchObservationRecord(record, savedTuneID: resolvedSavedTuneID)
+            },
+            fh5ResearchReviewEntries: researchReviewEntries,
+            onImportFH5ResearchReviewEntry:
+                tune.request.car.game == .fh5 && resolvedSavedTuneID != nil
+                ? { entry in
+                    guard let resolvedSavedTuneID else {
+                        return ContentWorkflowError.missingSavedTune.localizedDescription
+                    }
+                    return importFH5ResearchReviewEntry(
+                        entry,
+                        savedTuneID: resolvedSavedTuneID
+                    )
+                }
+                : nil,
+            onDeleteFH5ResearchReviewEntry: { entry in
+                guard let resolvedSavedTuneID else { return }
+                deleteFH5ResearchReviewEntry(
+                    entry,
+                    savedTuneID: resolvedSavedTuneID
+                )
             },
             latestValidationRecord: latestValidationRecord,
             onRecordTestDrive: validationEligibility.isSuccess && resolvedSavedTuneID != nil ? {

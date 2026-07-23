@@ -71,14 +71,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.2.1
-- Current project build: 22
+- Current project version: 1.3.0
+- Current project build: 23
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Saved FH5 catalog plans can now record the untouched stock tuning menu as first-party Research Lab evidence with optional deidentified JSON sharing. Numeric FH5 settings remain withheld; Upgrade Lab purchase paths and existing FH6 tuning workflows remain available.
+FH5 Research Review now validates and compares exact permission-bound Research Lab exports on a matching saved plan. It reports replicated or conflicting raw observations without averaging values or unlocking numeric FH5 tuning.
 
 ## Export Compliance Notes
 

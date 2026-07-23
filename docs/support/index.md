@@ -40,6 +40,12 @@ If the plan already contains a complete verified Upgrade Lab observation, Resear
 
 Structured JSON reuse and sharing are off by default for every observation. If you explicitly enable them, the saved plan can open the iOS share sheet for a deidentified allow-listed JSON record. Deleting the local record cannot recall a copy you already shared.
 
+### What is FH5 Research Review?
+
+Open an eligible saved FH5 catalog plan and choose Research Review to paste an exact ForzAdvisor Research Lab JSON export. The app validates the complete canonical record, requires confirmation of direct receipt and reuse permission, and keeps the permission-bound copy locally with that plan. UUIDs and hashes bind the reviewed bytes but do not authenticate identity.
+
+One record remains a single raw observation. Exact repeats from distinct capture sessions are labeled replicated raw observations, while exact-value disagreements are labeled conflicting raw observations. Review never averages values, creates a ruleset, or unlocks numeric FH5 tuning.
+
 ### How do I delete a tune?
 
 Open the garage, swipe left on a saved tune, and tap Delete.

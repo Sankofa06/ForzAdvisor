@@ -682,7 +682,7 @@ struct FH5ResearchObservationFactory {
     func publicSemanticFingerprint(
         for record: FH5ResearchObservationRecord
     ) throws -> String {
-        try hash(PublicSemanticPayload(
+        try publicSemanticFingerprint(
             schemaVersion: record.schemaVersion,
             consentVersion: record.consentVersion,
             submissionID: record.submissionID,
@@ -699,6 +699,67 @@ struct FH5ResearchObservationFactory {
             attestations: record.attestations,
             unknowns: record.unknowns,
             privacyExclusions: record.privacyExclusions
+        )
+    }
+
+    func publicSemanticFingerprint(
+        for export: FH5ResearchObservationExport
+    ) throws -> String {
+        try publicSemanticFingerprint(
+            schemaVersion: export.schemaVersion,
+            consentVersion: export.consentVersion,
+            submissionID: export.submissionID,
+            permissionReceiptID: export.permissionReceiptID,
+            capturedAt: export.capturedAt,
+            game: export.game,
+            platform: export.platform,
+            gameVersion: export.gameVersion,
+            unitScope: export.unitScope,
+            vehicle: export.vehicle,
+            tireCompoundDisplayName: export.tireCompoundDisplayName,
+            forwardGearCount: export.forwardGearCount,
+            controls: export.controls,
+            attestations: export.attestations,
+            unknowns: export.unknowns,
+            privacyExclusions: export.privacyExclusions
+        )
+    }
+
+    private func publicSemanticFingerprint(
+        schemaVersion: Int,
+        consentVersion: String,
+        submissionID: UUID,
+        permissionReceiptID: UUID,
+        capturedAt: Date,
+        game: ForzaGame,
+        platform: FH5Platform,
+        gameVersion: String,
+        unitScope: String,
+        vehicle: FH5ResearchObservationRecord.Vehicle,
+        tireCompoundDisplayName: String,
+        forwardGearCount: Int,
+        controls: [FH5TuneFieldObservation],
+        attestations: FH5ResearchObservationRecord.Attestations,
+        unknowns: [String],
+        privacyExclusions: [String]
+    ) throws -> String {
+        try hash(PublicSemanticPayload(
+            schemaVersion: schemaVersion,
+            consentVersion: consentVersion,
+            submissionID: submissionID,
+            permissionReceiptID: permissionReceiptID,
+            capturedAt: capturedAt,
+            game: game,
+            platform: platform,
+            gameVersion: gameVersion,
+            unitScope: unitScope,
+            vehicle: vehicle,
+            tireCompoundDisplayName: tireCompoundDisplayName,
+            forwardGearCount: forwardGearCount,
+            controls: controls,
+            attestations: attestations,
+            unknowns: unknowns,
+            privacyExclusions: privacyExclusions
         ))
     }
 
