@@ -72,6 +72,36 @@ final class FirstPartyValidationOutcomeEvaluatorTests: XCTestCase {
         }
     }
 
+    func testCurrentSchemaConsentAndPublicRulesetAreRequired() async throws {
+        let fixture = try await makeFixture()
+
+        var staleSchema = fixture.export
+        staleSchema.schemaVersion += 1
+        XCTAssertThrowsError(try FirstPartyValidationIngestor().validate(
+            FirstPartyValidationIngestor.canonicalData(for: staleSchema)
+        )) { error in
+            XCTAssertEqual(error as? FirstPartyValidationIngestionError, .invalidStructure)
+        }
+
+        var staleConsent = fixture.export
+        staleConsent.consentVersion = "first-party-validation-stale"
+        XCTAssertThrowsError(try FirstPartyValidationIngestor().validate(
+            FirstPartyValidationIngestor.canonicalData(for: staleConsent)
+        )) { error in
+            XCTAssertEqual(error as? FirstPartyValidationIngestionError, .invalidStructure)
+        }
+
+        var staleRuleset = fixture.export
+        staleRuleset.ruleset.knowledgeRevision = "stale-knowledge-revision"
+        staleRuleset.contentFingerprint =
+            try FirstPartyValidationIngestor.contentFingerprint(for: staleRuleset)
+        XCTAssertThrowsError(try FirstPartyValidationIngestor().validate(
+            FirstPartyValidationIngestor.canonicalData(for: staleRuleset)
+        )) { error in
+            XCTAssertEqual(error as? FirstPartyValidationIngestionError, .invalidStructure)
+        }
+    }
+
     func testJSONReceiptIsQuarantinedUntilExternalBindingMatches() async throws {
         let fixture = try await makeFixture()
         let validPermission = try permission(for: fixture.data)
@@ -246,9 +276,11 @@ final class FirstPartyValidationOutcomeEvaluatorTests: XCTestCase {
         ])
         XCTAssertEqual(group.associationContext.appliedFields, fixture.export.appliedFields)
         XCTAssertEqual(group.associationContext.shopAvailabilityFingerprint, fixture.export.shopAvailabilityFingerprint)
-        XCTAssertFalse(report.sessionSummary.lowercased().contains("tester"))
-        XCTAssertFalse(report.sessionSummary.lowercased().contains("community consensus"))
-        XCTAssertFalse(report.sessionSummary.lowercased().contains("reference target"))
+        let summary = report.sessionSummary.lowercased()
+        XCTAssertFalse(summary.contains("tester"))
+        XCTAssertFalse(summary.contains("accuracy score"))
+        XCTAssertFalse(summary.contains("community consensus"))
+        XCTAssertFalse(summary.contains("reference target"))
     }
 
     func testTestedTuneFingerprintExcludesSessionOutcomeAndAdministrativeFields() async throws {

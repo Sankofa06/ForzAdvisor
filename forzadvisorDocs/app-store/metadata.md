@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata
 
-Last updated: 2026-06-27
+Last updated: 2026-07-23
 
 ## App Name
 
@@ -12,7 +12,7 @@ Photo-to-tune racing setups
 
 ## Promotional Text
 
-Capture or enter car stats, confirm every value, and generate menu-order racing setups with offline formulas, saved garage history, and optional AI help.
+Choose reviewed FH5/FH6 cars, follow local validation missions, and review permission-bound FH6 Test Drive outcomes without changing the tune.
 
 ## Description
 
@@ -22,7 +22,7 @@ Start from the input path that fits the session: take a photo, import a screensh
 
 Choose the discipline you are building for, including road, drift, drag, dirt, cross-country, or touge. ForzAdvisor returns a complete setup in menu order across tires, gearing, alignment, antiroll bars, springs, damping, aero, brakes, differential, and driving notes.
 
-Save tunes to a local garage, search by car, filter by discipline, copy complete setups, and use Guided Refinement after testing on track.
+Save tunes to a local garage, search by car, filter by discipline, copy complete setups, and use Guided Refinement after testing on track. Eligible saved FH6 tunes can also import exact permission-bound Test Drive JSON in Validation Review, where observed outcomes and conditions remain separate from tune generation.
 
 ForzAdvisor runs offline by default using deterministic local formulas. Optional on-device AI can assist when Apple Foundation Models are available on the device, and optional API mode lets advanced users connect their own Anthropic API key. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -69,14 +69,14 @@ Camera access is optional and only used when the reviewer chooses Take Photo to 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.1.6
-- Current project build: 9
+- Current project version: 1.5.0
+- Current project build: 25
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-ForzAdvisor is ready for end-to-end tuning feedback with camera/photo OCR, manual entry, discipline-based tune generation, saved garage history, copyable setup sections, on-device AI fallback support, and optional Anthropic API mode.
+FH6 Validation Review imports exact, permission-bound ForzAdvisor Test Drive JSON for the current saved setup and reports only observed outcomes and test conditions without changing tune settings.
 
 ## Export Compliance Notes
 

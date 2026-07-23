@@ -382,6 +382,38 @@ extension ContentView {
         }
     }
 
+    @discardableResult
+    func importFH6ValidationReviewEntry(
+        _ entry: FH6ValidationReviewEntry,
+        savedTuneID: UUID
+    ) -> String? {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            try savedTune.appendFH6ValidationReviewEntry(entry)
+            try modelContext.save()
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    func deleteFH6ValidationReviewEntry(
+        _ entry: FH6ValidationReviewEntry,
+        savedTuneID: UUID
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            _ = try savedTune.deleteFH6ValidationReviewEntry(id: entry.id)
+            try modelContext.save()
+        } catch {
+            errorMessage = "Could not delete this FH6 review entry: \(error.localizedDescription)"
+        }
+    }
+
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
         if let tune = savedTune.tuneResult {

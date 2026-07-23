@@ -26,6 +26,10 @@ The public JSON does not contain the local record UUID, raw tune UUID, internal 
 
 Creating a validation record does not upload it. Sharing happens only when you choose the system share sheet, and ForzAdvisor keeps no share destination or history. You can delete the latest matching local record; deletion cannot recall a JSON file you already shared. The app makes no background-upload, receiver, or remote-revocation claim for these records.
 
+On an eligible matching saved FH6 tune, Validation Review can locally import an exact ForzAdvisor validation JSON export after you confirm direct receipt from the driver and permission for deidentified structured reuse. The canonical JSON, integrity-binding fields, and local review time are stored in a separate on-device queue. UUIDs and hashes bind the reviewed bytes but do not authenticate identity.
+
+Validation Review requires the current game build, stock vehicle facts, verified shop availability, discipline, public ruleset version, and applied settings to match the saved setup. It groups only observed verdicts, handling symptoms, course type, surface, and input. It does not calculate a quality ranking, modify tune settings, contact a provider, or promote the experimental ruleset. Invalid, conflicting, or replayed administrative records are excluded from reviewed outcome counts. Imported entries can be deleted locally.
+
 For an eligible saved FH5 untouched-stock catalog plan, Research Lab can store a complete first-party observation of the tuning menu in a separate local record. The record includes the selected platform, exact game version, reviewed catalog car facts, any complete matching Upgrade Lab part availability, tire-compound display name, forward gear count, each expected control's adjustable, locked, or not-shown state, and any manually entered slider range, step, and current value allowed by that state. Creating this record does not call a tuning provider, create a numeric tune, or upload anything. The app only surfaces or shares an observation while it still matches the current saved plan and catalog revision; older records may remain local as history.
 
 Deidentified structured reuse and JSON sharing are off by default for each FH5 observation. If you explicitly enable them before saving, the exported JSON uses an allow-list and excludes the local record and tune identifiers, screenshots, OCR, thumbnails, garage notes, discipline, generated tune values, catalog source URLs, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, history, and share destination. Its public content fingerprint covers only those approved exported semantic fields and is separate from the local integrity fingerprint. Deleting the local observation cannot recall a JSON file already shared.
@@ -50,7 +54,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes, locally stored validation records, locally stored FH5 Research Lab observations, and imported FH5 Research Review entries in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, locally stored validation records, imported FH6 Validation Review entries, locally stored FH5 Research Lab observations, and imported FH5 Research Review entries in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

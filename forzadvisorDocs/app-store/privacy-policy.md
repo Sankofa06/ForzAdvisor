@@ -20,6 +20,8 @@ On eligible exact-build results, ForzAdvisor can prepare verified build cards an
 
 From Beta Validation Missions, ForzAdvisor can prepare an aggregate progress summary containing only counts of saved setups, permission-bound evidence records, setups with exact upgrade paths, and currently available missions. It excludes car names, disciplines, tune values, notes, identifiers, screenshots, JSON, fingerprints, receipts, provider details, and ruleset details. Sharing is user-initiated through the iOS system share sheet.
 
+Validation Review can store exact permission-bound FH6 Test Drive JSON locally with a matching eligible saved setup after the reviewer confirms direct receipt and deidentified reuse permission. UUIDs and hashes bind the reviewed bytes but do not authenticate identity. The separate queue reports only verdicts, handling symptoms, and controlled test conditions. It cannot change the tune, contact a provider, or promote the experimental FH6 ruleset.
+
 For an eligible saved FH5 untouched-stock catalog plan, Research Lab can store a complete first-party tuning-menu observation in a separate local record. It can include platform, exact game version, reviewed stock-car facts, complete matching Upgrade Lab availability, tire compound, forward gear count, control availability, and allowed manually entered slider values. The workflow does not call a tuning provider, create a numeric tune, or upload anything.
 
 Deidentified structured reuse and JSON sharing are off by default for every FH5 observation. Its allow-listed export excludes local tune and record identifiers, screenshots, OCR, thumbnails, notes, discipline, generated tune values, catalog source URLs, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, history, and share destination. Its public content fingerprint covers only approved exported semantic fields and is separate from local integrity. The app surfaces or shares an observation only while it matches the current saved plan and catalog revision. Local deletion cannot recall a JSON file already shared.
@@ -44,7 +46,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes and locally stored validation, FH5 Research Lab, or imported Research Review records in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes and locally stored validation, imported FH6 Validation Review, FH5 Research Lab, or imported FH5 Research Review records in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

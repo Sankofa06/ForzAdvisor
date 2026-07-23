@@ -23,6 +23,8 @@ Reason: optional Anthropic API mode can send reviewed car details, selected disc
 
 FH5 Research Lab observations are manually entered and stored locally in a separate saved-plan record. The workflow does not contact a tune provider or upload the observation. A complete Upgrade Lab observation locks capture to its exact game build, and only records matching the current saved plan and catalog revision are surfaced or shared. Deidentified structured JSON sharing is off by default and requires explicit per-record permission; its allow-list excludes screenshots, OCR, notes, tune identifiers, generated tune values, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, and share destinations. The public content fingerprint covers only exported semantic fields and does not expose the local integrity fingerprint.
 
+FH6 Validation Review imports exact ForzAdvisor Test Drive JSON only for an eligible matching saved setup after local confirmation of direct receipt and deidentified reuse permission. Imported entries are stored separately from locally authored validation records. The review reports controlled outcomes and conditions only and does not modify tunes, contact a provider, or promote the experimental ruleset.
+
 Tracking:
 
 - `NSPrivacyTracking`: false
@@ -57,6 +59,7 @@ Do not mark photos/videos as collected for the current build unless the app chan
 - Optional remote tune generation calls Anthropic's API directly with the user's saved API key.
 - Optional on-device model assistance uses Apple Foundation Models when available and falls back to offline formulas.
 - FH5 Research Lab records and exports are generated locally. The app has no background uploader, receiver, or remote-revocation mechanism for them.
+- Imported FH6 Validation Review entries remain local unless the user separately acts through another app or system share destination; ForzAdvisor has no background review uploader.
 
 ## Sources
 

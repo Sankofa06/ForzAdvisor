@@ -421,6 +421,22 @@ struct ContentView: View {
         let latestValidationRecord = resolvedSavedTune?
             .validationRecords(matching: tune)
             .last
+        let validationReviewState: (
+            entries: [FH6ValidationReviewEntry],
+            loadError: String?
+        ) = {
+            guard let resolvedSavedTune else { return ([], nil) }
+            do {
+                return (
+                    try resolvedSavedTune.fh6ValidationReviewEntries(
+                        matching: tune
+                    ),
+                    nil
+                )
+            } catch {
+                return ([], error.localizedDescription)
+            }
+        }()
         let researchEligibility = FH5ResearchEligibility().snapshot(
             for: tune,
             savedTune: persistedTune,
@@ -536,6 +552,28 @@ struct ContentView: View {
             onDeleteValidationRecord: { record in
                 guard let resolvedSavedTuneID else { return }
                 deleteValidationRecord(record, savedTuneID: resolvedSavedTuneID)
+            },
+            fh6ValidationReviewEntries: validationReviewState.entries,
+            fh6ValidationReviewLoadError: validationReviewState.loadError,
+            onImportFH6ValidationReviewEntry:
+                validationEligibility.isSuccess && resolvedSavedTuneID != nil
+                ? { entry in
+                    guard let resolvedSavedTuneID else {
+                        return ContentWorkflowError.missingSavedTune
+                            .localizedDescription
+                    }
+                    return importFH6ValidationReviewEntry(
+                        entry,
+                        savedTuneID: resolvedSavedTuneID
+                    )
+                }
+                : nil,
+            onDeleteFH6ValidationReviewEntry: { entry in
+                guard let resolvedSavedTuneID else { return }
+                deleteFH6ValidationReviewEntry(
+                    entry,
+                    savedTuneID: resolvedSavedTuneID
+                )
             },
             onFeedback: { feedback in
                 guard let resolvedSavedTuneID else { return }

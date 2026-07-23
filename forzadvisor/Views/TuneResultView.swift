@@ -31,6 +31,11 @@ struct TuneResultView: View {
     let latestValidationRecord: FirstPartyValidationRecord?
     let onRecordTestDrive: (() -> Void)?
     let onDeleteValidationRecord: (FirstPartyValidationRecord) -> Void
+    let fh6ValidationReviewEntries: [FH6ValidationReviewEntry]
+    let fh6ValidationReviewLoadError: String?
+    let onImportFH6ValidationReviewEntry:
+        ((FH6ValidationReviewEntry) -> String?)?
+    let onDeleteFH6ValidationReviewEntry: (FH6ValidationReviewEntry) -> Void
     let onFeedback: (TuneFeedback) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
@@ -39,6 +44,7 @@ struct TuneResultView: View {
     @State private var recordPendingDeletion: FirstPartyValidationRecord?
     @State private var researchRecordPendingDeletion: FH5ResearchObservationRecord?
     @State private var showsFH5ResearchReview = false
+    @State private var showsFH6ValidationReview = false
 
     private var isAdjusting: Bool {
         activeFeedback != nil
@@ -319,7 +325,9 @@ struct TuneResultView: View {
             }
 
             if !isStreaming,
-               onRecordTestDrive != nil || latestValidationRecord != nil {
+               onRecordTestDrive != nil
+                || latestValidationRecord != nil
+                || onImportFH6ValidationReviewEntry != nil {
                 Section("Accuracy Evidence") {
                     if let onRecordTestDrive {
                         VStack(alignment: .leading, spacing: 8) {
@@ -351,6 +359,25 @@ struct TuneResultView: View {
                                 recordPendingDeletion = record
                             }
                             .accessibilityIdentifier("deleteValidationRecordButton")
+                        }
+                        .padding(.vertical, 2)
+                    }
+
+                    if onImportFH6ValidationReviewEntry != nil {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label(
+                                "Review shared test-drive outcomes",
+                                systemImage: "rectangle.stack.badge.checkmark"
+                            )
+                            .font(.subheadline.weight(.semibold))
+                            Text("Import exact, permission-bound ForzAdvisor JSON for this saved setup. Review shows observed outcomes and conditions only; it never changes the tune.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button("Open Validation Review") {
+                                showsFH6ValidationReview = true
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier("openFH6ValidationReviewButton")
                         }
                         .padding(.vertical, 2)
                     }
@@ -490,6 +517,17 @@ struct TuneResultView: View {
                     entries: fh5ResearchReviewEntries,
                     onImport: onImportFH5ResearchReviewEntry,
                     onDelete: onDeleteFH5ResearchReviewEntry
+                )
+            }
+        }
+        .sheet(isPresented: $showsFH6ValidationReview) {
+            if let onImportFH6ValidationReviewEntry {
+                FH6ValidationReviewView(
+                    tune: tune,
+                    entries: fh6ValidationReviewEntries,
+                    storageError: fh6ValidationReviewLoadError,
+                    onImport: onImportFH6ValidationReviewEntry,
+                    onDelete: onDeleteFH6ValidationReviewEntry
                 )
             }
         }

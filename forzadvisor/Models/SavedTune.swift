@@ -32,6 +32,7 @@ final class SavedTune {
     @Attribute(.externalStorage) private var firstPartyValidationRecordsData: Data? = nil
     @Attribute(.externalStorage) private var fh5ResearchObservationRecordsData: Data? = nil
     @Attribute(.externalStorage) private var fh5ResearchReviewEntriesData: Data? = nil
+    @Attribute(.externalStorage) private var fh6ValidationReviewEntriesData: Data? = nil
 
     @MainActor
     init(
@@ -60,6 +61,7 @@ final class SavedTune {
         self.firstPartyValidationRecordsData = nil
         self.fh5ResearchObservationRecordsData = nil
         self.fh5ResearchReviewEntriesData = nil
+        self.fh6ValidationReviewEntriesData = nil
     }
 
     @MainActor
@@ -357,6 +359,90 @@ final class SavedTune {
     }
 
     @MainActor
+    func fh6ValidationReviewEntries(
+        matching tune: TuneResult
+    ) throws -> [FH6ValidationReviewEntry] {
+        guard let currentTune = tuneResult else {
+            throw FH6ValidationReviewError.tuneMismatch
+        }
+        let ingestor = FH6ValidationReviewIngestor()
+        return try decodedFH6ValidationReviewEntries()
+            .filter { entry in
+                guard let validated = try? ingestor.validate(entry.canonicalExportJSON) else {
+                    return false
+                }
+                return ingestor.matchesSavedTune(validated, tune: currentTune)
+                    && ingestor.matchesSavedTune(validated, tune: tune)
+            }
+            .sorted {
+                if $0.importedAt != $1.importedAt {
+                    return $0.importedAt < $1.importedAt
+                }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+    }
+
+    @MainActor
+    func fh6ValidationReviewReport(
+        matching tune: TuneResult
+    ) throws -> FH6ValidationReviewReport {
+        try FH6ValidationReviewEvaluator().evaluate(
+            fh6ValidationReviewEntries(matching: tune)
+        )
+    }
+
+    @MainActor
+    func appendFH6ValidationReviewEntry(
+        _ entry: FH6ValidationReviewEntry
+    ) throws {
+        guard entry.schemaVersion == FH6ValidationReviewEntry.currentSchemaVersion,
+              let currentTune = tuneResult else {
+            throw FH6ValidationReviewError.tuneMismatch
+        }
+        guard entry.hasConsistentLocalReviewTimestamp else {
+            throw FH6ValidationReviewError.permissionNotConfirmed
+        }
+
+        let ingestor = FH6ValidationReviewIngestor()
+        let validated = try ingestor.validate(entry.canonicalExportJSON)
+        guard ingestor.matchesSavedTune(validated, tune: currentTune) else {
+            throw FH6ValidationReviewError.tuneMismatch
+        }
+        let bindingReport = FH6ValidationReviewEvaluator().evaluate([entry])
+        guard bindingReport.verifiedUniqueSessionCount == 1,
+              bindingReport.quarantinedCount == 0,
+              bindingReport.invalidCount == 0 else {
+            throw FH6ValidationReviewError.permissionNotConfirmed
+        }
+
+        var entries = try decodedFH6ValidationReviewEntries()
+        guard !entries.contains(where: {
+            $0.id == entry.id
+                || $0.permission.canonicalExportDigest
+                    == entry.permission.canonicalExportDigest
+        }) else {
+            return
+        }
+        entries.append(entry)
+        fh6ValidationReviewEntriesData = try Self.encoder.encode(entries)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteFH6ValidationReviewEntry(id: UUID) throws -> Bool {
+        var entries = try decodedFH6ValidationReviewEntries()
+        let priorCount = entries.count
+        entries.removeAll { $0.id == id }
+        guard entries.count != priorCount else { return false }
+        fh6ValidationReviewEntriesData = entries.isEmpty
+            ? nil
+            : try Self.encoder.encode(entries)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
     private func decodedValidationRecords() throws -> [FirstPartyValidationRecord] {
         guard let firstPartyValidationRecordsData else { return [] }
         do {
@@ -425,6 +511,41 @@ final class SavedTune {
         }
     }
 
+    @MainActor
+    private func decodedFH6ValidationReviewEntries() throws
+        -> [FH6ValidationReviewEntry] {
+        guard let fh6ValidationReviewEntriesData else { return [] }
+        do {
+            let entries = try Self.decoder.decode(
+                [FH6ValidationReviewEntry].self,
+                from: fh6ValidationReviewEntriesData
+            )
+            let ingestor = FH6ValidationReviewIngestor()
+            guard entries.allSatisfy({ entry in
+                guard entry.schemaVersion == FH6ValidationReviewEntry.currentSchemaVersion,
+                      entry.hasConsistentLocalReviewTimestamp,
+                      let validated = try? ingestor.validate(
+                          entry.canonicalExportJSON
+                      ) else {
+                    return false
+                }
+                return entry.permission.submissionID == validated.export.submissionID
+                    && entry.permission.permissionReceiptID
+                        == validated.export.permissionReceiptID
+                    && entry.permission.consentVersion == validated.export.consentVersion
+                    && entry.permission.canonicalExportDigest
+                        == validated.canonicalExportDigest
+                    && entry.permission.contentFingerprint
+                        == validated.export.contentFingerprint
+            }) else {
+                throw FH6ValidationReviewError.corruptStorage
+            }
+            return entries
+        } catch {
+            throw FH6ValidationReviewError.corruptStorage
+        }
+    }
+
 #if DEBUG
     @MainActor
     func replaceTuneDataForTesting(_ data: Data) {
@@ -444,6 +565,11 @@ final class SavedTune {
     @MainActor
     func replaceFH5ResearchReviewEntriesDataForTesting(_ data: Data?) {
         fh5ResearchReviewEntriesData = data
+    }
+
+    @MainActor
+    func replaceFH6ValidationReviewEntriesDataForTesting(_ data: Data?) {
+        fh6ValidationReviewEntriesData = data
     }
 #endif
 
