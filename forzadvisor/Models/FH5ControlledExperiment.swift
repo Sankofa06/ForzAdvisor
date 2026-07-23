@@ -137,7 +137,7 @@ enum FH5ControlledExperimentIssue: Error, LocalizedError, Equatable {
 struct FH5ControlledExperimentRecord: Codable, Equatable, Identifiable, Sendable {
     static let currentSchemaVersion = 1
     static let currentConsentVersion = "fh5-controlled-experiment-v1"
-    static let currentProtocolVersion = "fh5-abba-one-step-v1"
+    nonisolated static let currentProtocolVersion = "fh5-abba-one-step-v1"
     static let route = "Horizon Test Track"
     static let sequence = ["A", "B", "B", "A"]
     static let privacyExclusions = [

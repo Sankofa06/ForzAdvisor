@@ -1,6 +1,6 @@
 # FH5 Numeric Readiness Policy
 
-Policy version: `fh5-numeric-readiness-v1`
+Policy version: `fh5-numeric-readiness-v2`
 
 FH5 numeric tuning is a separate product capability from FH5 build planning and
 Research Lab. It remains unavailable until every gate below is machine-checkable
@@ -36,6 +36,44 @@ provider-independent, numeric-free build plans. Manual, OCR, edited, legacy,
 missing-snapshot, and malformed inputs must fail closed to that same plan-only
 result.
 
+## Registration and experimental threshold
+
+The app now declares a closed, code-owned experimental algorithm identifier and
+the registration contract a future implementation must satisfy. A valid
+registration binds that identifier to:
+
+- one exact FH5 ruleset reference with `experimental` status;
+- canonical source manifests whose use permission is explicitly `permitted`;
+- matching provenance IDs and a SHA-256 fingerprint computed from those source
+  manifests by app code; and
+- the supported controlled-outcome policy version.
+
+Readiness resolves the registration from the internal algorithm identifier. It
+does not accept a decoded ruleset descriptor as authority. The production
+registry remains empty, so the rights gate cannot pass in this release.
+
+The only supported experimental threshold is
+`fh5-controlled-outcome-experimental-v1`:
+
+- at least 10 unique, exact candidate-bound experiments;
+- at least 8 `variantPreferred` outcomes;
+- zero `baselinePreferred` outcomes;
+- at most 2 combined `noClearDifference` or `inconclusive` outcomes;
+- experiments recorded on at least 2 distinct UTC dates; and
+- explicit deidentified reuse permission on every counted record.
+
+This threshold is a conservative experimental smoke gate, not scientific
+validation. A future evaluator must fail closed on collisions or replay across
+submission ID, permission receipt ID, and semantic fingerprint. Every counted
+record must match the exact algorithm, ruleset reference, source-manifest
+fingerprint, policy version, generated candidate fingerprint, plan, measured
+menu, field, direction, value, test context, and protocol.
+
+No evaluator, production registration, FH5 numeric generator, or activation
+route exists yet. Even a test-injected valid registration can complete only the
+rights gate; controlled outcomes remain blocked, and the provider and output
+projector continue to strip every FH5 numeric setting.
+
 ## Paired experiment collection
 
 Outcome Lab may collect local calibration evidence before a promotion policy
@@ -61,7 +99,7 @@ allow-listed JSON export with a public semantic fingerprint. The export omits
 the local experiment ID, saved tune ID and plan fingerprint, Research Lab
 record ID and content fingerprint, generated tune values, provider and ruleset
 data, notes, screenshots, telemetry, device identifiers, location, analytics,
-share destination, and public attribution. It retains the menu-measurement fingerprint that binds
-the observed controls. Exporting a record does not make it promotion-eligible:
-schema-v1 experiments have no registered ruleset binding and remain calibration
-evidence only.
+share destination, and public attribution. It retains the menu-measurement
+fingerprint that binds the observed controls. Exporting a record does not make
+it promotion-eligible: schema-v1 experiments have no app-assigned candidate
+binding and remain calibration evidence only.

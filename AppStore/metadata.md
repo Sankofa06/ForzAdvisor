@@ -74,14 +74,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.8.0
-- Current project build: 28
+- Current project version: 1.8.1
+- Current project build: 29
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-FH5 Outcome Lab can now share an explicitly permitted, deidentified paired-experiment JSON copy through the iOS system share sheet while keeping numeric FH5 tuning locked.
+FH5 numeric safeguards now require a code-owned experimental ruleset registration and fixed controlled-outcome policy. Numeric FH5 tuning remains locked.
 
 ## Export Compliance Notes
 

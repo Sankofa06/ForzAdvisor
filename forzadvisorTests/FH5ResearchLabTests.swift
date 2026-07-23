@@ -1193,7 +1193,7 @@ final class FH5ResearchLabTests: XCTestCase {
         XCTAssertTrue(reopened.fh5ResearchObservationRecords.isEmpty)
     }
 
-    func testNumericReadinessRejectsForgedRulesetAfterEveryEvidenceGatePasses() async throws {
+    func testNumericReadinessRejectsUnregisteredAlgorithmAfterEveryEvidenceGatePasses() async throws {
         let plan = try await makePlan(upgradeBuild: "3.688.109.0")
         let record = try FH5ResearchObservationFactory().make(
             tune: plan,
@@ -1234,7 +1234,7 @@ final class FH5ResearchLabTests: XCTestCase {
             ]
         )
         let forged = try XCTUnwrap(TuneRulesetReference(descriptor: TuneRulesetDescriptor(
-            id: "forged.fh5.numeric",
+            id: FH5ExperimentalAlgorithmID.cleanRoomDirectionalV1.rawValue,
             game: .fh5,
             schemaVersion: 1,
             algorithmVersion: "1",
@@ -1242,17 +1242,18 @@ final class FH5ResearchLabTests: XCTestCase {
             validationStatus: .validated,
             provenanceIDs: ["self-asserted"]
         )))
+        XCTAssertTrue(forged.isValid)
 
         let assessment = FH5NumericReadinessPolicy().assess(
             tune: plan,
             researchRecords: [record],
             reviewReport: report,
-            candidateRuleset: forged,
+            candidateAlgorithmID: .cleanRoomDirectionalV1,
             controlledOutcomeReport: .unregistered(matchingRecordCount: 1)
         )
 
         XCTAssertFalse(assessment.canGenerateNumeric)
-        XCTAssertEqual(assessment.policyVersion, "fh5-numeric-readiness-v1")
+        XCTAssertEqual(assessment.policyVersion, "fh5-numeric-readiness-v2")
         XCTAssertEqual(
             assessment.items.prefix(4).map(\.state),
             Array(repeating: .complete, count: 4)
@@ -1265,7 +1266,303 @@ final class FH5ResearchLabTests: XCTestCase {
             assessment.items.first { $0.gate == .controlledOutcomes }?.state,
             .blocked
         )
-        XCTAssertFalse(FH5TrustedNumericRulesetRegistry.production.approves(forged))
+        XCTAssertTrue(FH5TrustedNumericRulesetRegistry.production.isEmpty)
+        XCTAssertNil(
+            FH5TrustedNumericRulesetRegistry.production.registration(
+                for: .cleanRoomDirectionalV1
+            )
+        )
+    }
+
+    func testNumericRulesetRegistrationBindsRightsThresholdAndCandidate() throws {
+        let registration = try makeExperimentalRegistration()
+        let registry = try FH5TrustedNumericRulesetRegistry(
+            validating: [registration]
+        )
+        let threshold = registration.outcomeThreshold
+
+        XCTAssertTrue(registration.isValid)
+        XCTAssertFalse(registry.isEmpty)
+        XCTAssertEqual(
+            registry.registration(for: registration.algorithmID),
+            registration
+        )
+        XCTAssertEqual(threshold.minimumUniqueRecords, 10)
+        XCTAssertEqual(threshold.minimumVariantPreferred, 8)
+        XCTAssertEqual(threshold.maximumBaselinePreferred, 0)
+        XCTAssertEqual(threshold.maximumNonDecisive, 2)
+        XCTAssertEqual(threshold.minimumDistinctUTCDays, 2)
+        XCTAssertTrue(threshold.requiresDeidentifiedReusePermission)
+        XCTAssertEqual(
+            threshold.protocolVersion,
+            FH5ControlledExperimentRecord.currentProtocolVersion
+        )
+        let sourceFingerprint = try XCTUnwrap(
+            registration.sourceManifestFingerprint
+        )
+        XCTAssertEqual(
+            sourceFingerprint,
+            FH5NumericRulesetSourceManifest.fingerprint(
+                for: Array(registration.sourceManifests.reversed())
+            )
+        )
+        let changedSource = FH5NumericRulesetSourceManifest(
+            sourceID: registration.sourceManifests[0].sourceID,
+            sourceVersion: registration.sourceManifests[0].sourceVersion,
+            owner: "Different rights owner",
+            rightsBasis: registration.sourceManifests[0].rightsBasis,
+            rightsEvidenceID:
+                registration.sourceManifests[0].rightsEvidenceID,
+            usagePermission:
+                registration.sourceManifests[0].usagePermission
+        )
+        XCTAssertNotEqual(
+            sourceFingerprint,
+            FH5NumericRulesetSourceManifest.fingerprint(for: [changedSource])
+        )
+
+        let binding = FH5RulesetCandidateBinding(
+            algorithmID: registration.algorithmID,
+            rulesetReference: registration.reference,
+            sourceManifestFingerprint: sourceFingerprint,
+            outcomePolicyVersion: threshold.policyVersion,
+            generatedCandidateFingerprint: String(repeating: "a", count: 64)
+        )
+        XCTAssertTrue(binding.isValid(for: registration))
+        XCTAssertFalse(FH5RulesetCandidateBinding(
+            algorithmID: binding.algorithmID,
+            rulesetReference: binding.rulesetReference,
+            sourceManifestFingerprint: binding.sourceManifestFingerprint,
+            outcomePolicyVersion: binding.outcomePolicyVersion,
+            generatedCandidateFingerprint: String(repeating: "A", count: 64)
+        ).isValid(for: registration))
+        XCTAssertFalse(FH5RulesetCandidateBinding(
+            algorithmID: binding.algorithmID,
+            rulesetReference: try XCTUnwrap(TuneRulesetReference(
+                descriptor: TuneRulesetDescriptor(
+                    id: binding.algorithmID.rawValue,
+                    game: .fh5,
+                    schemaVersion: 1,
+                    algorithmVersion: "2",
+                    knowledgeRevision: binding.sourceManifestFingerprint,
+                    validationStatus: .experimental,
+                    provenanceIDs: registration.reference.provenanceIDs
+                )
+            )),
+            sourceManifestFingerprint: binding.sourceManifestFingerprint,
+            outcomePolicyVersion: binding.outcomePolicyVersion,
+            generatedCandidateFingerprint:
+                binding.generatedCandidateFingerprint
+        ).isValid(for: registration))
+        XCTAssertFalse(FH5RulesetCandidateBinding(
+            algorithmID: binding.algorithmID,
+            rulesetReference: binding.rulesetReference,
+            sourceManifestFingerprint: String(repeating: "b", count: 64),
+            outcomePolicyVersion: binding.outcomePolicyVersion,
+            generatedCandidateFingerprint:
+                binding.generatedCandidateFingerprint
+        ).isValid(for: registration))
+        XCTAssertFalse(FH5RulesetCandidateBinding(
+            algorithmID: binding.algorithmID,
+            rulesetReference: binding.rulesetReference,
+            sourceManifestFingerprint: binding.sourceManifestFingerprint,
+            outcomePolicyVersion: "fh5-controlled-outcome-experimental-v2",
+            generatedCandidateFingerprint:
+                binding.generatedCandidateFingerprint
+        ).isValid(for: registration))
+        XCTAssertThrowsError(
+            try JSONDecoder().decode(
+                FH5ExperimentalAlgorithmID.self,
+                from: Data("\"fh5.other-algorithm\"".utf8)
+            )
+        )
+    }
+
+    func testNumericRulesetRegistrationRejectsSelfAssertedOrWeakenedContracts() throws {
+        let valid = try makeExperimentalRegistration()
+        let unknownPermission = FH5NumericRulesetSourceManifest(
+            sourceID: "first-party.clean-room",
+            sourceVersion: "1",
+            owner: "ForzAdvisor",
+            rightsBasis: .firstPartyCleanRoom,
+            rightsEvidenceID: "internal.clean-room-record",
+            usagePermission: .unknown
+        )
+        let unknownRights = try makeExperimentalRegistration(
+            sourceManifests: [unknownPermission]
+        )
+        XCTAssertTrue(unknownRights.validationIssues.contains(
+            .invalidSourceManifest(unknownPermission.sourceID)
+        ))
+
+        let validatedClaim = FH5NumericRulesetRegistration(
+            algorithmID: valid.algorithmID,
+            reference: try XCTUnwrap(TuneRulesetReference(
+                descriptor: TuneRulesetDescriptor(
+                    id: valid.reference.id,
+                    game: .fh5,
+                    schemaVersion: valid.reference.schemaVersion,
+                    algorithmVersion: valid.reference.algorithmVersion,
+                    knowledgeRevision: valid.reference.knowledgeRevision,
+                    validationStatus: .validated,
+                    provenanceIDs: valid.reference.provenanceIDs
+                )
+            )),
+            sourceManifests: valid.sourceManifests,
+            outcomeThreshold: valid.outcomeThreshold
+        )
+        XCTAssertTrue(validatedClaim.validationIssues.contains(
+            .nonExperimentalStatus
+        ))
+
+        let wrongGame = FH5NumericRulesetRegistration(
+            algorithmID: valid.algorithmID,
+            reference: try XCTUnwrap(TuneRulesetReference(
+                descriptor: TuneRulesetDescriptor(
+                    id: valid.reference.id,
+                    game: .fh6,
+                    schemaVersion: valid.reference.schemaVersion,
+                    algorithmVersion: valid.reference.algorithmVersion,
+                    knowledgeRevision: valid.reference.knowledgeRevision,
+                    validationStatus: .experimental,
+                    provenanceIDs: valid.reference.provenanceIDs
+                )
+            )),
+            sourceManifests: valid.sourceManifests,
+            outcomeThreshold: valid.outcomeThreshold
+        )
+        XCTAssertTrue(wrongGame.validationIssues.contains(.wrongGame))
+
+        let provenanceMismatch = FH5NumericRulesetRegistration(
+            algorithmID: valid.algorithmID,
+            reference: try XCTUnwrap(TuneRulesetReference(
+                descriptor: TuneRulesetDescriptor(
+                    id: valid.reference.id,
+                    game: .fh5,
+                    schemaVersion: valid.reference.schemaVersion,
+                    algorithmVersion: valid.reference.algorithmVersion,
+                    knowledgeRevision: valid.reference.knowledgeRevision,
+                    validationStatus: .experimental,
+                    provenanceIDs: ["different.source"]
+                )
+            )),
+            sourceManifests: valid.sourceManifests,
+            outcomeThreshold: valid.outcomeThreshold
+        )
+        XCTAssertTrue(provenanceMismatch.validationIssues.contains(
+            .provenanceMismatch
+        ))
+
+        let weakenedThreshold = FH5ControlledOutcomeThreshold(
+            policyVersion: "fh5-controlled-outcome-experimental-v1",
+            protocolVersion:
+                FH5ControlledExperimentRecord.currentProtocolVersion,
+            minimumUniqueRecords: 2,
+            minimumVariantPreferred: 1,
+            maximumBaselinePreferred: 1,
+            maximumNonDecisive: 1,
+            minimumDistinctUTCDays: 1,
+            requiresDeidentifiedReusePermission: true
+        )
+        let weakened = FH5NumericRulesetRegistration(
+            algorithmID: valid.algorithmID,
+            reference: valid.reference,
+            sourceManifests: valid.sourceManifests,
+            outcomeThreshold: weakenedThreshold
+        )
+        XCTAssertTrue(weakened.validationIssues.contains(
+            .unsupportedOutcomeThreshold
+        ))
+        XCTAssertThrowsError(
+            try FH5TrustedNumericRulesetRegistry(
+                validating: [weakened]
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5NumericRulesetRegistryIssue,
+                .invalidRegistration(weakened.algorithmID)
+            )
+        }
+        XCTAssertThrowsError(
+            try FH5TrustedNumericRulesetRegistry(
+                validating: [valid, valid]
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5NumericRulesetRegistryIssue,
+                .duplicateAlgorithmID(valid.algorithmID)
+            )
+        }
+    }
+
+    func testRegisteredAlgorithmCompletesRightsGateButCannotActivateNumbers() async throws {
+        let plan = try await makePlan(upgradeBuild: "3.688.109.0")
+        let record = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable,
+                reuse: true
+            ),
+            capturedAt: capturedAt
+        )
+        let report = FH5ResearchReviewReport(
+            receivedCount: 2,
+            verifiedUniqueObservationCount: 2,
+            invalidCount: 0,
+            quarantinedCount: 0,
+            duplicateCount: 0,
+            administrativeConflictCount: 0,
+            receiptReplayCount: 0,
+            groups: [
+                FH5ResearchReviewGroup(
+                    associationFingerprint: "synthetic-matching-association",
+                    association: FH5ResearchReviewAssociation(
+                        platform: record.platform,
+                        gameVersion: record.gameVersion,
+                        vehicle: record.vehicle,
+                        tireCompoundDisplayName:
+                            record.tireCompoundDisplayName,
+                        forwardGearCount: record.forwardGearCount
+                    ),
+                    observationCount: 2,
+                    measurementVariantCount: 1,
+                    measurementFingerprint: FH5ResearchReviewIngestor()
+                        .measurementFingerprint(for: record.controls),
+                    status: .replicated
+                )
+            ]
+        )
+        let registration = try makeExperimentalRegistration()
+        let registry = try FH5TrustedNumericRulesetRegistry(
+            validating: [registration]
+        )
+        let assessment = FH5NumericReadinessPolicy(
+            registry: registry
+        ).assess(
+            tune: plan,
+            researchRecords: [record],
+            reviewReport: report,
+            candidateAlgorithmID: registration.algorithmID,
+            controlledOutcomeReport: .unregistered(matchingRecordCount: 10)
+        )
+
+        XCTAssertEqual(
+            assessment.items.first { $0.gate == .rightsClearedRuleset }?.state,
+            .complete
+        )
+        XCTAssertEqual(
+            assessment.items.first { $0.gate == .controlledOutcomes }?.state,
+            .blocked
+        )
+        XCTAssertFalse(assessment.canGenerateNumeric)
+        XCTAssertEqual(plan.purpose, .fh5BuildPlan)
+        XCTAssertTrue(plan.sections.isEmpty)
+        XCTAssertNil(plan.providerInfo)
+        XCTAssertNil(plan.rulesetReference)
     }
 
     func testNumericReadinessExplainsMissingEvidenceWithoutUnlockingNumbers() async throws {
@@ -2014,6 +2311,42 @@ final class FH5ResearchLabTests: XCTestCase {
             firstPartyAuthorshipConfirmed: true,
             localStoragePermitted: true,
             deidentifiedReusePermitted: reusePermitted
+        )
+    }
+
+    private func makeExperimentalRegistration(
+        sourceManifests: [FH5NumericRulesetSourceManifest]? = nil
+    ) throws -> FH5NumericRulesetRegistration {
+        let algorithmID = FH5ExperimentalAlgorithmID.cleanRoomDirectionalV1
+        let sources = sourceManifests ?? [
+            FH5NumericRulesetSourceManifest(
+                sourceID: "first-party.clean-room",
+                sourceVersion: "1",
+                owner: "ForzAdvisor",
+                rightsBasis: .firstPartyCleanRoom,
+                rightsEvidenceID: "internal.clean-room-record",
+                usagePermission: .permitted
+            )
+        ]
+        let fingerprint = FH5NumericRulesetSourceManifest.fingerprint(
+            for: sources
+        ) ?? String(repeating: "0", count: 64)
+        let reference = try XCTUnwrap(TuneRulesetReference(
+            descriptor: TuneRulesetDescriptor(
+                id: algorithmID.rawValue,
+                game: .fh5,
+                schemaVersion: 1,
+                algorithmVersion: "1",
+                knowledgeRevision: fingerprint,
+                validationStatus: .experimental,
+                provenanceIDs: sources.map(\.sourceID).sorted()
+            )
+        ))
+        return FH5NumericRulesetRegistration(
+            algorithmID: algorithmID,
+            reference: reference,
+            sourceManifests: sources,
+            outcomeThreshold: .currentExperimental
         )
     }
 

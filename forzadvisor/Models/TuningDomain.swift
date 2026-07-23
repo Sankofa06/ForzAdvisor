@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum ForzaGame: String, CaseIterable, Codable, Identifiable, Sendable {
+nonisolated enum ForzaGame: String, CaseIterable, Codable, Identifiable, Sendable {
     case fh5
     case fh6
 

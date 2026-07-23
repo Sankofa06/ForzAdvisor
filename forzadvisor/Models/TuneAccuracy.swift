@@ -321,7 +321,7 @@ enum VehicleBuildSnapshotKind: String, Codable, Sendable {
     case exactBuildObservation
 }
 
-enum TuneDataUsagePermission: String, Codable, Sendable {
+nonisolated enum TuneDataUsagePermission: String, Codable, Sendable {
     case permitted
     case unknown
     case prohibited
@@ -684,13 +684,13 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
     }
 }
 
-enum TuneRulesetValidationStatus: String, Codable, Sendable {
+nonisolated enum TuneRulesetValidationStatus: String, Codable, Sendable {
     case experimental
     case validated
     case deprecated
 }
 
-enum TuneRulesetDescriptorIssue: Equatable, Sendable {
+nonisolated enum TuneRulesetDescriptorIssue: Equatable, Sendable {
     case invalidID
     case invalidSchemaVersion
     case invalidAlgorithmVersion
@@ -699,7 +699,7 @@ enum TuneRulesetDescriptorIssue: Equatable, Sendable {
     case duplicateProvenanceID(String)
 }
 
-struct TuneRulesetDescriptor: Codable, Equatable, Sendable {
+nonisolated struct TuneRulesetDescriptor: Codable, Equatable, Sendable {
     var id: String
     var game: ForzaGame
     var schemaVersion: Int
@@ -730,7 +730,7 @@ struct TuneRulesetDescriptor: Codable, Equatable, Sendable {
     }
 }
 
-struct TuneRulesetReference: Codable, Equatable, Sendable {
+nonisolated struct TuneRulesetReference: Codable, Equatable, Sendable {
     let id: String
     let game: ForzaGame
     let schemaVersion: Int

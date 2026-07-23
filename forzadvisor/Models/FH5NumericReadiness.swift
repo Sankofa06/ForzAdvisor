@@ -7,6 +7,7 @@
 //  quality, and cannot authorize numeric output by themselves.
 //
 
+import CryptoKit
 import Foundation
 
 enum FH5NumericReadinessGate: String, CaseIterable, Sendable {
@@ -55,39 +56,248 @@ struct FH5NumericReadinessAssessment: Equatable, Sendable {
     }
 }
 
-/// A code-owned allow-list is deliberately stronger than
-/// `TuneRulesetReference.isValid`, which only validates descriptor structure.
-struct FH5TrustedNumericRulesetRegistry: Sendable {
-    static let production = Self(approvedRulesets: [])
+nonisolated enum FH5ExperimentalAlgorithmID:
+    String,
+    Codable,
+    CaseIterable,
+    Hashable,
+    Sendable {
+    case cleanRoomDirectionalV1 = "fh5.clean-room-directional-v1"
+}
 
-    private let approvedRulesets: [TuneRulesetReference]
+nonisolated enum FH5NumericRulesetRightsBasis: String, Codable, Sendable {
+    case firstPartyCleanRoom
+    case creatorPermission
+    case compatibleLicense
+}
 
-    private init(approvedRulesets: [TuneRulesetReference]) {
-        self.approvedRulesets = approvedRulesets
+nonisolated struct FH5NumericRulesetSourceManifest: Codable, Equatable, Sendable {
+    let sourceID: String
+    let sourceVersion: String
+    let owner: String
+    let rightsBasis: FH5NumericRulesetRightsBasis
+    let rightsEvidenceID: String
+    let usagePermission: TuneDataUsagePermission
+
+    var isValid: Bool {
+        isCanonicalIdentifier(sourceID, maximumLength: 160)
+            && isCanonicalIdentifier(sourceVersion, maximumLength: 120)
+            && isCanonicalText(owner, maximumLength: 200)
+            && isCanonicalIdentifier(rightsEvidenceID, maximumLength: 200)
+            && usagePermission == .permitted
     }
 
-    func approves(_ reference: TuneRulesetReference?) -> Bool {
-        guard let reference,
-              reference.isValid,
-              reference.game == .fh5 else { return false }
-        return approvedRulesets.contains(reference)
+    static func fingerprint(
+        for manifests: [FH5NumericRulesetSourceManifest]
+    ) -> String? {
+        guard !manifests.isEmpty,
+              manifests.allSatisfy(\.isValid),
+              Set(manifests.map(\.sourceID)).count == manifests.count else {
+            return nil
+        }
+        let ordered = manifests.sorted { $0.sourceID < $1.sourceID }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        guard let data = try? encoder.encode(ordered) else { return nil }
+        return sha256Fingerprint(data)
+    }
+}
+
+nonisolated struct FH5ControlledOutcomeThreshold: Codable, Equatable, Sendable {
+    static let currentExperimental = Self(
+        policyVersion: "fh5-controlled-outcome-experimental-v1",
+        protocolVersion:
+            FH5ControlledExperimentRecord.currentProtocolVersion,
+        minimumUniqueRecords: 10,
+        minimumVariantPreferred: 8,
+        maximumBaselinePreferred: 0,
+        maximumNonDecisive: 2,
+        minimumDistinctUTCDays: 2,
+        requiresDeidentifiedReusePermission: true
+    )
+
+    let policyVersion: String
+    let protocolVersion: String
+    let minimumUniqueRecords: Int
+    let minimumVariantPreferred: Int
+    let maximumBaselinePreferred: Int
+    let maximumNonDecisive: Int
+    let minimumDistinctUTCDays: Int
+    let requiresDeidentifiedReusePermission: Bool
+
+    var isValid: Bool {
+        isCanonicalIdentifier(policyVersion, maximumLength: 160)
+            && protocolVersion
+                == FH5ControlledExperimentRecord.currentProtocolVersion
+            && minimumUniqueRecords > 0
+            && minimumVariantPreferred > 0
+            && minimumVariantPreferred <= minimumUniqueRecords
+            && maximumBaselinePreferred >= 0
+            && maximumNonDecisive >= 0
+            && minimumVariantPreferred + maximumNonDecisive
+                >= minimumUniqueRecords
+            && minimumDistinctUTCDays > 0
+            && minimumDistinctUTCDays <= minimumUniqueRecords
+            && requiresDeidentifiedReusePermission
+    }
+}
+
+nonisolated enum FH5NumericRulesetRegistrationIssue: Equatable, Sendable {
+    case invalidRulesetReference
+    case wrongGame
+    case rulesetIDMismatch
+    case nonExperimentalStatus
+    case missingSourceManifest
+    case invalidSourceManifest(String)
+    case duplicateSourceManifest(String)
+    case provenanceMismatch
+    case sourceFingerprintMismatch
+    case unsupportedOutcomeThreshold
+}
+
+nonisolated struct FH5NumericRulesetRegistration: Codable, Equatable, Sendable {
+    let algorithmID: FH5ExperimentalAlgorithmID
+    let reference: TuneRulesetReference
+    let sourceManifests: [FH5NumericRulesetSourceManifest]
+    let outcomeThreshold: FH5ControlledOutcomeThreshold
+
+    var sourceManifestFingerprint: String? {
+        FH5NumericRulesetSourceManifest.fingerprint(for: sourceManifests)
+    }
+
+    var validationIssues: [FH5NumericRulesetRegistrationIssue] {
+        var issues: [FH5NumericRulesetRegistrationIssue] = []
+        if !reference.isValid {
+            issues.append(.invalidRulesetReference)
+        }
+        if reference.game != .fh5 {
+            issues.append(.wrongGame)
+        }
+        if reference.id != algorithmID.rawValue {
+            issues.append(.rulesetIDMismatch)
+        }
+        if reference.validationStatus != .experimental {
+            issues.append(.nonExperimentalStatus)
+        }
+        if sourceManifests.isEmpty {
+            issues.append(.missingSourceManifest)
+        }
+        for source in sourceManifests where !source.isValid {
+            issues.append(.invalidSourceManifest(source.sourceID))
+        }
+        var seenSourceIDs = Set<String>()
+        for source in sourceManifests
+            where !seenSourceIDs.insert(source.sourceID).inserted {
+            issues.append(.duplicateSourceManifest(source.sourceID))
+        }
+        let sourceIDs = sourceManifests.map(\.sourceID).sorted()
+        if reference.provenanceIDs != sourceIDs {
+            issues.append(.provenanceMismatch)
+        }
+        if reference.knowledgeRevision != sourceManifestFingerprint {
+            issues.append(.sourceFingerprintMismatch)
+        }
+        if !outcomeThreshold.isValid
+            || outcomeThreshold != .currentExperimental {
+            issues.append(.unsupportedOutcomeThreshold)
+        }
+        return issues
+    }
+
+    var isValid: Bool { validationIssues.isEmpty }
+}
+
+nonisolated struct FH5RulesetCandidateBinding: Codable, Equatable, Sendable {
+    let algorithmID: FH5ExperimentalAlgorithmID
+    let rulesetReference: TuneRulesetReference
+    let sourceManifestFingerprint: String
+    let outcomePolicyVersion: String
+    let generatedCandidateFingerprint: String
+
+    func isValid(
+        for registration: FH5NumericRulesetRegistration
+    ) -> Bool {
+        registration.isValid
+            && algorithmID == registration.algorithmID
+            && rulesetReference == registration.reference
+            && sourceManifestFingerprint
+                == registration.sourceManifestFingerprint
+            && outcomePolicyVersion
+                == registration.outcomeThreshold.policyVersion
+            && isSHA256Fingerprint(generatedCandidateFingerprint)
+    }
+}
+
+nonisolated enum FH5NumericRulesetRegistryIssue: Error, Equatable, Sendable {
+    case invalidRegistration(FH5ExperimentalAlgorithmID)
+    case duplicateAlgorithmID(FH5ExperimentalAlgorithmID)
+}
+
+/// A code-owned allow-list is deliberately stronger than
+/// `TuneRulesetReference.isValid`, which only validates descriptor structure.
+nonisolated struct FH5TrustedNumericRulesetRegistry: Sendable {
+    static let production = Self(uncheckedRegistrations: [])
+
+    private let registrations:
+        [FH5ExperimentalAlgorithmID: FH5NumericRulesetRegistration]
+
+    private init(
+        uncheckedRegistrations: [FH5NumericRulesetRegistration]
+    ) {
+        registrations = Dictionary(
+            uniqueKeysWithValues: uncheckedRegistrations.map {
+                ($0.algorithmID, $0)
+            }
+        )
+    }
+
+    init(
+        validating registrations: [FH5NumericRulesetRegistration]
+    ) throws {
+        var registrationsByID:
+            [FH5ExperimentalAlgorithmID: FH5NumericRulesetRegistration] = [:]
+        for registration in registrations {
+            guard registration.isValid else {
+                throw FH5NumericRulesetRegistryIssue.invalidRegistration(
+                    registration.algorithmID
+                )
+            }
+            guard registrationsByID[registration.algorithmID] == nil else {
+                throw FH5NumericRulesetRegistryIssue.duplicateAlgorithmID(
+                    registration.algorithmID
+                )
+            }
+            registrationsByID[registration.algorithmID] = registration
+        }
+        self.registrations = registrationsByID
+    }
+
+    var isEmpty: Bool { registrations.isEmpty }
+
+    func registration(
+        for algorithmID: FH5ExperimentalAlgorithmID?
+    ) -> FH5NumericRulesetRegistration? {
+        guard let algorithmID else { return nil }
+        return registrations[algorithmID]
     }
 }
 
 struct FH5NumericReadinessPolicy {
-    static let currentVersion = "fh5-numeric-readiness-v1"
+    static let currentVersion = "fh5-numeric-readiness-v2"
 
     private let registry: FH5TrustedNumericRulesetRegistry
 
-    init() {
-        registry = .production
+    init(
+        registry: FH5TrustedNumericRulesetRegistry = .production
+    ) {
+        self.registry = registry
     }
 
     func assess(
         tune: TuneResult,
         researchRecords: [FH5ResearchObservationRecord],
         reviewReport: FH5ResearchReviewReport,
-        candidateRuleset: TuneRulesetReference? = nil,
+        candidateAlgorithmID: FH5ExperimentalAlgorithmID? = nil,
         controlledOutcomeReport: FH5ControlledOutcomePolicyReport = .empty
     ) -> FH5NumericReadinessAssessment {
         let exactContext = hasExactStockContext(tune)
@@ -101,7 +311,10 @@ struct FH5NumericReadinessPolicy {
             record: latestRecord,
             report: reviewReport
         )
-        let hasRegisteredRuleset = registry.approves(candidateRuleset)
+        let registeredRuleset = registry.registration(
+            for: candidateAlgorithmID
+        )
+        let hasRegisteredRuleset = registeredRuleset != nil
         let hasControlledOutcomes = hasRegisteredRuleset
             && controlledOutcomeReport.passes
 
@@ -250,4 +463,45 @@ struct FH5NumericReadinessPolicy {
         }
         return "Controlled A-B-B-A Test Track evidence and a registered promotion policy are still required."
     }
+}
+
+nonisolated private func isCanonicalIdentifier(
+    _ value: String,
+    maximumLength: Int
+) -> Bool {
+    !value.isEmpty
+        && value.count <= maximumLength
+        && value == value.lowercased()
+        && value.allSatisfy {
+            $0.isASCII
+                && ($0.isLetter
+                    || $0.isNumber
+                    || $0 == "."
+                    || $0 == "-"
+                    || $0 == "_")
+        }
+}
+
+nonisolated private func isCanonicalText(
+    _ value: String,
+    maximumLength: Int
+) -> Bool {
+    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    return !trimmed.isEmpty
+        && trimmed == value
+        && value.count <= maximumLength
+        && !value.unicodeScalars.contains {
+            CharacterSet.controlCharacters.contains($0)
+        }
+}
+
+nonisolated private func sha256Fingerprint(_ data: Data) -> String {
+    SHA256.hash(data: data)
+        .map { String(format: "%02x", $0) }
+        .joined()
+}
+
+nonisolated private func isSHA256Fingerprint(_ value: String) -> Bool {
+    value.count == 64
+        && value.allSatisfy { $0.isHexDigit && !$0.isUppercase }
 }

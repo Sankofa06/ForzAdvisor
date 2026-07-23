@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.8.1 (Build 29) - 2026-07-23
+
+- Added a closed, code-owned FH5 experimental algorithm registration contract that binds one exact ruleset to explicitly permitted source manifests and their deterministic fingerprint.
+- Declared the only supported experimental outcome threshold: 10 exact experiments, at least 8 candidate-preferred outcomes, no stock-preferred outcomes, no more than 2 nondecisive outcomes, at least 2 UTC test days, and reuse permission on every record.
+- Kept the production FH5 registry empty and all numeric routes locked. This build adds no evaluator, numeric generator, or promotion path.
+
 ## Version 1.8.0 (Build 28) - 2026-07-23
 
 - Added user-initiated sharing for FH5 Outcome Lab experiments only when deidentified calibration reuse was explicitly enabled before saving.
@@ -132,9 +138,11 @@
 
 ## App Store What's New
 
-FH5 Outcome Lab can now share an explicitly permitted, deidentified paired-experiment JSON copy through the iOS system share sheet. The export omits local record, tune, plan, and Research Lab record linkage while retaining a menu-measurement fingerprint. It remains calibration evidence only and cannot unlock numeric FH5 tuning.
+FH5 numeric-tuning safeguards now require a code-owned experimental algorithm registration and a fixed controlled-outcome policy before any future candidate can advance. Numeric FH5 tuning remains locked in this build.
 
 ## TestFlight Notes
+
+Regression focus for build 29: repeat the FH5 catalog, Research Lab, Upgrade Lab, and Outcome Lab paths below and confirm they behave exactly as in build 28. No FH5 numeric settings, provider attribution, or ruleset reference may appear. Outcome Lab schema-v1 experiments remain calibration evidence and cannot satisfy the new candidate-bound threshold.
 
 Complete Research Lab and Upgrade Lab for the same saved FH5 plan, then open Outcome Lab. Leave deidentified calibration reuse off, save the experiment, and confirm the result says JSON sharing is unavailable. Delete the experiment, repeat the fixed A-B-B-A run, enable reuse before saving, and confirm Share deidentified experiment JSON opens the system share sheet.
 
