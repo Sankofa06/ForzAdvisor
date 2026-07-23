@@ -442,11 +442,20 @@ struct ContentView: View {
             savedTune: persistedTune,
             isStreaming: isStreaming
         )
-        let latestResearchRecord = resolvedSavedTune?
-            .fh5ResearchObservationRecords(matching: tune)
-            .last
+        let researchRecords = resolvedSavedTune?
+            .fh5ResearchObservationRecords(matching: tune) ?? []
+        let latestResearchRecord = researchRecords.last
         let researchReviewEntries = resolvedSavedTune?
             .fh5ResearchReviewEntries(matching: tune) ?? []
+        let researchReviewReport = resolvedSavedTune?
+            .fh5ResearchReviewReport(matching: tune) ?? .empty
+        let fh5NumericReadiness = tune.request.car.game == .fh5
+            ? FH5NumericReadinessPolicy().assess(
+                tune: tune,
+                researchRecords: researchRecords,
+                reviewReport: researchReviewReport
+            )
+            : nil
 
         TuneResultView(
             tune: tune,
@@ -504,6 +513,7 @@ struct ContentView: View {
                 )
             },
             latestFH5ResearchRecord: latestResearchRecord,
+            fh5NumericReadiness: fh5NumericReadiness,
             onOpenFH5Research: researchEligibility.isSuccess && resolvedSavedTuneID != nil ? {
                 guard let resolvedSavedTuneID else { return }
                 tuneWorkflow.cancelAdjustment()

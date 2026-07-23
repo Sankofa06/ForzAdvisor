@@ -161,6 +161,7 @@ struct FH5ResearchReviewGroup: Equatable, Identifiable, Sendable {
     let association: FH5ResearchReviewAssociation
     let observationCount: Int
     let measurementVariantCount: Int
+    let measurementFingerprint: String?
     let status: FH5ResearchReplicationStatus
 }
 
@@ -233,6 +234,12 @@ struct FH5ResearchReviewIngestor {
         } catch {
             throw FH5ResearchReviewError.invalidStructure
         }
+    }
+
+    func measurementFingerprint(
+        for controls: [FH5TuneFieldObservation]
+    ) -> String? {
+        try? Self.fingerprint(controls)
     }
 
     func matchesSavedPlan(
@@ -529,6 +536,9 @@ struct FH5ResearchReviewEvaluator {
             ),
             observationCount: observations.count,
             measurementVariantCount: variants,
+            measurementFingerprint: variants == 1
+                ? first.measurementFingerprint
+                : nil,
             status: status
         )
     }

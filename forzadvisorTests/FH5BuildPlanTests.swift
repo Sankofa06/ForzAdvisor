@@ -41,7 +41,7 @@ final class FH5BuildPlanTests: XCTestCase {
         }
     }
 
-    func testFH5RouteFailsClosedForEveryUntrustedRequestShape() async throws {
+    func testFH5RouteReturnsPlanOnlyForEveryUntrustedRequestShape() async throws {
         let valid = try catalogRequest()
         var requests: [TuneRequest] = []
 
@@ -86,13 +86,13 @@ final class FH5BuildPlanTests: XCTestCase {
                     localProvider: CountingTuneProvider(calls: calls)
                 )
 
-                do {
-                    _ = try await provider.generateTune(for: request)
-                    XCTFail("Expected unsupported FH5 request for \(mode.rawValue).")
-                } catch let error as LocalTuneProviderError {
-                    XCTAssertEqual(error, .unsupportedRuleset(.fh5))
-                }
+                let tune = try await provider.generateTune(for: request)
 
+                XCTAssertEqual(tune.purpose, .fh5BuildPlan)
+                XCTAssertEqual(tune.request, request)
+                XCTAssertTrue(tune.sections.isEmpty)
+                XCTAssertNil(tune.providerInfo)
+                XCTAssertNil(tune.rulesetReference)
                 XCTAssertEqual(calls.total, 0)
             }
         }

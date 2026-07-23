@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.6.0 (Build 26) - 2026-07-23
+
+- Added an FH5 numeric-readiness checklist that shows the exact stock, Research Lab, Upgrade Lab, replication, rights, and controlled-outcome gates still required.
+- Bound replicated menu evidence to the local first-party measurements and kept conflicting observations, self-labelled rulesets, and installed-part contexts fail-closed.
+- FH5 manual, OCR, edited, missing-snapshot, and legacy requests now return a safe local plan-only result without calling a model, API, or numeric provider.
+
 ## Version 1.5.0 (Build 25) - 2026-07-23
 
 - Added FH6 Validation Review for exact ForzAdvisor Test Drive JSON tied to the current saved build, ruleset, discipline, and applied settings.

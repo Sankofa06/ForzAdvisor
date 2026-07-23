@@ -230,16 +230,6 @@ struct CompositeTuneProvider: TuneProvider {
 struct FH5BuildPlanRouter {
     func route(_ request: TuneRequest) throws -> TuneResult? {
         guard request.car.game == .fh5 else { return nil }
-        guard request.car.catalogReference != nil,
-              !request.car.catalogValuesModified,
-              let snapshot = request.buildSnapshot,
-              snapshot.kind == .capabilityOnly,
-              snapshot.isValid,
-              snapshot.matches(car: request.car),
-              snapshot.car.catalogReference == request.car.catalogReference,
-              !snapshot.car.catalogValuesModified else {
-            throw LocalTuneProviderError.unsupportedRuleset(.fh5)
-        }
 
         return TuneResult(
             request: request,

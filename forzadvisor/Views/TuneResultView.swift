@@ -23,6 +23,7 @@ struct TuneResultView: View {
     let onVerifyTirePressures: (() -> Void)?
     let onVerifyUpgradeParts: (() -> Void)?
     let latestFH5ResearchRecord: FH5ResearchObservationRecord?
+    let fh5NumericReadiness: FH5NumericReadinessAssessment?
     let onOpenFH5Research: (() -> Void)?
     let onDeleteFH5ResearchRecord: (FH5ResearchObservationRecord) -> Void
     let fh5ResearchReviewEntries: [FH5ResearchReviewEntry]
@@ -134,6 +135,36 @@ struct TuneResultView: View {
                     || latestFH5ResearchRecord != nil
                     || onImportFH5ResearchReviewEntry != nil {
                     Section("FH5 Research Lab") {
+                        if let readiness = fh5NumericReadiness {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Label(
+                                    "Numeric readiness \(readiness.completedCount)/\(readiness.items.count)",
+                                    systemImage: "checklist"
+                                )
+                                .font(.subheadline.weight(.semibold))
+
+                                ForEach(readiness.items) { item in
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Image(systemName: readinessSymbol(for: item.state))
+                                            .foregroundStyle(readinessColor(for: item.state))
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(item.gate.title)
+                                                .font(.caption.weight(.semibold))
+                                            Text(item.detail)
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
+
+                                Text("Menu evidence never becomes tune-quality evidence by itself. Numeric output stays locked until every gate passes.")
+                                    .font(.caption)
+                                    .foregroundStyle(ForzAdvisorTheme.warning)
+                            }
+                            .padding(.vertical, 2)
+                            .accessibilityIdentifier("fh5NumericReadiness")
+                        }
+
                         if let onOpenFH5Research {
                             VStack(alignment: .leading, spacing: 10) {
                                 Label(
@@ -530,6 +561,26 @@ struct TuneResultView: View {
                     onDelete: onDeleteFH6ValidationReviewEntry
                 )
             }
+        }
+    }
+
+    private func readinessSymbol(
+        for state: FH5NumericReadinessState
+    ) -> String {
+        switch state {
+        case .complete: "checkmark.circle.fill"
+        case .pending: "circle.dotted"
+        case .blocked: "lock.circle.fill"
+        }
+    }
+
+    private func readinessColor(
+        for state: FH5NumericReadinessState
+    ) -> Color {
+        switch state {
+        case .complete: ForzAdvisorTheme.success
+        case .pending: .secondary
+        case .blocked: ForzAdvisorTheme.warning
         }
     }
 
