@@ -4291,14 +4291,6 @@ final class FH5ResearchLabTests: XCTestCase {
                     true,
                 now: capturedAt
             )
-        let configuration = ModelConfiguration(
-            isStoredInMemoryOnly: true
-        )
-        let container = try ModelContainer(
-            for: SavedTune.self,
-            configurations: configuration
-        )
-
         let staleResearch = try SavedTune(tune: fixture.plan)
         try persistCandidatePrerequisites(
             fixture: fixture,

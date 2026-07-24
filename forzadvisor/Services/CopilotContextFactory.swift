@@ -52,6 +52,8 @@ struct CopilotContextFactory {
                 fh5CandidateTrialAvailable:
                     fh5CandidateTrialAvailable
             )
+        case .fh6TuneMenuCapture:
+            return context(.fh6TuneMenuCapture, cannotSeeUnsavedEdits: true)
         case .tirePressureCapture:
             return context(.tirePressureCapture, cannotSeeUnsavedEdits: true)
         case .upgradePartCapture:
@@ -146,6 +148,12 @@ struct CopilotContextFactory {
             readyCount: report.readyCount,
             blockedByStatus: statusCounts(in: report),
             blockedByReason: reasonCounts(in: report),
+            tuneMenuLabEligible: isStreaming
+                ? nil
+                : FH6TuneMenuCaptureEligibility().snapshot(
+                    for: tune,
+                    isStreaming: false
+                ) != nil,
             tireLabEligible: isStreaming ? nil : TirePressureCaptureEligibility().snapshot(for: tune) != nil,
             upgradeLabEligible: isStreaming ? nil : UpgradePartCaptureEligibility().snapshot(for: tune) != nil,
             fh5ResearchLabEligible: isStreaming ? nil : fh5ResearchLabEligible,

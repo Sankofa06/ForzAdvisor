@@ -20,6 +20,7 @@ struct TuneResultView: View {
     let onDone: () -> Void
     let onSave: () -> Void
     let onEdit: () -> Void
+    let onVerifyTuneMenu: (() -> Void)?
     let onVerifyTirePressures: (() -> Void)?
     let onVerifyUpgradeParts: (() -> Void)?
     let latestFH5ResearchRecord: FH5ResearchObservationRecord?
@@ -178,6 +179,23 @@ struct TuneResultView: View {
                         experimentRecordPendingDeletion = $0
                     }
                 )
+
+                if !isStreaming, let onVerifyTuneMenu {
+                    Section("Tune Menu Lab") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("Verify the exact stock tune menu", systemImage: "slider.horizontal.3")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Record every FH6 control as Adjustable, Shown locked, or Not shown. Exact ranges and steps let ForzAdvisor regenerate only values that fit this untouched stock build.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button("Verify Exact Tune Menu", action: onVerifyTuneMenu)
+                                .buttonStyle(.borderedProminent)
+                                .accessibilityIdentifier("verifyTuneMenuButton")
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .forzAdvisorRowBackground()
+                }
 
                 if !isStreaming, let onVerifyTirePressures {
                     Section("Tune Lab") {

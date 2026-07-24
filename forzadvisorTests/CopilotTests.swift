@@ -52,7 +52,7 @@ final class CopilotTests: XCTestCase {
 
     func testEveryWorkflowPhaseAnswersEverySupportedIntent() {
         let engine = CopilotEngine()
-        XCTAssertEqual(CopilotPhase.allCases.count, 16)
+        XCTAssertEqual(CopilotPhase.allCases.count, 17)
 
         for phase in CopilotPhase.allCases {
             let context = syntheticContext(for: phase)
@@ -82,6 +82,7 @@ final class CopilotTests: XCTestCase {
             (.discipline(car, origin: .manual(car), thumbnailData: nil), .discipline),
             (.loading(request, thumbnailData: nil, savedTuneID: nil, playerNotes: "", partialTune: nil), .loading),
             (.result(tune, savedTuneID: nil, adjustmentChanges: [], thumbnailData: nil, playerNotes: ""), .result),
+            (.fh6TuneMenuCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""), .fh6TuneMenuCapture),
             (.tirePressureCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""), .tirePressureCapture),
             (.upgradePartCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""), .upgradePartCapture),
             (.recordTestDrive(tune, savedTuneID: UUID(), thumbnailData: nil, playerNotes: ""), .recordTestDrive),
@@ -104,6 +105,7 @@ final class CopilotTests: XCTestCase {
             .catalogEdit(selection),
             .ocrReview(OCRConfirmationDraft(make: "Secret Make", model: "Secret Model")),
             .manualEntry(draft, thumbnailData: Data("secret-image".utf8)),
+            .fh6TuneMenuCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""),
             .tirePressureCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""),
             .upgradePartCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""),
             .recordTestDrive(tune, savedTuneID: UUID(), thumbnailData: nil, playerNotes: "secret-note"),
@@ -158,11 +160,13 @@ final class CopilotTests: XCTestCase {
         }
         XCTAssertEqual(partial.projection?.readyCount, tune.projectionReport?.readyCount)
         XCTAssertTrue(partial.projection?.isStreaming == true)
+        XCTAssertNil(partial.projection?.tuneMenuLabEligible)
         XCTAssertNil(partial.projection?.tireLabEligible)
         XCTAssertNil(partial.projection?.upgradeLabEligible)
         XCTAssertNil(partial.projection?.exactUpgradePathCount)
         XCTAssertNil(partial.projection?.isSaved)
         XCTAssertFalse(partial.facts.contains { $0.label == "Tire Lab" })
+        XCTAssertFalse(partial.facts.contains { $0.label == "FH6 Tune Menu Lab" })
         XCTAssertFalse(partial.facts.contains { $0.label == "Upgrade Lab" })
         XCTAssertFalse(partial.facts.contains { $0.label == "Exact upgrade paths" })
     }
@@ -176,6 +180,10 @@ final class CopilotTests: XCTestCase {
         )
 
         XCTAssertEqual(
+            context.projection?.tuneMenuLabEligible,
+            FH6TuneMenuCaptureEligibility().snapshot(for: tireTune) != nil
+        )
+        XCTAssertEqual(
             context.projection?.tireLabEligible,
             TirePressureCaptureEligibility().snapshot(for: tireTune) != nil
         )
@@ -187,7 +195,7 @@ final class CopilotTests: XCTestCase {
             context.projection?.exactUpgradePathCount,
             TuneControlUpgradePlanner().paths(for: tireTune).count
         )
-        XCTAssertTrue(CopilotEngine().response(to: .nextStep, in: context).message.contains("Tire Lab"))
+        XCTAssertTrue(CopilotEngine().response(to: .nextStep, in: context).message.contains("Tune Menu Lab"))
     }
 
     func testResultWithoutProjectionMakesNoReadyClaim() throws {
@@ -407,7 +415,8 @@ final class CopilotTests: XCTestCase {
             catalogCarCount: phase == .catalogPicker ? 6 : nil,
             projection: phase == .result ? projectionFacts(readyCount: 2, isSaved: true) : nil,
             cannotSeeUnsavedEdits: [
-                .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture,
+                .catalogEdit, .ocrReview, .manualEntry, .fh6TuneMenuCapture,
+                .tirePressureCapture,
                 .upgradePartCapture, .fh5ResearchCapture,
                 .fh5ControlledExperimentCapture, .recordTestDrive,
                 .editSavedTune

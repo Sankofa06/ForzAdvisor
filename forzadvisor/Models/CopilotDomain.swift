@@ -19,6 +19,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
     case discipline
     case loading
     case result
+    case fh6TuneMenuCapture
     case tirePressureCapture
     case upgradePartCapture
     case fh5ResearchCapture
@@ -38,6 +39,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
         case .discipline: "Discipline"
         case .loading: "Tune Generation"
         case .result: "Tune Result"
+        case .fh6TuneMenuCapture: "FH6 Tune Menu Lab"
         case .tirePressureCapture: "Tire Lab"
         case .upgradePartCapture: "Upgrade Lab"
         case .fh5ResearchCapture: "FH5 Research Lab"
@@ -107,6 +109,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
     let readyCount: Int
     let blockedByStatus: [CopilotCountFact]
     let blockedByReason: [CopilotCountFact]
+    let tuneMenuLabEligible: Bool?
     let tireLabEligible: Bool?
     let upgradeLabEligible: Bool?
     let fh5ResearchLabEligible: Bool?
@@ -121,6 +124,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
         readyCount: Int,
         blockedByStatus: [CopilotCountFact],
         blockedByReason: [CopilotCountFact],
+        tuneMenuLabEligible: Bool? = nil,
         tireLabEligible: Bool?,
         upgradeLabEligible: Bool?,
         fh5ResearchLabEligible: Bool? = nil,
@@ -134,6 +138,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
         self.readyCount = readyCount
         self.blockedByStatus = blockedByStatus
         self.blockedByReason = blockedByReason
+        self.tuneMenuLabEligible = tuneMenuLabEligible
         self.tireLabEligible = tireLabEligible
         self.upgradeLabEligible = upgradeLabEligible
         self.fh5ResearchLabEligible = fh5ResearchLabEligible
@@ -152,6 +157,7 @@ extension CopilotProjectionFacts {
         case readyCount
         case blockedByStatus
         case blockedByReason
+        case tuneMenuLabEligible
         case tireLabEligible
         case upgradeLabEligible
         case fh5ResearchLabEligible
@@ -171,6 +177,7 @@ extension CopilotProjectionFacts {
         readyCount = try container.decode(Int.self, forKey: .readyCount)
         blockedByStatus = try container.decode([CopilotCountFact].self, forKey: .blockedByStatus)
         blockedByReason = try container.decode([CopilotCountFact].self, forKey: .blockedByReason)
+        tuneMenuLabEligible = try container.decodeIfPresent(Bool.self, forKey: .tuneMenuLabEligible)
         tireLabEligible = try container.decodeIfPresent(Bool.self, forKey: .tireLabEligible)
         upgradeLabEligible = try container.decodeIfPresent(Bool.self, forKey: .upgradeLabEligible)
         fh5ResearchLabEligible = try container.decodeIfPresent(Bool.self, forKey: .fh5ResearchLabEligible)
@@ -190,6 +197,7 @@ extension CopilotProjectionFacts {
         try container.encode(readyCount, forKey: .readyCount)
         try container.encode(blockedByStatus, forKey: .blockedByStatus)
         try container.encode(blockedByReason, forKey: .blockedByReason)
+        try container.encodeIfPresent(tuneMenuLabEligible, forKey: .tuneMenuLabEligible)
         try container.encodeIfPresent(tireLabEligible, forKey: .tireLabEligible)
         try container.encodeIfPresent(upgradeLabEligible, forKey: .upgradeLabEligible)
         try container.encodeIfPresent(fh5ResearchLabEligible, forKey: .fh5ResearchLabEligible)
@@ -270,6 +278,12 @@ struct CopilotContext: Identifiable, Codable, Equatable, Sendable {
                 value: projection.isStreaming ? "Still generating" : "Generation complete"
             ))
             if !projection.isStreaming {
+                if let tuneMenuLabEligible = projection.tuneMenuLabEligible {
+                    result.append(CopilotFact(
+                        label: "FH6 Tune Menu Lab",
+                        value: tuneMenuLabEligible ? "Eligible" : "Not eligible"
+                    ))
+                }
                 if let tireLabEligible = projection.tireLabEligible {
                     result.append(CopilotFact(
                         label: "Tire Lab",
@@ -381,6 +395,8 @@ struct CopilotEngine {
             return "Wait for generation to finish. Closing this sheet does not cancel generation."
         case .result:
             return resultNextStep(context.projection)
+        case .fh6TuneMenuCapture:
+            return unsavedEditsMessage("Review every expected FH6 control, enter exact ranges for adjustable sliders, restore moved values, and submit through the validated button below.")
         case .tirePressureCapture:
             return unsavedEditsMessage("Complete the exact game-build, tire compound, and front/rear range checklist, then submit through the validated button below.")
         case .upgradePartCapture:
@@ -403,7 +419,7 @@ struct CopilotEngine {
         switch context.phase {
         case .catalogPicker, .catalogReview:
             return "Treat the reviewed catalog as a starting point and confirm its stock facts in your current game build."
-        case .catalogEdit, .ocrReview, .manualEntry, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .fh5ControlledExperimentCapture, .recordTestDrive, .editSavedTune:
+        case .catalogEdit, .ocrReview, .manualEntry, .fh6TuneMenuCapture, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .fh5ControlledExperimentCapture, .recordTestDrive, .editSavedTune:
             return unsavedEditsMessage("Trust only facts you personally confirm in the underlying screen and any validation it shows.")
         case .loading:
             guard let projection = context.projection else {
@@ -444,6 +460,8 @@ struct CopilotEngine {
             return "The final generation result is still missing. Wait for completion; dismissing Copilot will not cancel it."
         case .result:
             return resultMissing(context.projection)
+        case .fh6TuneMenuCapture:
+            return unsavedEditsMessage("The underlying checklist identifies missing control states, ranges, steps, current values, exact-build facts, or attestations.")
         case .tirePressureCapture:
             return unsavedEditsMessage("The underlying checklist identifies any missing build, compound, range, step, or attestation fact.")
         case .upgradePartCapture:
@@ -493,6 +511,9 @@ struct CopilotEngine {
                     : "Copy the FH5 build plan and save it so you can reopen the exact paths later."
             }
             return "Save the FH5 build plan. Numeric tuning settings remain unavailable pending a separate validated FH5 ruleset."
+        }
+        if projection.tuneMenuLabEligible == true {
+            return "Open FH6 Tune Menu Lab to verify the untouched stock car's complete tuning menu and regenerate against exact first-party constraints."
         }
         if projection.tireLabEligible == true {
             return "Open Tire Lab from the underlying result to verify the exact stock tire-pressure ranges."

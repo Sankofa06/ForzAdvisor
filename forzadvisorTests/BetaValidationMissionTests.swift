@@ -127,6 +127,37 @@ final class BetaValidationMissionTests: XCTestCase {
         XCTAssertEqual(board.progress.availableMissionCount, 0)
     }
 
+    func testTuneMenuMissionPrecedesLegacyTireAndUpgradeMissions() {
+        let board = BetaValidationMissionPlanner().makeBoard(setups: [
+            facts(
+                id: fh6ID,
+                game: .fh6,
+                name: "Menu Sentinel",
+                research: false,
+                menu: true,
+                tires: true,
+                upgrades: true,
+                testDrive: false,
+                evidence: 0,
+                exactPaths: false
+            )
+        ])
+
+        XCTAssertEqual(
+            board.missions.map(\.kind),
+            [
+                .startFH5Plan,
+                .verifyTuneMenu,
+                .verifyTireRanges,
+                .verifyUpgradeParts
+            ]
+        )
+        XCTAssertTrue(
+            board.missions.first { $0.kind == .verifyTuneMenu }?
+                .detail.contains("every untouched stock tuning control") == true
+        )
+    }
+
     func testCandidateReadyMissionUsesExperimentalBoundaryCopy() {
         let board = BetaValidationMissionPlanner().makeBoard(setups: [
             facts(
@@ -375,6 +406,7 @@ final class BetaValidationMissionTests: XCTestCase {
         name: String,
         discipline: String = "Road",
         research: Bool,
+        menu: Bool = false,
         tires: Bool,
         upgrades: Bool,
         testDrive: Bool,
@@ -390,6 +422,7 @@ final class BetaValidationMissionTests: XCTestCase {
             disciplineTitle: discipline,
             canRecordFH5Research: research,
             canRunFH5Experiment: experiment,
+            canVerifyTuneMenu: menu,
             canVerifyTireRanges: tires,
             canVerifyUpgradeParts: upgrades,
             canRecordTestDrive: testDrive,

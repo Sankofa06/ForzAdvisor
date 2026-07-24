@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.12.0 (Build 36) - 2026-07-24
+
+- Added FH6 Tune Menu Lab for untouched catalog cars, with exact first-party capture of adjustable, locked, and unavailable controls.
+- Regenerates the tune against the observed game build, tire compound, gear count, slider ranges, steps, and current values while keeping missing or mismatched settings withheld.
+- Added contextual Copilot guidance and a Beta Validation Mission for completing the exact stock tuning-menu check.
+
 ## Version 1.11.0 (Build 35) - 2026-07-23
 
 - Expanded the reviewed selectable FH6 stock-car catalog from three to eight cars with official roster identity and class/PI plus community-cross-checked stock specifications.

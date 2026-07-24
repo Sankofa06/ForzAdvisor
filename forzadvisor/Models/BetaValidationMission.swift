@@ -14,6 +14,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
     case startFH6Tune
     case recordFH5Research
     case runFH5Experiment
+    case verifyTuneMenu
     case verifyTireRanges
     case verifyUpgradeParts
     case recordTestDrive
@@ -24,6 +25,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         case .startFH6Tune: "Create an FH6 tune"
         case .recordFH5Research: "Record FH5 stock controls"
         case .runFH5Experiment: "Run an FH5 paired experiment"
+        case .verifyTuneMenu: "Verify the FH6 tune menu"
         case .verifyTireRanges: "Verify FH6 tire ranges"
         case .verifyUpgradeParts: "Verify offered tuning parts"
         case .recordTestDrive: "Record an FH6 test drive"
@@ -35,6 +37,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         case .startFH5Plan, .startFH6Tune: "car.2"
         case .recordFH5Research: "list.clipboard"
         case .runFH5Experiment: "testtube.2"
+        case .verifyTuneMenu: "slider.horizontal.3"
         case .verifyTireRanges: "gauge.with.dots.needle.50percent"
         case .verifyUpgradeParts: "wrench.and.screwdriver"
         case .recordTestDrive: "flag.checkered"
@@ -47,7 +50,8 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         case .startFH6Tune: 1
         case .recordFH5Research: 10
         case .runFH5Experiment: 15
-        case .verifyTireRanges: 20
+        case .verifyTuneMenu: 20
+        case .verifyTireRanges: 25
         case .verifyUpgradeParts: 30
         case .recordTestDrive: 40
         }
@@ -101,6 +105,8 @@ struct BetaValidationMission: Equatable, Identifiable, Sendable {
             return isExperimentalCandidateTrial
                 ? "\(setup): test one generated hypothesis from replicated menu evidence using a fixed A-B-B-A protocol. This is not a tune."
                 : "\(setup): compare stock with one slider step using a fixed A-B-B-A test."
+        case .verifyTuneMenu:
+            return "\(setup): record every untouched stock tuning control and its exact slider range."
         case .verifyTireRanges:
             return "\(setup): confirm exact stock tire-pressure bounds and game build."
         case .verifyUpgradeParts:
@@ -168,6 +174,7 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
     let disciplineTitle: String
     let canRecordFH5Research: Bool
     let canRunFH5Experiment: Bool
+    let canVerifyTuneMenu: Bool
     let canVerifyTireRanges: Bool
     let canVerifyUpgradeParts: Bool
     let canRecordTestDrive: Bool
@@ -182,6 +189,7 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
         disciplineTitle: String,
         canRecordFH5Research: Bool,
         canRunFH5Experiment: Bool,
+        canVerifyTuneMenu: Bool = false,
         canVerifyTireRanges: Bool,
         canVerifyUpgradeParts: Bool,
         canRecordTestDrive: Bool,
@@ -195,6 +203,7 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
         self.disciplineTitle = disciplineTitle
         self.canRecordFH5Research = canRecordFH5Research
         self.canRunFH5Experiment = canRunFH5Experiment
+        self.canVerifyTuneMenu = canVerifyTuneMenu
         self.canVerifyTireRanges = canVerifyTireRanges
         self.canVerifyUpgradeParts = canVerifyUpgradeParts
         self.canRecordTestDrive = canRecordTestDrive
@@ -227,6 +236,9 @@ struct BetaValidationMissionPlanner {
             }
             if setup.canRunFH5Experiment {
                 missions.append(mission(.runFH5Experiment, setup: setup))
+            }
+            if setup.canVerifyTuneMenu {
+                missions.append(mission(.verifyTuneMenu, setup: setup))
             }
             if setup.canVerifyTireRanges {
                 missions.append(mission(.verifyTireRanges, setup: setup))
@@ -327,6 +339,8 @@ struct BetaValidationMissionPlanner {
             disciplineTitle: tune.request.discipline.title,
             canRecordFH5Research: researchEligible,
             canRunFH5Experiment: experimentEligibility.eligible,
+            canVerifyTuneMenu:
+                FH6TuneMenuCaptureEligibility().snapshot(for: tune) != nil,
             canVerifyTireRanges:
                 TirePressureCaptureEligibility().snapshot(for: tune) != nil,
             canVerifyUpgradeParts:

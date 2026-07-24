@@ -164,6 +164,37 @@ struct ContentView: View {
                         thumbnailData: thumbnailData,
                         playerNotes: playerNotes
                     )
+                case .fh6TuneMenuCapture(let tune, let savedTuneID, let thumbnailData, let playerNotes):
+                    if let snapshot = tune.request.buildSnapshot {
+                        FH6TuneMenuCaptureView(
+                            tune: tune,
+                            snapshot: snapshot,
+                            onBack: {
+                                step = .result(
+                                    tune,
+                                    savedTuneID: savedTuneID,
+                                    adjustmentChanges: [],
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            },
+                            onSubmit: { capture in
+                                applyFH6TuneMenuCapture(
+                                    capture,
+                                    to: tune,
+                                    savedTuneID: savedTuneID,
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            }
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            "Build snapshot unavailable",
+                            systemImage: "exclamationmark.triangle",
+                            description: Text("Return to the tune and select an untouched FH6 catalog car.")
+                        )
+                    }
                 case .tirePressureCapture(let tune, let savedTuneID, let thumbnailData, let playerNotes):
                     if let snapshot = tune.request.buildSnapshot {
                         TirePressureCaptureView(
@@ -659,7 +690,19 @@ struct ContentView: View {
                     thumbnailData: resolvedThumbnailData
                 )
             },
-            onVerifyTirePressures: eligibleTireCaptureSnapshot(for: tune) == nil ? nil : {
+            onVerifyTuneMenu: eligibleFH6TuneMenuCaptureSnapshot(for: tune) == nil ? nil : {
+                tuneWorkflow.cancelAdjustment()
+                step = .fh6TuneMenuCapture(
+                    tune,
+                    savedTuneID: resolvedSavedTuneID,
+                    thumbnailData: resolvedThumbnailData,
+                    playerNotes: resolvedPlayerNotes
+                )
+            },
+            onVerifyTirePressures:
+                eligibleFH6TuneMenuCaptureSnapshot(for: tune) != nil
+                || eligibleTireCaptureSnapshot(for: tune) == nil
+                ? nil : {
                 tuneWorkflow.cancelAdjustment()
                 step = .tirePressureCapture(
                     tune,
