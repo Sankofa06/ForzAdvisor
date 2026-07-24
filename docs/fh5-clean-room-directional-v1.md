@@ -68,8 +68,13 @@ the actual experiment capture.
 The production registry is intentionally empty. An exact-evidence,
 candidate-only experimental UI can lock and display this hypothesis for the
 fixed A-B-B-A protocol, then persist the completed outcome locally as a
-non-exportable schema-v2 record. Generic user-selected Outcome Lab calibration
-remains a separate schema-v1 flow. No provider, projector, `TuneResult`,
-clipboard, persistence export, or numeric-output route consumes this artifact.
-Promotion requires a separate review and activation change after the exact
-candidate passes its declared controlled-outcome threshold.
+schema-v2 record. With reuse permission and a separate per-share confirmation,
+the app can create a deidentified Candidate Outcome export whose association
+fingerprint contains only the registered algorithm/source/policy and exact
+public experiment semantics. A recipient must independently regenerate that
+exact candidate before adding the canonical bytes to a separate local review
+queue. Generic user-selected Outcome Lab calibration remains a separate
+schema-v1 flow. Imported outcomes are collection-only: no provider, projector,
+`TuneResult`, clipboard, production registry, readiness authorization, or
+numeric-output route consumes them. Promotion requires a separate reviewed
+activation change.

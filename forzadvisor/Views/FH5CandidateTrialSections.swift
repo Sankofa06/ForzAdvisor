@@ -183,7 +183,7 @@ struct FH5CandidateTrialPermissionSection: View {
                 isOn: $deidentifiedReusePermitted
             )
             Text(
-                "Evaluation reuse is optional and off by default. This candidate-bound record stays local and cannot be exported or shared in this version, even when reuse is enabled."
+                "Evaluation reuse is optional and off by default. When enabled, a separate explicit confirmation can share one deidentified Candidate Outcome JSON copy. Sharing is manual, copies cannot be recalled, and no background upload occurs."
             )
             .font(.caption)
             .foregroundStyle(.secondary)

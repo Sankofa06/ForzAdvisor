@@ -85,10 +85,16 @@ pressure one observed legal step below the restored stock value. It produces
 only an experimental artifact, not a `TuneResult`. When its exact evidence
 preconditions pass, a candidate-only Outcome Lab UI can lock the input and
 surface, show the experimental A/B hypothesis, and collect the completed
-protocol as a local, non-exportable schema-v2 record. Existing generic Outcome
-Lab behavior remains separate unbound schema-v1 calibration evidence. The
-production registry is empty, and no provider, output projector, `TuneResult`,
-clipboard, or numeric-output route consumes the experimental registration.
+protocol as a local schema-v2 record. Existing generic Outcome
+Lab behavior remains separate unbound schema-v1 calibration evidence.
+Permission-bound schema-v2 outcomes may be shared only through the distinct
+Candidate Outcome schema after a per-share confirmation. Import requires the
+recipient to regenerate the exact public candidate association locally and
+stores canonical bytes in a separate review queue. The combined display report
+has no passing or authorization API and does not feed this readiness policy.
+The production registry is empty, and no provider, output projector,
+`TuneResult`, clipboard, or numeric-output route consumes the experimental
+registration or reviewed outcomes.
 
 The evaluator is order-independent, counts only reuse-permitted exact matches,
 combines `noClearDifference` and `inconclusive` as nondecisive outcomes, and
@@ -130,5 +136,8 @@ share destination, and public attribution. It retains the menu-measurement
 fingerprint that binds the observed controls. Exporting a record does not make
 it promotion-eligible: schema-v1 experiments have no app-assigned candidate
 binding and remain calibration evidence only. Candidate-bound schema-v2 records
-stay local and cannot use this schema-v1 export; a separate consented export
-contract would be required before they could leave the device.
+cannot use this schema-v1 export. Their distinct Candidate Outcome schema
+requires reuse permission plus a per-share confirmation, excludes internal
+plan/Research/candidate identifiers, and can be imported only after exact local
+candidate regeneration and direct-receipt permission. Its review aggregate is
+collection-only and does not feed readiness.

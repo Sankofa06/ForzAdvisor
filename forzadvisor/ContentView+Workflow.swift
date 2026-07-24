@@ -450,6 +450,47 @@ extension ContentView {
         }
     }
 
+    func importFH5CandidateOutcomeReviewEntry(
+        _ entry: FH5CandidateOutcomeReviewEntry,
+        savedTuneID: UUID
+    ) -> String? {
+        do {
+            guard let savedTune = try savedTune(
+                for: savedTuneID
+            ) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            try savedTune.appendFH5CandidateOutcomeReviewEntry(
+                entry
+            )
+            try modelContext.save()
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    func deleteFH5CandidateOutcomeReviewEntry(
+        _ entry: FH5CandidateOutcomeReviewEntry,
+        savedTuneID: UUID
+    ) {
+        do {
+            guard let savedTune = try savedTune(
+                for: savedTuneID
+            ) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            _ = try savedTune
+                .deleteFH5CandidateOutcomeReviewEntry(
+                    id: entry.id
+                )
+            try modelContext.save()
+        } catch {
+            errorMessage =
+                "Could not delete this FH5 Candidate Outcome review: \(error.localizedDescription)"
+        }
+    }
+
     func recordTestDrive(
         _ capture: FirstPartyValidationCapture,
         for tune: TuneResult,

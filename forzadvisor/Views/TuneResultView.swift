@@ -32,6 +32,16 @@ struct TuneResultView: View {
     let latestFH5ControlledExperimentRecord: FH5ControlledExperimentRecord?
     let fh5CandidateTrialAvailable: Bool
     let fh5CandidateOutcomeReport: FH5ControlledOutcomePolicyReport?
+    let fh5CandidateTrialArtifact: FH5GeneratedCandidateArtifact?
+    let fh5CandidateOutcomeReviewEntries:
+        [FH5CandidateOutcomeReviewEntry]
+    let fh5CandidateOutcomeCollectionReport:
+        FH5CandidateOutcomeCollectionReport
+    let fh5CandidateOutcomeReviewLoadError: String?
+    let onImportFH5CandidateOutcomeReviewEntry:
+        ((FH5CandidateOutcomeReviewEntry) -> String?)?
+    let onDeleteFH5CandidateOutcomeReviewEntry:
+        (FH5CandidateOutcomeReviewEntry) -> Void
     let onOpenFH5ControlledExperiment: (() -> Void)?
     let onDeleteFH5ControlledExperimentRecord:
         (FH5ControlledExperimentRecord) -> Void
@@ -53,6 +63,7 @@ struct TuneResultView: View {
     @State private var experimentRecordPendingDeletion:
         FH5ControlledExperimentRecord?
     @State private var showsFH5ResearchReview = false
+    @State private var showsFH5CandidateOutcomeReview = false
     @State private var showsFH6ValidationReview = false
 
     private var isAdjusting: Bool {
@@ -150,6 +161,15 @@ struct TuneResultView: View {
                     experimentRecord: latestFH5ControlledExperimentRecord,
                     candidateTrialAvailable: fh5CandidateTrialAvailable,
                     candidateOutcomeReport: fh5CandidateOutcomeReport,
+                    candidateTrialArtifact:
+                        fh5CandidateTrialArtifact,
+                    candidateOutcomeCollectionReport:
+                        fh5CandidateOutcomeCollectionReport,
+                    canOpenCandidateOutcomeReview:
+                        onImportFH5CandidateOutcomeReviewEntry != nil,
+                    onOpenCandidateOutcomeReview: {
+                        showsFH5CandidateOutcomeReview = true
+                    },
                     onOpenExperiment: onOpenFH5ControlledExperiment,
                     onRequestDeleteResearch: {
                         researchRecordPendingDeletion = $0
@@ -356,6 +376,22 @@ struct TuneResultView: View {
                     storageError: fh6ValidationReviewLoadError,
                     onImport: onImportFH6ValidationReviewEntry,
                     onDelete: onDeleteFH6ValidationReviewEntry
+                )
+            }
+        }
+        .sheet(isPresented: $showsFH5CandidateOutcomeReview) {
+            if let artifact = fh5CandidateTrialArtifact,
+               let onImportFH5CandidateOutcomeReviewEntry {
+                FH5CandidateOutcomeReviewView(
+                    artifact: artifact,
+                    entries: fh5CandidateOutcomeReviewEntries,
+                    report: fh5CandidateOutcomeCollectionReport,
+                    storageError:
+                        fh5CandidateOutcomeReviewLoadError,
+                    onImport:
+                        onImportFH5CandidateOutcomeReviewEntry,
+                    onDelete:
+                        onDeleteFH5CandidateOutcomeReviewEntry
                 )
             }
         }
@@ -580,6 +616,11 @@ private struct FH5ResearchOutcomeSection: View {
     let experimentRecord: FH5ControlledExperimentRecord?
     let candidateTrialAvailable: Bool
     let candidateOutcomeReport: FH5ControlledOutcomePolicyReport?
+    let candidateTrialArtifact: FH5GeneratedCandidateArtifact?
+    let candidateOutcomeCollectionReport:
+        FH5CandidateOutcomeCollectionReport
+    let canOpenCandidateOutcomeReview: Bool
+    let onOpenCandidateOutcomeReview: () -> Void
     let onOpenExperiment: (() -> Void)?
     let onRequestDeleteResearch: (FH5ResearchObservationRecord) -> Void
     let onRequestDeleteExperiment: (FH5ControlledExperimentRecord) -> Void
@@ -727,6 +768,13 @@ private struct FH5ResearchOutcomeSection: View {
                     record: experimentRecord,
                     candidateTrialAvailable: candidateTrialAvailable,
                     candidateOutcomeReport: candidateOutcomeReport,
+                    candidateTrialArtifact: candidateTrialArtifact,
+                    candidateOutcomeCollectionReport:
+                        candidateOutcomeCollectionReport,
+                    canOpenCandidateOutcomeReview:
+                        canOpenCandidateOutcomeReview,
+                    onOpenCandidateOutcomeReview:
+                        onOpenCandidateOutcomeReview,
                     onOpen: onOpenExperiment,
                     onRequestDelete: onRequestDeleteExperiment
                 )
@@ -760,8 +808,18 @@ private struct FH5ControlledExperimentSummary: View {
     let record: FH5ControlledExperimentRecord?
     let candidateTrialAvailable: Bool
     let candidateOutcomeReport: FH5ControlledOutcomePolicyReport?
+    let candidateTrialArtifact: FH5GeneratedCandidateArtifact?
+    let candidateOutcomeCollectionReport:
+        FH5CandidateOutcomeCollectionReport
+    let canOpenCandidateOutcomeReview: Bool
+    let onOpenCandidateOutcomeReview: () -> Void
     let onOpen: (() -> Void)?
     let onRequestDelete: (FH5ControlledExperimentRecord) -> Void
+    @State private var showsCandidateShareConfirmation = false
+    @State private var candidateShareAuthorization =
+        FH5CandidateOutcomeShareAuthorization()
+    @State private var candidateSharePayload:
+        FH5CandidateOutcomeSharePayload?
 
     var body: some View {
         Group {
@@ -830,7 +888,7 @@ private struct FH5ControlledExperimentSummary: View {
                         == FH5ControlledExperimentRecord
                             .candidateBoundSchemaVersion {
                         Text(
-                            "This schema-v2 candidate record is local-only and non-exportable. No share action is available, even when local deidentified evaluation reuse was enabled."
+                            "Candidate outcomes can be shared only as explicit, deidentified experiment JSON. They are not tunes and cannot unlock numeric FH5 output."
                         )
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -845,6 +903,40 @@ private struct FH5ControlledExperimentSummary: View {
                                 "Variant preferred: \(report.variantPreferredCount) · Baseline preferred: \(report.baselinePreferredCount) · Non-decisive: \(report.nonDecisiveCount)"
                             )
                             .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        }
+
+                        if candidateArtifactMatchesRecord,
+                           record.attestations
+                            .deidentifiedReusePermitted {
+                            Button {
+                                showsCandidateShareConfirmation = true
+                            } label: {
+                                Label(
+                                    "Review One-Time Share",
+                                    systemImage:
+                                        "square.and.arrow.up"
+                                )
+                                .frame(
+                                    maxWidth: .infinity,
+                                    minHeight: 44,
+                                    alignment: .leading
+                                )
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier(
+                                "shareFH5CandidateOutcomeButton"
+                            )
+                            Text(
+                                "Manual system share only. No background upload. The recipient must regenerate the exact candidate locally and confirm direct receipt and reuse permission."
+                            )
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        } else {
+                            Text(
+                                "Sharing requires deidentified reuse permission and an exact locally regenerated candidate."
+                            )
+                            .font(.caption)
                             .foregroundStyle(.secondary)
                         }
                     } else if let json = record.deterministicJSONString {
@@ -888,6 +980,76 @@ private struct FH5ControlledExperimentSummary: View {
                 }
                 .padding(.vertical, 2)
             }
+
+            if canOpenCandidateOutcomeReview,
+               candidateTrialArtifact != nil {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(
+                        "Review exact experimental candidate outcomes",
+                        systemImage:
+                            "rectangle.stack.badge.checkmark"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    Text(
+                        "Only canonical, permission-bound outcomes for the exact candidate independently regenerated on this device can enter the separate review queue."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    Button(
+                        "Open Candidate Outcome Review",
+                        action: onOpenCandidateOutcomeReview
+                    )
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier(
+                        "openFH5CandidateOutcomeReviewButton"
+                    )
+                    Text(
+                        candidateOutcomeCollectionReport.summary
+                    )
+                    .font(.caption)
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .confirmationDialog(
+            "Share this exact candidate outcome?",
+            isPresented: $showsCandidateShareConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Share This Candidate Outcome") {
+                candidateShareAuthorization.confirm()
+                guard let record,
+                      let artifact = candidateTrialArtifact,
+                      let export = try?
+                        FH5CandidateOutcomeExchange().prepareShare(
+                            from: record,
+                            currentArtifact: artifact,
+                            authorization:
+                                &candidateShareAuthorization
+                        ),
+                      let json = export.deterministicJSONString else {
+                    candidateShareAuthorization.invalidate()
+                    candidateSharePayload = nil
+                    return
+                }
+                candidateSharePayload =
+                    FH5CandidateOutcomeSharePayload(json: json)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(
+                "This one share contains the exact experiment context, change, and outcome. Copies cannot be recalled."
+            )
+        }
+        .sheet(item: $candidateSharePayload) { payload in
+            FH5CandidateOutcomeSystemShareSheet(
+                activityItems: [payload.json]
+            )
+        }
+        .onChange(of: candidateShareStateIdentity) {
+            showsCandidateShareConfirmation = false
+            candidateShareAuthorization.invalidate()
+            candidateSharePayload = nil
         }
     }
 
@@ -897,6 +1059,54 @@ private struct FH5ControlledExperimentSummary: View {
         )
         return "\(number) \(unit.rawValue)"
     }
+
+    private var candidateArtifactMatchesRecord: Bool {
+        guard let record,
+              let artifact = candidateTrialArtifact else {
+            return false
+        }
+        return FH5CandidateOutcomeExchange().canShare(
+            record,
+            currentArtifact: artifact
+        )
+    }
+
+    private var candidateShareStateIdentity: String {
+        [
+            record?.recordID.uuidString ?? "no-record",
+            record?.contentFingerprint ?? "no-record-content",
+            record?.candidateBinding?
+                .generatedCandidateFingerprint
+                ?? "no-record-binding",
+            candidateTrialArtifact?.candidateBinding
+                .generatedCandidateFingerprint
+                ?? "no-current-artifact"
+        ].joined(separator: "|")
+    }
+}
+
+private struct FH5CandidateOutcomeSharePayload: Identifiable {
+    let id = UUID()
+    let json: String
+}
+
+private struct FH5CandidateOutcomeSystemShareSheet:
+    UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(
+        context: Context
+    ) -> UIActivityViewController {
+        UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: nil
+        )
+    }
+
+    func updateUIViewController(
+        _ uiViewController: UIActivityViewController,
+        context: Context
+    ) {}
 }
 
 private struct TuneSectionsGroup: View {

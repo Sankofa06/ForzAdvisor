@@ -3611,6 +3611,858 @@ final class FH5ResearchLabTests: XCTestCase {
         )
     }
 
+    func testCandidateOutcomeExchangeIsDistinctCanonicalAndDeidentified()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let exchange = FH5CandidateOutcomeExchange()
+
+        XCTAssertThrowsError(try exchange.makeExport(
+            from: fixture.record,
+            explicitShareConfirmed: false
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .shareConfirmationRequired
+            )
+        }
+        let export = try exchange.makeExport(
+            from: fixture.record,
+            explicitShareConfirmed: true
+        )
+        let data = try export.deterministicJSON()
+        let validated = try exchange.validate(data)
+        XCTAssertTrue(
+            try exchange.matches(
+                validated,
+                locallyRegeneratedArtifact: fixture.artifact
+            )
+        )
+        XCTAssertEqual(
+            export.associationFingerprint.count,
+            64
+        )
+        XCTAssertEqual(export.contentFingerprint.count, 64)
+        XCTAssertEqual(
+            export.association.rulesetReference,
+            fixture.artifact.candidateBinding
+                .rulesetReference
+        )
+        XCTAssertThrowsError(try fixture.record.publicExport()) {
+            XCTAssertEqual(
+                $0 as? FH5ControlledExperimentIssue,
+                .candidateBoundExportUnsupported
+            )
+        }
+
+        let json = try XCTUnwrap(
+            String(data: data, encoding: .utf8)
+        )
+        for excluded in [
+            fixture.record.recordID.uuidString,
+            fixture.record.planRevisionFingerprint,
+            fixture.record.researchContentFingerprint,
+            fixture.artifact.candidateBinding
+                .generatedCandidateFingerprint
+        ] {
+            XCTAssertFalse(json.contains(excluded))
+        }
+        XCTAssertFalse(json.contains("planRevisionFingerprint"))
+        XCTAssertFalse(json.contains("researchContentFingerprint"))
+        XCTAssertFalse(json.contains("candidateBinding"))
+        XCTAssertFalse(json.contains("generatedCandidateFingerprint"))
+        XCTAssertFalse(json.contains("providerInfo"))
+        XCTAssertTrue(json.contains("\"knowledgeRevision\""))
+        XCTAssertTrue(json.contains("\"provenanceIDs\""))
+        XCTAssertFalse(json.contains("\"sourceManifests\""))
+        XCTAssertEqual(
+            export.privacyExclusions,
+            FH5CandidateOutcomeExport.privacyExclusions
+        )
+
+        var nonCanonical = data
+        nonCanonical.append(0x20)
+        XCTAssertThrowsError(try exchange.validate(nonCanonical)) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .nonCanonicalJSON
+            )
+        }
+        let tamperedJSON = json.replacingOccurrences(
+            of: export.contentFingerprint,
+            with: String(repeating: "b", count: 64)
+        )
+        XCTAssertThrowsError(
+            try exchange.validate(Data(tamperedJSON.utf8))
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .invalidContentFingerprint
+            )
+        }
+        XCTAssertThrowsError(try exchange.validate(
+            Data(
+                repeating: 0x20,
+                count:
+                    FH5CandidateOutcomeExchange
+                        .maximumPayloadBytes + 1
+            )
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .payloadTooLarge
+            )
+        }
+
+        let secondRecord = try FH5CandidateTrialCoordinator()
+            .makeRecord(
+                tune: fixture.plan,
+                savedTune: fixture.plan,
+                isStreaming: false,
+                researchRecords: [fixture.research],
+                reviewInputs: fixture.reviewInputs,
+                submission: FH5CandidateTrialSubmission(
+                    capture: experimentCapture(
+                        field: .frontTirePressure,
+                        candidate:
+                            fixture.artifact.change
+                                .candidateValue,
+                        reusePermitted: true
+                    ),
+                    lockedArtifact: fixture.artifact
+                ),
+                recordID: UUID(),
+                submissionID: UUID(),
+                permissionReceiptID: UUID(),
+                createdAt:
+                    fixture.record.createdAt
+                        .addingTimeInterval(60)
+            )
+        XCTAssertEqual(
+            try exchange.makeExport(
+                from: secondRecord,
+                explicitShareConfirmed: true
+            ).associationFingerprint,
+            export.associationFingerprint
+        )
+
+        let noReuse = try await makeCandidateOutcomeFixture(
+            reusePermitted: false
+        )
+        XCTAssertThrowsError(try exchange.makeExport(
+            from: noReuse.record,
+            explicitShareConfirmed: true
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .reuseNotPermitted
+            )
+        }
+    }
+
+    func testCandidateOutcomeReviewRequiresPermissionAndExactRegeneration()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let data = try FH5CandidateOutcomeExchange()
+            .makeExport(
+                from: fixture.record,
+                explicitShareConfirmed: true
+            ).deterministicJSON()
+
+        XCTAssertThrowsError(
+            try FH5CandidateOutcomeReviewEntry.locallyReviewed(
+                canonicalExportJSON: data,
+                expectedArtifact: fixture.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    false
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .permissionNotConfirmed
+            )
+        }
+
+        let entry = try FH5CandidateOutcomeReviewEntry
+            .locallyReviewed(
+                canonicalExportJSON: data,
+                expectedArtifact: fixture.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true,
+                now: capturedAt
+            )
+        XCTAssertTrue(
+            FH5CandidateOutcomeExchange()
+                .isValidReviewEntry(entry)
+        )
+
+        let wheel = try FH5CandidateTrialCoordinator().generate(
+            tune: fixture.plan,
+            savedTune: fixture.plan,
+            isStreaming: false,
+            researchRecords: [fixture.research],
+            reviewInputs: fixture.reviewInputs,
+            input: .wheel,
+            surface: .dry
+        )
+        XCTAssertThrowsError(
+            try FH5CandidateOutcomeReviewEntry.locallyReviewed(
+                canonicalExportJSON: data,
+                expectedArtifact: wheel,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .candidateMismatch
+            )
+        }
+    }
+
+    func testCandidateOutcomeCollectionPrefersLocalAndQuarantinesSemanticReplay()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true,
+            submissionID: UUID(),
+            permissionReceiptID: UUID(),
+            createdAt: capturedAt
+        )
+        let exchange = FH5CandidateOutcomeExchange()
+        let association = try exchange.associationFingerprint(
+            for: fixture.artifact
+        )
+        let duplicateData = try exchange.makeExport(
+            from: fixture.record,
+            explicitShareConfirmed: true
+        ).deterministicJSON()
+        let duplicateEntry = try FH5CandidateOutcomeReviewEntry
+            .locallyReviewed(
+                canonicalExportJSON: duplicateData,
+                expectedArtifact: fixture.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true,
+                now: capturedAt.addingTimeInterval(5)
+            )
+        let second = try FH5CandidateTrialCoordinator()
+            .makeRecord(
+                tune: fixture.plan,
+                savedTune: fixture.plan,
+                isStreaming: false,
+                researchRecords: [fixture.research],
+                reviewInputs: fixture.reviewInputs,
+                submission: FH5CandidateTrialSubmission(
+                    capture: experimentCapture(
+                        field: .frontTirePressure,
+                        candidate:
+                            fixture.artifact.change
+                                .candidateValue,
+                        reusePermitted: true,
+                        outcome: .noClearDifference
+                    ),
+                    lockedArtifact: fixture.artifact
+                ),
+                submissionID: UUID(),
+                permissionReceiptID: UUID(),
+                createdAt:
+                    capturedAt.addingTimeInterval(86_400)
+            )
+        let report = FH5CandidateOutcomeCollectionEvaluator()
+            .evaluate(
+                localRecords: [fixture.record, second],
+                reviewedEntries: [duplicateEntry],
+                matchingAssociationFingerprint: association
+            )
+        XCTAssertEqual(report.receivedCount, 3)
+        XCTAssertEqual(report.verifiedUniqueSessionCount, 2)
+        XCTAssertEqual(report.localCount, 2)
+        XCTAssertEqual(report.reviewedCount, 0)
+        XCTAssertEqual(report.duplicateCount, 1)
+        XCTAssertEqual(report.distinctUTCDayCount, 2)
+        XCTAssertEqual(report.variantPreferredCount, 1)
+        XCTAssertEqual(report.noClearDifferenceCount, 1)
+        XCTAssertEqual(report.quarantinedCount, 0)
+
+        let semanticClone = try FH5CandidateTrialCoordinator()
+            .makeRecord(
+                tune: fixture.plan,
+                savedTune: fixture.plan,
+                isStreaming: false,
+                researchRecords: [fixture.research],
+                reviewInputs: fixture.reviewInputs,
+                submission: FH5CandidateTrialSubmission(
+                    capture: experimentCapture(
+                        field: .frontTirePressure,
+                        candidate:
+                            fixture.artifact.change
+                                .candidateValue,
+                        reusePermitted: true
+                    ),
+                    lockedArtifact: fixture.artifact
+                ),
+                submissionID: UUID(),
+                permissionReceiptID: UUID(),
+                createdAt: fixture.record.createdAt
+            )
+        let replayReport =
+            FH5CandidateOutcomeCollectionEvaluator().evaluate(
+                localRecords: [
+                    fixture.record, semanticClone
+                ],
+                reviewedEntries: [],
+                matchingAssociationFingerprint: association
+            )
+        XCTAssertEqual(
+            replayReport.verifiedUniqueSessionCount,
+            0
+        )
+        XCTAssertEqual(replayReport.semanticReplayCount, 2)
+        XCTAssertEqual(replayReport.quarantinedCount, 2)
+
+        let reversedReplay =
+            FH5CandidateOutcomeCollectionEvaluator().evaluate(
+                localRecords: [
+                    semanticClone, fixture.record
+                ],
+                reviewedEntries: [],
+                matchingAssociationFingerprint: association
+            )
+        XCTAssertEqual(reversedReplay.verifiedUniqueSessionCount, 0)
+        XCTAssertEqual(reversedReplay.semanticReplayCount, 2)
+
+        let changedOutcomeClone = try FH5CandidateTrialCoordinator()
+            .makeRecord(
+                tune: fixture.plan,
+                savedTune: fixture.plan,
+                isStreaming: false,
+                researchRecords: [fixture.research],
+                reviewInputs: fixture.reviewInputs,
+                submission: FH5CandidateTrialSubmission(
+                    capture: experimentCapture(
+                        field: .frontTirePressure,
+                        candidate:
+                            fixture.artifact.change.candidateValue,
+                        reusePermitted: true,
+                        outcome: .baselinePreferred
+                    ),
+                    lockedArtifact: fixture.artifact
+                ),
+                submissionID: UUID(),
+                permissionReceiptID: UUID(),
+                createdAt: fixture.record.createdAt
+            )
+        for records in [
+            [fixture.record, changedOutcomeClone],
+            [changedOutcomeClone, fixture.record]
+        ] {
+            let alteredReport =
+                FH5CandidateOutcomeCollectionEvaluator().evaluate(
+                    localRecords: records,
+                    reviewedEntries: [],
+                    matchingAssociationFingerprint: association
+                )
+            XCTAssertEqual(
+                alteredReport.verifiedUniqueSessionCount,
+                0
+            )
+            XCTAssertEqual(alteredReport.semanticReplayCount, 2)
+            XCTAssertEqual(alteredReport.quarantinedCount, 2)
+        }
+    }
+
+    func testCandidateOutcomeShareGateRequiresExactInternalBinding()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        var authorization =
+            FH5CandidateOutcomeShareAuthorization()
+        XCTAssertFalse(authorization.consume())
+        authorization.confirm()
+        XCTAssertTrue(authorization.consume())
+        XCTAssertFalse(authorization.consume())
+
+        let secondResearch = try FH5ResearchObservationFactory().make(
+            tune: fixture.plan,
+            savedTune: fixture.plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: fixture.plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable
+            ),
+            capturedAt: capturedAt.addingTimeInterval(30)
+        )
+        let secondArtifact = try FH5CandidateTrialCoordinator()
+            .generate(
+                tune: fixture.plan,
+                savedTune: fixture.plan,
+                isStreaming: false,
+                researchRecords: [secondResearch],
+                reviewInputs: fixture.reviewInputs,
+                input: .controller,
+                surface: .dry
+            )
+        let exchange = FH5CandidateOutcomeExchange()
+        XCTAssertEqual(
+            try exchange.associationFingerprint(
+                for: fixture.artifact
+            ),
+            try exchange.associationFingerprint(
+                for: secondArtifact
+            )
+        )
+        XCTAssertNotEqual(
+            fixture.artifact.candidateBinding,
+            secondArtifact.candidateBinding
+        )
+        XCTAssertTrue(
+            exchange.canShare(
+                fixture.record,
+                currentArtifact: fixture.artifact
+            )
+        )
+        XCTAssertFalse(
+            exchange.canShare(
+                fixture.record,
+                currentArtifact: secondArtifact
+            )
+        )
+
+        var staleAuthorization =
+            FH5CandidateOutcomeShareAuthorization()
+        staleAuthorization.confirm()
+        XCTAssertThrowsError(
+            try exchange.prepareShare(
+                from: fixture.record,
+                currentArtifact: secondArtifact,
+                authorization: &staleAuthorization
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .candidateMismatch
+            )
+        }
+        XCTAssertFalse(staleAuthorization.isConfirmed)
+        XCTAssertThrowsError(
+            try exchange.prepareShare(
+                from: fixture.record,
+                currentArtifact: fixture.artifact,
+                authorization: &staleAuthorization
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .shareConfirmationRequired
+            )
+        }
+
+        var currentAuthorization =
+            FH5CandidateOutcomeShareAuthorization()
+        currentAuthorization.confirm()
+        _ = try exchange.prepareShare(
+            from: fixture.record,
+            currentArtifact: fixture.artifact,
+            authorization: &currentAuthorization
+        )
+        XCTAssertFalse(currentAuthorization.isConfirmed)
+    }
+
+    func testCandidateOutcomeReportIgnoresUnrelatedHistoricalAssociation()
+        async throws {
+        let sharedSubmissionID = UUID()
+        let sharedReceiptID = UUID()
+        let current = try await makeCandidateOutcomeFixture(
+            reusePermitted: true,
+            submissionID: sharedSubmissionID,
+            permissionReceiptID: sharedReceiptID,
+            createdAt: capturedAt
+        )
+        let historical = try await makeCandidateOutcomeFixture(
+            reusePermitted: true,
+            submissionID: sharedSubmissionID,
+            permissionReceiptID: sharedReceiptID,
+            createdAt: capturedAt,
+            fh5EntryOffset: 1
+        )
+        let exchange = FH5CandidateOutcomeExchange()
+        let currentAssociation = try exchange
+            .associationFingerprint(for: current.artifact)
+        XCTAssertNotEqual(
+            currentAssociation,
+            try exchange.associationFingerprint(
+                for: historical.artifact
+            )
+        )
+        let baseline = FH5CandidateOutcomeCollectionEvaluator()
+            .evaluate(
+                localRecords: [current.record],
+                reviewedEntries: [],
+                matchingAssociationFingerprint: currentAssociation
+            )
+        let historicalData = try exchange.makeExport(
+            from: historical.record,
+            explicitShareConfirmed: true
+        ).deterministicJSON()
+        let historicalEntry =
+            try FH5CandidateOutcomeReviewEntry.locallyReviewed(
+                canonicalExportJSON: historicalData,
+                expectedArtifact: historical.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true,
+                now: capturedAt
+            )
+        let withHistory =
+            FH5CandidateOutcomeCollectionEvaluator().evaluate(
+                localRecords: [
+                    current.record, historical.record
+                ],
+                reviewedEntries: [historicalEntry],
+                matchingAssociationFingerprint: currentAssociation
+            )
+
+        XCTAssertEqual(baseline.receivedCount, 1)
+        XCTAssertEqual(baseline.verifiedUniqueSessionCount, 1)
+        XCTAssertEqual(withHistory, baseline)
+        XCTAssertEqual(withHistory.conflictCount, 0)
+        XCTAssertEqual(withHistory.receiptReplayCount, 0)
+        XCTAssertEqual(withHistory.semanticReplayCount, 0)
+        XCTAssertEqual(withHistory.quarantinedCount, 0)
+    }
+
+    func testSavedTuneCandidateOutcomeReviewQueueIsScopedDeletableAndFailClosed()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let data = try FH5CandidateOutcomeExchange()
+            .makeExport(
+                from: fixture.record,
+                explicitShareConfirmed: true
+            ).deterministicJSON()
+        let entry = try FH5CandidateOutcomeReviewEntry
+            .locallyReviewed(
+                canonicalExportJSON: data,
+                expectedArtifact: fixture.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true,
+                now: capturedAt
+            )
+        let configuration = ModelConfiguration(
+            isStoredInMemoryOnly: true
+        )
+        let container = try ModelContainer(
+            for: SavedTune.self,
+            configurations: configuration
+        )
+        let context = ModelContext(container)
+        let saved = try SavedTune(tune: fixture.plan)
+        context.insert(saved)
+        try persistCandidatePrerequisites(
+            fixture: fixture,
+            in: saved
+        )
+
+        XCTAssertTrue(
+            saved.fh5CandidateOutcomeReviewEntries.isEmpty
+        )
+        try saved.appendFH5CandidateOutcomeReviewEntry(entry)
+        try saved.appendFH5CandidateOutcomeReviewEntry(entry)
+        XCTAssertEqual(
+            try saved.fh5CandidateOutcomeReviewEntries(
+                matching: fixture.artifact
+            ),
+            [entry]
+        )
+        XCTAssertEqual(
+            try saved.fh5CandidateOutcomeCollectionReport(
+                matching: fixture.artifact
+            ).verifiedUniqueSessionCount,
+            1
+        )
+        XCTAssertEqual(
+            try saved.allFH5CandidateOutcomeReviewEntries(),
+            [entry]
+        )
+        let historicalArtifact = try FH5CandidateTrialCoordinator()
+            .generate(
+                tune: fixture.plan,
+                savedTune: fixture.plan,
+                isStreaming: false,
+                researchRecords: [fixture.research],
+                reviewInputs: fixture.reviewInputs,
+                input: .wheel,
+                surface: .dry
+            )
+        XCTAssertTrue(
+            try saved.fh5CandidateOutcomeReviewEntries(
+                matching: historicalArtifact
+            ).isEmpty
+        )
+        XCTAssertEqual(
+            try saved.allFH5CandidateOutcomeReviewEntries(),
+            [entry]
+        )
+        let readiness = FH5NumericReadinessPolicy().assess(
+            tune: fixture.plan,
+            researchRecords: [fixture.research],
+            reviewReport: .empty,
+            controlledOutcomeReport: .empty
+        )
+        XCTAssertFalse(readiness.canGenerateNumeric)
+        XCTAssertEqual(
+            readiness.items.first {
+                $0.gate == .controlledOutcomes
+            }?.state,
+            .blocked
+        )
+        let projected = TuneOutputProjector().project(
+            fixture.plan
+        )
+        XCTAssertEqual(projected.purpose, .fh5BuildPlan)
+        XCTAssertTrue(projected.sections.isEmpty)
+        XCTAssertNil(projected.providerInfo)
+        XCTAssertNil(projected.rulesetReference)
+        XCTAssertNil(
+            TuneClipboardFormatter.verifiedSettingsText(
+                for: projected
+            )
+        )
+        XCTAssertTrue(
+            try saved.deleteFH5CandidateOutcomeReviewEntry(
+                id: entry.id
+            )
+        )
+        XCTAssertTrue(
+            saved.fh5CandidateOutcomeReviewEntries.isEmpty
+        )
+
+        saved.replaceFH5CandidateOutcomeReviewEntriesDataForTesting(
+            Data("corrupt candidate review".utf8)
+        )
+        XCTAssertTrue(
+            saved.fh5CandidateOutcomeReviewEntries.isEmpty
+        )
+        XCTAssertThrowsError(
+            try saved.fh5CandidateOutcomeReviewEntries(
+                matching: fixture.artifact
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .corruptStorage
+            )
+        }
+        XCTAssertEqual(
+            saved.tuneResult?.id,
+            fixture.plan.id
+        )
+        XCTAssertEqual(
+            saved.tuneResult?.request,
+            fixture.plan.request
+        )
+        XCTAssertTrue(saved.tuneResult?.sections.isEmpty == true)
+        XCTAssertNil(saved.tuneResult?.providerInfo)
+        XCTAssertNil(saved.tuneResult?.rulesetReference)
+        XCTAssertTrue(
+            FH5TrustedNumericRulesetRegistry.production.isEmpty
+        )
+    }
+
+    func testSavedTuneCandidateOutcomeImportRegeneratesFromPersistedEvidence()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let data = try FH5CandidateOutcomeExchange()
+            .makeExport(
+                from: fixture.record,
+                explicitShareConfirmed: true
+            ).deterministicJSON()
+        let entry = try FH5CandidateOutcomeReviewEntry
+            .locallyReviewed(
+                canonicalExportJSON: data,
+                expectedArtifact: fixture.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true,
+                now: capturedAt
+            )
+        let configuration = ModelConfiguration(
+            isStoredInMemoryOnly: true
+        )
+        let container = try ModelContainer(
+            for: SavedTune.self,
+            configurations: configuration
+        )
+
+        let staleResearch = try SavedTune(tune: fixture.plan)
+        try persistCandidatePrerequisites(
+            fixture: fixture,
+            in: staleResearch
+        )
+        staleResearch
+            .replaceFH5ResearchObservationRecordsDataForTesting(nil)
+        let researchUpdatedAt = staleResearch.updatedAt
+        XCTAssertThrowsError(
+            try staleResearch
+                .appendFH5CandidateOutcomeReviewEntry(entry)
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .candidateMismatch
+            )
+        }
+        XCTAssertTrue(
+            try staleResearch
+                .allFH5CandidateOutcomeReviewEntries().isEmpty
+        )
+        XCTAssertEqual(staleResearch.updatedAt, researchUpdatedAt)
+
+        let staleReview = try SavedTune(tune: fixture.plan)
+        try persistCandidatePrerequisites(
+            fixture: fixture,
+            in: staleReview
+        )
+        staleReview.replaceFH5ResearchReviewEntriesDataForTesting(nil)
+        let reviewUpdatedAt = staleReview.updatedAt
+        XCTAssertThrowsError(
+            try staleReview
+                .appendFH5CandidateOutcomeReviewEntry(entry)
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .candidateMismatch
+            )
+        }
+        XCTAssertTrue(
+            try staleReview
+                .allFH5CandidateOutcomeReviewEntries().isEmpty
+        )
+        XCTAssertEqual(staleReview.updatedAt, reviewUpdatedAt)
+
+        let foreignFixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true,
+            fh5EntryOffset: 1
+        )
+        let foreignSaved = try SavedTune(
+            tune: foreignFixture.plan
+        )
+        try persistCandidatePrerequisites(
+            fixture: foreignFixture,
+            in: foreignSaved
+        )
+        let foreignUpdatedAt = foreignSaved.updatedAt
+        XCTAssertThrowsError(
+            try foreignSaved
+                .appendFH5CandidateOutcomeReviewEntry(entry)
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CandidateOutcomeExchangeError,
+                .candidateMismatch
+            )
+        }
+        XCTAssertTrue(
+            try foreignSaved
+                .allFH5CandidateOutcomeReviewEntries().isEmpty
+        )
+        XCTAssertEqual(foreignSaved.updatedAt, foreignUpdatedAt)
+    }
+
+    private func makeCandidateOutcomeFixture(
+        reusePermitted: Bool,
+        submissionID: UUID = UUID(),
+        permissionReceiptID: UUID = UUID(),
+        createdAt: Date? = nil,
+        fh5EntryOffset: Int = 0
+    ) async throws -> (
+        plan: TuneResult,
+        research: FH5ResearchObservationRecord,
+        reviewInputs: [FH5ResearchReviewInput],
+        artifact: FH5GeneratedCandidateArtifact,
+        record: FH5ControlledExperimentRecord
+    ) {
+        let plan = try await makePlan(
+            upgradeBuild: "3.688.109.0",
+            fh5EntryOffset: fh5EntryOffset
+        )
+        let research = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable
+            ),
+            capturedAt: capturedAt
+        )
+        let reviewInputs = try reviewedReplicationInputs(
+            plan: plan
+        )
+        let coordinator = FH5CandidateTrialCoordinator()
+        let artifact = try coordinator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            input: .controller,
+            surface: .dry
+        )
+        let record = try coordinator.makeRecord(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            submission: FH5CandidateTrialSubmission(
+                capture: experimentCapture(
+                    field: .frontTirePressure,
+                    candidate: artifact.change.candidateValue,
+                    reusePermitted: reusePermitted
+                ),
+                lockedArtifact: artifact
+            ),
+            submissionID: submissionID,
+            permissionReceiptID: permissionReceiptID,
+            createdAt:
+                createdAt
+                ?? capturedAt.addingTimeInterval(120)
+        )
+        return (
+            plan, research, reviewInputs, artifact, record
+        )
+    }
+
+    @MainActor
+    private func persistCandidatePrerequisites(
+        fixture: (
+            plan: TuneResult,
+            research: FH5ResearchObservationRecord,
+            reviewInputs: [FH5ResearchReviewInput],
+            artifact: FH5GeneratedCandidateArtifact,
+            record: FH5ControlledExperimentRecord
+        ),
+        in savedTune: SavedTune
+    ) throws {
+        try savedTune.appendFH5ResearchObservationRecord(
+            fixture.research
+        )
+        for input in fixture.reviewInputs {
+            let entry = try FH5ResearchReviewEntry.locallyReviewed(
+                canonicalExportJSON: input.exportJSON,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true,
+                now: capturedAt
+            )
+            try savedTune.appendFH5ResearchReviewEntry(entry)
+        }
+    }
+
     private func experimentCapture(
         field: TuneFieldID,
         candidate: Double,

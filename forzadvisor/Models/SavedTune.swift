@@ -33,6 +33,7 @@ final class SavedTune {
     @Attribute(.externalStorage) private var fh5ResearchObservationRecordsData: Data? = nil
     @Attribute(.externalStorage) private var fh5ResearchReviewEntriesData: Data? = nil
     @Attribute(.externalStorage) private var fh5ControlledExperimentRecordsData: Data? = nil
+    @Attribute(.externalStorage) private var fh5CandidateOutcomeReviewEntriesData: Data? = nil
     @Attribute(.externalStorage) private var fh6ValidationReviewEntriesData: Data? = nil
 
     @MainActor
@@ -63,6 +64,7 @@ final class SavedTune {
         self.fh5ResearchObservationRecordsData = nil
         self.fh5ResearchReviewEntriesData = nil
         self.fh5ControlledExperimentRecordsData = nil
+        self.fh5CandidateOutcomeReviewEntriesData = nil
         self.fh6ValidationReviewEntriesData = nil
     }
 
@@ -445,6 +447,145 @@ final class SavedTune {
     }
 
     @MainActor
+    var fh5CandidateOutcomeReviewEntries:
+        [FH5CandidateOutcomeReviewEntry] {
+        (try? decodedFH5CandidateOutcomeReviewEntries()) ?? []
+    }
+
+    @MainActor
+    func allFH5CandidateOutcomeReviewEntries()
+        throws -> [FH5CandidateOutcomeReviewEntry] {
+        try decodedFH5CandidateOutcomeReviewEntries()
+            .sorted {
+                if $0.importedAt != $1.importedAt {
+                    return $0.importedAt < $1.importedAt
+                }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+    }
+
+    @MainActor
+    func fh5CandidateOutcomeReviewEntries(
+        matching artifact: FH5GeneratedCandidateArtifact
+    ) throws -> [FH5CandidateOutcomeReviewEntry] {
+        let exchange = FH5CandidateOutcomeExchange()
+        let associationFingerprint = try exchange
+            .associationFingerprint(for: artifact)
+        return try decodedFH5CandidateOutcomeReviewEntries()
+            .filter {
+                $0.permission.associationFingerprint
+                    == associationFingerprint
+            }
+            .sorted {
+                if $0.importedAt != $1.importedAt {
+                    return $0.importedAt < $1.importedAt
+                }
+                return $0.id.uuidString < $1.id.uuidString
+            }
+    }
+
+    @MainActor
+    func fh5CandidateOutcomeCollectionReport(
+        matching artifact: FH5GeneratedCandidateArtifact
+    ) throws -> FH5CandidateOutcomeCollectionReport {
+        let exchange = FH5CandidateOutcomeExchange()
+        let associationFingerprint = try exchange
+            .associationFingerprint(for: artifact)
+        return FH5CandidateOutcomeCollectionEvaluator().evaluate(
+            localRecords: try decodedFH5ControlledExperimentRecords(),
+            reviewedEntries:
+                try decodedFH5CandidateOutcomeReviewEntries(),
+            matchingAssociationFingerprint: associationFingerprint
+        )
+    }
+
+    @MainActor
+    func appendFH5CandidateOutcomeReviewEntry(
+        _ entry: FH5CandidateOutcomeReviewEntry
+    ) throws {
+        let exchange = FH5CandidateOutcomeExchange()
+        guard exchange.isValidReviewEntry(entry),
+              let validated = try? exchange.validate(
+                entry.canonicalExportJSON
+              ),
+              let currentTune = tuneResult else {
+            throw FH5CandidateOutcomeExchangeError
+                .candidateMismatch
+        }
+        let association = validated.export.association
+        let researchRecords = fh5ResearchObservationRecords(
+            matching: currentTune
+        )
+        let reviewInputs = fh5ResearchReviewEntries(
+            matching: currentTune
+        ).map { FH5ResearchReviewInput(entry: $0) }
+        let freshArtifact: FH5GeneratedCandidateArtifact
+        do {
+            freshArtifact = try FH5CandidateTrialCoordinator()
+                .generate(
+                    tune: currentTune,
+                    savedTune: currentTune,
+                    isStreaming: false,
+                    researchRecords: researchRecords,
+                    reviewInputs: reviewInputs,
+                    input: association.context.input,
+                    surface: association.context.surface
+                )
+        } catch {
+            throw FH5CandidateOutcomeExchangeError
+                .candidateMismatch
+        }
+        guard try exchange.matches(
+            validated,
+            locallyRegeneratedArtifact: freshArtifact
+        ) else {
+            throw FH5CandidateOutcomeExchangeError
+                .candidateMismatch
+        }
+        let oneEntryReport = FH5CandidateOutcomeCollectionEvaluator()
+            .evaluate(
+                localRecords: [],
+                reviewedEntries: [entry],
+                matchingAssociationFingerprint:
+                    validated.export.associationFingerprint
+            )
+        guard oneEntryReport.verifiedUniqueSessionCount == 1,
+              oneEntryReport.quarantinedCount == 0 else {
+            throw FH5CandidateOutcomeExchangeError
+                .permissionNotConfirmed
+        }
+
+        var entries = try decodedFH5CandidateOutcomeReviewEntries()
+        guard !entries.contains(where: {
+            $0.id == entry.id
+                || $0.permission.canonicalExportDigest
+                    == entry.permission.canonicalExportDigest
+        }) else {
+            return
+        }
+        entries.append(entry)
+        fh5CandidateOutcomeReviewEntriesData =
+            try Self.encoder.encode(entries)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteFH5CandidateOutcomeReviewEntry(
+        id: UUID
+    ) throws -> Bool {
+        var entries = try decodedFH5CandidateOutcomeReviewEntries()
+        let priorCount = entries.count
+        entries.removeAll { $0.id == id }
+        guard entries.count != priorCount else { return false }
+        fh5CandidateOutcomeReviewEntriesData = entries.isEmpty
+            ? nil
+            : try Self.encoder.encode(entries)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
     func fh6ValidationReviewEntries(
         matching tune: TuneResult
     ) throws -> [FH6ValidationReviewEntry] {
@@ -617,6 +758,30 @@ final class SavedTune {
     }
 
     @MainActor
+    private func decodedFH5CandidateOutcomeReviewEntries() throws
+        -> [FH5CandidateOutcomeReviewEntry] {
+        guard let fh5CandidateOutcomeReviewEntriesData else {
+            return []
+        }
+        do {
+            let entries = try Self.decoder.decode(
+                [FH5CandidateOutcomeReviewEntry].self,
+                from: fh5CandidateOutcomeReviewEntriesData
+            )
+            guard entries.allSatisfy(
+                FH5CandidateOutcomeExchange()
+                    .isValidReviewEntry
+            ) else {
+                throw FH5CandidateOutcomeExchangeError
+                    .corruptStorage
+            }
+            return entries
+        } catch {
+            throw FH5CandidateOutcomeExchangeError.corruptStorage
+        }
+    }
+
+    @MainActor
     private func decodedFH6ValidationReviewEntries() throws
         -> [FH6ValidationReviewEntry] {
         guard let fh6ValidationReviewEntriesData else { return [] }
@@ -675,6 +840,13 @@ final class SavedTune {
     @MainActor
     func replaceFH5ControlledExperimentRecordsDataForTesting(_ data: Data?) {
         fh5ControlledExperimentRecordsData = data
+    }
+
+    @MainActor
+    func replaceFH5CandidateOutcomeReviewEntriesDataForTesting(
+        _ data: Data?
+    ) {
+        fh5CandidateOutcomeReviewEntriesData = data
     }
 
     @MainActor

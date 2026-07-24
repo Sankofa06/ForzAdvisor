@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.10.0 (Build 33) - 2026-07-23
+
+- Added explicit, deidentified sharing for reuse-permitted FH5 Candidate Outcomes, with a separate per-share confirmation and no background upload.
+- Added strict local Candidate Outcome Review: canonical JSON, code-owned registration validation, exact locally regenerated candidate matching, direct-receipt permission, replay/conflict quarantine, and deletion.
+- Added a collection-only local-plus-reviewed summary that cannot register or promote a ruleset, authorize readiness, create a `TuneResult`, or unlock/copy numeric FH5 settings.
+
 ## Version 1.9.0 (Build 32) - 2026-07-23
 
 - Added an experimental FH5 Candidate Trial for exact saved plans whose permission-bound Research observations independently agree.
@@ -157,15 +163,15 @@
 
 ## App Store What's New
 
-Replication-qualified FH5 plans can now run one locked experimental candidate trial and save its outcome locally. Numeric FH5 tuning remains locked.
+Reuse-permitted FH5 Candidate Outcomes can now be shared explicitly and reviewed on another device only after it independently regenerates the exact candidate. Numeric FH5 tuning remains locked.
 
 ## TestFlight Notes
 
-Regression focus for build 32: create or open a saved exact FH5 catalog plan, complete Upgrade Lab, and provide two canonical permission-bound Research Review observations that exactly replicate the local Research Lab stock-menu measurements. When the car pushes wide and front tire pressure can move one observed legal step lower, confirm the result and Beta Mission surfaces label the next action as an experimental candidate trial, not a tune.
+Create or open a saved exact FH5 catalog plan, complete Upgrade Lab, and provide two canonical permission-bound Research Review observations that exactly replicate the local Research Lab stock-menu measurements. When the car pushes wide and front tire pressure can move one observed legal step lower, confirm the result and Beta Mission surfaces label the next action as an experimental candidate trial, not a tune.
 
 Open the trial, choose input and surface, then lock it. Confirm those choices become disabled, the screen shows the exact stock A and one-step-lower B front tire pressure, and the fixed route and A-B-B-A sequence are clear. Complete the confirmations and save. If Research evidence or the saved plan changes after locking, submission must fail instead of accepting the stale candidate.
 
-Confirm the saved result hides the candidate value, says the schema-v2 record is local-only and non-exportable, offers no share action, and shows local exact-outcome progress. Reuse permission starts off and applies only to local deidentified evaluation. The saved plan, copied build plan, provider attribution, numeric readiness, and every FH5 numeric setting must remain unchanged and locked.
+Confirm the saved result hides the candidate value from plan output. Reuse permission starts off. When it was enabled for the trial, a separate confirmation reveals the Candidate Outcome share action. On another exact eligible plan, Candidate Outcome Review must reject mismatches and require direct-receipt permission before import. The summary may count exact reviewed outcomes but must not change the saved plan, copied build plan, provider attribution, numeric readiness, production registry, or any FH5 numeric setting.
 
 For a plan without exact replicated review evidence, confirm the original generic Outcome Lab remains available. Its schema-v1 record can still expose the existing user-initiated deidentified JSON share action only when reuse permission was enabled.
 

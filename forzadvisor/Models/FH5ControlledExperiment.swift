@@ -132,7 +132,7 @@ enum FH5ControlledExperimentIssue: Error, LocalizedError, Equatable {
         case .reuseNotPermitted:
             "Allow deidentified calibration reuse before sharing this experiment."
         case .candidateBoundExportUnsupported:
-            "Candidate-bound experiments stay local until a separate export consent and schema are available."
+            "Candidate-bound experiments do not use generic calibration export. Use the separate consented Candidate Outcome exchange."
         case .unregisteredCandidateAlgorithm:
             "The experimental algorithm is not registered by this build."
         case .candidateArtifactMismatch:

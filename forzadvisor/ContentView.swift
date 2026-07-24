@@ -560,9 +560,40 @@ struct ContentView: View {
                 reviewInputs: researchReviewEntries.map {
                     FH5ResearchReviewInput(entry: $0)
                 },
-                input: .controller,
-                surface: .dry
+                input:
+                    latestExperimentRecord?.candidateBinding == nil
+                    ? .controller
+                    : latestExperimentRecord?.context.input
+                        ?? .controller,
+                surface:
+                    latestExperimentRecord?.candidateBinding == nil
+                    ? .dry
+                    : latestExperimentRecord?.context.surface
+                        ?? .dry
             )
+        let candidateOutcomeReviewState: (
+            entries: [FH5CandidateOutcomeReviewEntry],
+            report: FH5CandidateOutcomeCollectionReport,
+            loadError: String?
+        ) = {
+            guard let resolvedSavedTune,
+                  let candidateTrialArtifact else {
+                return ([], .empty, nil)
+            }
+            do {
+                return (
+                    try resolvedSavedTune
+                        .allFH5CandidateOutcomeReviewEntries(),
+                    try resolvedSavedTune
+                        .fh5CandidateOutcomeCollectionReport(
+                            matching: candidateTrialArtifact
+                        ),
+                    nil
+                )
+            } catch {
+                return ([], .empty, error.localizedDescription)
+            }
+        }()
         let candidateOutcomeReport: FH5ControlledOutcomePolicyReport? = {
             guard let binding =
                     latestExperimentRecord?.candidateBinding else {
@@ -685,6 +716,35 @@ struct ContentView: View {
             latestFH5ControlledExperimentRecord: latestExperimentRecord,
             fh5CandidateTrialAvailable: candidateTrialArtifact != nil,
             fh5CandidateOutcomeReport: candidateOutcomeReport,
+            fh5CandidateTrialArtifact: candidateTrialArtifact,
+            fh5CandidateOutcomeReviewEntries:
+                candidateOutcomeReviewState.entries,
+            fh5CandidateOutcomeCollectionReport:
+                candidateOutcomeReviewState.report,
+            fh5CandidateOutcomeReviewLoadError:
+                candidateOutcomeReviewState.loadError,
+            onImportFH5CandidateOutcomeReviewEntry:
+                resolvedSavedTuneID != nil
+                    && candidateTrialArtifact != nil
+                ? { entry in
+                    guard let resolvedSavedTuneID else {
+                        return ContentWorkflowError
+                            .missingSavedTune.localizedDescription
+                    }
+                    return importFH5CandidateOutcomeReviewEntry(
+                        entry,
+                        savedTuneID: resolvedSavedTuneID
+                    )
+                }
+                : nil,
+            onDeleteFH5CandidateOutcomeReviewEntry: {
+                entry in
+                guard let resolvedSavedTuneID else { return }
+                deleteFH5CandidateOutcomeReviewEntry(
+                    entry,
+                    savedTuneID: resolvedSavedTuneID
+                )
+            },
             onOpenFH5ControlledExperiment:
                 experimentEligibility.isSuccess && resolvedSavedTuneID != nil
                 ? {
