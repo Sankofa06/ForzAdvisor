@@ -125,6 +125,33 @@ struct BetaValidationProgressShare: Equatable, Sendable {
     let text: String
 }
 
+struct FH5ResearchPartnerInvite: Equatable, Sendable {
+    static let testFlightURL = URL(
+        string: "https://testflight.apple.com/join/ec1RxDV3"
+    )!
+
+    static let current = FH5ResearchPartnerInvite(
+        subject: "Join the ForzAdvisor FH5 Research Partners",
+        text: """
+        Join the ForzAdvisor FH5 Research Partners
+
+        Play Forza Horizon 5 and use an iPhone with iOS 17 or later? Join the ForzAdvisor FH5 Research Partners TestFlight group:
+        \(testFlightURL.absoluteString)
+
+        Apple controls external beta availability. TestFlight access begins after Apple approves the beta.
+
+        Coordinate with another tester on the same FH5 game build and the same untouched stock catalog car. In ForzAdvisor, create and save the exact plan, complete Upgrade Lab, and complete the required Research evidence before running a Candidate Trial.
+
+        Use Candidate Outcome JSON only after explicit permission for deidentified reuse and sharing, and only when the recipient can confirm direct receipt. Reviewed outcomes are collection-only and cannot unlock numeric FH5 tuning. ForzAdvisor does not authenticate tester identity.
+
+        Send feedback through TestFlight's Send Beta Feedback. Include the car, FH5 game build, input, surface, and the exact step that was unclear or unexpectedly rejected. Do not include Candidate Outcome JSON, identifiers, fingerprints, or other private data in the invite.
+        """
+    )
+
+    let subject: String
+    let text: String
+}
+
 struct BetaValidationMissionBoard: Equatable, Sendable {
     let missions: [BetaValidationMission]
     let progress: BetaValidationProgress

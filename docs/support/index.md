@@ -34,6 +34,14 @@ Open Beta Validation Missions from the garage to see the next local testing task
 
 The mission board does not upload progress or create evidence by itself. Share Beta Progress opens the iOS system share sheet with aggregate counts only and excludes car names, tune values, notes, identifiers, screenshots, and analytics.
 
+### How do I join or invite an FH5 Research Partner?
+
+In Beta Validation Missions, open FH5 Research Partners. You can open the capped public TestFlight group at https://testflight.apple.com/join/ec1RxDV3 or share a public-only invitation. The invitation contains no local progress counts, car values, identifiers, fingerprints, or Candidate Outcome JSON.
+
+Partners need FH5 and an iPhone with iOS 17 or later. Apple controls external beta availability; after approval, install the latest TestFlight beta, coordinate the same FH5 game build and untouched stock catalog car, save the exact plan, and complete Upgrade Lab plus the required Research evidence. Candidate Outcome JSON may be used only with explicit deidentified reuse/share permission and confirmed direct receipt. Reviewed outcomes are collection-only and cannot unlock numeric FH5 tuning; UUIDs and hashes do not authenticate tester identity.
+
+Use TestFlight's Send Beta Feedback and include the car, FH5 game build, input, surface, and exact step that was unclear or unexpectedly rejected. Do not include private JSON or identifiers in an invitation or feedback report.
+
 ### What is FH6 Validation Review?
 
 Open an eligible saved exact-build FH6 tune and choose Open Validation Review under Accuracy Evidence. Paste an exact ForzAdvisor Test Drive JSON export for that setup. The app validates the canonical bytes, current game build and ruleset, verified shop availability, car, discipline, and applied settings before it can be imported.

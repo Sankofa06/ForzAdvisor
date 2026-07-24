@@ -4,15 +4,15 @@ Last updated: 2026-07-23
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.10.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.10.1` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.10.0`.
-- Current project build is `33`.
+- Current project version is `1.10.1`.
+- Current project build is `34`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -45,6 +45,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - FH5 Outcome Lab stores exact-plan, one-variable A-B-B-A experiment evidence locally, requires stock restoration, and cannot register a ruleset or unlock numeric tuning. Generic calibration sharing remains a separate schema-v1 path. Replication-qualified generated candidate trials are explicitly experimental and regenerated against current persisted evidence. A reuse-permitted schema-v2 outcome can leave only after a separate per-share confirmation; import requires an exact locally regenerated candidate and direct-receipt permission, stays in a separate review queue, and cannot affect readiness or numeric output.
 - FH6 Validation Review stores exact permission-bound Test Drive JSON in a separate local queue, requires the same eligible exact-build boundary as local Test Drive capture, and reports outcomes without modifying tunes or promoting the experimental ruleset.
 - Beta Validation Missions are derived locally from existing eligibility checks, create no records by themselves, and share aggregate counts only through a user-initiated system share sheet.
+- FH5 Research Partners uses the exact public TestFlight URL `https://testflight.apple.com/join/ec1RxDV3`. Its separate invite contains no local counts, car values, IDs, fingerprints, or JSON; it states exact-plan/evidence and permission prerequisites, the collection-only numeric boundary, and the TestFlight Send Beta Feedback path.
 - FH6 offline formula tuning is the default numeric provider and requires no account or API key.
 - Optional on-device model assistance and user-key Anthropic API mode apply to FH6 generation; reviewers can complete both catalog flows offline.
 - Screenshots and camera photos are processed locally for OCR. Current code does not upload screenshot images.

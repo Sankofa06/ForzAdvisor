@@ -34,6 +34,14 @@ Open Beta Validation Missions from the garage to see the next local testing task
 
 The mission board does not upload progress or create evidence by itself. Share Beta Progress opens the iOS system share sheet with aggregate counts only and excludes car names, tune values, notes, identifiers, screenshots, and analytics.
 
+### How do I join or invite an FH5 Research Partner?
+
+In Beta Validation Missions, open FH5 Research Partners. You can open the capped public TestFlight group at https://testflight.apple.com/join/ec1RxDV3 or share a public-only invitation. It contains no local counts, car values, identifiers, fingerprints, or Candidate Outcome JSON.
+
+Partners need FH5 and an iPhone with iOS 17 or later. Apple controls external beta availability; after approval, install the latest beta, coordinate the same FH5 game build and untouched stock catalog car, save the exact plan, and complete Upgrade Lab plus required Research evidence. Candidate Outcome JSON still requires explicit reuse/share and direct-receipt permission. Reviewed outcomes are collection-only and cannot unlock numeric FH5 tuning; IDs and hashes do not authenticate identity.
+
+Send feedback through TestFlight's Send Beta Feedback with the car, game build, input, surface, and exact unclear or unexpectedly rejected step. Do not include private JSON or identifiers.
+
 ### What is FH5 Outcome Lab?
 
 After a matching Research Lab record and complete Upgrade Lab observation exist, Outcome Lab guides a fixed A-B-B-A Horizon Test Track experiment. You compare stock with one user-selected slider step while keeping the route, conditions, assists, input, and every other setting unchanged, then restore the stock value.

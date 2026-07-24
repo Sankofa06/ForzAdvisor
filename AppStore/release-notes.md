@@ -1,5 +1,9 @@
 # Release Notes
 
+## Version 1.10.1 (Build 34) - 2026-07-23
+
+- Added an FH5 Research Partners handoff in Beta Validation Missions with a public TestFlight link and a privacy-safe invite that explains exact-plan prerequisites, permission boundaries, Apple-controlled beta availability, and the TestFlight feedback path.
+
 ## Version 1.10.0 (Build 33) - 2026-07-23
 
 - Added explicit, deidentified sharing for reuse-permitted FH5 Candidate Outcomes, with a separate per-share confirmation and no background upload.
@@ -163,7 +167,7 @@
 
 ## App Store What's New
 
-Reuse-permitted FH5 Candidate Outcomes can now be shared explicitly and reviewed on another device only after it independently regenerates the exact candidate. Numeric FH5 tuning remains locked.
+Reuse-permitted FH5 Candidate Outcomes can now be shared explicitly and reviewed on another device only after it independently regenerates the exact candidate. Beta Missions can also invite an FH5 Research Partner through the public TestFlight group. Numeric FH5 tuning remains locked.
 
 ## TestFlight Notes
 
@@ -176,6 +180,8 @@ Confirm the saved result hides the candidate value from plan output. Reuse permi
 For a plan without exact replicated review evidence, confirm the original generic Outcome Lab remains available. Its schema-v1 record can still expose the existing user-initiated deidentified JSON share action only when reuse permission was enabled.
 
 Confirm Copilot distinguishes generic calibration from an experimental candidate trial, and that Beta Missions never describes the candidate as validated tuning advice. Existing FH5 manual/OCR/edited inputs and all FH6 catalog, Tune Lab, refinement, sharing, Test Drive, and Validation Review workflows should remain unchanged.
+
+In Beta Validation Missions, confirm FH5 Research Partners can share a public-only invitation or open `https://testflight.apple.com/join/ec1RxDV3`. The invite must contain no local progress counts, car values, identifiers, fingerprints, or Candidate Outcome JSON. Feedback should be sent through TestFlight's Send Beta Feedback with the car, game build, input, surface, and exact unclear or unexpectedly rejected step.
 
 ## Reviewer Notes
 

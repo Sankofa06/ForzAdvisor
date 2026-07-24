@@ -22,6 +22,8 @@ Candidate Outcome Review accepts canonical JSON only when this device independen
 
 From Beta Validation Missions, you can open the iOS system share sheet with a progress summary containing only the number of saved setups, permission-bound evidence records, setups with exact upgrade paths, and currently available missions. It excludes car names, disciplines, tune values, notes, identifiers, screenshots, JSON, fingerprints, receipts, provider details, and ruleset details. Sharing is user-initiated, and ForzAdvisor does not record the destination or history.
 
+The separate FH5 Research Partner invite contains only the public TestFlight link, testing prerequisites, safety boundaries, and feedback instructions. It contains no local counts, car values, IDs, fingerprints, receipts, or Candidate Outcome JSON. Opening or sharing it is user-initiated and adds no recruitment analytics, authentication, background upload, or share-history recording. Candidate Outcome reuse remains governed by its own explicit permission and direct-receipt checks.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.

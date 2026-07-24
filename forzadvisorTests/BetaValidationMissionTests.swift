@@ -228,6 +228,76 @@ final class BetaValidationMissionTests: XCTestCase {
         }
     }
 
+    func testFH5ResearchPartnerInviteUsesExactPublicTestFlightURL() {
+        let url = FH5ResearchPartnerInvite.testFlightURL
+
+        XCTAssertEqual(
+            url.absoluteString,
+            "https://testflight.apple.com/join/ec1RxDV3"
+        )
+        XCTAssertEqual(url.scheme, "https")
+        XCTAssertEqual(url.host, "testflight.apple.com")
+        XCTAssertEqual(url.path, "/join/ec1RxDV3")
+    }
+
+    func testFH5ResearchPartnerInviteIsDeterministicAndStatesBoundaries() {
+        let first = FH5ResearchPartnerInvite.current
+        let second = FH5ResearchPartnerInvite.current
+
+        XCTAssertEqual(first, second)
+        XCTAssertEqual(
+            first.subject,
+            "Join the ForzAdvisor FH5 Research Partners"
+        )
+
+        let requiredPhrases = [
+            "Forza Horizon 5",
+            "iPhone with iOS 17 or later",
+            "Join the ForzAdvisor FH5 Research Partners TestFlight group",
+            "TestFlight access begins after Apple approves the beta",
+            "same FH5 game build",
+            "same untouched stock catalog car",
+            "create and save the exact plan",
+            "complete Upgrade Lab",
+            "complete the required Research evidence",
+            "explicit permission for deidentified reuse and sharing",
+            "confirm direct receipt",
+            "collection-only",
+            "cannot unlock numeric FH5 tuning",
+            "does not authenticate tester identity",
+            "TestFlight's Send Beta Feedback",
+            "car, FH5 game build, input, surface",
+            "exact step that was unclear or unexpectedly rejected"
+        ]
+        for phrase in requiredPhrases {
+            XCTAssertTrue(first.text.contains(phrase), phrase)
+        }
+    }
+
+    func testFH5ResearchPartnerInviteExcludesLocalAndPrivatePayloadData() {
+        let forbiddenTokens = [
+            "Saved setups:",
+            "Permission-bound evidence records:",
+            "Validation missions ready:",
+            "SECRET-CAR-NAME",
+            "29.5 PSI",
+            "11111111-1111-1111-1111-111111111111",
+            "generatedCandidateFingerprint",
+            "planRevisionFingerprint",
+            "researchContentFingerprint",
+            "\"schemaVersion\"",
+            "\"submissionID\""
+        ]
+
+        for token in forbiddenTokens {
+            XCTAssertFalse(
+                FH5ResearchPartnerInvite.current.text
+                    .localizedCaseInsensitiveContains(token),
+                token
+            )
+        }
+    }
+
     @MainActor
     func testSavedFH5PlanUsesProductionEligibilityAndCorruptStorageFailsClosed() async throws {
         let plan = try await makeFH5Plan()

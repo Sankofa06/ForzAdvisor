@@ -96,6 +96,39 @@ struct BetaValidationMissionsView: View {
                 }
                 .forzAdvisorRowBackground()
 
+                Section("FH5 Research Partners") {
+                    Text("Invite an FH5 player to join the Research Partners TestFlight group and coordinate one exact, permission-bound Candidate Trial. Apple controls external beta availability.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    ShareLink(
+                        item: FH5ResearchPartnerInvite.current.text,
+                        subject: Text(
+                            FH5ResearchPartnerInvite.current.subject
+                        )
+                    ) {
+                        Label(
+                            "Share Research Partner Invite",
+                            systemImage: "person.badge.plus"
+                        )
+                    }
+                    .accessibilityIdentifier(
+                        "shareFH5ResearchPartnerInvite"
+                    )
+                    Link(
+                        destination:
+                            FH5ResearchPartnerInvite.testFlightURL
+                    ) {
+                        Label(
+                            "Open FH5 Research Partners TestFlight",
+                            systemImage: "arrow.up.right.square"
+                        )
+                    }
+                    .accessibilityIdentifier(
+                        "openFH5ResearchPartnersTestFlight"
+                    )
+                }
+                .forzAdvisorRowBackground()
+
                 Section("Invite More Testing") {
                     Text("Share aggregate progress to show that you are helping test ForzAdvisor. Sharing is always your choice.")
                         .font(.caption)
