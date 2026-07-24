@@ -1,3 +1,4 @@
 DerivedData/
 Screenshots/Simulator/
 *.xcresult
+forzadvisorTests/Fixtures/*.private.json

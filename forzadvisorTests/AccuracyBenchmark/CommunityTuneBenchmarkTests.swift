@@ -505,6 +505,31 @@ final class CommunityTuneBenchmarkTests: XCTestCase {
         XCTAssertEqual(report.fixtures[0].candidate.status, .supported)
     }
 
+    func testRunOptInBundledLocalResearchDocument() async throws {
+        guard let bundledDocumentURL = Bundle(for: Self.self).url(
+            forResource: "CommunityTuneLocalResearch.private",
+            withExtension: "json"
+        ) else {
+            return
+        }
+
+        let documentData = try Data(contentsOf: bundledDocumentURL)
+        let report = try await CommunityTuneBenchmark.run(
+            documentData: documentData,
+            mode: .localResearch
+        )
+        let encoded = try CommunityTuneBenchmark.encodedReport(report)
+        let attachment = XCTAttachment(
+            data: encoded,
+            uniformTypeIdentifier: "public.json"
+        )
+        attachment.name = "ForzAdvisor Community Tune Benchmark Report"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+
+        XCTAssertFalse(report.fixtures.isEmpty)
+    }
+
     func testReportOrderingAndJSONAreDeterministic() async throws {
         let first = metadataFixture(id: "z-last", sourceID: "source.z", game: .fh6)
         let second = metadataFixture(id: "a-first", sourceID: "source.a", game: .fh5)
