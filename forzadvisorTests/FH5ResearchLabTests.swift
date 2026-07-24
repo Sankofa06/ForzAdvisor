@@ -409,7 +409,8 @@ final class FH5ResearchLabTests: XCTestCase {
         var capture = validCapture(
             drivetrain: plan.request.car.drivetrain,
             gearCount: 6,
-            availability: .adjustable
+            availability: .adjustable,
+            reuse: true
         )
         let rearCamberIndex = try XCTUnwrap(
             capture.controls.firstIndex { $0.field == .rearCamber }
@@ -1746,6 +1747,362 @@ final class FH5ResearchLabTests: XCTestCase {
         }
     }
 
+    func testCleanRoomDirectionalGeneratorProducesDeterministicBoundArtifact() async throws {
+        let plan = try await makePlan(upgradeBuild: "3.688.109.0")
+        let older = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable
+            ),
+            capturedAt: capturedAt
+        )
+        let latest = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable
+            ),
+            capturedAt: capturedAt.addingTimeInterval(60)
+        )
+        let registration = try makeExperimentalRegistration()
+        let registry = try FH5TrustedNumericRulesetRegistry(
+            validating: [registration]
+        )
+        let generator = FH5CleanRoomDirectionalCandidateGenerator()
+        let reviewInputs = try reviewedReplicationInputs(plan: plan)
+        let first = try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [older, latest],
+            reviewInputs: reviewInputs,
+            targetSymptom: .pushesWide,
+            input: .controller,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: registry
+        )
+        let reordered = try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [latest, older],
+            reviewInputs: Array(reviewInputs.reversed()),
+            targetSymptom: .pushesWide,
+            input: .controller,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: registry
+        )
+
+        XCTAssertEqual(first, reordered)
+        XCTAssertEqual(first.game, .fh5)
+        XCTAssertEqual(first.researchContentFingerprint, latest.contentFingerprint)
+        XCTAssertEqual(first.change.field, .frontTirePressure)
+        XCTAssertEqual(first.change.baselineValue, 50)
+        XCTAssertEqual(first.change.candidateValue, 49)
+        XCTAssertEqual(first.change.step, 1)
+        XCTAssertEqual(first.change.unit, .psi)
+        XCTAssertEqual(first.targetSymptom, .pushesWide)
+        XCTAssertTrue(first.candidateBinding.isValid(for: registration))
+        XCTAssertTrue(plan.sections.isEmpty)
+        XCTAssertNil(plan.providerInfo)
+        XCTAssertNil(plan.rulesetReference)
+
+        let wheel = try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [latest],
+            reviewInputs: reviewInputs,
+            targetSymptom: .pushesWide,
+            input: .wheel,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: registry
+        )
+        XCTAssertNotEqual(
+            first.candidateBinding.generatedCandidateFingerprint,
+            wheel.candidateBinding.generatedCandidateFingerprint
+        )
+
+        let record = try FH5ControlledExperimentFactory().makeCandidateBound(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [latest],
+            capture: experimentCapture(
+                field: .frontTirePressure,
+                candidate: 49
+            ),
+            candidateArtifact: first,
+            registry: registry
+        )
+        XCTAssertEqual(
+            record.schemaVersion,
+            FH5ControlledExperimentRecord.candidateBoundSchemaVersion
+        )
+        XCTAssertThrowsError(try FH5ControlledExperimentFactory().makeCandidateBound(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [latest],
+            capture: FH5ControlledExperimentCapture(
+                field: .frontTirePressure,
+                candidateValue: 49,
+                input: .wheel,
+                surface: .dry,
+                targetSymptom: .pushesWide,
+                outcome: .variantPreferred,
+                sameRouteAndConditionsConfirmed: true,
+                sameAssistsAndInputConfirmed: true,
+                onlyDeclaredFieldChangedConfirmed: true,
+                sequenceCompletedConfirmed: true,
+                stockValuesRestoredConfirmed: true,
+                firstPartyAuthorshipConfirmed: true,
+                localStoragePermitted: true,
+                deidentifiedReusePermitted: false
+            ),
+            candidateArtifact: first,
+            registry: registry
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5ControlledExperimentIssue,
+                .candidateArtifactMismatch
+            )
+        }
+    }
+
+    func testCleanRoomDirectionalGeneratorFailsClosedOnAuthorityAndEvidence() async throws {
+        let plan = try await makePlan(upgradeBuild: "3.688.109.0")
+        let research = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable
+            ),
+            capturedAt: capturedAt
+        )
+        let registration = try makeExperimentalRegistration()
+        let registry = try FH5TrustedNumericRulesetRegistry(
+            validating: [registration]
+        )
+        let generator = FH5CleanRoomDirectionalCandidateGenerator()
+        let reviewInputs = try reviewedReplicationInputs(plan: plan)
+
+        XCTAssertThrowsError(try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            targetSymptom: .pushesWide,
+            input: .controller,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: .production
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CleanRoomDirectionalCandidateIssue,
+                .experiment(.unregisteredCandidateAlgorithm)
+            )
+        }
+        XCTAssertThrowsError(try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            targetSymptom: .oversteersOnExit,
+            input: .controller,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: registry
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CleanRoomDirectionalCandidateIssue,
+                .unsupportedSymptom
+            )
+        }
+        XCTAssertThrowsError(try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: true,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            targetSymptom: .pushesWide,
+            input: .controller,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: registry
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CleanRoomDirectionalCandidateIssue,
+                .experiment(.streaming)
+            )
+        }
+        XCTAssertThrowsError(try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: [],
+            targetSymptom: .pushesWide,
+            input: .controller,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: registry
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CleanRoomDirectionalCandidateIssue,
+                .exactReplicationRequired
+            )
+        }
+        XCTAssertThrowsError(try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs + [
+                FH5ResearchReviewInput(
+                    exportJSON: Data("not canonical research".utf8),
+                    permission: nil
+                )
+            ],
+            targetSymptom: .pushesWide,
+            input: .controller,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: registry
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CleanRoomDirectionalCandidateIssue,
+                .malformedReview
+            )
+        }
+
+        let baseExport = try makeReviewExport(
+            plan: plan,
+            submissionID: UUID(),
+            permissionReceiptID: UUID()
+        )
+        let changedControls = try baseExport.controls.map {
+            guard $0.field == .frontTirePressure else { return $0 }
+            return adjustable(
+                .frontTirePressure,
+                minimum: try XCTUnwrap($0.minimum),
+                maximum: try XCTUnwrap($0.maximum),
+                step: try XCTUnwrap($0.step),
+                current: try XCTUnwrap($0.current) + 1
+            )
+        }
+        let conflictingExport = try replacingReviewExport(
+            baseExport,
+            submissionID: UUID(),
+            permissionReceiptID: UUID(),
+            capturedAt: capturedAt.addingTimeInterval(60),
+            controls: changedControls,
+            recomputingFingerprint: true
+        )
+        let conflictInputs = try [
+            reviewedInput(for: baseExport),
+            reviewedInput(for: conflictingExport)
+        ]
+        XCTAssertThrowsError(try generator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: conflictInputs,
+            targetSymptom: .pushesWide,
+            input: .controller,
+            surface: .dry,
+            algorithmID: registration.algorithmID,
+            registry: registry
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5CleanRoomDirectionalCandidateIssue,
+                .conflictingReplication
+            )
+        }
+    }
+
+    func testCleanRoomDirectionalGeneratorRequiresLegalFrontPressureStep() async throws {
+        let plan = try await makePlan(upgradeBuild: "3.688.109.0")
+        var capture = validCapture(
+            drivetrain: plan.request.car.drivetrain,
+            gearCount: 6,
+            availability: .adjustable,
+            reuse: true
+        )
+        capture = replacing(
+            capture,
+            controls: capture.controls.map {
+                $0.field == .frontTirePressure
+                    ? adjustable(
+                        .frontTirePressure,
+                        minimum: 20,
+                        maximum: 60,
+                        step: 1,
+                        current: 20
+                    )
+                    : $0
+            }
+        )
+        let research = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: capture,
+            capturedAt: capturedAt
+        )
+        let registration = try makeExperimentalRegistration()
+        let registry = try FH5TrustedNumericRulesetRegistry(
+            validating: [registration]
+        )
+        let firstExport = try research.publicExport()
+        let secondExport = try replacingReviewExport(
+            firstExport,
+            submissionID: UUID(),
+            permissionReceiptID: UUID(),
+            capturedAt: capturedAt.addingTimeInterval(60),
+            recomputingFingerprint: true
+        )
+        let matchingInputs = try [
+            reviewedInput(for: firstExport),
+            reviewedInput(for: secondExport)
+        ]
+        XCTAssertThrowsError(
+            try FH5CleanRoomDirectionalCandidateGenerator().generate(
+                tune: plan,
+                savedTune: plan,
+                isStreaming: false,
+                researchRecords: [research],
+                reviewInputs: matchingInputs,
+                targetSymptom: .pushesWide,
+                input: .controller,
+                surface: .dry,
+                algorithmID: registration.algorithmID,
+                registry: registry
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH5CleanRoomDirectionalCandidateIssue,
+                .frontTirePressureAlreadyAtMinimum
+            )
+        }
+    }
+
     func testCandidateBoundEvaluatorPassesExactThresholdWithoutRoutingNumbers() async throws {
         let plan = try await makePlan(upgradeBuild: "3.688.109.0")
         let research = try FH5ResearchObservationFactory().make(
@@ -2444,6 +2801,39 @@ final class FH5ResearchLabTests: XCTestCase {
                 locallyReviewedAt: capturedAt
             )
         )
+    }
+
+    private func reviewedInput(
+        for export: FH5ResearchObservationExport
+    ) throws -> FH5ResearchReviewInput {
+        let data = try FH5ResearchReviewIngestor.canonicalData(for: export)
+        let entry = try FH5ResearchReviewEntry.locallyReviewed(
+            canonicalExportJSON: data,
+            reviewerConfirmedDirectReceiptAndReusePermission: true,
+            now: capturedAt
+        )
+        return FH5ResearchReviewInput(entry: entry)
+    }
+
+    private func reviewedReplicationInputs(
+        plan: TuneResult
+    ) throws -> [FH5ResearchReviewInput] {
+        let first = try makeReviewExport(
+            plan: plan,
+            submissionID: UUID(),
+            permissionReceiptID: UUID(),
+            capturedAt: capturedAt
+        )
+        let second = try makeReviewExport(
+            plan: plan,
+            submissionID: UUID(),
+            permissionReceiptID: UUID(),
+            capturedAt: capturedAt.addingTimeInterval(60)
+        )
+        return try [
+            reviewedInput(for: first),
+            reviewedInput(for: second)
+        ]
     }
 
     private func replacingReviewExport(

@@ -187,6 +187,33 @@ struct FH5ResearchReviewReport: Equatable, Sendable {
     )
 }
 
+enum FH5ExactReplicationProofIssue: Error, Equatable, Sendable {
+    case invalidResearchRecord
+    case malformedEvidence
+    case conflictingEvidence
+    case exactReplicationRequired
+}
+
+/// Opaque authority produced only by the canonical review evaluator.
+struct FH5ExactReplicationProof: Equatable, Sendable {
+    let researchContentFingerprint: String
+    let measurementFingerprint: String
+    let associationFingerprint: String
+    let uniqueObservationCount: Int
+
+    fileprivate init(
+        researchContentFingerprint: String,
+        measurementFingerprint: String,
+        associationFingerprint: String,
+        uniqueObservationCount: Int
+    ) {
+        self.researchContentFingerprint = researchContentFingerprint
+        self.measurementFingerprint = measurementFingerprint
+        self.associationFingerprint = associationFingerprint
+        self.uniqueObservationCount = uniqueObservationCount
+    }
+}
+
 struct FH5ResearchReviewIngestor {
     static let maximumPayloadBytes = 256 * 1_024
 
@@ -428,6 +455,50 @@ struct FH5ResearchReviewIngestor {
 }
 
 struct FH5ResearchReviewEvaluator {
+    func exactReplicationProof(
+        inputs: [FH5ResearchReviewInput],
+        for record: FH5ResearchObservationRecord
+    ) throws -> FH5ExactReplicationProof {
+        guard FH5ResearchObservationFactory().isValid(record),
+              let measurement = FH5ResearchReviewIngestor()
+                .measurementFingerprint(for: record.controls) else {
+            throw FH5ExactReplicationProofIssue.invalidResearchRecord
+        }
+        let report = evaluate(inputs)
+        guard report.invalidCount == 0,
+              report.quarantinedCount == 0,
+              report.administrativeConflictCount == 0,
+              report.receiptReplayCount == 0 else {
+            throw FH5ExactReplicationProofIssue.malformedEvidence
+        }
+        let matching = report.groups.filter {
+            $0.association.platform == record.platform
+                && $0.association.gameVersion == record.gameVersion
+                && $0.association.vehicle == record.vehicle
+                && $0.association.tireCompoundDisplayName
+                    == record.tireCompoundDisplayName
+                && $0.association.forwardGearCount
+                    == record.forwardGearCount
+        }
+        guard !matching.contains(where: { $0.status == .conflicted }) else {
+            throw FH5ExactReplicationProofIssue.conflictingEvidence
+        }
+        guard let replicated = matching.first(where: {
+            $0.status == .replicated
+                && $0.observationCount >= 2
+                && $0.measurementVariantCount == 1
+                && $0.measurementFingerprint == measurement
+        }) else {
+            throw FH5ExactReplicationProofIssue.exactReplicationRequired
+        }
+        return FH5ExactReplicationProof(
+            researchContentFingerprint: record.contentFingerprint,
+            measurementFingerprint: measurement,
+            associationFingerprint: replicated.associationFingerprint,
+            uniqueObservationCount: replicated.observationCount
+        )
+    }
+
     func evaluate(_ inputs: [FH5ResearchReviewInput]) -> FH5ResearchReviewReport {
         let ingestor = FH5ResearchReviewIngestor()
         var invalidCount = 0

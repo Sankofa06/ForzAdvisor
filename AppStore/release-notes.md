@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.8.3 (Build 31) - 2026-07-23
+
+- Added the first registry-gated FH5 clean-room candidate generator for controlled testing: one legal front-tire-pressure step lower when an untouched stock car pushes wide.
+- Requires the exact saved plan, complete Upgrade Lab evidence, and two canonical permission-bound Research observations that independently agree on the same stock menu measurements.
+- Produces only a candidate-bound experimental artifact. The production registry remains empty, and no FH5 numeric tune, provider, UI, sharing, or output route is enabled.
+
 ## Version 1.8.2 (Build 30) - 2026-07-23
 
 - Added a local schema-v2 contract that binds controlled FH5 outcomes to one exact registry-backed generated-candidate artifact while preserving existing schema-v1 Outcome Lab records and exports.
@@ -144,11 +150,11 @@
 
 ## App Store What's New
 
-FH5 numeric safeguards now bind controlled outcomes to one exact candidate and reject malformed or replayed evidence. Numeric FH5 tuning remains locked.
+FH5 research can now produce one tightly controlled clean-room experiment candidate after exact independent evidence agrees. Numeric FH5 tuning remains locked.
 
 ## TestFlight Notes
 
-Regression focus for build 30: repeat the FH5 catalog, Research Lab, Upgrade Lab, and Outcome Lab paths below and confirm they behave exactly as in build 29. No FH5 numeric settings, provider attribution, ruleset reference, generated candidate, or candidate-bound collection UI may appear. Normal Outcome Lab experiments must remain schema-v1 calibration evidence and retain the existing deidentified export behavior.
+Regression focus for build 31: repeat the FH5 catalog, Research Lab, Upgrade Lab, and Outcome Lab paths below and confirm they behave exactly as in build 30. No FH5 numeric settings, provider attribution, ruleset reference, generated candidate, or candidate-bound collection UI may appear. The new clean-room generator is registry-gated internal research infrastructure; the production registry is empty. Normal Outcome Lab experiments must remain schema-v1 calibration evidence and retain the existing deidentified export behavior.
 
 Complete Research Lab and Upgrade Lab for the same saved FH5 plan, then open Outcome Lab. Leave deidentified calibration reuse off, save the experiment, and confirm the result says JSON sharing is unavailable. Delete the experiment, repeat the fixed A-B-B-A run, enable reuse before saving, and confirm Share deidentified experiment JSON opens the system share sheet.
 

@@ -336,6 +336,27 @@ struct FH5GeneratedCandidateArtifact: Equatable, Sendable {
         targetSymptom = record.targetSymptom
     }
 
+    fileprivate init(
+        candidateBinding: FH5RulesetCandidateBinding,
+        planRevisionFingerprint: String,
+        researchContentFingerprint: String,
+        measurementFingerprint: String,
+        context: FH5ControlledExperimentRecord.Context,
+        change: FH5ControlledExperimentRecord.Change,
+        targetSymptom: TuneFeedback
+    ) {
+        self.candidateBinding = candidateBinding
+        protocolVersion =
+            FH5ControlledExperimentRecord.currentProtocolVersion
+        game = .fh5
+        self.planRevisionFingerprint = planRevisionFingerprint
+        self.researchContentFingerprint = researchContentFingerprint
+        self.measurementFingerprint = measurementFingerprint
+        self.context = context
+        self.change = change
+        self.targetSymptom = targetSymptom
+    }
+
     fileprivate func exactlyMatches(
         _ record: FH5ControlledExperimentRecord
     ) -> Bool {
@@ -354,6 +375,15 @@ struct FH5GeneratedCandidateArtifact: Equatable, Sendable {
 
 struct FH5ControlledExperimentFactory {
     private static let fingerprintLength = 64
+
+    private struct CandidateComponents {
+        let sourceRecord: FH5ResearchObservationRecord
+        let planFingerprint: String
+        let measurementFingerprint: String
+        let context: FH5ControlledExperimentRecord.Context
+        let change: FH5ControlledExperimentRecord.Change
+        let targetSymptom: TuneFeedback
+    }
 
     func eligibility(
         tune: TuneResult,
@@ -421,8 +451,8 @@ struct FH5ControlledExperimentFactory {
         )
     }
 
-    /// Candidate-bound records can only consume a separately constructed
-    /// artifact. This slice deliberately exposes no release artifact producer.
+    /// Candidate-bound records can only consume a separately constructed,
+    /// registry-authorized artifact.
     func makeCandidateBound(
         tune: TuneResult,
         savedTune: TuneResult?,
@@ -462,9 +492,51 @@ struct FH5ControlledExperimentFactory {
         return record
     }
 
+    /// Converts an opaque, registry-authorized generator proposal into the
+    /// exact artifact consumed by `makeCandidateBound`. This does not produce
+    /// or mutate a `TuneResult`.
+    func makeGeneratedCandidateArtifact(
+        tune: TuneResult,
+        savedTune: TuneResult?,
+        isStreaming: Bool,
+        researchRecord: FH5ResearchObservationRecord,
+        proposal: FH5CleanRoomDirectionalProposal,
+        algorithmID: FH5ExperimentalAlgorithmID,
+        registry: FH5TrustedNumericRulesetRegistry
+    ) throws -> FH5GeneratedCandidateArtifact {
+        guard let registration = registry.registration(for: algorithmID) else {
+            throw FH5ControlledExperimentIssue.unregisteredCandidateAlgorithm
+        }
+        let components = try candidateComponents(
+            tune: tune,
+            savedTune: savedTune,
+            isStreaming: isStreaming,
+            researchRecords: [researchRecord],
+            field: proposal.field,
+            candidateValue: proposal.candidateValue,
+            input: proposal.input,
+            surface: proposal.surface,
+            targetSymptom: proposal.targetSymptom
+        )
+        let binding = try candidateBinding(
+            registration: registration,
+            components: components
+        )
+        return FH5GeneratedCandidateArtifact(
+            candidateBinding: binding,
+            planRevisionFingerprint: components.planFingerprint,
+            researchContentFingerprint:
+                components.sourceRecord.contentFingerprint,
+            measurementFingerprint: components.measurementFingerprint,
+            context: components.context,
+            change: components.change,
+            targetSymptom: components.targetSymptom
+        )
+    }
+
     #if DEBUG
-    /// Debug-only scaffolding for contract tests. A future trusted generator
-    /// must replace this before candidate-bound collection is wired into UI.
+    /// Debug-only scaffolding retained for adversarial record-contract tests.
+    /// Release generation uses the sealed clean-room proposal above.
     func makeCandidateArtifactForTesting(
         tune: TuneResult,
         savedTune: TuneResult?,
@@ -507,62 +579,18 @@ struct FH5ControlledExperimentFactory {
         permissionReceiptID: UUID,
         createdAt: Date
     ) throws -> FH5ControlledExperimentRecord {
-        let sourceRecord: FH5ResearchObservationRecord
-        switch eligibility(
+        let components = try candidateComponents(
             tune: tune,
             savedTune: savedTune,
             isStreaming: isStreaming,
-            researchRecords: researchRecords
-        ) {
-        case .success(let record):
-            sourceRecord = record
-        case .failure(let issue):
-            throw issue
-        }
-
-        guard let observation = sourceRecord.controls.first(where: {
-            $0.field == capture.field && $0.availability == .adjustable
-        }) else {
-            throw FH5ControlledExperimentIssue.fieldNotAdjustable
-        }
-        guard let minimum = observation.minimum,
-              let maximum = observation.maximum,
-              let step = observation.step,
-              let current = observation.current,
-              let unit = observation.unit else {
-            throw FH5ControlledExperimentIssue.missingFieldMeasurements
-        }
-        if let issue = candidateIssue(
-            candidate: capture.candidateValue,
-            minimum: minimum,
-            maximum: maximum,
-            step: step,
-            current: current
-        ) {
-            throw issue
-        }
-        try validateAttestations(capture)
-
-        let context = FH5ControlledExperimentRecord.Context(
-            platform: sourceRecord.platform,
-            gameVersion: sourceRecord.gameVersion,
-            vehicle: sourceRecord.vehicle,
-            tireCompoundDisplayName: sourceRecord.tireCompoundDisplayName,
-            forwardGearCount: sourceRecord.forwardGearCount,
+            researchRecords: researchRecords,
+            field: capture.field,
+            candidateValue: capture.candidateValue,
             input: capture.input,
             surface: capture.surface,
-            route: FH5ControlledExperimentRecord.route,
-            sequence: FH5ControlledExperimentRecord.sequence
+            targetSymptom: capture.targetSymptom
         )
-        let change = FH5ControlledExperimentRecord.Change(
-            field: capture.field,
-            baselineValue: current,
-            candidateValue: capture.candidateValue,
-            minimum: minimum,
-            maximum: maximum,
-            step: step,
-            unit: unit
-        )
+        try validateAttestations(capture)
         let attestations = FH5ControlledExperimentRecord.Attestations(
             sameRouteAndConditions: capture.sameRouteAndConditionsConfirmed,
             sameAssistsAndInput: capture.sameAssistsAndInputConfirmed,
@@ -573,50 +601,20 @@ struct FH5ControlledExperimentFactory {
             localStoragePermitted: capture.localStoragePermitted,
             deidentifiedReusePermitted: capture.deidentifiedReusePermitted
         )
-        let planFingerprint = try requirePlanFingerprint(tune)
-        guard let measurementFingerprint = FH5ResearchReviewIngestor()
-            .measurementFingerprint(for: sourceRecord.controls) else {
-            throw FH5ControlledExperimentIssue.invalidStoredRecord
-        }
         let schemaVersion: Int
         let consentVersion: String
         let candidateBinding: FH5RulesetCandidateBinding?
         if let registration {
-            guard registration.isValid,
-                  let sourceManifestFingerprint =
-                    registration.sourceManifestFingerprint else {
+            guard registration.isValid else {
                 throw FH5ControlledExperimentIssue.unregisteredCandidateAlgorithm
             }
             schemaVersion =
                 FH5ControlledExperimentRecord.candidateBoundSchemaVersion
             consentVersion =
                 FH5ControlledExperimentRecord.candidateBoundConsentVersion
-            candidateBinding = FH5RulesetCandidateBinding(
-                algorithmID: registration.algorithmID,
-                rulesetReference: registration.reference,
-                sourceManifestFingerprint: sourceManifestFingerprint,
-                outcomePolicyVersion:
-                    registration.outcomeThreshold.policyVersion,
-                generatedCandidateFingerprint:
-                    try generatedCandidateFingerprint(
-                        algorithmID: registration.algorithmID,
-                        rulesetReference: registration.reference,
-                        sourceManifestFingerprint:
-                            sourceManifestFingerprint,
-                        outcomePolicyVersion:
-                            registration.outcomeThreshold.policyVersion,
-                        protocolVersion:
-                            FH5ControlledExperimentRecord
-                                .currentProtocolVersion,
-                        game: .fh5,
-                        planRevisionFingerprint: planFingerprint,
-                        researchContentFingerprint:
-                            sourceRecord.contentFingerprint,
-                        measurementFingerprint: measurementFingerprint,
-                        context: context,
-                        change: change,
-                        targetSymptom: capture.targetSymptom
-                    )
+            candidateBinding = try self.candidateBinding(
+                registration: registration,
+                components: components
             )
         } else {
             schemaVersion =
@@ -633,11 +631,12 @@ struct FH5ControlledExperimentFactory {
             permissionReceiptID: permissionReceiptID,
             createdAt: createdAt,
             game: .fh5,
-            planRevisionFingerprint: planFingerprint,
-            researchContentFingerprint: sourceRecord.contentFingerprint,
-            measurementFingerprint: measurementFingerprint,
-            context: context,
-            change: change,
+            planRevisionFingerprint: components.planFingerprint,
+            researchContentFingerprint:
+                components.sourceRecord.contentFingerprint,
+            measurementFingerprint: components.measurementFingerprint,
+            context: components.context,
+            change: components.change,
             targetSymptom: capture.targetSymptom,
             outcome: capture.outcome,
             attestations: attestations,
@@ -652,11 +651,12 @@ struct FH5ControlledExperimentFactory {
             permissionReceiptID: permissionReceiptID,
             createdAt: createdAt,
             game: .fh5,
-            planRevisionFingerprint: planFingerprint,
-            researchContentFingerprint: sourceRecord.contentFingerprint,
-            measurementFingerprint: measurementFingerprint,
-            context: context,
-            change: change,
+            planRevisionFingerprint: components.planFingerprint,
+            researchContentFingerprint:
+                components.sourceRecord.contentFingerprint,
+            measurementFingerprint: components.measurementFingerprint,
+            context: components.context,
+            change: components.change,
             targetSymptom: capture.targetSymptom,
             outcome: capture.outcome,
             attestations: attestations,
@@ -667,6 +667,124 @@ struct FH5ControlledExperimentFactory {
             throw FH5ControlledExperimentIssue.invalidStoredRecord
         }
         return record
+    }
+
+    private func candidateComponents(
+        tune: TuneResult,
+        savedTune: TuneResult?,
+        isStreaming: Bool,
+        researchRecords: [FH5ResearchObservationRecord],
+        field: TuneFieldID,
+        candidateValue: Double,
+        input: ValidationInput,
+        surface: ValidationSurface,
+        targetSymptom: TuneFeedback
+    ) throws -> CandidateComponents {
+        let sourceRecord: FH5ResearchObservationRecord
+        switch eligibility(
+            tune: tune,
+            savedTune: savedTune,
+            isStreaming: isStreaming,
+            researchRecords: researchRecords
+        ) {
+        case .success(let record):
+            sourceRecord = record
+        case .failure(let issue):
+            throw issue
+        }
+        guard let observation = sourceRecord.controls.first(where: {
+            $0.field == field && $0.availability == .adjustable
+        }) else {
+            throw FH5ControlledExperimentIssue.fieldNotAdjustable
+        }
+        guard let minimum = observation.minimum,
+              let maximum = observation.maximum,
+              let step = observation.step,
+              let current = observation.current,
+              let unit = observation.unit else {
+            throw FH5ControlledExperimentIssue.missingFieldMeasurements
+        }
+        if let issue = candidateIssue(
+            candidate: candidateValue,
+            minimum: minimum,
+            maximum: maximum,
+            step: step,
+            current: current
+        ) {
+            throw issue
+        }
+        let planFingerprint = try requirePlanFingerprint(tune)
+        guard let measurementFingerprint = FH5ResearchReviewIngestor()
+            .measurementFingerprint(for: sourceRecord.controls) else {
+            throw FH5ControlledExperimentIssue.invalidStoredRecord
+        }
+        return CandidateComponents(
+            sourceRecord: sourceRecord,
+            planFingerprint: planFingerprint,
+            measurementFingerprint: measurementFingerprint,
+            context: FH5ControlledExperimentRecord.Context(
+                platform: sourceRecord.platform,
+                gameVersion: sourceRecord.gameVersion,
+                vehicle: sourceRecord.vehicle,
+                tireCompoundDisplayName:
+                    sourceRecord.tireCompoundDisplayName,
+                forwardGearCount: sourceRecord.forwardGearCount,
+                input: input,
+                surface: surface,
+                route: FH5ControlledExperimentRecord.route,
+                sequence: FH5ControlledExperimentRecord.sequence
+            ),
+            change: FH5ControlledExperimentRecord.Change(
+                field: field,
+                baselineValue: current,
+                candidateValue: candidateValue,
+                minimum: minimum,
+                maximum: maximum,
+                step: step,
+                unit: unit
+            ),
+            targetSymptom: targetSymptom
+        )
+    }
+
+    private func candidateBinding(
+        registration: FH5NumericRulesetRegistration,
+        components: CandidateComponents
+    ) throws -> FH5RulesetCandidateBinding {
+        guard registration.isValid,
+              let sourceManifestFingerprint =
+                registration.sourceManifestFingerprint else {
+            throw FH5ControlledExperimentIssue.unregisteredCandidateAlgorithm
+        }
+        return FH5RulesetCandidateBinding(
+            algorithmID: registration.algorithmID,
+            rulesetReference: registration.reference,
+            sourceManifestFingerprint: sourceManifestFingerprint,
+            outcomePolicyVersion:
+                registration.outcomeThreshold.policyVersion,
+            generatedCandidateFingerprint:
+                try generatedCandidateFingerprint(
+                    algorithmID: registration.algorithmID,
+                    rulesetReference: registration.reference,
+                    sourceManifestFingerprint:
+                        sourceManifestFingerprint,
+                    outcomePolicyVersion:
+                        registration.outcomeThreshold.policyVersion,
+                    protocolVersion:
+                        FH5ControlledExperimentRecord
+                            .currentProtocolVersion,
+                    game: .fh5,
+                    planRevisionFingerprint:
+                        components.planFingerprint,
+                    researchContentFingerprint:
+                        components.sourceRecord.contentFingerprint,
+                    measurementFingerprint:
+                        components.measurementFingerprint,
+                    context: components.context,
+                    change: components.change,
+                    targetSymptom: components.targetSymptom
+                )
+        )
     }
 
     func isValid(_ record: FH5ControlledExperimentRecord) -> Bool {

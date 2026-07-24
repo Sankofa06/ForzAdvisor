@@ -79,9 +79,12 @@ capture whose exact context, field, direction, or value differs from that
 artifact. The artifact fingerprint covers the exact ruleset, source manifest,
 policy, plan, Research record, menu measurement, vehicle and test context,
 field, range, step, baseline, candidate, unit, and target symptom. This slice
-provides only a Debug test artifact producer; release builds have no artifact
-producer, generator, or UI collection route. Existing and normal Outcome Lab
-records remain unbound schema v1 calibration evidence.
+includes one release-build, registry-gated artifact producer described in
+`fh5-clean-room-directional-v1.md`: for `pushesWide`, it proposes front tire
+pressure one observed legal step below the restored stock value. It produces
+only an experimental artifact, not a `TuneResult`. The production registry is
+empty and there is no UI collection or numeric-output route. Existing and
+normal Outcome Lab records remain unbound schema v1 calibration evidence.
 
 The evaluator is order-independent, counts only reuse-permitted exact matches,
 combines `noClearDifference` and `inconclusive` as nondecisive outcomes, and
@@ -89,10 +92,10 @@ uses fixed Gregorian UTC dates. A passing report authorizes only its exact
 registration and candidate binding; it cannot be replayed for another
 candidate.
 
-The production registry remains empty, the app has no FH5 numeric generator,
-and no activation route exists. A fully qualifying test-injected registration
-and candidate can exercise the readiness contract, but the production provider
-and output projector continue to strip every FH5 numeric setting.
+The production registry remains empty and no activation route exists. A fully
+qualifying test-injected registration can exercise the candidate generator and
+readiness contract, but the production provider and output projector continue
+to strip every FH5 numeric setting.
 
 ## Paired experiment collection
 
