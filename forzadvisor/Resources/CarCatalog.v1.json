@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "revision": "2026.07.21.1",
-  "reviewedAt": "2026-07-21T00:00:00Z",
+  "revision": "2026.07.23.1",
+  "reviewedAt": "2026-07-23T00:00:00Z",
   "entries": [
     {
       "id": "fh5-2020-toyota-gr-supra",
@@ -85,6 +85,76 @@
         { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
         { "id": "wiki", "title": "Forza Wiki — 2018 Porsche 911 GT2 RS", "url": "https://forza.fandom.com/wiki/Porsche_911_GT2_RS_%282018%29", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
         { "id": "forzalabs", "title": "ForzaLabs — 2018 Porsche 911 GT2 RS", "url": "https://forza.labsgg.com/cars/2018-porsche-911-gt2-rs", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh6-1985-toyota-sprinter-trueno-gt-apex",
+      "game": "fh6",
+      "year": 1985,
+      "make": "Toyota",
+      "model": "Sprinter Trueno GT Apex",
+      "stock": { "performanceIndex": 376, "performanceClass": "D", "drivetrain": "RWD", "weightPounds": 2094, "frontWeightPercent": 53, "peakHorsepower": 128, "peakTorqueFootPounds": 110 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
+        { "id": "wiki", "title": "Forza Wiki — Toyota Sprinter Trueno GT Apex", "url": "https://forza.fandom.com/wiki/Toyota_Sprinter_Trueno_GT_Apex", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 1985 Toyota Sprinter Trueno GT Apex", "url": "https://forza.labsgg.com/cars/1985-toyota-sprinter-trueno-gt-apex", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh6-1998-toyota-supra-rz",
+      "game": "fh6",
+      "year": 1998,
+      "make": "Toyota",
+      "model": "Supra RZ",
+      "stock": { "performanceIndex": 529, "performanceClass": "B", "drivetrain": "RWD", "weightPounds": 3329, "frontWeightPercent": 53, "peakHorsepower": 320, "peakTorqueFootPounds": 315 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
+        { "id": "wiki", "title": "Forza Wiki — Toyota Supra RZ", "url": "https://forza.fandom.com/wiki/Toyota_Supra_RZ", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 1998 Toyota Supra RZ", "url": "https://forza.labsgg.com/cars/1998-toyota-supra-rz", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh6-1992-honda-nsx-r",
+      "game": "fh6",
+      "year": 1992,
+      "make": "Honda",
+      "model": "NSX-R",
+      "stock": { "performanceIndex": 572, "performanceClass": "B", "drivetrain": "RWD", "weightPounds": 2712, "frontWeightPercent": 42, "peakHorsepower": 276, "peakTorqueFootPounds": 217 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
+        { "id": "wiki", "title": "Forza Wiki — 1992 Honda NSX-R", "url": "https://forza.fandom.com/wiki/Honda_NSX-R_%281992%29", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 1992 Honda NSX-R", "url": "https://forza.labsgg.com/cars/1992-honda-nsx-r", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh6-2017-nissan-gt-r-r35",
+      "game": "fh6",
+      "year": 2017,
+      "make": "Nissan",
+      "model": "GT-R (R35)",
+      "stock": { "performanceIndex": 709, "performanceClass": "S1", "drivetrain": "AWD", "weightPounds": 3933, "frontWeightPercent": 54, "peakHorsepower": 565, "peakTorqueFootPounds": 467 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
+        { "id": "wiki", "title": "Forza Wiki — Nissan GT-R (R35)", "url": "https://forza.fandom.com/wiki/Nissan_GT-R_%28R35%29", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 2017 Nissan GT-R (R35)", "url": "https://forza.labsgg.com/cars/2017-nissan-gt-r-r35", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
+      ]
+    },
+    {
+      "id": "fh6-2022-toyota-gr86",
+      "game": "fh6",
+      "year": 2022,
+      "make": "Toyota",
+      "model": "GR86",
+      "stock": { "performanceIndex": 556, "performanceClass": "B", "drivetrain": "RWD", "weightPounds": 2811, "frontWeightPercent": 53, "peakHorsepower": 228, "peakTorqueFootPounds": 184 },
+      "verificationStatus": "communityCrossChecked",
+      "sources": [
+        { "id": "official", "title": "Forza Horizon 6 Official Car List", "url": "https://forza.net/fh6cars", "role": "officialRoster", "fields": ["identity", "performanceIndex", "performanceClass"] },
+        { "id": "wiki", "title": "Forza Wiki — Toyota GR86", "url": "https://forza.fandom.com/wiki/Toyota_GR86", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] },
+        { "id": "forzalabs", "title": "ForzaLabs — 2022 Toyota GR86", "url": "https://forza.labsgg.com/cars/2022-toyota-gr86", "role": "communityQA", "fields": ["identity", "performanceIndex", "performanceClass", "drivetrain", "weightPounds", "frontWeightPercent", "peakHorsepower", "peakTorqueFootPounds"] }
       ]
     }
   ]

@@ -18,7 +18,7 @@ Choose a reviewed FH5 or FH6 stock car, build trustworthy tuning-control plans, 
 
 ForzAdvisor is an unofficial tuning assistant for racing-game players who want faster setup decisions without losing control of the numbers.
 
-Start from the searchable FH5/FH6 stock-car catalog, take a photo, import a screenshot, or enter car details manually. Catalog entries retain their source and revision details, and edited values are clearly labeled.
+Start from the searchable stock-car catalog with three FH5 and eight FH6 choices, take a photo, import a screenshot, or enter car details manually. Catalog entries retain their source and revision details, and edited values are clearly labeled.
 
 For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a menu-order setup across the tuning controls supported by the verified build evidence. FH6 formulas remain experimental, and settings that do not pass local capability, range, and provenance checks are withheld.
 
@@ -75,14 +75,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.10.1
-- Current project build: 34
+- Current project version: 1.11.0
+- Current project build: 35
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Reuse-permitted FH5 Candidate Outcomes can now be reviewed against an independently regenerated exact candidate, and Beta Missions can invite an FH5 Research Partner through the public TestFlight group. Numeric FH5 tuning remains locked.
+The reviewed FH6 stock-car catalog now includes the Toyota Sprinter Trueno GT Apex, Toyota Supra RZ, Honda NSX-R, Nissan GT-R (R35), and Toyota GR86, expanding selectable FH6 cars from three to eight.
 
 ## Export Compliance Notes
 

@@ -23,29 +23,33 @@ final class CarCatalogTests: XCTestCase {
         let snapshot = try loadedSnapshot()
 
         XCTAssertEqual(snapshot.schemaVersion, 1)
-        XCTAssertEqual(snapshot.revision, "2026.07.21.1")
-        XCTAssertEqual(snapshot.reviewedAt, try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-07-21T00:00:00Z")))
+        XCTAssertEqual(snapshot.revision, "2026.07.23.1")
+        XCTAssertEqual(snapshot.reviewedAt, try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-07-23T00:00:00Z")))
     }
 
-    func testCatalogContainsExactSixGameScopedStockRecords() throws {
+    func testCatalogContainsExactElevenGameScopedStockRecords() throws {
         let snapshot = try loadedSnapshot()
-        XCTAssertEqual(snapshot.entries.count, 6)
-        XCTAssertEqual(Set(snapshot.entries.map(\.id)).count, 6)
+        XCTAssertEqual(snapshot.entries.count, 11)
+        XCTAssertEqual(Set(snapshot.entries.map(\.id)).count, 11)
         XCTAssertEqual(snapshot.entries.filter { $0.game == .fh5 }.count, 3)
-        XCTAssertEqual(snapshot.entries.filter { $0.game == .fh6 }.count, 3)
+        XCTAssertEqual(snapshot.entries.filter { $0.game == .fh6 }.count, 8)
 
         let expected: [String: ExpectedCar] = [
-            "fh5-2020-toyota-gr-supra": ExpectedCar(.fh5, 2020, "Toyota", "GR Supra", .a, 731, 3_397, 51, 335, 365),
-            "fh5-2022-subaru-brz": ExpectedCar(.fh5, 2022, "Subaru", "BRZ", .b, 673, 2_835, 53, 228, 184),
-            "fh5-2018-porsche-911-gt2-rs": ExpectedCar(.fh5, 2018, "Porsche", "911 GT2 RS", .s1, 888, 3_197, 40, 691, 553),
-            "fh6-2020-toyota-gr-supra": ExpectedCar(.fh6, 2020, "Toyota", "GR Supra", .a, 616, 3_397, 51, 335, 365),
-            "fh6-2022-subaru-brz": ExpectedCar(.fh6, 2022, "Subaru", "BRZ", .b, 551, 2_835, 53, 228, 184),
-            "fh6-2018-porsche-911-gt2-rs": ExpectedCar(.fh6, 2018, "Porsche", "911 GT2 RS", .s2, 803, 3_197, 40, 691, 553)
+            "fh5-2020-toyota-gr-supra": ExpectedCar(.fh5, 2020, "Toyota", "GR Supra", .a, 731, .rwd, 3_397, 51, 335, 365),
+            "fh5-2022-subaru-brz": ExpectedCar(.fh5, 2022, "Subaru", "BRZ", .b, 673, .rwd, 2_835, 53, 228, 184),
+            "fh5-2018-porsche-911-gt2-rs": ExpectedCar(.fh5, 2018, "Porsche", "911 GT2 RS", .s1, 888, .rwd, 3_197, 40, 691, 553),
+            "fh6-2020-toyota-gr-supra": ExpectedCar(.fh6, 2020, "Toyota", "GR Supra", .a, 616, .rwd, 3_397, 51, 335, 365),
+            "fh6-2022-subaru-brz": ExpectedCar(.fh6, 2022, "Subaru", "BRZ", .b, 551, .rwd, 2_835, 53, 228, 184),
+            "fh6-2018-porsche-911-gt2-rs": ExpectedCar(.fh6, 2018, "Porsche", "911 GT2 RS", .s2, 803, .rwd, 3_197, 40, 691, 553),
+            "fh6-1985-toyota-sprinter-trueno-gt-apex": ExpectedCar(.fh6, 1985, "Toyota", "Sprinter Trueno GT Apex", .d, 376, .rwd, 2_094, 53, 128, 110),
+            "fh6-1998-toyota-supra-rz": ExpectedCar(.fh6, 1998, "Toyota", "Supra RZ", .b, 529, .rwd, 3_329, 53, 320, 315),
+            "fh6-1992-honda-nsx-r": ExpectedCar(.fh6, 1992, "Honda", "NSX-R", .b, 572, .rwd, 2_712, 42, 276, 217),
+            "fh6-2017-nissan-gt-r-r35": ExpectedCar(.fh6, 2017, "Nissan", "GT-R (R35)", .s1, 709, .awd, 3_933, 54, 565, 467),
+            "fh6-2022-toyota-gr86": ExpectedCar(.fh6, 2022, "Toyota", "GR86", .b, 556, .rwd, 2_811, 53, 228, 184)
         ]
 
         for entry in snapshot.entries {
             XCTAssertEqual(ExpectedCar(entry), expected[entry.id], entry.id)
-            XCTAssertEqual(entry.stock.drivetrain, .rwd, entry.id)
         }
     }
 
@@ -84,12 +88,29 @@ final class CarCatalogTests: XCTestCase {
 
         XCTAssertEqual(
             BundledCarCatalog.search(snapshot, game: .fh6, query: "  sUpRa ").map(\.id),
-            ["fh6-2020-toyota-gr-supra"]
+            ["fh6-2020-toyota-gr-supra", "fh6-1998-toyota-supra-rz"]
         )
         XCTAssertEqual(
             BundledCarCatalog.search(snapshot, game: .fh5, query: " PÓRSCHE ").map(\.id),
             ["fh5-2018-porsche-911-gt2-rs"]
         )
+        XCTAssertEqual(
+            BundledCarCatalog.search(snapshot, game: .fh6, query: "  trueno ").map(\.id),
+            ["fh6-1985-toyota-sprinter-trueno-gt-apex"]
+        )
+        XCTAssertEqual(
+            BundledCarCatalog.search(snapshot, game: .fh6, query: " GT-R ").map(\.id),
+            ["fh6-2017-nissan-gt-r-r35"]
+        )
+        XCTAssertTrue(BundledCarCatalog.search(snapshot, game: .fh6, query: "1997 RX-7").isEmpty)
+        XCTAssertTrue(
+            BundledCarCatalog.search(
+                snapshot,
+                game: .fh6,
+                query: "2002 Skyline GT-R V-Spec II"
+            ).isEmpty
+        )
+        XCTAssertEqual(BundledCarCatalog.search(snapshot, game: .fh6, query: "").count, 8)
         XCTAssertEqual(BundledCarCatalog.search(snapshot, game: .fh5, query: "").count, 3)
     }
 
@@ -106,6 +127,33 @@ final class CarCatalogTests: XCTestCase {
         XCTAssertFalse(car.catalogValuesModified)
         XCTAssertEqual(selection.reference.entryID, entry.id)
         XCTAssertEqual(selection.reference.sources, entry.sources)
+    }
+
+    func testEveryFH6CatalogCarGeneratesOfflineTuneAcrossAllDisciplines() async throws {
+        let snapshot = try loadedSnapshot()
+        let provider = LocalSampleTuneProvider()
+
+        for entry in snapshot.entries.filter({ $0.game == .fh6 }) {
+            let car = snapshot.selection(for: entry).carInput
+
+            for discipline in DrivingDiscipline.allCases {
+                let tune = try await provider.generateTune(
+                    for: TuneRequest(car: car, discipline: discipline)
+                )
+
+                XCTAssertEqual(tune.request.car, car, "\(entry.id) · \(discipline.rawValue)")
+                XCTAssertEqual(tune.request.discipline, discipline, entry.id)
+                XCTAssertEqual(tune.purpose, .numericTune, entry.id)
+                XCTAssertFalse(tune.sections.isEmpty, entry.id)
+                XCTAssertTrue(
+                    tune.sections
+                        .flatMap(\.lines)
+                        .compactMap(\.numericValue)
+                        .allSatisfy(\.isFinite),
+                    "\(entry.id) · \(discipline.rawValue)"
+                )
+            }
+        }
     }
 
     func testUntouchedCatalogOriginCreatesCapabilityOnlyUnknownBuildSnapshot() throws {
@@ -602,6 +650,7 @@ private struct ExpectedCar: Equatable {
     let model: String
     let performanceClass: PerformanceClass
     let performanceIndex: Int
+    let drivetrain: Drivetrain
     let weightPounds: Int
     let frontWeightPercent: Double
     let horsepower: Int
@@ -614,6 +663,7 @@ private struct ExpectedCar: Equatable {
         _ model: String,
         _ performanceClass: PerformanceClass,
         _ performanceIndex: Int,
+        _ drivetrain: Drivetrain,
         _ weightPounds: Int,
         _ frontWeightPercent: Double,
         _ horsepower: Int,
@@ -625,6 +675,7 @@ private struct ExpectedCar: Equatable {
         self.model = model
         self.performanceClass = performanceClass
         self.performanceIndex = performanceIndex
+        self.drivetrain = drivetrain
         self.weightPounds = weightPounds
         self.frontWeightPercent = frontWeightPercent
         self.horsepower = horsepower
@@ -639,6 +690,7 @@ private struct ExpectedCar: Equatable {
             entry.model,
             entry.stock.performanceClass,
             entry.stock.performanceIndex,
+            entry.stock.drivetrain,
             entry.stock.weightPounds,
             entry.stock.frontWeightPercent,
             entry.stock.peakHorsepower,

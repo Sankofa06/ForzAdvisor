@@ -1,5 +1,9 @@
 # Release Notes
 
+## Version 1.11.0 (Build 35) - 2026-07-23
+
+- Expanded the reviewed selectable FH6 stock-car catalog from three to eight cars with official roster identity and class/PI plus community-cross-checked stock specifications.
+
 ## Version 1.10.1 (Build 34) - 2026-07-23
 
 - Added an FH5 Research Partners handoff in Beta Validation Missions with a public TestFlight link and a privacy-safe invite that explains exact-plan prerequisites, permission boundaries, Apple-controlled beta availability, and the TestFlight feedback path.
