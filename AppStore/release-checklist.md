@@ -4,15 +4,15 @@ Last updated: 2026-07-23
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.8.3` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.9.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission remains gated on App Store Connect record checks and explicit human approval; TestFlight upload is explicitly approved.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.8.3`.
-- Current project build is `30`.
+- Current project version is `1.9.0`.
+- Current project build is `32`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -42,7 +42,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - Do not use official game logos or screenshots without legal clearance.
 - FH5 catalog build planning stays local, does not use numeric formulas or the selected provider, and requires no account or API key.
 - FH5 Research Review stores exact permission-bound JSON locally, does not authenticate observer identity, and cannot promote evidence into numeric tuning or production constraints.
-- FH5 Outcome Lab stores exact-plan, one-variable A-B-B-A experiment evidence locally, requires stock restoration, and cannot register a ruleset or unlock numeric tuning. Sharing is off by default and only an explicitly permitted allow-listed JSON copy can leave through the user-initiated system share sheet; there is no background experiment uploader or importer.
+- FH5 Outcome Lab stores exact-plan, one-variable A-B-B-A experiment evidence locally, requires stock restoration, and cannot register a ruleset or unlock numeric tuning. Generic calibration sharing is off by default and only an explicitly permitted schema-v1 JSON copy can leave through the user-initiated system share sheet. Replication-qualified generated candidate trials are explicitly experimental, are regenerated against current persisted evidence before submission, and create local-only non-exportable schema-v2 records.
 - FH6 Validation Review stores exact permission-bound Test Drive JSON in a separate local queue, requires the same eligible exact-build boundary as local Test Drive capture, and reports outcomes without modifying tunes or promoting the experimental ruleset.
 - Beta Validation Missions are derived locally from existing eligibility checks, create no records by themselves, and share aggregate counts only through a user-initiated system share sheet.
 - FH6 offline formula tuning is the default numeric provider and requires no account or API key.

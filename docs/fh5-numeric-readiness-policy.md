@@ -82,9 +82,13 @@ field, range, step, baseline, candidate, unit, and target symptom. This slice
 includes one release-build, registry-gated artifact producer described in
 `fh5-clean-room-directional-v1.md`: for `pushesWide`, it proposes front tire
 pressure one observed legal step below the restored stock value. It produces
-only an experimental artifact, not a `TuneResult`. The production registry is
-empty and there is no UI collection or numeric-output route. Existing and
-normal Outcome Lab records remain unbound schema v1 calibration evidence.
+only an experimental artifact, not a `TuneResult`. When its exact evidence
+preconditions pass, a candidate-only Outcome Lab UI can lock the input and
+surface, show the experimental A/B hypothesis, and collect the completed
+protocol as a local, non-exportable schema-v2 record. Existing generic Outcome
+Lab behavior remains separate unbound schema-v1 calibration evidence. The
+production registry is empty, and no provider, output projector, `TuneResult`,
+clipboard, or numeric-output route consumes the experimental registration.
 
 The evaluator is order-independent, counts only reuse-permitted exact matches,
 combines `noClearDifference` and `inconclusive` as nondecisive outcomes, and

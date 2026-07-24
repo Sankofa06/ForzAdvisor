@@ -1880,6 +1880,129 @@ final class FH5ResearchLabTests: XCTestCase {
         }
     }
 
+    func testExperimentalCandidateCollectionRegistryIsIsolatedAndRightsBound() throws {
+        let production = FH5TrustedNumericRulesetRegistry.production
+        let collection =
+            FH5TrustedNumericRulesetRegistry.experimentalCandidateCollection
+        let registration = try XCTUnwrap(
+            collection.registration(for: .cleanRoomDirectionalV1)
+        )
+
+        XCTAssertTrue(production.isEmpty)
+        XCTAssertNil(
+            production.registration(for: .cleanRoomDirectionalV1)
+        )
+        XCTAssertFalse(collection.isEmpty)
+        XCTAssertTrue(registration.isValid)
+        XCTAssertEqual(registration.sourceManifests.count, 1)
+        XCTAssertEqual(
+            registration.sourceManifests.first?.rightsEvidenceID,
+            "docs.fh5-clean-room-directional-v1.md"
+        )
+        XCTAssertEqual(
+            registration.sourceManifests.first?.rightsBasis,
+            .firstPartyCleanRoom
+        )
+        XCTAssertEqual(
+            registration.sourceManifests.first?.usagePermission,
+            .permitted
+        )
+        XCTAssertEqual(
+            registration.outcomeThreshold,
+            .currentExperimental
+        )
+    }
+
+    func testCandidateTrialCoordinatorRegeneratesLockedArtifactAndCreatesLocalV2Record() async throws {
+        let plan = try await makePlan(upgradeBuild: "3.688.109.0")
+        let research = try FH5ResearchObservationFactory().make(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            capture: validCapture(
+                drivetrain: plan.request.car.drivetrain,
+                gearCount: 6,
+                availability: .adjustable
+            ),
+            capturedAt: capturedAt
+        )
+        let reviewInputs = try reviewedReplicationInputs(plan: plan)
+        let coordinator = FH5CandidateTrialCoordinator()
+        let locked = try coordinator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            input: .controller,
+            surface: .dry
+        )
+        let capture = experimentCapture(
+            field: .frontTirePressure,
+            candidate: locked.change.candidateValue,
+            reusePermitted: true
+        )
+        let record = try coordinator.makeRecord(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            submission: FH5CandidateTrialSubmission(
+                capture: capture,
+                lockedArtifact: locked
+            ),
+            recordID: recordID,
+            submissionID: submissionID,
+            permissionReceiptID: permissionID,
+            createdAt: capturedAt.addingTimeInterval(120)
+        )
+
+        XCTAssertEqual(
+            record.schemaVersion,
+            FH5ControlledExperimentRecord.candidateBoundSchemaVersion
+        )
+        XCTAssertEqual(
+            record.consentVersion,
+            FH5ControlledExperimentRecord.candidateBoundConsentVersion
+        )
+        XCTAssertNotNil(record.candidateBinding)
+        XCTAssertFalse(record.canExport)
+        XCTAssertNil(record.deterministicJSONString)
+        XCTAssertThrowsError(try record.publicExport()) {
+            XCTAssertEqual(
+                $0 as? FH5ControlledExperimentIssue,
+                .candidateBoundExportUnsupported
+            )
+        }
+
+        let wrongContextArtifact = try coordinator.generate(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            input: .wheel,
+            surface: .dry
+        )
+        XCTAssertThrowsError(try coordinator.makeRecord(
+            tune: plan,
+            savedTune: plan,
+            isStreaming: false,
+            researchRecords: [research],
+            reviewInputs: reviewInputs,
+            submission: FH5CandidateTrialSubmission(
+                capture: capture,
+                lockedArtifact: wrongContextArtifact
+            )
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5ControlledExperimentIssue,
+                .candidateArtifactMismatch
+            )
+        }
+    }
+
     func testCleanRoomDirectionalGeneratorFailsClosedOnAuthorityAndEvidence() async throws {
         let plan = try await makePlan(upgradeBuild: "3.688.109.0")
         let research = try FH5ResearchObservationFactory().make(

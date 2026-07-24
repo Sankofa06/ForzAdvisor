@@ -127,6 +127,36 @@ final class BetaValidationMissionTests: XCTestCase {
         XCTAssertEqual(board.progress.availableMissionCount, 0)
     }
 
+    func testCandidateReadyMissionUsesExperimentalBoundaryCopy() {
+        let board = BetaValidationMissionPlanner().makeBoard(setups: [
+            facts(
+                id: fh5ID,
+                game: .fh5,
+                name: "Candidate Car",
+                research: false,
+                tires: false,
+                upgrades: false,
+                testDrive: false,
+                evidence: 3,
+                exactPaths: true,
+                experiment: true,
+                candidateTrial: true
+            )
+        ])
+        let mission = board.missions.first {
+            $0.kind == .runFH5Experiment
+        }
+
+        XCTAssertEqual(
+            mission?.title,
+            "Run an FH5 experimental candidate trial"
+        )
+        XCTAssertTrue(
+            mission?.detail.contains("not a tune") == true
+        )
+        XCTAssertTrue(mission?.isExperimentalCandidateTrial == true)
+    }
+
     func testOneGameGarageOffersOnlyTheMissingGameStarter() {
         let fh5Only = BetaValidationMissionPlanner().makeBoard(setups: [
             facts(
@@ -280,7 +310,8 @@ final class BetaValidationMissionTests: XCTestCase {
         testDrive: Bool,
         evidence: Int,
         exactPaths: Bool,
-        experiment: Bool = false
+        experiment: Bool = false,
+        candidateTrial: Bool = false
     ) -> BetaValidationSetupFacts {
         BetaValidationSetupFacts(
             savedTuneID: id,
@@ -293,7 +324,8 @@ final class BetaValidationMissionTests: XCTestCase {
             canVerifyUpgradeParts: upgrades,
             canRecordTestDrive: testDrive,
             evidenceRecordCount: evidence,
-            hasExactUpgradePaths: exactPaths
+            hasExactUpgradePaths: exactPaths,
+            fh5CandidateTrialAvailable: candidateTrial
         )
     }
 }

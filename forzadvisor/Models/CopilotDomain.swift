@@ -111,6 +111,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
     let upgradeLabEligible: Bool?
     let fh5ResearchLabEligible: Bool?
     let fh5ObservationRecorded: Bool?
+    let fh5CandidateTrialAvailable: Bool?
     let exactUpgradePathCount: Int?
     let isSaved: Bool?
     let isStreaming: Bool
@@ -124,6 +125,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
         upgradeLabEligible: Bool?,
         fh5ResearchLabEligible: Bool? = nil,
         fh5ObservationRecorded: Bool? = nil,
+        fh5CandidateTrialAvailable: Bool? = nil,
         exactUpgradePathCount: Int?,
         isSaved: Bool?,
         isStreaming: Bool
@@ -136,6 +138,8 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
         self.upgradeLabEligible = upgradeLabEligible
         self.fh5ResearchLabEligible = fh5ResearchLabEligible
         self.fh5ObservationRecorded = fh5ObservationRecorded
+        self.fh5CandidateTrialAvailable =
+            fh5CandidateTrialAvailable
         self.exactUpgradePathCount = exactUpgradePathCount
         self.isSaved = isSaved
         self.isStreaming = isStreaming
@@ -152,6 +156,7 @@ extension CopilotProjectionFacts {
         case upgradeLabEligible
         case fh5ResearchLabEligible
         case fh5ObservationRecorded
+        case fh5CandidateTrialAvailable
         case exactUpgradePathCount
         case isSaved
         case isStreaming
@@ -170,6 +175,10 @@ extension CopilotProjectionFacts {
         upgradeLabEligible = try container.decodeIfPresent(Bool.self, forKey: .upgradeLabEligible)
         fh5ResearchLabEligible = try container.decodeIfPresent(Bool.self, forKey: .fh5ResearchLabEligible)
         fh5ObservationRecorded = try container.decodeIfPresent(Bool.self, forKey: .fh5ObservationRecorded)
+        fh5CandidateTrialAvailable = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .fh5CandidateTrialAvailable
+        )
         exactUpgradePathCount = try container.decodeIfPresent(Int.self, forKey: .exactUpgradePathCount)
         isSaved = try container.decodeIfPresent(Bool.self, forKey: .isSaved)
         isStreaming = try container.decode(Bool.self, forKey: .isStreaming)
@@ -185,6 +194,10 @@ extension CopilotProjectionFacts {
         try container.encodeIfPresent(upgradeLabEligible, forKey: .upgradeLabEligible)
         try container.encodeIfPresent(fh5ResearchLabEligible, forKey: .fh5ResearchLabEligible)
         try container.encodeIfPresent(fh5ObservationRecorded, forKey: .fh5ObservationRecorded)
+        try container.encodeIfPresent(
+            fh5CandidateTrialAvailable,
+            forKey: .fh5CandidateTrialAvailable
+        )
         try container.encodeIfPresent(exactUpgradePathCount, forKey: .exactUpgradePathCount)
         try container.encodeIfPresent(isSaved, forKey: .isSaved)
         try container.encode(isStreaming, forKey: .isStreaming)
@@ -206,6 +219,7 @@ struct CopilotContext: Identifiable, Codable, Equatable, Sendable {
     let savedTuneCount: Int?
     let catalogCarCount: Int?
     let projection: CopilotProjectionFacts?
+    var fh5CandidateTrialAvailable: Bool? = nil
     let cannotSeeUnsavedEdits: Bool
 
     var id: String {
@@ -230,6 +244,14 @@ struct CopilotContext: Identifiable, Codable, Equatable, Sendable {
         }
         if let catalogCarCount {
             result.append(CopilotFact(label: "Reviewed cars loaded", value: "\(catalogCarCount)"))
+        }
+        if let fh5CandidateTrialAvailable {
+            result.append(CopilotFact(
+                label: "FH5 Outcome Lab mode",
+                value: fh5CandidateTrialAvailable
+                    ? "Experimental candidate trial"
+                    : "Generic calibration"
+            ))
         }
         if let projection {
             result.append(CopilotFact(
@@ -270,6 +292,12 @@ struct CopilotContext: Identifiable, Codable, Equatable, Sendable {
                     result.append(CopilotFact(
                         label: "FH5 stock evidence",
                         value: "Recorded"
+                    ))
+                }
+                if projection.fh5CandidateTrialAvailable == true {
+                    result.append(CopilotFact(
+                        label: "FH5 candidate trial",
+                        value: "Experimental hypothesis ready"
                     ))
                 }
                 if let exactUpgradePathCount = projection.exactUpgradePathCount {
@@ -360,6 +388,9 @@ struct CopilotEngine {
         case .fh5ResearchCapture:
             return unsavedEditsMessage("Record every FH5 control as Adjustable, Shown locked, or Not shown, restore moved sliders, and save the raw observation.")
         case .fh5ControlledExperimentCapture:
+            if context.fh5CandidateTrialAvailable == true {
+                return unsavedEditsMessage("Treat the candidate only as an experimental hypothesis. Lock the input and surface, complete the fixed A-B-B-A sequence, keep every condition constant, restore stock, and record only the comparative outcome.")
+            }
             return unsavedEditsMessage("Complete the fixed A-B-B-A sequence, keep every condition constant, restore the stock value, and record only the comparative outcome.")
         case .recordTestDrive:
             return unsavedEditsMessage("Describe this one session, confirm the tested setup, then explicitly opt in if you want to create reusable deidentified evidence.")
@@ -443,6 +474,9 @@ struct CopilotEngine {
             return "Wait for generation to finish. Closing this sheet does not cancel generation."
         }
         if projection.resultPurpose == .fh5BuildPlan {
+            if projection.fh5CandidateTrialAvailable == true {
+                return "Open the experimental FH5 Candidate Trial to test one evidence-bound hypothesis. It is not a tune, and its value stays out of the saved plan."
+            }
             if projection.fh5ObservationRecorded == true {
                 return "The raw FH5 stock-menu evidence is recorded. It is not a tune, and numeric FH5 tuning remains unavailable."
             }
@@ -480,6 +514,9 @@ struct CopilotEngine {
             return "A verified projection report is missing, so every tune setting remains untrusted."
         }
         if projection.resultPurpose == .fh5BuildPlan {
+            if projection.fh5CandidateTrialAvailable == true {
+                return "A controlled outcome for the experimental candidate is still missing. Numeric FH5 tuning remains locked."
+            }
             if projection.fh5ObservationRecorded == true {
                 return "The stock-menu observation is recorded, but it is raw evidence only. A validated numeric FH5 ruleset is still missing."
             }

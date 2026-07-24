@@ -370,6 +370,71 @@ extension ContentView {
         }
     }
 
+    func makeFH5CandidateTrialArtifact(
+        for tune: TuneResult,
+        savedTuneID: UUID,
+        input: ValidationInput,
+        surface: ValidationSurface
+    ) throws -> FH5GeneratedCandidateArtifact {
+        guard let savedTune = try savedTune(for: savedTuneID),
+              let persistedTune = savedTune.tuneResult else {
+            throw ContentWorkflowError.missingSavedTune
+        }
+        let researchRecords = savedTune
+            .fh5ResearchObservationRecords(matching: persistedTune)
+        let reviewInputs = savedTune
+            .fh5ResearchReviewEntries(matching: persistedTune)
+            .map { FH5ResearchReviewInput(entry: $0) }
+        return try FH5CandidateTrialCoordinator().generate(
+            tune: tune,
+            savedTune: persistedTune,
+            isStreaming: false,
+            researchRecords: researchRecords,
+            reviewInputs: reviewInputs,
+            input: input,
+            surface: surface
+        )
+    }
+
+    func recordFH5CandidateTrial(
+        _ submission: FH5CandidateTrialSubmission,
+        for tune: TuneResult,
+        savedTuneID: UUID,
+        thumbnailData: Data?,
+        playerNotes: String
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID),
+                  let persistedTune = savedTune.tuneResult else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            let researchRecords = savedTune
+                .fh5ResearchObservationRecords(matching: persistedTune)
+            let reviewInputs = savedTune
+                .fh5ResearchReviewEntries(matching: persistedTune)
+                .map { FH5ResearchReviewInput(entry: $0) }
+            let record = try FH5CandidateTrialCoordinator().makeRecord(
+                tune: tune,
+                savedTune: persistedTune,
+                isStreaming: false,
+                researchRecords: researchRecords,
+                reviewInputs: reviewInputs,
+                submission: submission
+            )
+            try savedTune.appendFH5ControlledExperimentRecord(record)
+            try modelContext.save()
+            step = .result(
+                TuneResultBoundarySanitizer().sanitize(tune),
+                savedTuneID: savedTuneID,
+                adjustmentChanges: [],
+                thumbnailData: thumbnailData,
+                playerNotes: playerNotes
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func deleteFH5ControlledExperimentRecord(
         _ record: FH5ControlledExperimentRecord,
         savedTuneID: UUID
@@ -594,10 +659,25 @@ extension ContentView {
                         ) else {
                         throw ContentWorkflowError.staleBetaMission
                     }
+                    let reviewInputs = savedTune
+                        .fh5ResearchReviewEntries(matching: tune)
+                        .map { FH5ResearchReviewInput(entry: $0) }
+                    let candidateTrialAvailable = (try?
+                        FH5CandidateTrialCoordinator().generate(
+                            tune: tune,
+                            savedTune: tune,
+                            isStreaming: false,
+                            researchRecords: researchRecords,
+                            reviewInputs: reviewInputs,
+                            input: .controller,
+                            surface: .dry
+                        )
+                    ) != nil
                     step = .fh5ControlledExperimentCapture(
                         tune,
                         savedTuneID: savedTuneID,
                         researchRecord: researchRecord,
+                        candidateTrialAvailable: candidateTrialAvailable,
                         thumbnailData: savedTune.thumbnailData,
                         playerNotes: savedTune.playerNotes
                     )
@@ -661,7 +741,7 @@ enum WorkflowStep {
     case tirePressureCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
     case upgradePartCapture(TuneResult, savedTuneID: UUID?, thumbnailData: Data?, playerNotes: String)
     case fh5ResearchCapture(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
-    case fh5ControlledExperimentCapture(TuneResult, savedTuneID: UUID, researchRecord: FH5ResearchObservationRecord, thumbnailData: Data?, playerNotes: String)
+    case fh5ControlledExperimentCapture(TuneResult, savedTuneID: UUID, researchRecord: FH5ResearchObservationRecord, candidateTrialAvailable: Bool, thumbnailData: Data?, playerNotes: String)
     case recordTestDrive(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
     case editSavedTune(TuneResult, savedTuneID: UUID, playerNotes: String, thumbnailData: Data?)
 }

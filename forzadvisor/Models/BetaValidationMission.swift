@@ -65,6 +65,13 @@ struct BetaValidationMission: Equatable, Identifiable, Sendable {
     let savedTuneID: UUID?
     let carDisplayName: String?
     let disciplineTitle: String?
+    var isExperimentalCandidateTrial = false
+
+    var title: String {
+        isExperimentalCandidateTrial
+            ? "Run an FH5 experimental candidate trial"
+            : kind.title
+    }
 
     var id: String {
         if let savedTuneID {
@@ -91,7 +98,9 @@ struct BetaValidationMission: Equatable, Identifiable, Sendable {
         case .recordFH5Research:
             return "\(setup): capture the untouched stock tuning menu as raw evidence."
         case .runFH5Experiment:
-            return "\(setup): compare stock with one slider step using a fixed A-B-B-A test."
+            return isExperimentalCandidateTrial
+                ? "\(setup): test one generated hypothesis from replicated menu evidence using a fixed A-B-B-A protocol. This is not a tune."
+                : "\(setup): compare stock with one slider step using a fixed A-B-B-A test."
         case .verifyTireRanges:
             return "\(setup): confirm exact stock tire-pressure bounds and game build."
         case .verifyUpgradeParts:
@@ -137,6 +146,36 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
     let canRecordTestDrive: Bool
     let evidenceRecordCount: Int
     let hasExactUpgradePaths: Bool
+    let fh5CandidateTrialAvailable: Bool
+
+    init(
+        savedTuneID: UUID,
+        game: ForzaGame,
+        carDisplayName: String,
+        disciplineTitle: String,
+        canRecordFH5Research: Bool,
+        canRunFH5Experiment: Bool,
+        canVerifyTireRanges: Bool,
+        canVerifyUpgradeParts: Bool,
+        canRecordTestDrive: Bool,
+        evidenceRecordCount: Int,
+        hasExactUpgradePaths: Bool,
+        fh5CandidateTrialAvailable: Bool = false
+    ) {
+        self.savedTuneID = savedTuneID
+        self.game = game
+        self.carDisplayName = carDisplayName
+        self.disciplineTitle = disciplineTitle
+        self.canRecordFH5Research = canRecordFH5Research
+        self.canRunFH5Experiment = canRunFH5Experiment
+        self.canVerifyTireRanges = canVerifyTireRanges
+        self.canVerifyUpgradeParts = canVerifyUpgradeParts
+        self.canRecordTestDrive = canRecordTestDrive
+        self.evidenceRecordCount = evidenceRecordCount
+        self.hasExactUpgradePaths = hasExactUpgradePaths
+        self.fh5CandidateTrialAvailable =
+            fh5CandidateTrialAvailable
+    }
 }
 
 struct BetaValidationMissionPlanner {
@@ -226,19 +265,32 @@ struct BetaValidationMissionPlanner {
         } else {
             validationEligible = false
         }
-        let experimentEligible: Bool
+        let experimentEligibility: (eligible: Bool, candidate: Bool)
         if tune.request.car.game == .fh5,
            evidence.fh5ControlledExperimentCount == 0 {
             let researchRecords = savedTune
                 .fh5ResearchObservationRecords(matching: tune)
-            experimentEligible = FH5ControlledExperimentFactory().eligibility(
+            let eligible = FH5ControlledExperimentFactory().eligibility(
                 tune: tune,
                 savedTune: tune,
                 isStreaming: false,
                 researchRecords: researchRecords
             ).isSuccess
+            let reviewInputs = savedTune
+                .fh5ResearchReviewEntries(matching: tune)
+                .map { FH5ResearchReviewInput(entry: $0) }
+            let candidate = (try? FH5CandidateTrialCoordinator().generate(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                researchRecords: researchRecords,
+                reviewInputs: reviewInputs,
+                input: .controller,
+                surface: .dry
+            )) != nil
+            experimentEligibility = (eligible, candidate)
         } else {
-            experimentEligible = false
+            experimentEligibility = (false, false)
         }
 
         return BetaValidationSetupFacts(
@@ -247,14 +299,17 @@ struct BetaValidationMissionPlanner {
             carDisplayName: tune.request.car.displayName,
             disciplineTitle: tune.request.discipline.title,
             canRecordFH5Research: researchEligible,
-            canRunFH5Experiment: experimentEligible,
+            canRunFH5Experiment: experimentEligibility.eligible,
             canVerifyTireRanges:
                 TirePressureCaptureEligibility().snapshot(for: tune) != nil,
             canVerifyUpgradeParts:
                 UpgradePartCaptureEligibility().snapshot(for: tune) != nil,
             canRecordTestDrive: validationEligible,
             evidenceRecordCount: evidence.totalRecordCount,
-            hasExactUpgradePaths: !TuneControlUpgradePlanner().paths(for: tune).isEmpty
+            hasExactUpgradePaths:
+                !TuneControlUpgradePlanner().paths(for: tune).isEmpty,
+            fh5CandidateTrialAvailable:
+                experimentEligibility.candidate
         )
     }
 
@@ -277,7 +332,10 @@ struct BetaValidationMissionPlanner {
             game: setup.game,
             savedTuneID: setup.savedTuneID,
             carDisplayName: setup.carDisplayName,
-            disciplineTitle: setup.disciplineTitle
+            disciplineTitle: setup.disciplineTitle,
+            isExperimentalCandidateTrial:
+                kind == .runFH5Experiment
+                    && setup.fh5CandidateTrialAvailable
         )
     }
 

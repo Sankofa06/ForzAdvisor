@@ -248,6 +248,46 @@ nonisolated enum FH5NumericRulesetRegistryIssue: Error, Equatable, Sendable {
 /// `TuneRulesetReference.isValid`, which only validates descriptor structure.
 nonisolated struct FH5TrustedNumericRulesetRegistry: Sendable {
     static let production = Self(uncheckedRegistrations: [])
+    static let experimentalCandidateCollection: Self = {
+        let algorithmID = FH5ExperimentalAlgorithmID.cleanRoomDirectionalV1
+        let sources = [
+            FH5NumericRulesetSourceManifest(
+                sourceID: "first-party.clean-room",
+                sourceVersion: "1",
+                owner: "ForzAdvisor",
+                rightsBasis: .firstPartyCleanRoom,
+                rightsEvidenceID:
+                    "docs.fh5-clean-room-directional-v1.md",
+                usagePermission: .permitted
+            )
+        ]
+        guard let knowledgeRevision =
+                FH5NumericRulesetSourceManifest.fingerprint(for: sources),
+              let reference = TuneRulesetReference(
+                descriptor: TuneRulesetDescriptor(
+                    id: algorithmID.rawValue,
+                    game: .fh5,
+                    schemaVersion: 1,
+                    algorithmVersion: "1",
+                    knowledgeRevision: knowledgeRevision,
+                    validationStatus: .experimental,
+                    provenanceIDs: sources.map(\.sourceID).sorted()
+                )
+              ),
+              let registry = try? Self(validating: [
+                FH5NumericRulesetRegistration(
+                    algorithmID: algorithmID,
+                    reference: reference,
+                    sourceManifests: sources,
+                    outcomeThreshold: .currentExperimental
+                )
+              ]) else {
+            preconditionFailure(
+                "The code-owned FH5 candidate collection registration is invalid."
+            )
+        }
+        return registry
+    }()
 
     private let registrations:
         [FH5ExperimentalAlgorithmID: FH5NumericRulesetRegistration]

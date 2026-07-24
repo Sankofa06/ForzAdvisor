@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 1.9.0 (Build 32) - 2026-07-23
+
+- Added an experimental FH5 Candidate Trial for exact saved plans whose permission-bound Research observations independently agree.
+- Locks one clean-room front-tire-pressure hypothesis to the selected input and surface, shows the exact stock-versus-variant A-B-B-A protocol, and revalidates current saved evidence before accepting an outcome.
+- Stores candidate-bound outcomes locally with non-exportable schema-v2 records, local evaluation progress, Beta Mission routing, and contextual Copilot guidance.
+- Keeps the production FH5 registry empty: no candidate can become a tune, enter a provider or projector, appear in plan output, or unlock numeric FH5 settings.
+
 ## Version 1.8.3 (Build 31) - 2026-07-23
 
 - Added the first registry-gated FH5 clean-room candidate generator for controlled testing: one legal front-tire-pressure step lower when an untouched stock car pushes wide.
@@ -150,43 +157,19 @@
 
 ## App Store What's New
 
-FH5 research can now produce one tightly controlled clean-room experiment candidate after exact independent evidence agrees. Numeric FH5 tuning remains locked.
+Replication-qualified FH5 plans can now run one locked experimental candidate trial and save its outcome locally. Numeric FH5 tuning remains locked.
 
 ## TestFlight Notes
 
-Regression focus for build 31: repeat the FH5 catalog, Research Lab, Upgrade Lab, and Outcome Lab paths below and confirm they behave exactly as in build 30. No FH5 numeric settings, provider attribution, ruleset reference, generated candidate, or candidate-bound collection UI may appear. The new clean-room generator is registry-gated internal research infrastructure; the production registry is empty. Normal Outcome Lab experiments must remain schema-v1 calibration evidence and retain the existing deidentified export behavior.
+Regression focus for build 32: create or open a saved exact FH5 catalog plan, complete Upgrade Lab, and provide two canonical permission-bound Research Review observations that exactly replicate the local Research Lab stock-menu measurements. When the car pushes wide and front tire pressure can move one observed legal step lower, confirm the result and Beta Mission surfaces label the next action as an experimental candidate trial, not a tune.
 
-Complete Research Lab and Upgrade Lab for the same saved FH5 plan, then open Outcome Lab. Leave deidentified calibration reuse off, save the experiment, and confirm the result says JSON sharing is unavailable. Delete the experiment, repeat the fixed A-B-B-A run, enable reuse before saving, and confirm Share deidentified experiment JSON opens the system share sheet.
+Open the trial, choose input and surface, then lock it. Confirm those choices become disabled, the screen shows the exact stock A and one-step-lower B front tire pressure, and the fixed route and A-B-B-A sequence are clear. Complete the confirmations and save. If Research evidence or the saved plan changes after locking, submission must fail instead of accepting the stale candidate.
 
-Inspect the shared JSON and confirm it contains the declared stock context, observed one-step change, protocol, target symptom, outcome, attestations, privacy exclusion list, random submission and permission receipt identifiers, and public content fingerprint. It must not contain the local experiment ID, saved tune ID or plan fingerprint, Research Lab record ID or content fingerprint, generated tune values, provider or ruleset data, notes, screenshots, OCR, telemetry, device identifiers, location, analytics, share destination, or public attribution.
+Confirm the saved result hides the candidate value, says the schema-v2 record is local-only and non-exportable, offers no share action, and shows local exact-outcome progress. Reuse permission starts off and applies only to local deidentified evaluation. The saved plan, copied build plan, provider attribution, numeric readiness, and every FH5 numeric setting must remain unchanged and locked.
 
-Confirm sharing does not change the saved plan or readiness state, there is no experiment importer or background upload, and numeric FH5 settings remain unavailable.
+For a plan without exact replicated review evidence, confirm the original generic Outcome Lab remains available. Its schema-v1 record can still expose the existing user-initiated deidentified JSON share action only when reuse permission was enabled.
 
-Create and save an eligible exact-build FH6 tune, then open Accuracy Evidence -> Open Validation Review. Paste exact JSON shared from Record Test Drive for that same build and tune. Confirm validation succeeds only for canonical JSON matching the current game build, catalog car, verified shop availability, discipline, current ruleset, and applied settings.
-
-Confirm import stays disabled until direct receipt and deidentified structured reuse permission are checked. After import, verify Reviewed Sessions shows Keep, Adjust, Reject, handling symptoms, course, surface, and input counts. Delete the imported entry and confirm the player's own local Test Drive record and tune remain unchanged.
-
-Try JSON from a different setup, FH5, a stale ruleset, or edited bytes and confirm it is rejected. Reimport an exact administrative copy and confirm it does not add another session. Conflicting submissions and reused permission receipts must be quarantined instead of influencing the outcome summary.
-
-From the garage, open Beta Validation Missions with an empty garage and confirm it offers one starter mission for FH5 and one for FH6. Save an FH5 plan or FH6 tune, reopen the mission board, and confirm it replaces the matching starter with only the eligible Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, or Record Test Drive actions.
-
-Open a saved-setup mission and confirm it enters the existing capture workflow for that exact setup. Complete the workflow, then reopen Beta Validation Missions and confirm the completed mission disappears. If a setup changes or is deleted while the board is open, the stale mission must fail safely instead of opening the wrong setup.
-
-Use Share Beta Progress and confirm the preview contains only aggregate counts and the ForzAdvisor marketing link. It must not contain car names, disciplines, tune settings, notes, screenshots, tune or evidence identifiers, provider details, or analytics.
-
-Please also test New Tune -> Choose a Car -> select an FH5 catalog car -> Use This Car -> choose a discipline. Confirm the result is clearly labeled Build Plan, contains no numeric tuning settings, and offers Upgrade Lab without contacting the selected model or API provider.
-
-Save the plan, open FH5 Research Lab, and confirm every expected control requires Adjustable, Shown locked, or Not shown. For Adjustable, enter the observed minimum, maximum, step, and restored current value. Confirm incomplete or contradictory observations cannot save, reuse/JSON sharing starts off, and returning to the plan does not expose numeric FH5 tune settings.
-
-After completing Research Lab and Upgrade Lab for the same FH5 plan, open Outcome Lab. Confirm it shows the exact stock A value and a one-step B value, fixes the sequence to A-B-B-A on Horizon Test Track, and requires unchanged conditions, assists, input, every other setting, full sequence completion, stock restoration, authorship, and local storage permission. Save the result and confirm the readiness checklist reports the matching experiment but keeps controlled outcomes blocked.
-
-In Upgrade Lab, enter the exact FH5 game build, confirm the untouched stock car, and mark every listed part Offered or Not offered. When all parts are offered, confirm the rebuilt plan shows three deterministic alternatives and that Copy build plan includes only the exact verified paths. Save, reopen, and confirm the same paths remain available.
-
-Please also confirm manual, OCR, edited-catalog, and otherwise unverified FH5 inputs still refuse numeric generation. Existing FH6 catalog, manual, Tire Lab, refinement, sharing, and Record Test Drive workflows should behave unchanged.
-
-The starter catalog contains six community-crosschecked cars across both games. Confirm catalog values and upgrade availability in game and report discrepancies. FH6 formulas remain experimental; catalog provenance does not validate formula accuracy.
-
-Offline use requires no account or API key. FH5 build plans and Research Lab observations stay local unless the user explicitly shares an eligible deidentified JSON record. Camera and photo import are optional, screenshots are processed on device, and Anthropic API mode requires the tester to provide their own key for FH6.
+Confirm Copilot distinguishes generic calibration from an experimental candidate trial, and that Beta Missions never describes the candidate as validated tuning advice. Existing FH5 manual/OCR/edited inputs and all FH6 catalog, Tune Lab, refinement, sharing, Test Drive, and Validation Review workflows should remain unchanged.
 
 ## Reviewer Notes
 

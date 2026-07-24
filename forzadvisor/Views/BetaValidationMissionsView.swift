@@ -69,7 +69,7 @@ struct BetaValidationMissionsView: View {
                                             : ForzAdvisorTheme.accent
                                     )
                                     VStack(alignment: .leading, spacing: 5) {
-                                        Text(mission.kind.title)
+                                        Text(mission.title)
                                             .font(.headline)
                                             .foregroundStyle(.primary)
                                         Text(mission.detail)
@@ -89,7 +89,7 @@ struct BetaValidationMissionsView: View {
                                 "betaMission-\(mission.id)"
                             )
                             .accessibilityHint(
-                                "Opens the existing \(mission.kind.title) workflow."
+                                "Opens the existing \(mission.title) workflow."
                             )
                         }
                     }

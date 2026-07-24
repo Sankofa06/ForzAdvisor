@@ -13,7 +13,8 @@ struct CopilotContextFactory {
         savedTuneCount: Int,
         catalogCarCount: Int,
         fh5ResearchLabEligible: Bool = false,
-        fh5ObservationRecorded: Bool = false
+        fh5ObservationRecorded: Bool = false,
+        fh5CandidateTrialAvailable: Bool = false
     ) -> CopilotContext {
         switch step {
         case .home:
@@ -47,7 +48,9 @@ struct CopilotContextFactory {
                 phase: .result,
                 isSaved: savedTuneID != nil,
                 fh5ResearchLabEligible: fh5ResearchLabEligible,
-                fh5ObservationRecorded: fh5ObservationRecorded
+                fh5ObservationRecorded: fh5ObservationRecorded,
+                fh5CandidateTrialAvailable:
+                    fh5CandidateTrialAvailable
             )
         case .tirePressureCapture:
             return context(.tirePressureCapture, cannotSeeUnsavedEdits: true)
@@ -55,9 +58,18 @@ struct CopilotContextFactory {
             return context(.upgradePartCapture, cannotSeeUnsavedEdits: true)
         case .fh5ResearchCapture:
             return context(.fh5ResearchCapture, cannotSeeUnsavedEdits: true)
-        case .fh5ControlledExperimentCapture:
+        case .fh5ControlledExperimentCapture(
+            _,
+            _,
+            _,
+            let candidateTrialAvailable,
+            _,
+            _
+        ):
             return context(
                 .fh5ControlledExperimentCapture,
+                fh5CandidateTrialAvailable:
+                    candidateTrialAvailable,
                 cannotSeeUnsavedEdits: true
             )
         case .recordTestDrive:
@@ -73,6 +85,7 @@ struct CopilotContextFactory {
         isSaved: Bool,
         fh5ResearchLabEligible: Bool = false,
         fh5ObservationRecorded: Bool = false,
+        fh5CandidateTrialAvailable: Bool = false,
         cannotSeeUnsavedEdits: Bool = false
     ) -> CopilotContext {
         context(
@@ -84,7 +97,9 @@ struct CopilotContextFactory {
                 isSaved: isSaved,
                 isStreaming: false,
                 fh5ResearchLabEligible: fh5ResearchLabEligible,
-                fh5ObservationRecorded: fh5ObservationRecorded
+                fh5ObservationRecorded: fh5ObservationRecorded,
+                fh5CandidateTrialAvailable:
+                    fh5CandidateTrialAvailable
             ),
             cannotSeeUnsavedEdits: cannotSeeUnsavedEdits
         )
@@ -97,6 +112,7 @@ struct CopilotContextFactory {
         savedTuneCount: Int? = nil,
         catalogCarCount: Int? = nil,
         projection: CopilotProjectionFacts? = nil,
+        fh5CandidateTrialAvailable: Bool? = nil,
         cannotSeeUnsavedEdits: Bool = false
     ) -> CopilotContext {
         CopilotContext(
@@ -107,6 +123,8 @@ struct CopilotContextFactory {
             savedTuneCount: savedTuneCount,
             catalogCarCount: catalogCarCount,
             projection: projection,
+            fh5CandidateTrialAvailable:
+                fh5CandidateTrialAvailable,
             cannotSeeUnsavedEdits: cannotSeeUnsavedEdits
         )
     }
@@ -116,7 +134,8 @@ struct CopilotContextFactory {
         isSaved: Bool,
         isStreaming: Bool,
         fh5ResearchLabEligible: Bool = false,
-        fh5ObservationRecorded: Bool = false
+        fh5ObservationRecorded: Bool = false,
+        fh5CandidateTrialAvailable: Bool = false
     ) -> CopilotProjectionFacts? {
         guard let report = tune.projectionReport else {
             return nil
@@ -131,6 +150,8 @@ struct CopilotContextFactory {
             upgradeLabEligible: isStreaming ? nil : UpgradePartCaptureEligibility().snapshot(for: tune) != nil,
             fh5ResearchLabEligible: isStreaming ? nil : fh5ResearchLabEligible,
             fh5ObservationRecorded: isStreaming ? nil : fh5ObservationRecorded,
+            fh5CandidateTrialAvailable:
+                isStreaming ? nil : fh5CandidateTrialAvailable,
             exactUpgradePathCount: isStreaming ? nil : TuneControlUpgradePlanner().paths(for: tune).count,
             isSaved: isStreaming ? nil : isSaved,
             isStreaming: isStreaming

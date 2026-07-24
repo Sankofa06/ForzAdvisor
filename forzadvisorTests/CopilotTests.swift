@@ -228,6 +228,78 @@ final class CopilotTests: XCTestCase {
         XCTAssertTrue(engine.response(to: .nextStep, in: resultContext(facts)).message.contains("guided feedback"))
     }
 
+    func testCandidateTrialCopilotCopyKeepsHypothesisOutOfTuneOutput() throws {
+        let facts = CopilotProjectionFacts(
+            resultPurpose: .fh5BuildPlan,
+            readyCount: 0,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tireLabEligible: false,
+            upgradeLabEligible: false,
+            fh5ResearchLabEligible: false,
+            fh5ObservationRecorded: true,
+            fh5CandidateTrialAvailable: true,
+            exactUpgradePathCount: 1,
+            isSaved: true,
+            isStreaming: false
+        )
+        let result = resultContext(facts)
+        let next = CopilotEngine().response(
+            to: .nextStep,
+            in: result
+        ).message
+        let missing = CopilotEngine().response(
+            to: .missing,
+            in: result
+        ).message
+        let genericCapture = syntheticContext(
+            for: .fh5ControlledExperimentCapture
+        )
+        var candidateCapture = genericCapture
+        candidateCapture.fh5CandidateTrialAvailable = true
+        let genericCaptureNext = CopilotEngine().response(
+            to: .nextStep,
+            in: genericCapture
+        ).message
+        let candidateCaptureNext = CopilotEngine().response(
+            to: .nextStep,
+            in: candidateCapture
+        ).message
+
+        XCTAssertTrue(next.contains("experimental"))
+        XCTAssertTrue(next.contains("not a tune"))
+        XCTAssertTrue(missing.contains("Numeric FH5 tuning remains locked"))
+        XCTAssertTrue(genericCaptureNext.contains("Complete the fixed A-B-B-A"))
+        XCTAssertFalse(genericCaptureNext.contains("candidate"))
+        XCTAssertTrue(
+            candidateCaptureNext.contains("experimental hypothesis")
+        )
+        XCTAssertTrue(candidateCapture.facts.contains {
+            $0.label == "FH5 Outcome Lab mode"
+                && $0.value == "Experimental candidate trial"
+        })
+        XCTAssertFalse(genericCapture.facts.contains {
+            $0.label == "FH5 Outcome Lab mode"
+        })
+        XCTAssertTrue(result.facts.contains {
+            $0.label == "FH5 candidate trial"
+                && $0.value == "Experimental hypothesis ready"
+        })
+
+        var encoded = try XCTUnwrap(
+            JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(candidateCapture)
+            ) as? [String: Any]
+        )
+        encoded.removeValue(forKey: "fh5CandidateTrialAvailable")
+        let legacyData = try JSONSerialization.data(withJSONObject: encoded)
+        let decoded = try JSONDecoder().decode(
+            CopilotContext.self,
+            from: legacyData
+        )
+        XCTAssertNil(decoded.fh5CandidateTrialAvailable)
+    }
+
     func testSamePhaseLoadingReportChangesAreResetDrivingContextChanges() throws {
         let selection = try catalogSelection()
         let firstTune = projectedTune(car: selection.carInput)

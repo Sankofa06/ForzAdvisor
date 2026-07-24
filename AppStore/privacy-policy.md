@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-07-22
+Effective date: 2026-07-23
 
 Public URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
 
@@ -40,7 +40,9 @@ On a matching saved FH5 catalog plan, Research Review can locally import the exa
 
 For a matching saved FH5 plan with complete Research Lab and Upgrade Lab evidence, Outcome Lab can store one local paired-experiment record in a separate evidence queue. It binds to the exact saved-plan and menu-measurement fingerprints and includes allow-listed stock context, capture time, one adjustable field's observed range, step, and stock value, a one-step candidate value, surface, input type, target handling symptom, comparative outcome, the fixed A-B-B-A protocol, confirmations, and random integrity identifiers.
 
-Optional deidentified calibration reuse and JSON sharing are off by default for each experiment. If explicitly enabled before saving, you can open the iOS system share sheet for an allow-listed JSON copy. The export excludes the local record ID, saved tune ID and plan fingerprint, Research Lab record ID and content fingerprint, generated tune values, provider and ruleset data, lap times, telemetry, notes, screenshots, OCR, device identifiers, location, analytics, share destination, and public attribution. Its public content fingerprint covers only the exported fields and is separate from local integrity. ForzAdvisor has no background experiment uploader or importer and keeps no share destination or history. Deleting the local experiment cannot recall a JSON copy already shared.
+For user-selected calibration experiments, optional deidentified calibration reuse and JSON sharing are off by default. If explicitly enabled before saving, you can open the iOS system share sheet for an allow-listed JSON copy. The export excludes the local record ID, saved tune ID and plan fingerprint, Research Lab record ID and content fingerprint, generated tune values, provider and ruleset data, lap times, telemetry, notes, screenshots, OCR, device identifiers, location, analytics, share destination, and public attribution. Its public content fingerprint covers only the exported fields and is separate from local integrity. ForzAdvisor has no background experiment uploader or importer and keeps no share destination or history. Deleting the local experiment cannot recall a JSON copy already shared.
+
+When replicated permission-bound Research observations qualify an exact saved plan, Outcome Lab may instead offer one generated experimental candidate trial. The app labels it as a hypothesis rather than a tune, locks its input and surface before testing, and regenerates it from current persisted evidence before accepting the outcome. Its optional reuse permission applies only to local deidentified outcome evaluation. Candidate-bound schema-v2 records cannot be exported or shared in this version, even when local reuse is enabled.
 
 Outcome Lab evidence cannot register a ruleset, change the saved plan, set an acceptance threshold, or unlock numeric FH5 tuning.
 

@@ -24,7 +24,7 @@ For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a 
 
 For FH5 catalog cars, ForzAdvisor creates a provider-independent local build plan without numeric tuning settings. Upgrade Lab records only the tuning-control parts you confirm are offered for the untouched stock car, then produces up to three exact alternative purchase paths. Numeric FH5 tuning stays unavailable until a separate FH5 ruleset is validated.
 
-Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. Beta Validation Missions turn eligible saved setups into exact local testing tasks for Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, and Record Test Drive. FH5 Outcome Lab records a fixed one-variable A-B-B-A Test Track experiment as calibration evidence and can share an explicitly permitted deidentified JSON copy without unlocking numeric tuning. Eligible exact FH6 builds can also use Guided Refinement, verified build sharing, and local Validation Review for permission-bound Test Drive exports that match the current setup.
+Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. Beta Validation Missions turn eligible saved setups into exact local testing tasks for Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, and Record Test Drive. FH5 Outcome Lab records a fixed one-variable A-B-B-A Test Track experiment as calibration evidence. Generic calibration records can share an explicitly permitted deidentified JSON copy; replication-qualified generated candidate trials remain local-only and are labeled as experimental hypotheses rather than tunes. Eligible exact FH6 builds can also use Guided Refinement, verified build sharing, and local Validation Review for permission-bound Test Drive exports that match the current setup.
 
 ForzAdvisor runs offline by default. FH5 build plans always stay local. Optional on-device AI can assist FH6 generation when Apple Foundation Models are available, and optional API mode lets advanced users connect their own Anthropic API key for FH6. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -74,14 +74,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.8.3
-- Current project build: 30
+- Current project version: 1.9.0
+- Current project build: 32
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-FH5 numeric safeguards now bind controlled outcomes to one exact candidate and reject malformed or replayed evidence. Numeric FH5 tuning remains locked.
+Replication-qualified FH5 plans can now run one locked experimental candidate trial and save its outcome locally. Numeric FH5 tuning remains locked.
 
 ## Export Compliance Notes
 

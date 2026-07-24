@@ -261,31 +261,65 @@ struct ContentView: View {
                     let tune,
                     let savedTuneID,
                     let researchRecord,
+                    let candidateTrialAvailable,
                     let thumbnailData,
                     let playerNotes
                 ):
-                    FH5ControlledExperimentCaptureView(
-                        tune: tune,
-                        researchRecord: researchRecord,
-                        onBack: {
-                            step = .result(
-                                tune,
-                                savedTuneID: savedTuneID,
-                                adjustmentChanges: [],
-                                thumbnailData: thumbnailData,
-                                playerNotes: playerNotes
-                            )
-                        },
-                        onSubmit: { capture in
-                            recordFH5ControlledExperiment(
-                                capture,
-                                for: tune,
-                                savedTuneID: savedTuneID,
-                                thumbnailData: thumbnailData,
-                                playerNotes: playerNotes
-                            )
-                        }
-                    )
+                    if candidateTrialAvailable {
+                        FH5CandidateTrialCaptureView(
+                            tune: tune,
+                            researchRecord: researchRecord,
+                            onBack: {
+                                step = .result(
+                                    tune,
+                                    savedTuneID: savedTuneID,
+                                    adjustmentChanges: [],
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            },
+                            onLockCandidate: { input, surface in
+                                try makeFH5CandidateTrialArtifact(
+                                    for: tune,
+                                    savedTuneID: savedTuneID,
+                                    input: input,
+                                    surface: surface
+                                )
+                            },
+                            onSubmit: { submission in
+                                recordFH5CandidateTrial(
+                                    submission,
+                                    for: tune,
+                                    savedTuneID: savedTuneID,
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            }
+                        )
+                    } else {
+                        FH5ControlledExperimentCaptureView(
+                            tune: tune,
+                            researchRecord: researchRecord,
+                            onBack: {
+                                step = .result(
+                                    tune,
+                                    savedTuneID: savedTuneID,
+                                    adjustmentChanges: [],
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            },
+                            onSubmit: { capture in
+                                recordFH5ControlledExperiment(
+                                    capture,
+                                    for: tune,
+                                    savedTuneID: savedTuneID,
+                                    thumbnailData: thumbnailData,
+                                    playerNotes: playerNotes
+                                )
+                            }
+                        )
+                    }
                 case .recordTestDrive(let tune, let savedTuneID, let thumbnailData, let playerNotes):
                     FirstPartyValidationCaptureView(
                         tune: tune,
@@ -395,7 +429,9 @@ struct ContentView: View {
             savedTuneCount: savedTunes.count,
             catalogCarCount: catalogCarCount,
             fh5ResearchLabEligible: currentFH5ResearchLabEligible,
-            fh5ObservationRecorded: currentFH5ObservationRecorded
+            fh5ObservationRecorded: currentFH5ObservationRecorded,
+            fh5CandidateTrialAvailable:
+                currentFH5CandidateTrialAvailable
         )
     }
 
@@ -417,6 +453,31 @@ struct ContentView: View {
             return false
         }
         return !savedTune.fh5ResearchObservationRecords(matching: tune).isEmpty
+    }
+
+    private var currentFH5CandidateTrialAvailable: Bool {
+        guard case .result(let tune, let savedTuneID, _, _, _) = step,
+              let savedTune = resolvedSavedTune(
+                for: tune,
+                savedTuneID: savedTuneID
+              ),
+              let persistedTune = savedTune.tuneResult else {
+            return false
+        }
+        let researchRecords = savedTune
+            .fh5ResearchObservationRecords(matching: persistedTune)
+        let reviewInputs = savedTune
+            .fh5ResearchReviewEntries(matching: persistedTune)
+            .map { FH5ResearchReviewInput(entry: $0) }
+        return (try? FH5CandidateTrialCoordinator().generate(
+            tune: tune,
+            savedTune: persistedTune,
+            isStreaming: false,
+            researchRecords: researchRecords,
+            reviewInputs: reviewInputs,
+            input: .controller,
+            surface: .dry
+        )) != nil
     }
 
     private var catalogCarCount: Int {
@@ -490,6 +551,31 @@ struct ContentView: View {
             isStreaming: isStreaming,
             researchRecords: researchRecords
         )
+        let candidateTrialArtifact = try? FH5CandidateTrialCoordinator()
+            .generate(
+                tune: tune,
+                savedTune: persistedTune,
+                isStreaming: isStreaming,
+                researchRecords: researchRecords,
+                reviewInputs: researchReviewEntries.map {
+                    FH5ResearchReviewInput(entry: $0)
+                },
+                input: .controller,
+                surface: .dry
+            )
+        let candidateOutcomeReport: FH5ControlledOutcomePolicyReport? = {
+            guard let binding =
+                    latestExperimentRecord?.candidateBinding else {
+                return nil
+            }
+            return FH5ControlledOutcomeEvaluator().evaluate(
+                records: experimentRecords,
+                tune: tune,
+                researchRecord: latestResearchRecord,
+                candidateBinding: binding,
+                registry: .experimentalCandidateCollection
+            )
+        }()
         let controlledOutcomeReport = FH5ControlledExperimentFactory()
             .outcomePolicyReport(
                 records: experimentRecords,
@@ -597,6 +683,8 @@ struct ContentView: View {
                 )
             },
             latestFH5ControlledExperimentRecord: latestExperimentRecord,
+            fh5CandidateTrialAvailable: candidateTrialArtifact != nil,
+            fh5CandidateOutcomeReport: candidateOutcomeReport,
             onOpenFH5ControlledExperiment:
                 experimentEligibility.isSuccess && resolvedSavedTuneID != nil
                 ? {
@@ -609,6 +697,8 @@ struct ContentView: View {
                         tune,
                         savedTuneID: resolvedSavedTuneID,
                         researchRecord: researchRecord,
+                        candidateTrialAvailable:
+                            candidateTrialArtifact != nil,
                         thumbnailData: resolvedThumbnailData,
                         playerNotes: resolvedPlayerNotes
                     )

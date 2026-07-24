@@ -30,6 +30,8 @@ struct TuneResultView: View {
     let onImportFH5ResearchReviewEntry: ((FH5ResearchReviewEntry) -> String?)?
     let onDeleteFH5ResearchReviewEntry: (FH5ResearchReviewEntry) -> Void
     let latestFH5ControlledExperimentRecord: FH5ControlledExperimentRecord?
+    let fh5CandidateTrialAvailable: Bool
+    let fh5CandidateOutcomeReport: FH5ControlledOutcomePolicyReport?
     let onOpenFH5ControlledExperiment: (() -> Void)?
     let onDeleteFH5ControlledExperimentRecord:
         (FH5ControlledExperimentRecord) -> Void
@@ -146,6 +148,8 @@ struct TuneResultView: View {
                         showsFH5ResearchReview = true
                     },
                     experimentRecord: latestFH5ControlledExperimentRecord,
+                    candidateTrialAvailable: fh5CandidateTrialAvailable,
+                    candidateOutcomeReport: fh5CandidateOutcomeReport,
                     onOpenExperiment: onOpenFH5ControlledExperiment,
                     onRequestDeleteResearch: {
                         researchRecordPendingDeletion = $0
@@ -574,6 +578,8 @@ private struct FH5ResearchOutcomeSection: View {
     let canOpenReview: Bool
     let onOpenReview: () -> Void
     let experimentRecord: FH5ControlledExperimentRecord?
+    let candidateTrialAvailable: Bool
+    let candidateOutcomeReport: FH5ControlledOutcomePolicyReport?
     let onOpenExperiment: (() -> Void)?
     let onRequestDeleteResearch: (FH5ResearchObservationRecord) -> Void
     let onRequestDeleteExperiment: (FH5ControlledExperimentRecord) -> Void
@@ -719,6 +725,8 @@ private struct FH5ResearchOutcomeSection: View {
 
                 FH5ControlledExperimentSummary(
                     record: experimentRecord,
+                    candidateTrialAvailable: candidateTrialAvailable,
+                    candidateOutcomeReport: candidateOutcomeReport,
                     onOpen: onOpenExperiment,
                     onRequestDelete: onRequestDeleteExperiment
                 )
@@ -750,6 +758,8 @@ private struct FH5ResearchOutcomeSection: View {
 
 private struct FH5ControlledExperimentSummary: View {
     let record: FH5ControlledExperimentRecord?
+    let candidateTrialAvailable: Bool
+    let candidateOutcomeReport: FH5ControlledOutcomePolicyReport?
     let onOpen: (() -> Void)?
     let onRequestDelete: (FH5ControlledExperimentRecord) -> Void
 
@@ -758,16 +768,25 @@ private struct FH5ControlledExperimentSummary: View {
             if let onOpen {
                 VStack(alignment: .leading, spacing: 8) {
                     Label(
-                        "Run one controlled paired experiment",
+                        candidateTrialAvailable
+                            ? "Run one experimental candidate trial"
+                            : "Run one controlled paired experiment",
                         systemImage: "testtube.2"
                     )
                     .font(.subheadline.weight(.semibold))
                     Text(
-                        "Outcome Lab guides a fixed A-B-B-A Horizon Test Track test. It changes one adjustable control by one observed step, then requires a return to stock."
+                        candidateTrialAvailable
+                            ? "Replicated evidence qualifies this saved plan for one generated A-B-B-A hypothesis. It is not a tune or advice, and the candidate stays locked inside Outcome Lab."
+                            : "Outcome Lab guides a fixed A-B-B-A Horizon Test Track test. It changes one adjustable control by one observed step, then requires a return to stock."
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    Button("Open FH5 Outcome Lab", action: onOpen)
+                    Button(
+                        candidateTrialAvailable
+                            ? "Open Experimental Candidate Trial"
+                            : "Open FH5 Outcome Lab",
+                        action: onOpen
+                    )
                         .buttonStyle(.borderedProminent)
                         .accessibilityIdentifier(
                             "openFH5ControlledExperimentButton"
@@ -783,10 +802,19 @@ private struct FH5ControlledExperimentSummary: View {
                         systemImage: "checkmark.circle"
                     )
                     .font(.subheadline.weight(.semibold))
-                    Text(
-                        "\(record.change.field.projectionLabel): \(formatted(record.change.baselineValue, unit: record.change.unit)) → \(formatted(record.change.candidateValue, unit: record.change.unit))"
-                    )
-                    .font(.caption)
+                    if record.schemaVersion
+                        == FH5ControlledExperimentRecord
+                            .calibrationSchemaVersion {
+                        Text(
+                            "\(record.change.field.projectionLabel): \(formatted(record.change.baselineValue, unit: record.change.unit)) → \(formatted(record.change.candidateValue, unit: record.change.unit))"
+                        )
+                        .font(.caption)
+                    } else {
+                        Text(
+                            "Candidate-bound experimental outcome saved locally. The candidate value is not added to this plan or exposed as tune output."
+                        )
+                        .font(.caption)
+                    }
                     Text(
                         "\(record.targetSymptom.title) · \(record.outcome.title)"
                     )
@@ -798,7 +826,28 @@ private struct FH5ControlledExperimentSummary: View {
                     .font(.caption)
                     .foregroundStyle(ForzAdvisorTheme.warning)
 
-                    if let json = record.deterministicJSONString {
+                    if record.schemaVersion
+                        == FH5ControlledExperimentRecord
+                            .candidateBoundSchemaVersion {
+                        Text(
+                            "This schema-v2 candidate record is local-only and non-exportable. No share action is available, even when local deidentified evaluation reuse was enabled."
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                        if let report = candidateOutcomeReport {
+                            Label(
+                                "\(report.matchingRecordCount)/\(FH5ControlledOutcomeThreshold.currentExperimental.minimumUniqueRecords) exact local candidate outcomes collected",
+                                systemImage: "chart.bar.doc.horizontal"
+                            )
+                            .font(.caption.weight(.semibold))
+                            Text(
+                                "Variant preferred: \(report.variantPreferredCount) · Baseline preferred: \(report.baselinePreferredCount) · Non-decisive: \(report.nonDecisiveCount)"
+                            )
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        }
+                    } else if let json = record.deterministicJSONString {
                         ShareLink(
                             item: json,
                             subject: Text(
