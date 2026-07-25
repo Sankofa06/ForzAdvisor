@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.13.0 (Build 38) - 2026-07-25
+
+- Makes Copilot's FH6 next-step guidance actionable with direct handoffs to Tune Menu Lab, Tire Lab, or Upgrade Lab.
+- Rechecks the live result and current lab eligibility when tapped, so stale or changed recommendations fail safely.
+- Keeps FH5 advice guidance-only and preserves the current tune, saved setup, thumbnail, and notes during valid handoffs.
+
 ## Version 1.12.1 (Build 37) - 2026-07-25
 
 - Uses exact Tune Menu Lab ranges and slider steps for every formula-backed FH6 tuning control, not only tire pressure.

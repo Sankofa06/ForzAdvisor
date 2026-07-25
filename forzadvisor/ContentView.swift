@@ -441,6 +441,7 @@ struct ContentView: View {
                 case .copilot:
                     CopilotSheet(
                         context: copilotContext,
+                        onAction: performCopilotAction,
                         onClose: { rootSheet = nil }
                     )
                 case .betaMissions:

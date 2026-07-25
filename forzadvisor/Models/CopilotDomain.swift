@@ -99,6 +99,20 @@ enum CopilotIntent: String, CaseIterable, Codable, Sendable {
     }
 }
 
+enum CopilotAction: String, CaseIterable, Codable, Sendable {
+    case openFH6TuneMenuLab
+    case openTireLab
+    case openUpgradeLab
+
+    var title: String {
+        switch self {
+        case .openFH6TuneMenuLab: "Open FH6 Tune Menu Lab"
+        case .openTireLab: "Open Tire Lab"
+        case .openUpgradeLab: "Open Upgrade Lab"
+        }
+    }
+}
+
 struct CopilotCountFact: Codable, Equatable, Sendable {
     let label: String
     let count: Int
@@ -342,11 +356,13 @@ struct CopilotResponse: Equatable, Sendable {
     let title: String
     let message: String
     let intent: CopilotIntent?
+    let action: CopilotAction?
 
     static let unsupported = CopilotResponse(
         title: "That is outside this Copilot",
         message: "I can only answer Next step, What can I trust?, What is missing?, or Privacy. I cannot calculate tune numbers, PI, cost, performance, parts, or use web and community sources.",
-        intent: nil
+        intent: nil,
+        action: nil
     )
 }
 
@@ -370,7 +386,12 @@ struct CopilotEngine {
         case .privacy:
             message = privacy(in: context)
         }
-        return CopilotResponse(title: intent.title, message: message, intent: intent)
+        return CopilotResponse(
+            title: intent.title,
+            message: message,
+            intent: intent,
+            action: action(for: intent, in: context)
+        )
     }
 
     private func nextStep(in context: CopilotContext) -> String {
@@ -481,7 +502,31 @@ struct CopilotEngine {
         let editBoundary = context.cannotSeeUnsavedEdits
             ? " It cannot see unsaved field edits in the underlying form."
             : ""
-        return "This Copilot runs deterministic guidance locally. It does not call a model or network service, save a transcript, log questions, or change your workflow. It only receives the current phase and the summary facts shown here.\(editBoundary)"
+        return "This Copilot runs deterministic guidance locally. It does not call a model or network service, save a transcript, or log questions. It only receives the current phase and the summary facts shown here. Copilot does not change your workflow unless you explicitly tap an action it offers.\(editBoundary)"
+    }
+
+    private func action(
+        for intent: CopilotIntent,
+        in context: CopilotContext
+    ) -> CopilotAction? {
+        guard intent == .nextStep,
+              context.phase == .result,
+              let projection = context.projection,
+              !projection.isStreaming,
+              projection.resultPurpose == .numericTune,
+              projection.readyCount > 0 else {
+            return nil
+        }
+        if projection.tuneMenuLabEligible == true {
+            return .openFH6TuneMenuLab
+        }
+        if projection.tireLabEligible == true {
+            return .openTireLab
+        }
+        if projection.upgradeLabEligible == true {
+            return .openUpgradeLab
+        }
+        return nil
     }
 
     private func resultNextStep(_ projection: CopilotProjectionFacts?) -> String {

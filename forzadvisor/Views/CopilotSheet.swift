@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CopilotSheet: View {
     let context: CopilotContext
+    let onAction: (CopilotAction) -> Void
     let onClose: () -> Void
 
     @State private var question = ""
@@ -124,6 +125,20 @@ struct CopilotSheet: View {
                 .font(.headline)
             Text(response.message)
                 .fixedSize(horizontal: false, vertical: true)
+            if let action = response.action {
+                Button {
+                    onAction(action)
+                    onClose()
+                } label: {
+                    Text(action.title)
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: 44
+                        )
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("copilotResponseActionButton")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()

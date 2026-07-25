@@ -10,6 +10,17 @@ import Foundation
 import SwiftData
 
 extension ContentView {
+    func performCopilotAction(_ action: CopilotAction) {
+        guard let destination = CopilotWorkflowActionRouter().destination(
+            for: action,
+            from: step
+        ) else {
+            return
+        }
+        tuneWorkflow.cancelAdjustment()
+        step = destination
+    }
+
     func generateTune(
         for input: CarInput,
         discipline: DrivingDiscipline,

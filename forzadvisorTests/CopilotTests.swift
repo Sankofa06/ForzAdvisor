@@ -61,6 +61,9 @@ final class CopilotTests: XCTestCase {
                 XCTAssertEqual(response.intent, intent, "\(phase.rawValue) / \(intent.rawValue)")
                 XCTAssertFalse(response.title.isEmpty, "\(phase.rawValue) / \(intent.rawValue)")
                 XCTAssertFalse(response.message.isEmpty, "\(phase.rawValue) / \(intent.rawValue)")
+                if intent != .nextStep || phase != .result {
+                    XCTAssertNil(response.action, "\(phase.rawValue) / \(intent.rawValue)")
+                }
             }
         }
     }
@@ -219,21 +222,206 @@ final class CopilotTests: XCTestCase {
 
         XCTAssertEqual(response, .unsupported)
         XCTAssertNil(response.intent)
+        XCTAssertNil(response.action)
     }
 
     func testResultPriorityCoversStreamingWithheldUnsavedAndSavedStates() {
         let engine = CopilotEngine()
         var facts = projectionFacts(readyCount: 2, isSaved: false, isStreaming: true)
-        XCTAssertTrue(engine.response(to: .nextStep, in: resultContext(facts)).message.contains("Wait"))
+        var response = engine.response(
+            to: .nextStep,
+            in: resultContext(facts)
+        )
+        XCTAssertTrue(response.message.contains("Wait"))
+        XCTAssertNil(response.action)
 
         facts = projectionFacts(readyCount: 0, isSaved: false, isStreaming: false)
-        XCTAssertTrue(engine.response(to: .nextStep, in: resultContext(facts)).message.contains("withheld"))
+        response = engine.response(to: .nextStep, in: resultContext(facts))
+        XCTAssertTrue(response.message.contains("withheld"))
+        XCTAssertNil(response.action)
 
         facts = projectionFacts(readyCount: 2, isSaved: false, isStreaming: false)
-        XCTAssertTrue(engine.response(to: .nextStep, in: resultContext(facts)).message.contains("Save"))
+        response = engine.response(to: .nextStep, in: resultContext(facts))
+        XCTAssertTrue(response.message.contains("Save"))
+        XCTAssertNil(response.action)
 
         facts = projectionFacts(readyCount: 2, isSaved: true, isStreaming: false)
-        XCTAssertTrue(engine.response(to: .nextStep, in: resultContext(facts)).message.contains("guided feedback"))
+        response = engine.response(to: .nextStep, in: resultContext(facts))
+        XCTAssertTrue(response.message.contains("guided feedback"))
+        XCTAssertNil(response.action)
+    }
+
+    func testNextStepActionMatchesFH6LabMessagePriority() {
+        let engine = CopilotEngine()
+        let tuneMenu = CopilotProjectionFacts(
+            readyCount: 2,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: true,
+            tireLabEligible: true,
+            upgradeLabEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: false
+        )
+        let tire = CopilotProjectionFacts(
+            readyCount: 2,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: false,
+            tireLabEligible: true,
+            upgradeLabEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: false
+        )
+        let upgrade = CopilotProjectionFacts(
+            readyCount: 2,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: false,
+            tireLabEligible: false,
+            upgradeLabEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(
+            engine.response(to: .nextStep, in: resultContext(tuneMenu)).action,
+            .openFH6TuneMenuLab
+        )
+        XCTAssertEqual(
+            engine.response(to: .nextStep, in: resultContext(tire)).action,
+            .openTireLab
+        )
+        XCTAssertEqual(
+            engine.response(to: .nextStep, in: resultContext(upgrade)).action,
+            .openUpgradeLab
+        )
+    }
+
+    func testCopilotActionsFailClosedOutsideCompletedEligibleFH6NextStep() {
+        let engine = CopilotEngine()
+        let eligible = CopilotProjectionFacts(
+            readyCount: 2,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: true,
+            tireLabEligible: true,
+            upgradeLabEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: false
+        )
+        let streaming = CopilotProjectionFacts(
+            readyCount: 2,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: true,
+            tireLabEligible: true,
+            upgradeLabEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: true
+        )
+        let withheld = CopilotProjectionFacts(
+            readyCount: 0,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: true,
+            tireLabEligible: true,
+            upgradeLabEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: false,
+            isStreaming: false
+        )
+        let fh5 = CopilotProjectionFacts(
+            resultPurpose: .fh5BuildPlan,
+            readyCount: 0,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: false,
+            tireLabEligible: false,
+            upgradeLabEligible: true,
+            fh5ResearchLabEligible: false,
+            fh5ObservationRecorded: false,
+            fh5CandidateTrialAvailable: false,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: false
+        )
+
+        for intent in [CopilotIntent.trust, .missing, .privacy] {
+            XCTAssertNil(
+                engine.response(to: intent, in: resultContext(eligible)).action
+            )
+        }
+        XCTAssertNil(
+            engine.response(to: .nextStep, in: resultContext(streaming)).action
+        )
+        XCTAssertNil(
+            engine.response(to: .nextStep, in: resultContext(withheld)).action
+        )
+        XCTAssertNil(
+            engine.response(to: .nextStep, in: resultContext(fh5)).action
+        )
+        let eligibleContext = resultContext(eligible)
+        let missingProjection = CopilotContext(
+            phase: .result,
+            carDisplayName: eligibleContext.carDisplayName,
+            gameTitle: eligibleContext.gameTitle,
+            disciplineTitle: eligibleContext.disciplineTitle,
+            savedTuneCount: nil,
+            catalogCarCount: nil,
+            projection: nil,
+            cannotSeeUnsavedEdits: false
+        )
+        XCTAssertNil(
+            engine.response(to: .nextStep, in: missingProjection).action
+        )
+        XCTAssertNil(
+            engine.response(
+                to: .nextStep,
+                in: syntheticContext(for: .recordTestDrive)
+            ).action
+        )
+    }
+
+    func testCopilotActionIsClosedPayloadFreeAndDoesNotExposeTuneValues() throws {
+        XCTAssertEqual(
+            Set(CopilotAction.allCases),
+            Set([
+                .openFH6TuneMenuLab,
+                .openTireLab,
+                .openUpgradeLab
+            ])
+        )
+        for action in CopilotAction.allCases {
+            let encoded = try JSONEncoder().encode(action)
+            XCTAssertEqual(
+                try JSONDecoder().decode(CopilotAction.self, from: encoded),
+                action
+            )
+            XCTAssertFalse(
+                try XCTUnwrap(String(data: encoded, encoding: .utf8))
+                    .contains("31.375")
+            )
+        }
+    }
+
+    func testPrivacyExplainsOnlyExplicitActionTapChangesWorkflow() {
+        let response = CopilotEngine().response(
+            to: .privacy,
+            in: syntheticContext(for: .result)
+        )
+
+        XCTAssertTrue(
+            response.message.contains(
+                "does not change your workflow unless you explicitly tap an action"
+            )
+        )
+        XCTAssertNil(response.action)
     }
 
     func testCandidateTrialCopilotCopyKeepsHypothesisOutOfTuneOutput() throws {
