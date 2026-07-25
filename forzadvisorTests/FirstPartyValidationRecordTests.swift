@@ -258,6 +258,105 @@ final class FirstPartyValidationRecordTests: XCTestCase {
         })
     }
 
+    func testLegacyTireRulesetAcceptsOnlyTirePressureFields() async throws {
+        let factory = FirstPartyValidationRecordFactory()
+        var tireOnly = try await eligibleTune()
+        let tireEvidence = try XCTUnwrap(
+            tireOnly.request.buildSnapshot?.tireCompound?.evidenceIDs
+        )
+        tireOnly.rulesetReference = try XCTUnwrap(
+            FH6LocalTirePressureRuleset.reference(
+                provenanceIDs: tireEvidence.sorted()
+            )
+        )
+        XCTAssertSuccess(factory.eligibility(
+            for: tireOnly,
+            savedTune: tireOnly,
+            isStreaming: false
+        ))
+
+        var fullMenu = try await eligibleMenuTune()
+        let menuEvidence = try XCTUnwrap(
+            fullMenu.request.buildSnapshot?.tireCompound?.evidenceIDs
+        )
+        fullMenu.rulesetReference = try XCTUnwrap(
+            FH6LocalTirePressureRuleset.reference(
+                provenanceIDs: menuEvidence.sorted()
+            )
+        )
+        XCTAssertTrue(fullMenu.projectionReport?.readyFieldIDs.contains(.frontARB) == true)
+        XCTAssertFailure(
+            factory.eligibility(
+                for: fullMenu,
+                savedTune: fullMenu,
+                isStreaming: false
+            ),
+            .invalidProjection
+        )
+    }
+
+    func testExactRulesetRequiresReadyFieldProvenanceWithoutExtras() async throws {
+        let factory = FirstPartyValidationRecordFactory()
+        let tune = try await eligibleMenuTune()
+        let primaryID = try XCTUnwrap(tune.rulesetReference?.provenanceIDs.first)
+        let sourceEvidence = try XCTUnwrap(
+            tune.request.buildSnapshot?.evidenceSources.first {
+                $0.id == primaryID
+            }
+        )
+
+        var missing = tune
+        var missingSnapshot = try XCTUnwrap(missing.request.buildSnapshot)
+        var secondEvidence = sourceEvidence
+        secondEvidence.id = "fh6-menu.second-ready-field"
+        missingSnapshot.evidenceSources.append(secondEvidence)
+        let frontARBIndex = try XCTUnwrap(
+            missingSnapshot.constraints.firstIndex { $0.field == .frontARB }
+        )
+        missingSnapshot.constraints[frontARBIndex].evidenceIDs = [
+            secondEvidence.id
+        ]
+        XCTAssertTrue(missingSnapshot.isValid)
+        missing.request.buildSnapshot = missingSnapshot
+        missing.request.car = missingSnapshot.car
+        XCTAssertFailure(
+            factory.eligibility(
+                for: missing,
+                savedTune: missing,
+                isStreaming: false
+            ),
+            .invalidProjection
+        )
+
+        var extra = tune
+        var extraSnapshot = try XCTUnwrap(extra.request.buildSnapshot)
+        var unusedEvidence = sourceEvidence
+        unusedEvidence.id = "fh6-menu.provider-omitted-gear"
+        extraSnapshot.evidenceSources.append(unusedEvidence)
+        let gearIndex = try XCTUnwrap(
+            extraSnapshot.constraints.firstIndex { $0.field == .gearRatio(1) }
+        )
+        extraSnapshot.constraints[gearIndex].evidenceIDs.append(
+            unusedEvidence.id
+        )
+        XCTAssertTrue(extraSnapshot.isValid)
+        extra.request.buildSnapshot = extraSnapshot
+        extra.request.car = extraSnapshot.car
+        extra.rulesetReference = try XCTUnwrap(
+            FH6ExactConstraintRuleset.reference(
+                provenanceIDs: [primaryID, unusedEvidence.id].sorted()
+            )
+        )
+        XCTAssertFailure(
+            factory.eligibility(
+                for: extra,
+                savedTune: extra,
+                isStreaming: false
+            ),
+            .invalidProjection
+        )
+    }
+
     func testCaptureValidationRejectsEveryRequiredConsentAndOutcomeGate() async throws {
         let tune = try await eligibleTune()
         let factory = FirstPartyValidationRecordFactory()
@@ -437,6 +536,64 @@ final class FirstPartyValidationRecordTests: XCTestCase {
         ).exactBuildSnapshot(upgrading: parts, capturedAt: date, evidenceID: "local-tire")
         let request = TuneRequest(car: exact.car, discipline: .road, buildSnapshot: exact)
         var tune = try await CapabilityProjectingTuneProvider(base: LocalSampleTuneProvider()).generateTune(for: request)
+        tune.generatedAt = date
+        return tune
+    }
+
+    private func eligibleMenuTune() async throws -> TuneResult {
+        let catalog = try BundledCarCatalog.load().get()
+        let entry = try XCTUnwrap(catalog.entries.first {
+            $0.game == .fh6 && $0.stock.drivetrain == .rwd
+        })
+        let selection = catalog.selection(for: entry)
+        let capability = selection.capabilityOnlyBuildSnapshot(
+            capturedAt: date
+        )
+        let parts = try UpgradePartCapture(
+            gameBuildVersion: "test-build",
+            parts: TunePartID.allCases.map {
+                UpgradePartCaptureValue(partID: $0, status: .offered)
+            },
+            exactStockBuildConfirmed: true,
+            localUsePermitted: true
+        ).verifiedSnapshot(upgrading: capability, capturedAt: date)
+        let controls = TuneFieldID.expectedFields(
+            drivetrain: parts.car.drivetrain,
+            gearCount: 6
+        ).map { field in
+            let minimum = field.expectedUnit == .degrees ? -10.0 : 0
+            return FH6TuneMenuFieldObservation(
+                field: field,
+                availability: .adjustable,
+                minimum: minimum,
+                maximum: minimum + 5_000,
+                step: 0.5,
+                current: minimum + 5,
+                unit: field.expectedUnit
+            )
+        }
+        let exact = try FH6TuneMenuCapture(
+            gameBuildVersion: "test-build",
+            tireCompoundDisplayName: "Stock",
+            forwardGearCount: 6,
+            controls: controls,
+            exactUntouchedStockConfirmed: true,
+            allSlidersRestoredConfirmed: true,
+            personallyReadFromGameConfirmed: true,
+            localStoragePermitted: true
+        ).exactBuildSnapshot(
+            upgrading: parts,
+            capturedAt: date,
+            evidenceID: "fh6-menu.validation-test"
+        )
+        let request = TuneRequest(
+            car: exact.car,
+            discipline: .road,
+            buildSnapshot: exact
+        )
+        var tune = try await CapabilityProjectingTuneProvider(
+            base: LocalSampleTuneProvider()
+        ).generateTune(for: request)
         tune.generatedAt = date
         return tune
     }

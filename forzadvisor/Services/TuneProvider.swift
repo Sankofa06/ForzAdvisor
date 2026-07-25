@@ -28,7 +28,7 @@ struct LocalSampleTuneProvider: TuneProvider {
             throw LocalTuneProviderError.unsupportedRuleset(request.car.game)
         }
         try await Task.sleep(for: .milliseconds(250))
-        return FH6LocalTirePressureQuantizer().quantize(makeTune(for: request))
+        return FH6ExactConstraintQuantizer().quantize(makeTune(for: request))
             .withProviderInfo(.direct(.offlineFormula))
     }
 
@@ -66,9 +66,22 @@ struct LocalSampleTuneProvider: TuneProvider {
             changes.append(contentsOf: aeroChanges(in: &adjustedTune, delta: 10))
         }
 
+        let quantizedTune = FH6ExactConstraintQuantizer().quantize(adjustedTune)
+            .withProviderInfo(.direct(.offlineFormula))
+        let quantizedChanges = changes.compactMap { change in
+            guard let line = quantizedTune.sections
+                .first(where: { $0.title == change.sectionTitle })?
+                .lines.first(where: { $0.label == change.lineLabel }) else {
+                return change
+            }
+            guard line.value != change.oldValue else { return nil }
+            var change = change
+            change.newValue = line.value
+            return change
+        }
         return TuneAdjustmentResult(
-            tune: adjustedTune.withProviderInfo(.direct(.offlineFormula)),
-            changes: changes
+            tune: quantizedTune,
+            changes: quantizedChanges
         )
     }
 

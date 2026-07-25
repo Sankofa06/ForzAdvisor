@@ -339,11 +339,13 @@ struct FH6ValidationReviewIngestor {
         }
 
         let ruleset = export.ruleset
-        guard ruleset.id == FH6LocalTirePressureRuleset.id,
-              ruleset.schemaVersion == FH6LocalTirePressureRuleset.schemaVersion,
-              ruleset.algorithmVersion == FH6LocalTirePressureRuleset.algorithmVersion,
-              ruleset.knowledgeRevision == FH6LocalTirePressureRuleset.knowledgeRevision,
-              ruleset.validationStatus == .experimental else {
+        guard FH6PublicRulesetRegistry.recognizes(
+            id: ruleset.id,
+            schemaVersion: ruleset.schemaVersion,
+            algorithmVersion: ruleset.algorithmVersion,
+            knowledgeRevision: ruleset.knowledgeRevision,
+            validationStatus: ruleset.validationStatus
+        ) else {
             return false
         }
 

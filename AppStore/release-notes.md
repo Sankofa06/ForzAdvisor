@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.12.1 (Build 37) - 2026-07-25
+
+- Uses exact Tune Menu Lab ranges and slider steps for every formula-backed FH6 tuning control, not only tire pressure.
+- Keeps locked, missing, duplicate, out-of-range, and individual-gear settings withheld instead of clamping or inventing values.
+- Keeps Guided Refinement changes aligned to the same captured in-game grid while preserving legacy Tire Lab tunes.
+
 ## Version 1.12.0 (Build 36) - 2026-07-24
 
 - Added FH6 Tune Menu Lab for untouched catalog cars, with exact first-party capture of adjustable, locked, and unavailable controls.
@@ -177,21 +183,15 @@
 
 ## App Store What's New
 
-Reuse-permitted FH5 Candidate Outcomes can now be shared explicitly and reviewed on another device only after it independently regenerates the exact candidate. Beta Missions can also invite an FH5 Research Partner through the public TestFlight group. Numeric FH5 tuning remains locked.
+FH6 tunes now use the exact ranges and slider steps captured in Tune Menu Lab across every supported tuning control. Guided Refinement stays on that same in-game grid, while locked, missing, out-of-range, duplicate, and individual-gear settings remain safely withheld.
 
 ## TestFlight Notes
 
-Create or open a saved exact FH5 catalog plan, complete Upgrade Lab, and provide two canonical permission-bound Research Review observations that exactly replicate the local Research Lab stock-menu measurements. When the car pushes wide and front tire pressure can move one observed legal step lower, confirm the result and Beta Mission surfaces label the next action as an experimental candidate trial, not a tune.
+Choose an untouched FH6 catalog car, complete Upgrade Lab and Tune Menu Lab for the same exact game build, then regenerate the tune. Confirm every formula-backed adjustable control lands on the exact observed slider step.
 
-Open the trial, choose input and surface, then lock it. Confirm those choices become disabled, the screen shows the exact stock A and one-step-lower B front tire pressure, and the fixed route and A-B-B-A sequence are clear. Complete the confirmations and save. If Research evidence or the saved plan changes after locking, submission must fail instead of accepting the stale candidate.
+Locked, missing, duplicate, out-of-range, and individual-gear settings must stay withheld. Save the tune, use Guided Refinement, and confirm changed values remain aligned to the captured grid.
 
-Confirm the saved result hides the candidate value from plan output. Reuse permission starts off. When it was enabled for the trial, a separate confirmation reveals the Candidate Outcome share action. On another exact eligible plan, Candidate Outcome Review must reject mismatches and require direct-receipt permission before import. The summary may count exact reviewed outcomes but must not change the saved plan, copied build plan, provider attribution, numeric readiness, production registry, or any FH5 numeric setting.
-
-For a plan without exact replicated review evidence, confirm the original generic Outcome Lab remains available. Its schema-v1 record can still expose the existing user-initiated deidentified JSON share action only when reuse permission was enabled.
-
-Confirm Copilot distinguishes generic calibration from an experimental candidate trial, and that Beta Missions never describes the candidate as validated tuning advice. Existing FH5 manual/OCR/edited inputs and all FH6 catalog, Tune Lab, refinement, sharing, Test Drive, and Validation Review workflows should remain unchanged.
-
-In Beta Validation Missions, confirm FH5 Research Partners can share a public-only invitation or open `https://testflight.apple.com/join/ec1RxDV3`. The invite must contain no local progress counts, car values, identifiers, fingerprints, or Candidate Outcome JSON. Feedback should be sent through TestFlight's Send Beta Feedback with the car, game build, input, surface, and exact unclear or unexpectedly rejected step.
+Legacy Tire Lab tunes should still reopen and validate, but a legacy tire-only ruleset must never validate non-tire settings. Existing FH5 plan-only, Research, Outcome, and Candidate workflows should remain unchanged.
 
 ## Reviewer Notes
 

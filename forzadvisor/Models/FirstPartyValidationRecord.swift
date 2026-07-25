@@ -303,6 +303,11 @@ struct FirstPartyValidationRecordFactory {
               report.snapshotID == snapshot.id,
               report.contextStatus == .exactBuild,
               report.readyCount > 0,
+              rulesetProvenanceCoversReadyFields(
+                  ruleset,
+                  snapshot: snapshot,
+                  report: report
+              ),
               validAppliedFields(in: projected, report: report) != nil else {
             return .failure(.invalidProjection)
         }
@@ -561,9 +566,13 @@ struct FirstPartyValidationRecordFactory {
               !tireEvidenceIDs.contains(where: \.isEmpty),
               Set(tireEvidenceIDs).count == tireEvidenceIDs.count else { return false }
         let acceptedEvidence = snapshot.evidenceSources.filter { evidence in
-            tireEvidenceIDs.contains(evidence.id.trimmingCharacters(in: .whitespacesAndNewlines))
-                && evidence.source == TirePressureCapture.provenanceSource
-                && evidence.version == TirePressureCapture.provenanceVersion
+            let recognizedCapture =
+                (evidence.source == TirePressureCapture.provenanceSource
+                    && evidence.version == TirePressureCapture.provenanceVersion)
+                || (evidence.source == FH6TuneMenuCapture.provenanceSource
+                    && evidence.version == FH6TuneMenuCapture.provenanceVersion)
+            return tireEvidenceIDs.contains(evidence.id.trimmingCharacters(in: .whitespacesAndNewlines))
+                && recognizedCapture
                 && evidence.game == snapshot.car.game
                 && evidence.gameBuildVersion == build
                 && evidence.scope == .exactVehicleBuild
@@ -587,12 +596,29 @@ struct FirstPartyValidationRecordFactory {
     ) -> Bool {
         guard ruleset.game == .fh6,
               snapshot.car.game == .fh6,
-              ruleset.id == FH6LocalTirePressureRuleset.id,
-              ruleset.schemaVersion == FH6LocalTirePressureRuleset.schemaVersion,
-              ruleset.algorithmVersion == FH6LocalTirePressureRuleset.algorithmVersion,
-              ruleset.knowledgeRevision == FH6LocalTirePressureRuleset.knowledgeRevision,
-              ruleset.validationStatus == .experimental,
-              let tire = snapshot.tireCompound else { return false }
+              FH6PublicRulesetRegistry.recognizes(
+                  id: ruleset.id,
+                  schemaVersion: ruleset.schemaVersion,
+                  algorithmVersion: ruleset.algorithmVersion,
+                  knowledgeRevision: ruleset.knowledgeRevision,
+                  validationStatus: ruleset.validationStatus
+              ) else {
+            return false
+        }
+        if FH6ExactConstraintRuleset.matches(
+            id: ruleset.id,
+            schemaVersion: ruleset.schemaVersion,
+            algorithmVersion: ruleset.algorithmVersion,
+            knowledgeRevision: ruleset.knowledgeRevision,
+            validationStatus: ruleset.validationStatus
+        ) {
+            return FH6ExactConstraintRuleset.hasAcceptedProvenance(
+                ruleset.provenanceIDs,
+                in: snapshot
+            )
+        }
+
+        guard let tire = snapshot.tireCompound else { return false }
         let tireIDs = tire.evidenceIDs
         return !tireIDs.isEmpty
             && tireIDs.allSatisfy {
@@ -600,6 +626,51 @@ struct FirstPartyValidationRecordFactory {
             }
             && Set(tireIDs).count == tireIDs.count
             && ruleset.provenanceIDs == tireIDs.sorted()
+    }
+
+    private func rulesetProvenanceCoversReadyFields(
+        _ ruleset: TuneRulesetReference,
+        snapshot: VehicleBuildSnapshot,
+        report: TuneProjectionReport
+    ) -> Bool {
+        if FH6LocalTirePressureRuleset.matches(
+            id: ruleset.id,
+            schemaVersion: ruleset.schemaVersion,
+            algorithmVersion: ruleset.algorithmVersion,
+            knowledgeRevision: ruleset.knowledgeRevision,
+            validationStatus: ruleset.validationStatus
+        ) {
+            let legacyFields: Set<TuneFieldID> = [
+                .frontTirePressure,
+                .rearTirePressure
+            ]
+            return !report.readyFieldIDs.isEmpty
+                && report.readyFieldIDs.isSubset(of: legacyFields)
+        }
+
+        guard FH6ExactConstraintRuleset.matches(
+            id: ruleset.id,
+            schemaVersion: ruleset.schemaVersion,
+            algorithmVersion: ruleset.algorithmVersion,
+            knowledgeRevision: ruleset.knowledgeRevision,
+            validationStatus: ruleset.validationStatus
+        ) else {
+            return true
+        }
+
+        var coveredIDs = Set<String>()
+        for field in report.readyFieldIDs {
+            guard let constraint = snapshot.constraints.first(where: {
+                $0.field == field
+            }),
+                  let evidenceIDs = FH6ExactConstraintRuleset
+                    .acceptedEvidenceIDs(for: constraint, in: snapshot) else {
+                return false
+            }
+            coveredIDs.formUnion(evidenceIDs)
+        }
+        return !coveredIDs.isEmpty
+            && coveredIDs.sorted() == ruleset.provenanceIDs
     }
 
     private func validAppliedFields(

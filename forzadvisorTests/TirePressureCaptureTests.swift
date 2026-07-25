@@ -395,9 +395,9 @@ final class TirePressureCaptureTests: XCTestCase {
 
         XCTAssertTrue(frontConstraint.accepts(frontValue))
         XCTAssertTrue(rearConstraint.accepts(rearValue))
-        XCTAssertEqual(tune.rulesetReference?.id, FH6LocalTirePressureRuleset.id)
+        XCTAssertEqual(tune.rulesetReference?.id, FH6ExactConstraintRuleset.id)
         XCTAssertEqual(tune.rulesetReference?.game, .fh6)
-        XCTAssertEqual(tune.rulesetReference?.algorithmVersion, FH6LocalTirePressureRuleset.algorithmVersion)
+        XCTAssertEqual(tune.rulesetReference?.algorithmVersion, FH6ExactConstraintRuleset.algorithmVersion)
         XCTAssertEqual(tune.rulesetReference?.provenanceIDs, [evidenceID])
         XCTAssertEqual(tune.providerInfo, .direct(.offlineFormula))
     }
@@ -420,7 +420,7 @@ final class TirePressureCaptureTests: XCTestCase {
             Set(tune.sections.flatMap(\.lines).compactMap(\.fieldID)),
             Set([.frontTirePressure, .rearTirePressure])
         )
-        XCTAssertEqual(tune.rulesetReference?.id, FH6LocalTirePressureRuleset.id)
+        XCTAssertEqual(tune.rulesetReference?.id, FH6ExactConstraintRuleset.id)
         XCTAssertEqual(tune.rulesetReference?.provenanceIDs, [evidenceID])
     }
 

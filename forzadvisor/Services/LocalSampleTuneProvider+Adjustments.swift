@@ -59,8 +59,16 @@ extension LocalSampleTuneProvider {
         upper: Double,
         digits: Int
     ) -> TuneAdjustmentChange? {
+        let fieldID = adjustmentFieldID(
+            sectionTitle: sectionTitle,
+            lineLabel: lineLabel,
+            drivetrain: tune.request.car.drivetrain
+        )
         guard let sectionIndex = tune.sections.firstIndex(where: { $0.title == sectionTitle }),
-              let lineIndex = tune.sections[sectionIndex].lines.firstIndex(where: { $0.label == lineLabel }),
+              let lineIndex = tune.sections[sectionIndex].lines.firstIndex(where: {
+                  $0.label == lineLabel
+                      || (fieldID != nil && $0.fieldID == fieldID)
+              }),
               let oldValue = numericValue(from: tune.sections[sectionIndex].lines[lineIndex].value)
         else {
             return nil
@@ -81,6 +89,46 @@ extension LocalSampleTuneProvider {
             unit: oldLine.unit,
             rationale: rationale(for: sectionTitle, lineLabel: lineLabel, delta: newValue - oldValue)
         )
+    }
+
+    private func adjustmentFieldID(
+        sectionTitle: String,
+        lineLabel: String,
+        drivetrain: Drivetrain
+    ) -> TuneFieldID? {
+        switch (sectionTitle, lineLabel) {
+        case ("Antiroll Bars", "Front"): .frontARB
+        case ("Antiroll Bars", "Rear"): .rearARB
+        case ("Springs", "Front rate"): .frontSpringRate
+        case ("Springs", "Rear rate"): .rearSpringRate
+        case ("Damping", "Front rebound"): .frontRebound
+        case ("Damping", "Rear rebound"): .rearRebound
+        case ("Damping", "Front bump"): .frontBump
+        case ("Damping", "Rear bump"): .rearBump
+        case ("Gearing", "Final drive"): .finalDrive
+        case ("Aero", "Front"): .frontAero
+        case ("Aero", "Rear"): .rearAero
+        case ("Differential", "Center balance"):
+            .differentialCenterBalance
+        case ("Differential", "Rear accel"):
+            .rearDifferentialAcceleration
+        case ("Differential", "Rear decel"):
+            .rearDifferentialDeceleration
+        case ("Differential", "Front accel"):
+            drivetrain == .awd
+                ? .frontDifferentialAcceleration
+                : .differentialAcceleration
+        case ("Differential", "Front decel"):
+            drivetrain == .awd
+                ? .frontDifferentialDeceleration
+                : .differentialDeceleration
+        case ("Differential", "Accel"):
+            .differentialAcceleration
+        case ("Differential", "Decel"):
+            .differentialDeceleration
+        default:
+            nil
+        }
     }
 
     func numericValue(from text: String) -> Double? {
