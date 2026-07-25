@@ -262,7 +262,17 @@ struct FH6CommunityOutcomeReviewView: View {
             .navigationTitle("Community Outcome Review")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ModalCopilotToolbarLink(
+                        destination: .fh6CommunityOutcomeReview(
+                            carDisplayName:
+                                tune.request.car.displayName,
+                            gameTitle:
+                                tune.request.car.game.shortTitle,
+                            disciplineTitle:
+                                tune.request.discipline.title
+                        )
+                    )
                     Button("Done") { dismiss() }
                 }
             }

@@ -27,6 +27,12 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
     case recordTestDrive
     case fh6CommunityReferenceTrialCapture
     case editSavedTune
+    case settings
+    case betaValidationMissions
+    case fh6ValidationReview
+    case fh6CommunityOutcomeReview
+    case fh5ResearchReview
+    case fh5CandidateOutcomeReview
 
     var title: String {
         switch self {
@@ -49,6 +55,12 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
         case .fh6CommunityReferenceTrialCapture:
             "Community Comparison"
         case .editSavedTune: "Edit Saved Tune"
+        case .settings: "Settings"
+        case .betaValidationMissions: "Beta Validation Missions"
+        case .fh6ValidationReview: "FH6 Validation Review"
+        case .fh6CommunityOutcomeReview: "FH6 Community Outcome Review"
+        case .fh5ResearchReview: "FH5 Research Review"
+        case .fh5CandidateOutcomeReview: "FH5 Candidate Outcome Review"
         }
     }
 }
@@ -482,6 +494,18 @@ struct CopilotEngine {
             return unsavedEditsMessage("Keep the exact route, conditions, assists, and input fixed; complete A-B-B-A; restore the ForzAdvisor candidate; then save only your comparative observation.")
         case .editSavedTune:
             return unsavedEditsMessage("Use Save for metadata and notes. Use Save & Re-tune when the underlying screen recommends recalculating after material car changes.")
+        case .settings:
+            return unsavedEditsMessage("Review the settings descriptions and choose the configuration that matches how you want generation to run.")
+        case .betaValidationMissions:
+            return unsavedEditsMessage("Choose an available mission in the underlying screen when you are ready to collect first-party validation evidence.")
+        case .fh6ValidationReview:
+            return unsavedEditsMessage("Review the saved FH6 validation entries and use the underlying screen to validate any permission-bound import.")
+        case .fh6CommunityOutcomeReview:
+            return unsavedEditsMessage("Review the local community comparison outcomes and use the underlying screen to validate any permission-bound import.")
+        case .fh5ResearchReview:
+            return unsavedEditsMessage("Review the saved FH5 research observations and use the underlying screen to validate any permission-bound import.")
+        case .fh5CandidateOutcomeReview:
+            return unsavedEditsMessage("Review the saved FH5 candidate outcomes and use the underlying screen to validate any permission-bound import.")
         }
     }
 
@@ -491,6 +515,8 @@ struct CopilotEngine {
             return "Treat the reviewed catalog as a starting point and confirm its stock facts in your current game build."
         case .catalogEdit, .ocrReview, .manualEntry, .fh6TuneMenuCapture, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .fh5ControlledExperimentCapture, .recordTestDrive, .fh6CommunityReferenceTrialCapture, .editSavedTune:
             return unsavedEditsMessage("Trust only facts you personally confirm in the underlying screen and any validation it shows.")
+        case .settings, .betaValidationMissions, .fh6ValidationReview, .fh6CommunityOutcomeReview, .fh5ResearchReview, .fh5CandidateOutcomeReview:
+            return unsavedEditsMessage("Trust only the guidance boundary described here and facts you personally confirm in the underlying screen.")
         case .loading:
             guard let projection = context.projection else {
                 return "Generation is still in progress. No completed setting is claimed yet."
@@ -546,6 +572,18 @@ struct CopilotEngine {
             return unsavedEditsMessage("The underlying form identifies missing direct-source metadata, A-B-B-A checks, outcome details, restoration, authorship, or local-storage permission.")
         case .editSavedTune:
             return unsavedEditsMessage("The underlying form shows validation issues and whether material changes need Save & Re-tune.")
+        case .settings:
+            return unsavedEditsMessage("Use the descriptions and status messages in the underlying settings screen to identify anything that still needs attention.")
+        case .betaValidationMissions:
+            return unsavedEditsMessage("The underlying mission list shows which validation prerequisites are still missing.")
+        case .fh6ValidationReview:
+            return unsavedEditsMessage("The underlying review identifies missing JSON validation, tune matching, direct receipt, or permission confirmation.")
+        case .fh6CommunityOutcomeReview:
+            return unsavedEditsMessage("The underlying review identifies missing source, permission, candidate match, or outcome validation.")
+        case .fh5ResearchReview:
+            return unsavedEditsMessage("The underlying review identifies missing JSON validation, plan matching, direct receipt, or permission confirmation.")
+        case .fh5CandidateOutcomeReview:
+            return unsavedEditsMessage("The underlying review identifies missing candidate matching, permission, or outcome validation.")
         }
     }
 

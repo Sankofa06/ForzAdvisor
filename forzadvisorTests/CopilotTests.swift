@@ -52,7 +52,7 @@ final class CopilotTests: XCTestCase {
 
     func testEveryWorkflowPhaseAnswersEverySupportedIntent() {
         let engine = CopilotEngine()
-        XCTAssertEqual(CopilotPhase.allCases.count, 18)
+        XCTAssertEqual(CopilotPhase.allCases.count, 24)
 
         for phase in CopilotPhase.allCases {
             let context = syntheticContext(for: phase)
@@ -64,6 +64,154 @@ final class CopilotTests: XCTestCase {
                 if intent != .nextStep || phase != .result {
                     XCTAssertNil(response.action, "\(phase.rawValue) / \(intent.rawValue)")
                 }
+            }
+        }
+    }
+
+    func testModalCopilotDestinationsExposeOnlyAllowListedFacts() {
+        let destinations: [ModalCopilotDestination] = [
+            .settings,
+            .betaMissions(savedSetupCount: 7),
+            .fh6ValidationReview(
+                carDisplayName: "Committed FH6 Car",
+                gameTitle: "FH6",
+                disciplineTitle: "Road"
+            ),
+            .fh6CommunityOutcomeReview(
+                carDisplayName: "Committed FH6 Car",
+                gameTitle: "FH6",
+                disciplineTitle: "Road"
+            ),
+            .fh5ResearchReview(
+                carDisplayName: "Committed FH5 Car",
+                gameTitle: "FH5"
+            ),
+            .fh5CandidateOutcomeReview
+        ]
+
+        XCTAssertEqual(
+            destinations.map(\.buttonIdentifier),
+            destinations.map { "copilotButton-\($0.phase.rawValue)" }
+        )
+        XCTAssertEqual(
+            Set(destinations.map(\.buttonIdentifier)).count,
+            destinations.count
+        )
+        XCTAssertEqual(
+            Set(destinations.map(\.phase)).count,
+            destinations.count
+        )
+        XCTAssertTrue(destinations.allSatisfy {
+            !$0.accessibilityHint.isEmpty
+        })
+
+        let settings = destinations[0].context
+        XCTAssertEqual(settings.facts, [
+            CopilotFact(
+                label: "Unsaved fields",
+                value: "Not visible to Copilot"
+            )
+        ])
+        XCTAssertTrue(settings.cannotSeeUnsavedEdits)
+
+        let beta = destinations[1].context
+        XCTAssertEqual(beta.savedTuneCount, 7)
+        XCTAssertEqual(beta.facts, [
+            CopilotFact(label: "Saved tunes", value: "7")
+        ])
+        XCTAssertFalse(beta.cannotSeeUnsavedEdits)
+
+        for context in destinations[2...3].map(\.context) {
+            XCTAssertEqual(context.carDisplayName, "Committed FH6 Car")
+            XCTAssertEqual(context.gameTitle, "FH6")
+            XCTAssertEqual(context.disciplineTitle, "Road")
+            XCTAssertEqual(
+                context.facts.map(\.label),
+                ["Car", "Game", "Discipline", "Unsaved fields"]
+            )
+            XCTAssertTrue(context.cannotSeeUnsavedEdits)
+        }
+
+        let research = destinations[4].context
+        XCTAssertEqual(research.carDisplayName, "Committed FH5 Car")
+        XCTAssertEqual(research.gameTitle, "FH5")
+        XCTAssertNil(research.disciplineTitle)
+        XCTAssertEqual(
+            research.facts.map(\.label),
+            ["Car", "Game", "Unsaved fields"]
+        )
+        XCTAssertTrue(research.cannotSeeUnsavedEdits)
+
+        let candidate = destinations[5].context
+        XCTAssertEqual(candidate.facts, [
+            CopilotFact(
+                label: "Unsaved fields",
+                value: "Not visible to Copilot"
+            )
+        ])
+        XCTAssertTrue(candidate.cannotSeeUnsavedEdits)
+
+        for destination in destinations {
+            let context = destination.context
+            XCTAssertNil(context.catalogCarCount)
+            XCTAssertNil(context.projection)
+            XCTAssertNil(context.fh5CandidateTrialAvailable)
+            for intent in CopilotIntent.allCases {
+                XCTAssertNil(
+                    CopilotEngine()
+                        .response(to: intent, in: context)
+                        .action,
+                    "\(destination.phase.rawValue) / \(intent.rawValue)"
+                )
+            }
+        }
+    }
+
+    func testModalCopilotContextsDoNotContainDraftOrCredentialFields()
+        throws {
+        let destinations: [ModalCopilotDestination] = [
+            .settings,
+            .betaMissions(savedSetupCount: 4),
+            .fh6ValidationReview(
+                carDisplayName: "Committed Car",
+                gameTitle: "FH6",
+                disciplineTitle: "Road"
+            ),
+            .fh6CommunityOutcomeReview(
+                carDisplayName: "Committed Car",
+                gameTitle: "FH6",
+                disciplineTitle: "Road"
+            ),
+            .fh5ResearchReview(
+                carDisplayName: "Committed Car",
+                gameTitle: "FH5"
+            ),
+            .fh5CandidateOutcomeReview
+        ]
+        let forbidden = [
+            "apiKey",
+            "provider",
+            "pastedJSON",
+            "permission",
+            "tuneValue",
+            "notes",
+            "thumbnail",
+            "fingerprint",
+            "draft"
+        ]
+
+        for destination in destinations {
+            let encoded = try XCTUnwrap(
+                String(
+                    data: JSONEncoder().encode(destination.context),
+                    encoding: .utf8
+                )
+            )
+            for key in forbidden {
+                XCTAssertFalse(
+                    encoded.localizedCaseInsensitiveContains(key),
+                    "\(destination.phase.rawValue) unexpectedly encoded \(key)"
+                )
             }
         }
     }
@@ -673,7 +821,9 @@ final class CopilotTests: XCTestCase {
                 .tirePressureCapture,
                 .upgradePartCapture, .fh5ResearchCapture,
                 .fh5ControlledExperimentCapture, .recordTestDrive,
-                .editSavedTune
+                .editSavedTune, .settings, .fh6ValidationReview,
+                .fh6CommunityOutcomeReview, .fh5ResearchReview,
+                .fh5CandidateOutcomeReview
             ].contains(phase)
         )
     }

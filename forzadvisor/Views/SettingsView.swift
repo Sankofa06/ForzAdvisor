@@ -106,7 +106,8 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .forzAdvisorScreenChrome()
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ModalCopilotToolbarLink(destination: .settings)
                     Button("Done") {
                         dismiss()
                     }

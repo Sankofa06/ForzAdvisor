@@ -166,7 +166,10 @@ struct FH5CandidateOutcomeReviewView: View {
             .navigationTitle("Candidate Outcome Review")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ModalCopilotToolbarLink(
+                        destination: .fh5CandidateOutcomeReview
+                    )
                     Button("Done") { dismiss() }
                 }
             }

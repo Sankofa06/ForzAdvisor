@@ -7,9 +7,156 @@
 
 import SwiftUI
 
+enum ModalCopilotDestination: Sendable {
+    case settings
+    case betaMissions(savedSetupCount: Int)
+    case fh6ValidationReview(
+        carDisplayName: String,
+        gameTitle: String,
+        disciplineTitle: String
+    )
+    case fh6CommunityOutcomeReview(
+        carDisplayName: String,
+        gameTitle: String,
+        disciplineTitle: String
+    )
+    case fh5ResearchReview(
+        carDisplayName: String,
+        gameTitle: String
+    )
+    case fh5CandidateOutcomeReview
+
+    var phase: CopilotPhase {
+        switch self {
+        case .settings: .settings
+        case .betaMissions: .betaValidationMissions
+        case .fh6ValidationReview: .fh6ValidationReview
+        case .fh6CommunityOutcomeReview: .fh6CommunityOutcomeReview
+        case .fh5ResearchReview: .fh5ResearchReview
+        case .fh5CandidateOutcomeReview: .fh5CandidateOutcomeReview
+        }
+    }
+
+    var context: CopilotContext {
+        switch self {
+        case .settings:
+            phaseOnlyContext(cannotSeeUnsavedEdits: true)
+        case .betaMissions(let savedSetupCount):
+            CopilotContext(
+                phase: phase,
+                carDisplayName: nil,
+                gameTitle: nil,
+                disciplineTitle: nil,
+                savedTuneCount: savedSetupCount,
+                catalogCarCount: nil,
+                projection: nil,
+                cannotSeeUnsavedEdits: false
+            )
+        case .fh6ValidationReview(
+            let carDisplayName,
+            let gameTitle,
+            let disciplineTitle
+        ),
+        .fh6CommunityOutcomeReview(
+            let carDisplayName,
+            let gameTitle,
+            let disciplineTitle
+        ):
+            CopilotContext(
+                phase: phase,
+                carDisplayName: carDisplayName,
+                gameTitle: gameTitle,
+                disciplineTitle: disciplineTitle,
+                savedTuneCount: nil,
+                catalogCarCount: nil,
+                projection: nil,
+                cannotSeeUnsavedEdits: true
+            )
+        case .fh5ResearchReview(let carDisplayName, let gameTitle):
+            CopilotContext(
+                phase: phase,
+                carDisplayName: carDisplayName,
+                gameTitle: gameTitle,
+                disciplineTitle: nil,
+                savedTuneCount: nil,
+                catalogCarCount: nil,
+                projection: nil,
+                cannotSeeUnsavedEdits: true
+            )
+        case .fh5CandidateOutcomeReview:
+            phaseOnlyContext(cannotSeeUnsavedEdits: true)
+        }
+    }
+
+    var accessibilityHint: String {
+        switch self {
+        case .settings:
+            "Shows local guidance for Settings without changing settings."
+        case .betaMissions:
+            "Shows local guidance for Beta Missions without selecting a mission."
+        case .fh6ValidationReview:
+            "Shows local guidance for FH6 Validation Review without changing the review."
+        case .fh6CommunityOutcomeReview:
+            "Shows local guidance for Community Outcome Review without changing the review."
+        case .fh5ResearchReview:
+            "Shows local guidance for FH5 Research Review without changing the review."
+        case .fh5CandidateOutcomeReview:
+            "Shows local guidance for Candidate Outcome Review without changing the review."
+        }
+    }
+
+    var buttonIdentifier: String {
+        "copilotButton-\(phase.rawValue)"
+    }
+
+    private func phaseOnlyContext(
+        cannotSeeUnsavedEdits: Bool
+    ) -> CopilotContext {
+        CopilotContext(
+            phase: phase,
+            carDisplayName: nil,
+            gameTitle: nil,
+            disciplineTitle: nil,
+            savedTuneCount: nil,
+            catalogCarCount: nil,
+            projection: nil,
+            cannotSeeUnsavedEdits: cannotSeeUnsavedEdits
+        )
+    }
+}
+
+struct ModalCopilotToolbarLink: View {
+    let destination: ModalCopilotDestination
+
+    var body: some View {
+        NavigationLink {
+            ModalCopilotNavigationDestination(destination: destination)
+        } label: {
+            Image(systemName: "sparkles")
+                .frame(minWidth: 44, minHeight: 44)
+        }
+        .accessibilityLabel("Open contextual Copilot")
+        .accessibilityHint(destination.accessibilityHint)
+        .accessibilityIdentifier(destination.buttonIdentifier)
+    }
+}
+
+private struct ModalCopilotNavigationDestination: View {
+    let destination: ModalCopilotDestination
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        CopilotSheet(
+            context: destination.context,
+            onClose: { dismiss() }
+        )
+    }
+}
+
 struct CopilotSheet: View {
     let context: CopilotContext
-    let onAction: (CopilotAction) -> Void
+    let onAction: ((CopilotAction) -> Void)?
     let onClose: () -> Void
 
     @State private var question = ""
@@ -19,7 +166,7 @@ struct CopilotSheet: View {
 
     init(
         context: CopilotContext,
-        onAction: @escaping (CopilotAction) -> Void,
+        onAction: ((CopilotAction) -> Void)? = nil,
         onClose: @escaping () -> Void
     ) {
         self.context = context
@@ -136,7 +283,7 @@ struct CopilotSheet: View {
                 .font(.headline)
             Text(response.message)
                 .fixedSize(horizontal: false, vertical: true)
-            if let action = response.action {
+            if let action = response.action, let onAction {
                 Button {
                     onAction(action)
                     onClose()

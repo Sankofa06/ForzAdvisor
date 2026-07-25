@@ -174,7 +174,15 @@ struct FH5ResearchReviewView: View {
             .navigationTitle("FH5 Research Review")
             .forzAdvisorScreenChrome()
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ModalCopilotToolbarLink(
+                        destination: .fh5ResearchReview(
+                            carDisplayName:
+                                tune.request.car.displayName,
+                            gameTitle:
+                                tune.request.car.game.shortTitle
+                        )
+                    )
                     Button("Done") {
                         dismiss()
                     }

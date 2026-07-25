@@ -274,7 +274,17 @@ struct FH6ValidationReviewView: View {
             .navigationTitle("FH6 Validation Review")
             .forzAdvisorScreenChrome()
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ModalCopilotToolbarLink(
+                        destination: .fh6ValidationReview(
+                            carDisplayName:
+                                tune.request.car.displayName,
+                            gameTitle:
+                                tune.request.car.game.shortTitle,
+                            disciplineTitle:
+                                tune.request.discipline.title
+                        )
+                    )
                     Button("Done") {
                         dismiss()
                     }

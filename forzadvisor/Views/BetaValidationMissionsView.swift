@@ -156,7 +156,13 @@ struct BetaValidationMissionsView: View {
             .forzAdvisorScreenChrome()
             .accessibilityIdentifier("betaValidationMissions")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ModalCopilotToolbarLink(
+                        destination: .betaMissions(
+                            savedSetupCount:
+                                board.progress.savedSetupCount
+                        )
+                    )
                     Button("Done") {
                         dismiss()
                     }

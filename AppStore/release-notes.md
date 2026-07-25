@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.21.0 (Build 46) - 2026-07-25
+
+- Makes contextual Copilot available inside Settings, Beta Missions, and four evidence-review screens.
+- Opens Copilot within each screen's navigation flow so drafts, pasted JSON, toggles, and settings remain in place.
+- Keeps modal guidance local and action-free, with strict context allow-lists that exclude credentials, draft evidence, tune values, notes, identifiers, and fingerprints.
+
 ## Version 1.20.0 (Build 45) - 2026-07-25
 
 - Adds a direct Copilot handoff to Record Test Drive for eligible saved FH6 tunes.
