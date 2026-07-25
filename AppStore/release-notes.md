@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.17.0 (Build 42) - 2026-07-25
+
+- Adds a privacy-safe foundation for comparing an exact generated FH6 tune against a YouTube or Reddit reference with a fixed A-B-B-A drive protocol.
+- Keeps community tune settings, parts, share codes, source text, and generated tune details out of public trial exports.
+- Binds each reusable tester-authored outcome to the exact car, build, ruleset, and applied candidate through opaque integrity fingerprints.
+
 ## Version 1.16.0 (Build 41) - 2026-07-25
 
 - Turns an empty garage into a clear first-win path through the reviewed FH6 catalog.
