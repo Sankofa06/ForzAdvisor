@@ -367,6 +367,10 @@ struct CopilotResponse: Equatable, Sendable {
 }
 
 struct CopilotEngine {
+    func defaultResponse(in context: CopilotContext) -> CopilotResponse {
+        response(to: .nextStep, in: context)
+    }
+
     func response(to question: String, in context: CopilotContext) -> CopilotResponse {
         guard let intent = CopilotIntent.parse(question) else {
             return .unsupported

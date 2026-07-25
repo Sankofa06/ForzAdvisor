@@ -68,6 +68,24 @@ final class CopilotTests: XCTestCase {
         }
     }
 
+    func testDefaultResponseExactlyMatchesNextStepForEveryWorkflowPhase() {
+        let engine = CopilotEngine()
+
+        for phase in CopilotPhase.allCases {
+            let context = syntheticContext(for: phase)
+            let response = engine.defaultResponse(in: context)
+
+            XCTAssertEqual(
+                response,
+                engine.response(to: .nextStep, in: context),
+                phase.rawValue
+            )
+            XCTAssertEqual(response.intent, .nextStep, phase.rawValue)
+            XCTAssertFalse(response.title.isEmpty, phase.rawValue)
+            XCTAssertFalse(response.message.isEmpty, phase.rawValue)
+        }
+    }
+
     func testEveryWorkflowStepMapsToItsTruthfulPhase() throws {
         let selection = try catalogSelection()
         let car = selection.carInput
@@ -288,15 +306,15 @@ final class CopilotTests: XCTestCase {
         )
 
         XCTAssertEqual(
-            engine.response(to: .nextStep, in: resultContext(tuneMenu)).action,
+            engine.defaultResponse(in: resultContext(tuneMenu)).action,
             .openFH6TuneMenuLab
         )
         XCTAssertEqual(
-            engine.response(to: .nextStep, in: resultContext(tire)).action,
+            engine.defaultResponse(in: resultContext(tire)).action,
             .openTireLab
         )
         XCTAssertEqual(
-            engine.response(to: .nextStep, in: resultContext(upgrade)).action,
+            engine.defaultResponse(in: resultContext(upgrade)).action,
             .openUpgradeLab
         )
     }
@@ -358,13 +376,13 @@ final class CopilotTests: XCTestCase {
             )
         }
         XCTAssertNil(
-            engine.response(to: .nextStep, in: resultContext(streaming)).action
+            engine.defaultResponse(in: resultContext(streaming)).action
         )
         XCTAssertNil(
-            engine.response(to: .nextStep, in: resultContext(withheld)).action
+            engine.defaultResponse(in: resultContext(withheld)).action
         )
         XCTAssertNil(
-            engine.response(to: .nextStep, in: resultContext(fh5)).action
+            engine.defaultResponse(in: resultContext(fh5)).action
         )
         let eligibleContext = resultContext(eligible)
         let missingProjection = CopilotContext(
@@ -378,11 +396,10 @@ final class CopilotTests: XCTestCase {
             cannotSeeUnsavedEdits: false
         )
         XCTAssertNil(
-            engine.response(to: .nextStep, in: missingProjection).action
+            engine.defaultResponse(in: missingProjection).action
         )
         XCTAssertNil(
-            engine.response(
-                to: .nextStep,
+            engine.defaultResponse(
                 in: syntheticContext(for: .recordTestDrive)
             ).action
         )

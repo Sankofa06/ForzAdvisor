@@ -1,5 +1,10 @@
 # Release Notes
 
+## Version 1.14.0 (Build 39) - 2026-07-25
+
+- Shows Copilot's contextual next step immediately whenever it opens, without requiring a second prompt.
+- Refreshes the guidance when the tuning context changes while keeping every recommended action user-initiated.
+
 ## Version 1.13.0 (Build 38) - 2026-07-25
 
 - Makes Copilot's FH6 next-step guidance actionable with direct handoffs to Tune Menu Lab, Tire Lab, or Upgrade Lab.

@@ -13,20 +13,31 @@ struct CopilotSheet: View {
     let onClose: () -> Void
 
     @State private var question = ""
-    @State private var response: CopilotResponse?
+    @State private var response: CopilotResponse
 
     private let engine = CopilotEngine()
+
+    init(
+        context: CopilotContext,
+        onAction: @escaping (CopilotAction) -> Void,
+        onClose: @escaping () -> Void
+    ) {
+        self.context = context
+        self.onAction = onAction
+        self.onClose = onClose
+        _response = State(
+            initialValue: CopilotEngine().defaultResponse(in: context)
+        )
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 contextSection
+                responseCard(response)
                 suggestions
                 askField
-                if let response {
-                    responseCard(response)
-                }
             }
             .padding()
         }
@@ -36,7 +47,7 @@ struct CopilotSheet: View {
         .presentationDragIndicator(.visible)
         .onChange(of: context) { _, _ in
             question = ""
-            response = nil
+            response = engine.defaultResponse(in: context)
         }
     }
 
