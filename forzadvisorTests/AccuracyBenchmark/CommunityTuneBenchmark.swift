@@ -182,9 +182,14 @@ struct CommunityTuneBenchmarkDocument: Codable, Equatable, Sendable {
     var fixtures: [CommunityTuneFixture]
 }
 
-enum BenchmarkValidationMode: Sendable {
+enum BenchmarkValidationMode: String, Codable, Equatable, Sendable {
     case bundledFixture
     case localResearch
+}
+
+enum BenchmarkEvidenceScope: String, Codable, Sendable {
+    case bundledCommittedEvidence
+    case localResearchEvidence
 }
 
 enum BenchmarkValidationCode: String, Codable, Sendable {
@@ -668,8 +673,55 @@ struct BenchmarkCohortReport: Codable, Equatable, Sendable {
     var distributions: [BenchmarkFieldDistribution]
 }
 
+enum BenchmarkAlignmentLabel: String, Codable, Sendable {
+    case insufficientEvidence
+    case alignedOnAllCandidateFields
+    case differsOnConsensusFields
+    case candidateMissingConsensusFields
+}
+
+enum BenchmarkAlignmentFieldStatus: String, Codable, Sendable {
+    case withinConsensus
+    case outsideConsensus
+    case candidateMissing
+    case insufficientSourceCoverage
+    case sourcesDoNotAgree
+}
+
+struct BenchmarkAlignmentFieldDetail: Codable, Equatable, Sendable {
+    var field: TuneFieldID
+    var status: BenchmarkAlignmentFieldStatus
+    var sampleCount: Int
+    var candidate: Double?
+    var median: Double?
+    var minimum: Double?
+    var maximum: Double?
+    var acceptedMinimum: Double?
+    var acceptedMaximum: Double?
+    var deltaToMedian: Double?
+}
+
+struct BenchmarkCommunityAlignmentVerdict: Codable, Equatable, Sendable {
+    static let policyVersion = "community-consensus-v1"
+
+    var policyVersion: String
+    var validationMode: BenchmarkValidationMode
+    var evidenceScope: BenchmarkEvidenceScope
+    var cohortFingerprint: String
+    var representativeSourceIDs: [String]
+    var independentSourceCount: Int
+    var requiredCandidateFieldCount: Int
+    var consensusFieldCount: Int
+    var withinConsensusCount: Int
+    var outsideConsensusCount: Int
+    var candidateMissingCount: Int
+    var unresolvedCount: Int
+    var label: BenchmarkAlignmentLabel
+    var fields: [BenchmarkAlignmentFieldDetail]
+}
+
 struct CommunityTuneBenchmarkReport: Codable, Equatable, Sendable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     var schemaVersion: Int
     var fixtureSnapshotHash: String
@@ -677,6 +729,7 @@ struct CommunityTuneBenchmarkReport: Codable, Equatable, Sendable {
     var candidateAdapterVersion: String
     var fixtures: [BenchmarkFixtureReport]
     var cohorts: [BenchmarkCohortReport]
+    var alignmentVerdicts: [BenchmarkCommunityAlignmentVerdict]
 }
 
 enum BenchmarkTolerancePolicy {
@@ -786,7 +839,12 @@ enum CommunityTuneBenchmark {
             candidateAdapterID: RawLocalBenchmarkCandidateAdapter.id,
             candidateAdapterVersion: RawLocalBenchmarkCandidateAdapter.version,
             fixtures: fixtureReports,
-            cohorts: cohortReports(for: document.fixtures)
+            cohorts: cohortReports(for: document.fixtures),
+            alignmentVerdicts: alignmentVerdictsValidated(
+                fixtures: document.fixtures,
+                fixtureReports: fixtureReports,
+                mode: mode
+            )
         )
     }
 
@@ -952,6 +1010,261 @@ enum CommunityTuneBenchmark {
         }.sorted { $0.fingerprint < $1.fingerprint }
     }
 
+    static func alignmentVerdicts(
+        document: CommunityTuneBenchmarkDocument,
+        fixtureReports: [BenchmarkFixtureReport],
+        mode: BenchmarkValidationMode
+    ) throws -> [BenchmarkCommunityAlignmentVerdict] {
+        let documentIssues = document.validationIssues(mode: mode)
+        guard documentIssues.isEmpty else {
+            throw BenchmarkHarnessError.invalidDocument(documentIssues)
+        }
+        let reportIssues = fixtureReportValidationIssues(
+            document: document,
+            fixtureReports: fixtureReports
+        )
+        guard reportIssues.isEmpty else {
+            throw BenchmarkHarnessError.invalidDocument(reportIssues)
+        }
+        return alignmentVerdictsValidated(
+            fixtures: document.fixtures,
+            fixtureReports: fixtureReports,
+            mode: mode
+        )
+    }
+
+    private static func alignmentVerdictsValidated(
+        fixtures: [CommunityTuneFixture],
+        fixtureReports: [BenchmarkFixtureReport],
+        mode: BenchmarkValidationMode
+    ) -> [BenchmarkCommunityAlignmentVerdict] {
+        let reportsByFixtureID = Dictionary(
+            grouping: fixtureReports,
+            by: { $0.fixtureID.benchmarkNormalized }
+        )
+        let grouped = Dictionary(grouping: fixtures) {
+            $0.cohortIdentity.fingerprint
+        }
+
+        return grouped.map { fingerprint, cohortFixtures in
+            let sortedFixtures = cohortFixtures.sorted {
+                $0.id.benchmarkNormalized < $1.id.benchmarkNormalized
+            }
+            let representatives = independentRepresentatives(
+                from: sortedFixtures
+            )
+            let representativeSourceIDs = representatives
+                .map { $0.source.id }
+                .sorted()
+            let scope: BenchmarkEvidenceScope = mode == .bundledFixture
+                ? .bundledCommittedEvidence
+                : .localResearchEvidence
+
+            func insufficient(
+                requiredCandidateFieldCount: Int = 0
+            ) -> BenchmarkCommunityAlignmentVerdict {
+                .init(
+                    policyVersion:
+                        BenchmarkCommunityAlignmentVerdict.policyVersion,
+                    validationMode: mode,
+                    evidenceScope: scope,
+                    cohortFingerprint: fingerprint,
+                    representativeSourceIDs:
+                        representativeSourceIDs,
+                    independentSourceCount: representatives.count,
+                    requiredCandidateFieldCount:
+                        requiredCandidateFieldCount,
+                    consensusFieldCount: 0,
+                    withinConsensusCount: 0,
+                    outsideConsensusCount: 0,
+                    candidateMissingCount: 0,
+                    unresolvedCount: 0,
+                    label: .insufficientEvidence,
+                    fields: []
+                )
+            }
+
+            guard sortedFixtures.first?.cohortIdentity.classification == .exact,
+                  representatives.count >= 3,
+                  representatives.allSatisfy({
+                      sourceIsEligible($0.source, mode: mode)
+                  }) else {
+                return insufficient()
+            }
+
+            let reports: [BenchmarkFixtureReport] = representatives.compactMap {
+                let matches =
+                    reportsByFixtureID[$0.id.benchmarkNormalized] ?? []
+                return matches.count == 1 ? matches[0] : nil
+            }
+            guard reports.count == representatives.count,
+                  let canonicalCandidate = canonicalCandidateValues(
+                      from: reports.first?.candidate
+                  ),
+                  !canonicalCandidate.isEmpty,
+                  reports.allSatisfy({
+                      canonicalCandidateValues(from: $0.candidate)
+                          == canonicalCandidate
+                  }) else {
+                return insufficient()
+            }
+
+            let candidateValues = Dictionary(
+                uniqueKeysWithValues: canonicalCandidate.map {
+                    ($0.field, $0.value)
+                }
+            )
+            let requiredFields = Set(candidateValues.keys)
+            let allObservedFields = Set(
+                representatives.flatMap {
+                    $0.fields.map(\.id)
+                }
+            )
+            let fieldsToEvaluate = requiredFields.union(allObservedFields)
+                .sorted {
+                    $0.benchmarkStableID < $1.benchmarkStableID
+                }
+            var details: [BenchmarkAlignmentFieldDetail] = []
+
+            for field in fieldsToEvaluate {
+                let candidate = candidateValues[field]
+                let observations = representatives.map { fixture in
+                    fixture.fields.filter { $0.id == field }
+                }
+                let valid = observations.compactMap {
+                    groups -> BenchmarkFieldObservation? in
+                    guard groups.count == 1,
+                          observationIsConsensusEligible(groups[0]) else {
+                        return nil
+                    }
+                    return groups[0]
+                }
+
+                let samples = valid.compactMap(\.value).sorted()
+                let descriptive = descriptiveValues(samples)
+                guard valid.count == representatives.count else {
+                    details.append(.init(
+                        field: field,
+                        status: .insufficientSourceCoverage,
+                        sampleCount: samples.count,
+                        candidate: candidate,
+                        median: descriptive?.median,
+                        minimum: descriptive?.minimum,
+                        maximum: descriptive?.maximum,
+                        acceptedMinimum: nil,
+                        acceptedMaximum: nil,
+                        deltaToMedian: candidate.flatMap { candidate in
+                            descriptive.map {
+                                candidate - $0.median
+                            }
+                        }
+                    ))
+                    continue
+                }
+
+                let bands = valid.compactMap {
+                    observation
+                        -> ClosedRange<Double>? in
+                    guard let reference = observation.value,
+                          let tolerance = observation.observedStep,
+                          tolerance.isFinite,
+                          tolerance > 0 else {
+                        return nil
+                    }
+                    return (reference - tolerance)
+                        ... (reference + tolerance)
+                }
+                guard bands.count == representatives.count,
+                      let acceptedMinimum = bands.map(\.lowerBound).max(),
+                      let acceptedMaximum = bands.map(\.upperBound).min(),
+                      let descriptive else {
+                    details.append(.init(
+                        field: field,
+                        status: .insufficientSourceCoverage,
+                        sampleCount: samples.count,
+                        candidate: candidate,
+                        median: descriptive?.median,
+                        minimum: descriptive?.minimum,
+                        maximum: descriptive?.maximum,
+                        acceptedMinimum: nil,
+                        acceptedMaximum: nil,
+                        deltaToMedian: nil
+                    ))
+                    continue
+                }
+
+                let status: BenchmarkAlignmentFieldStatus
+                if acceptedMinimum > acceptedMaximum {
+                    status = .sourcesDoNotAgree
+                } else if let candidate {
+                    status = candidate >= acceptedMinimum
+                        && candidate <= acceptedMaximum
+                        ? .withinConsensus
+                        : .outsideConsensus
+                } else {
+                    status = .candidateMissing
+                }
+                details.append(.init(
+                    field: field,
+                    status: status,
+                    sampleCount: samples.count,
+                    candidate: candidate,
+                    median: descriptive.median,
+                    minimum: descriptive.minimum,
+                    maximum: descriptive.maximum,
+                    acceptedMinimum: acceptedMinimum,
+                    acceptedMaximum: acceptedMaximum,
+                    deltaToMedian: candidate.map {
+                        $0 - descriptive.median
+                    }
+                ))
+            }
+
+            let unresolvedCount = details.filter {
+                $0.status == .insufficientSourceCoverage
+                    || $0.status == .sourcesDoNotAgree
+            }.count
+            let missingCount = details.filter {
+                $0.status == .candidateMissing
+            }.count
+            let outsideCount = details.filter {
+                $0.status == .outsideConsensus
+            }.count
+            let withinCount = details.filter {
+                $0.status == .withinConsensus
+            }.count
+            let consensusCount = details.count - unresolvedCount
+            let label: BenchmarkAlignmentLabel
+            if unresolvedCount > 0 {
+                label = .insufficientEvidence
+            } else if missingCount > 0 {
+                label = .candidateMissingConsensusFields
+            } else if outsideCount > 0 {
+                label = .differsOnConsensusFields
+            } else {
+                label = .alignedOnAllCandidateFields
+            }
+
+            return .init(
+                policyVersion:
+                    BenchmarkCommunityAlignmentVerdict.policyVersion,
+                validationMode: mode,
+                evidenceScope: scope,
+                cohortFingerprint: fingerprint,
+                representativeSourceIDs: representativeSourceIDs,
+                independentSourceCount: representatives.count,
+                requiredCandidateFieldCount: requiredFields.count,
+                consensusFieldCount: consensusCount,
+                withinConsensusCount: withinCount,
+                outsideConsensusCount: outsideCount,
+                candidateMissingCount: missingCount,
+                unresolvedCount: unresolvedCount,
+                label: label,
+                fields: details
+            )
+        }.sorted { $0.cohortFingerprint < $1.cohortFingerprint }
+    }
+
     private static func independentRepresentatives(
         from sortedFixtures: [CommunityTuneFixture]
     ) -> [CommunityTuneFixture] {
@@ -985,6 +1298,116 @@ enum CommunityTuneBenchmark {
             representatives.append(fixture)
         }
         return representatives
+    }
+
+    private static func sourceIsEligible(
+        _ source: BenchmarkSource,
+        mode: BenchmarkValidationMode
+    ) -> Bool {
+        switch mode {
+        case .localResearch:
+            return source.usagePermission == .committedNumericBenchmark
+                || source.usagePermission == .localResearchOnly
+        case .bundledFixture:
+            return source.usagePermission == .committedNumericBenchmark
+                && source.permissionBasis != .syntheticTest
+                && source.permissionBasis.permitsCommittedNumbers
+        }
+    }
+
+    private static func canonicalCandidateValues(
+        from candidate: BenchmarkCandidate?
+    ) -> [BenchmarkCandidateValue]? {
+        guard let candidate,
+              candidate.status == .supported,
+              candidate.diagnostics.isEmpty,
+              candidate.values.allSatisfy({ $0.value.isFinite }) else {
+            return nil
+        }
+        let grouped = Dictionary(grouping: candidate.values, by: \.field)
+        guard grouped.values.allSatisfy({ $0.count == 1 }) else {
+            return nil
+        }
+        return candidate.values
+            .sorted {
+                $0.field.benchmarkStableID
+                    < $1.field.benchmarkStableID
+            }
+    }
+
+    private static func observationIsConsensusEligible(
+        _ observation: BenchmarkFieldObservation
+    ) -> Bool {
+        observation.status == .observed
+            && observation.unit == observation.id.expectedUnit
+            && observation.value?.isFinite == true
+            && observation.observedStep.map {
+                $0.isFinite && $0 > 0
+            } == true
+    }
+
+    private static func fixtureReportValidationIssues(
+        document: CommunityTuneBenchmarkDocument,
+        fixtureReports: [BenchmarkFixtureReport]
+    ) -> [BenchmarkValidationIssue] {
+        let fixturesByID = Dictionary(
+            uniqueKeysWithValues: document.fixtures.map {
+                ($0.id.benchmarkNormalized, $0)
+            }
+        )
+        let reportsByID = Dictionary(
+            grouping: fixtureReports,
+            by: { $0.fixtureID.benchmarkNormalized }
+        )
+        var issues: [BenchmarkValidationIssue] = []
+
+        if Set(reportsByID.keys) != Set(fixturesByID.keys) {
+            issues.append(.init(
+                code: .invalidSource,
+                path: "fixtureReports",
+                message: "Fixture reports must map exactly to the validated document fixture IDs."
+            ))
+        }
+
+        for (fixtureID, fixture) in fixturesByID.sorted(by: {
+            $0.key < $1.key
+        }) {
+            let reports = reportsByID[fixtureID] ?? []
+            guard reports.count == 1, let report = reports.first else {
+                issues.append(.init(
+                    code: .invalidSource,
+                    path: "fixtureReports[\(fixtureID)]",
+                    message: "Each validated fixture requires exactly one report."
+                ))
+                continue
+            }
+            let identity = fixture.cohortIdentity
+            guard report.sourceID.benchmarkNormalized
+                    == fixture.source.id.benchmarkNormalized,
+                  canonicalSource(report.source)
+                    == canonicalSource(fixture.source),
+                  report.game == fixture.source.game,
+                  report.cohortClassification == identity.classification,
+                  report.cohortFingerprint == identity.fingerprint else {
+                issues.append(.init(
+                    code: .invalidSource,
+                    path: "fixtureReports[\(fixtureID)]",
+                    message: "Fixture report source and cohort identity must match the validated document."
+                ))
+                continue
+            }
+        }
+        return issues
+    }
+
+    private static func descriptiveValues(
+        _ sorted: [Double]
+    ) -> (median: Double, minimum: Double, maximum: Double)? {
+        guard let minimum = sorted.first,
+              let maximum = sorted.last else {
+            return nil
+        }
+        return (median(sorted), minimum, maximum)
     }
 
     private static func fieldDistributions(for fixtures: [CommunityTuneFixture]) -> [BenchmarkFieldDistribution] {

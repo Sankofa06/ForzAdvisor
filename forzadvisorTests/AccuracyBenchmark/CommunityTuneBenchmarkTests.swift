@@ -503,6 +503,521 @@ final class CommunityTuneBenchmarkTests: XCTestCase {
 
         XCTAssertEqual(report.fixtures.count, 1)
         XCTAssertEqual(report.fixtures[0].candidate.status, .supported)
+        XCTAssertEqual(report.schemaVersion, 2)
+        XCTAssertEqual(
+            report.alignmentVerdicts.first?.evidenceScope,
+            .localResearchEvidence
+        )
+    }
+
+    func testExactIndependentConsensusAlignsEveryCandidateField() throws {
+        let fixtures = consensusFixtures(fields: [
+            [
+                observation(.frontTirePressure, value: 26.8, step: 0.5),
+                observation(.rearTirePressure, value: 27.8, step: 0.5)
+            ],
+            [
+                observation(.frontTirePressure, value: 27, step: 0.5),
+                observation(.rearTirePressure, value: 28, step: 0.5)
+            ],
+            [
+                observation(.frontTirePressure, value: 27.2, step: 0.5),
+                observation(.rearTirePressure, value: 28.2, step: 0.5)
+            ]
+        ])
+        let verdict = try alignmentVerdict(
+            fixtures: fixtures,
+            candidate: candidate([
+                (.frontTirePressure, 27),
+                (.rearTirePressure, 28)
+            ])
+        )
+
+        XCTAssertEqual(
+            verdict.policyVersion,
+            BenchmarkCommunityAlignmentVerdict.policyVersion
+        )
+        XCTAssertEqual(verdict.validationMode, .localResearch)
+        XCTAssertEqual(verdict.evidenceScope, .localResearchEvidence)
+        XCTAssertEqual(verdict.label, .alignedOnAllCandidateFields)
+        XCTAssertEqual(verdict.independentSourceCount, 3)
+        XCTAssertEqual(verdict.requiredCandidateFieldCount, 2)
+        XCTAssertEqual(verdict.consensusFieldCount, 2)
+        XCTAssertEqual(verdict.withinConsensusCount, 2)
+        XCTAssertEqual(verdict.outsideConsensusCount, 0)
+        XCTAssertEqual(verdict.candidateMissingCount, 0)
+        XCTAssertEqual(verdict.unresolvedCount, 0)
+        XCTAssertEqual(
+            verdict.representativeSourceIDs,
+            ["source.consensus.1", "source.consensus.2", "source.consensus.3"]
+        )
+        XCTAssertEqual(
+            verdict.fields.map(\.field),
+            [.frontTirePressure, .rearTirePressure]
+        )
+        XCTAssertTrue(
+            verdict.fields.allSatisfy {
+                $0.status == .withinConsensus
+                    && $0.sampleCount == 3
+                    && $0.median != nil
+                    && $0.minimum != nil
+                    && $0.maximum != nil
+                    && $0.acceptedMinimum != nil
+                    && $0.acceptedMaximum != nil
+                    && $0.deltaToMedian != nil
+            }
+        )
+    }
+
+    func testConsensusOutsideAndInclusiveBoundaryAreDistinguished() throws {
+        let fixtures = consensusFixtures(fields: Array(
+            repeating: [
+                observation(
+                    .frontTirePressure,
+                    value: 27,
+                    step: 0.5
+                )
+            ],
+            count: 3
+        ))
+        let boundary = try alignmentVerdict(
+            fixtures: fixtures,
+            candidate: candidate([(.frontTirePressure, 27.5)])
+        )
+        let outside = try alignmentVerdict(
+            fixtures: fixtures,
+            candidate: candidate([(.frontTirePressure, 27.500_001)])
+        )
+
+        XCTAssertEqual(boundary.label, .alignedOnAllCandidateFields)
+        XCTAssertEqual(boundary.fields[0].status, .withinConsensus)
+        XCTAssertEqual(boundary.fields[0].acceptedMaximum, 27.5)
+        XCTAssertEqual(outside.label, .differsOnConsensusFields)
+        XCTAssertEqual(outside.outsideConsensusCount, 1)
+        XCTAssertEqual(outside.fields[0].status, .outsideConsensus)
+    }
+
+    func testConsensusFieldAbsentFromCandidateIsReportedMissing() throws {
+        let fixtures = consensusFixtures(fields: Array(
+            repeating: [
+                observation(.frontTirePressure, value: 27, step: 0.5),
+                observation(.rearTirePressure, value: 28, step: 0.5)
+            ],
+            count: 3
+        ))
+        let verdict = try alignmentVerdict(
+            fixtures: fixtures,
+            candidate: candidate([(.frontTirePressure, 27)])
+        )
+
+        XCTAssertEqual(
+            verdict.label,
+            .candidateMissingConsensusFields
+        )
+        XCTAssertEqual(verdict.requiredCandidateFieldCount, 1)
+        XCTAssertEqual(verdict.candidateMissingCount, 1)
+        XCTAssertEqual(
+            verdict.fields.first {
+                $0.field == .rearTirePressure
+            }?.status,
+            .candidateMissing
+        )
+    }
+
+    func testIndependentThresholdAndDuplicateSourcesFailClosed() throws {
+        let one = consensusFixtures(fields: [
+            [observation(.frontTirePressure, value: 27)]
+        ])
+        let two = consensusFixtures(fields: [
+            [observation(.frontTirePressure, value: 27)],
+            [observation(.frontTirePressure, value: 27)]
+        ])
+        for fixtures in [one, two] {
+            let verdict = try alignmentVerdict(
+                fixtures: fixtures,
+                candidate: candidate([(.frontTirePressure, 27)])
+            )
+            XCTAssertEqual(verdict.label, .insufficientEvidence)
+            XCTAssertEqual(
+                verdict.independentSourceCount,
+                fixtures.count
+            )
+        }
+
+        var fixtures = consensusFixtures(fields: Array(
+            repeating: [
+                observation(.frontTirePressure, value: 27)
+            ],
+            count: 6
+        ))
+        fixtures[3].source.derivativeOfSourceID = fixtures[0].source.id
+        fixtures[4].source.publisher = " Publisher 1 "
+        fixtures[5].source.contentFingerprint =
+            fixtures[1].source.contentFingerprint
+        let verdict = try alignmentVerdict(
+            fixtures: fixtures,
+            candidate: candidate([(.frontTirePressure, 27)])
+        )
+
+        XCTAssertEqual(verdict.independentSourceCount, 3)
+        XCTAssertEqual(verdict.label, .alignedOnAllCandidateFields)
+    }
+
+    func testDivergentSourcesProduceUnresolvedInsufficientVerdict() throws {
+        let fixtures = consensusFixtures(fields: [
+            [observation(.frontTirePressure, value: 10, step: 0.5)],
+            [observation(.frontTirePressure, value: 20, step: 0.5)],
+            [observation(.frontTirePressure, value: 30, step: 0.5)]
+        ])
+        let verdict = try alignmentVerdict(
+            fixtures: fixtures,
+            candidate: candidate([(.frontTirePressure, 20)])
+        )
+
+        XCTAssertEqual(verdict.label, .insufficientEvidence)
+        XCTAssertEqual(verdict.unresolvedCount, 1)
+        XCTAssertEqual(verdict.consensusFieldCount, 0)
+        XCTAssertEqual(verdict.fields[0].status, .sourcesDoNotAgree)
+        XCTAssertGreaterThan(
+            verdict.fields[0].acceptedMinimum ?? 0,
+            verdict.fields[0].acceptedMaximum ?? 0
+        )
+    }
+
+    func testRequiredFieldCoverageRejectsEveryNonObservationForm() throws {
+        let invalidObservations: [BenchmarkFieldObservation?] = [
+            nil,
+            .init(
+                id: .frontTirePressure,
+                unit: .psi,
+                status: .notShown,
+                value: nil,
+                observedStep: nil,
+                reason: nil,
+                note: nil
+            ),
+            .init(
+                id: .frontTirePressure,
+                unit: .psi,
+                status: .ambiguous,
+                value: nil,
+                observedStep: nil,
+                reason: nil,
+                note: "Source screens disagree."
+            ),
+            .init(
+                id: .frontTirePressure,
+                unit: .psi,
+                status: .notApplicable,
+                value: nil,
+                observedStep: nil,
+                reason: "Not available.",
+                note: nil
+            )
+        ]
+
+        for invalid in invalidObservations {
+            var fields = Array(
+                repeating: [
+                    observation(.frontTirePressure, value: 27),
+                    observation(.rearTirePressure, value: 28)
+                ],
+                count: 3
+            )
+            fields[2] = (invalid.map { [$0] } ?? []) + [
+                observation(.rearTirePressure, value: 28)
+            ]
+            let verdict = try alignmentVerdict(
+                fixtures: consensusFixtures(fields: fields),
+                candidate: candidate([
+                    (.frontTirePressure, 27),
+                    (.rearTirePressure, 28)
+                ])
+            )
+
+            XCTAssertEqual(verdict.label, .insufficientEvidence)
+            XCTAssertEqual(verdict.unresolvedCount, 1)
+            XCTAssertEqual(
+                verdict.fields[0].status,
+                .insufficientSourceCoverage
+            )
+            XCTAssertEqual(verdict.fields[0].sampleCount, 2)
+        }
+    }
+
+    func testRequiredFieldWithoutObservedStepIsInsufficient() throws {
+        let fields = Array(
+            repeating: [
+                observation(.frontTirePressure, value: 27, step: 0.5)
+            ],
+            count: 3
+        )
+        var fixtures = consensusFixtures(fields: fields)
+        fixtures[2].fields[0].observedStep = nil
+
+        let verdict = try alignmentVerdict(
+            fixtures: fixtures,
+            candidate: candidate([(.frontTirePressure, 27)])
+        )
+
+        XCTAssertEqual(verdict.label, .insufficientEvidence)
+        XCTAssertEqual(verdict.unresolvedCount, 1)
+        XCTAssertEqual(verdict.fields.count, 1)
+        XCTAssertEqual(
+            verdict.fields[0].status,
+            .insufficientSourceCoverage
+        )
+        XCTAssertEqual(verdict.fields[0].sampleCount, 2)
+    }
+
+    func testPartialExtraObservedFieldIsSerializedAsUnresolved() throws {
+        let fixtures = consensusFixtures(fields: [
+            [
+                observation(.frontTirePressure, value: 27),
+                observation(.rearTirePressure, value: 28)
+            ],
+            [
+                observation(.frontTirePressure, value: 27),
+                observation(.rearTirePressure, value: 28)
+            ],
+            [
+                observation(.frontTirePressure, value: 27)
+            ]
+        ])
+
+        let verdict = try alignmentVerdict(
+            fixtures: fixtures,
+            candidate: candidate([(.frontTirePressure, 27)])
+        )
+
+        XCTAssertEqual(verdict.label, .insufficientEvidence)
+        XCTAssertEqual(verdict.unresolvedCount, 1)
+        XCTAssertEqual(verdict.candidateMissingCount, 0)
+        let extra = try XCTUnwrap(verdict.fields.first {
+            $0.field == .rearTirePressure
+        })
+        XCTAssertEqual(extra.status, .insufficientSourceCoverage)
+        XCTAssertEqual(extra.sampleCount, 2)
+        XCTAssertNil(extra.candidate)
+    }
+
+    func testAlignmentEvaluatorRejectsInvalidDocumentAndMismatchedReport() throws {
+        let fixtures = consensusFixtures(fields: Array(
+            repeating: [
+                observation(.frontTirePressure, value: 27)
+            ],
+            count: 3
+        ))
+        let candidates = Array(
+            repeating: candidate([(.frontTirePressure, 27)]),
+            count: fixtures.count
+        )
+
+        var invalidFixtures = fixtures
+        invalidFixtures[0].source.publisher = ""
+        invalidFixtures[0].source.usagePermission = .unknown
+        invalidFixtures[0].context = nil
+        let invalidDocument = CommunityTuneBenchmarkDocument(
+            schemaVersion: 1,
+            fixtures: invalidFixtures
+        )
+        XCTAssertThrowsError(
+            try CommunityTuneBenchmark.alignmentVerdicts(
+                document: invalidDocument,
+                fixtureReports: fixtureReports(
+                    fixtures: invalidFixtures,
+                    candidates: candidates
+                ),
+                mode: .localResearch
+            )
+        ) { error in
+            guard case let BenchmarkHarnessError.invalidDocument(issues) = error else {
+                return XCTFail("Expected invalidDocument, got \(error)")
+            }
+            XCTAssertTrue(issues.contains { $0.code == .invalidSource })
+            XCTAssertTrue(issues.contains { $0.code == .invalidPermission })
+            XCTAssertTrue(issues.contains { $0.code == .missingContext })
+        }
+
+        let document = CommunityTuneBenchmarkDocument(
+            schemaVersion: 1,
+            fixtures: fixtures
+        )
+        var mismatchedReports = fixtureReports(
+            fixtures: fixtures,
+            candidates: candidates
+        )
+        mismatchedReports[0].cohortFingerprint = "different-cohort"
+        XCTAssertThrowsError(
+            try CommunityTuneBenchmark.alignmentVerdicts(
+                document: document,
+                fixtureReports: mismatchedReports,
+                mode: .localResearch
+            )
+        ) { error in
+            guard case let BenchmarkHarnessError.invalidDocument(issues) = error else {
+                return XCTFail("Expected invalidDocument, got \(error)")
+            }
+            XCTAssertTrue(issues.contains {
+                $0.path.contains("fixtureReports")
+            })
+        }
+
+        XCTAssertThrowsError(
+            try CommunityTuneBenchmark.alignmentVerdicts(
+                document: document,
+                fixtureReports: Array(mismatchedReports.dropLast()),
+                mode: .localResearch
+            )
+        ) { error in
+            guard case let BenchmarkHarnessError.invalidDocument(issues) = error else {
+                return XCTFail("Expected invalidDocument, got \(error)")
+            }
+            XCTAssertTrue(issues.contains {
+                $0.path == "fixtureReports"
+            })
+        }
+    }
+
+    func testInvalidOrInconsistentCandidateReportsAreInsufficient() throws {
+        let fixtures = consensusFixtures(fields: Array(
+            repeating: [
+                observation(.frontTirePressure, value: 27)
+            ],
+            count: 3
+        ))
+        let valid = candidate([(.frontTirePressure, 27)])
+        let invalidCandidates: [[BenchmarkCandidate]] = [
+            Array(repeating: .init(
+                status: .unsupportedRuleset,
+                values: [],
+                diagnostics: ["unsupported"]
+            ), count: 3),
+            Array(repeating: .init(
+                status: .supported,
+                values: [.init(field: .frontTirePressure, value: 27)],
+                diagnostics: ["unexpected diagnostic"]
+            ), count: 3),
+            Array(repeating: .init(
+                status: .supported,
+                values: [
+                    .init(field: .frontTirePressure, value: 27),
+                    .init(field: .frontTirePressure, value: 27)
+                ],
+                diagnostics: []
+            ), count: 3),
+            [
+                valid,
+                valid,
+                candidate([(.frontTirePressure, 28)])
+            ],
+            Array(repeating: .init(
+                status: .supported,
+                values: [],
+                diagnostics: []
+            ), count: 3)
+        ]
+
+        for candidates in invalidCandidates {
+            let verdict = try alignmentVerdict(
+                fixtures: fixtures,
+                candidates: candidates
+            )
+            XCTAssertEqual(verdict.label, .insufficientEvidence)
+            XCTAssertTrue(verdict.fields.isEmpty)
+        }
+    }
+
+    func testExploratoryCohortAndPermissionScopesStayInsufficient() throws {
+        var exploratory = consensusFixtures(fields: Array(
+            repeating: [
+                observation(.frontTirePressure, value: 27)
+            ],
+            count: 3
+        ))
+        for index in exploratory.indices {
+            exploratory[index].source.coverage = .partialBuild
+        }
+        let exploratoryVerdict = try alignmentVerdict(
+            fixtures: exploratory,
+            candidate: candidate([(.frontTirePressure, 27)])
+        )
+        XCTAssertEqual(
+            exploratoryVerdict.label,
+            .insufficientEvidence
+        )
+
+        var local = consensusFixtures(fields: Array(
+            repeating: [
+                observation(.frontTirePressure, value: 27)
+            ],
+            count: 3
+        ))
+        for index in local.indices {
+            local[index].source.usagePermission = .localResearchOnly
+            local[index].source.permissionBasis = .publicAvailability
+            local[index].source.permissionEvidenceID = nil
+        }
+        let localVerdict = try alignmentVerdict(
+            fixtures: local,
+            candidate: candidate([(.frontTirePressure, 27)]),
+            mode: .localResearch
+        )
+        XCTAssertEqual(
+            localVerdict.label,
+            .alignedOnAllCandidateFields
+        )
+        XCTAssertEqual(
+            localVerdict.evidenceScope,
+            .localResearchEvidence
+        )
+        let document = CommunityTuneBenchmarkDocument(
+            schemaVersion: 1,
+            fixtures: local
+        )
+        XCTAssertTrue(
+            document.validationIssues(mode: .localResearch).isEmpty
+        )
+        XCTAssertTrue(
+            document.validationIssues(mode: .bundledFixture).contains {
+                $0.code == .invalidPermission
+            }
+        )
+        XCTAssertThrowsError(
+            try alignmentVerdict(
+                fixtures: local,
+                candidate: candidate([(.frontTirePressure, 27)]),
+                mode: .bundledFixture
+            )
+        ) { error in
+            guard case let BenchmarkHarnessError.invalidDocument(issues) = error else {
+                return XCTFail("Expected invalidDocument, got \(error)")
+            }
+            XCTAssertTrue(issues.contains { $0.code == .invalidPermission })
+        }
+    }
+
+    func testAlignmentVerdictAndEncodedJSONIgnoreFixtureOrder() throws {
+        let fixtures = consensusFixtures(fields: [
+            [observation(.frontTirePressure, value: 26.8, step: 0.5)],
+            [observation(.frontTirePressure, value: 27, step: 0.5)],
+            [observation(.frontTirePressure, value: 27.2, step: 0.5)]
+        ])
+        let candidate = candidate([(.frontTirePressure, 27)])
+        let forward = try alignmentVerdicts(
+            fixtures: fixtures,
+            candidates: Array(repeating: candidate, count: 3)
+        )
+        let reverse = try alignmentVerdicts(
+            fixtures: Array(fixtures.reversed()),
+            candidates: Array(repeating: candidate, count: 3)
+        )
+
+        XCTAssertEqual(forward, reverse)
+        XCTAssertEqual(
+            try CommunityTuneBenchmark.encoder().encode(forward),
+            try CommunityTuneBenchmark.encoder().encode(reverse)
+        )
     }
 
     func testRunOptInBundledLocalResearchDocument() async throws {
@@ -683,6 +1198,108 @@ final class CommunityTuneBenchmarkTests: XCTestCase {
             reason: nil,
             note: nil
         )
+    }
+
+    private func consensusFixtures(
+        fields: [[BenchmarkFieldObservation]]
+    ) -> [CommunityTuneFixture] {
+        fields.enumerated().map { offset, fields in
+            var fixture = makeFixture(
+                id: "fixture.consensus.\(offset + 1)",
+                sourceID: "source.consensus.\(offset + 1)",
+                publisher: "Publisher \(offset + 1)"
+            )
+            fixture.fields = fields.map { field in
+                var field = field
+                if field.status == .observed, field.observedStep == nil {
+                    field.observedStep = 0.5
+                }
+                return field
+            }
+            return fixture
+        }
+    }
+
+    private func candidate(
+        _ values: [(TuneFieldID, Double)]
+    ) -> BenchmarkCandidate {
+        .init(
+            status: .supported,
+            values: values.map {
+                .init(field: $0.0, value: $0.1)
+            },
+            diagnostics: []
+        )
+    }
+
+    private func alignmentVerdict(
+        fixtures: [CommunityTuneFixture],
+        candidate: BenchmarkCandidate,
+        mode: BenchmarkValidationMode = .localResearch
+    ) throws -> BenchmarkCommunityAlignmentVerdict {
+        try alignmentVerdict(
+            fixtures: fixtures,
+            candidates: Array(
+                repeating: candidate,
+                count: fixtures.count
+            ),
+            mode: mode
+        )
+    }
+
+    private func alignmentVerdict(
+        fixtures: [CommunityTuneFixture],
+        candidates: [BenchmarkCandidate],
+        mode: BenchmarkValidationMode = .localResearch
+    ) throws -> BenchmarkCommunityAlignmentVerdict {
+        let verdicts = try alignmentVerdicts(
+            fixtures: fixtures,
+            candidates: candidates,
+            mode: mode
+        )
+        return try XCTUnwrap(verdicts.first)
+    }
+
+    private func alignmentVerdicts(
+        fixtures: [CommunityTuneFixture],
+        candidates: [BenchmarkCandidate],
+        mode: BenchmarkValidationMode = .localResearch
+    ) throws -> [BenchmarkCommunityAlignmentVerdict] {
+        let document = CommunityTuneBenchmarkDocument(
+            schemaVersion: 1,
+            fixtures: fixtures
+        )
+        return try CommunityTuneBenchmark.alignmentVerdicts(
+            document: document,
+            fixtureReports: fixtureReports(
+                fixtures: fixtures,
+                candidates: candidates
+            ),
+            mode: mode
+        )
+    }
+
+    private func fixtureReports(
+        fixtures: [CommunityTuneFixture],
+        candidates: [BenchmarkCandidate]
+    ) -> [BenchmarkFixtureReport] {
+        zip(fixtures, candidates).map {
+            fixture,
+            candidate in
+            BenchmarkFixtureReport(
+                fixtureID: fixture.id,
+                sourceID: fixture.source.id,
+                source: fixture.source,
+                game: fixture.source.game,
+                cohortClassification:
+                    fixture.cohortIdentity.classification,
+                cohortFingerprint:
+                    fixture.cohortIdentity.fingerprint,
+                candidate: candidate,
+                fieldComparisons: [],
+                groupedMetrics: []
+            )
+        }
     }
 
     private func metric(_ id: String, in metrics: [BenchmarkGroupMetric]) -> BenchmarkGroupMetric? {
