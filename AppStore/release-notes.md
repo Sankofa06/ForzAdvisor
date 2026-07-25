@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 1.18.0 (Build 43) - 2026-07-25
+
+- Adds guided FH6 community reference comparisons for exact saved tunes using a fixed A-B-B-A drive protocol.
+- Surfaces the next eligible comparison through Saved Tune, Validation Review, Beta Missions, and contextual Copilot.
+- Keeps comparison records local by default, with optional explicit sharing that excludes source tune settings, parts, share codes, text, media, and metrics.
+- Treats every outcome as a comparative observation—not validation, ground truth, ranking, or tune promotion.
+
 ## Version 1.17.0 (Build 42) - 2026-07-25
 
 - Adds a privacy-safe foundation for comparing an exact generated FH6 tune against a YouTube or Reddit reference with a fixed A-B-B-A drive protocol.

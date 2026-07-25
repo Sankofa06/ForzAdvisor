@@ -35,6 +35,7 @@ final class SavedTune {
     @Attribute(.externalStorage) private var fh5ControlledExperimentRecordsData: Data? = nil
     @Attribute(.externalStorage) private var fh5CandidateOutcomeReviewEntriesData: Data? = nil
     @Attribute(.externalStorage) private var fh6ValidationReviewEntriesData: Data? = nil
+    @Attribute(.externalStorage) private var fh6CommunityReferenceTrialRecordsData: Data? = nil
 
     @MainActor
     init(
@@ -66,6 +67,7 @@ final class SavedTune {
         self.fh5ControlledExperimentRecordsData = nil
         self.fh5CandidateOutcomeReviewEntriesData = nil
         self.fh6ValidationReviewEntriesData = nil
+        self.fh6CommunityReferenceTrialRecordsData = nil
     }
 
     @MainActor
@@ -177,7 +179,10 @@ final class SavedTune {
                 validationRecordCount: validationRecords.count,
                 fh5ResearchObservationCount: 0,
                 fh5ResearchReviewCount: 0,
-                fh5ControlledExperimentCount: 0
+                fh5ControlledExperimentCount: 0,
+                fh6CommunityReferenceTrialCount: try fh6CommunityReferenceTrialRecords(
+                    matching: tune
+                ).count
             )
         }
         let researchRecords = try decodedFH5ResearchObservationRecords()
@@ -208,7 +213,10 @@ final class SavedTune {
             validationRecordCount: validationRecords.count,
             fh5ResearchObservationCount: researchRecords.count,
             fh5ResearchReviewCount: reviewEntries.count,
-            fh5ControlledExperimentCount: experimentRecords.count
+            fh5ControlledExperimentCount: experimentRecords.count,
+            fh6CommunityReferenceTrialCount: try fh6CommunityReferenceTrialRecords(
+                matching: tune
+            ).count
         )
     }
 
@@ -670,6 +678,72 @@ final class SavedTune {
     }
 
     @MainActor
+    func allFH6CommunityReferenceTrialRecords()
+        throws -> [FH6CommunityReferenceTrialRecord] {
+        try decodedFH6CommunityReferenceTrialRecords()
+            .sorted(by: Self.communityTrialPrecedes)
+    }
+
+    @MainActor
+    func fh6CommunityReferenceTrialRecords(
+        matching tune: TuneResult
+    ) throws -> [FH6CommunityReferenceTrialRecord] {
+        guard let currentTune = tuneResult else {
+            throw SavedTuneFH6CommunityReferenceTrialError.staleSavedRevision
+        }
+        let factory = FH6CommunityReferenceTrialFactory()
+        guard factory.eligibility(
+            for: tune,
+            savedTune: currentTune,
+            isStreaming: false
+        ).isSuccess else {
+            return []
+        }
+        return try decodedFH6CommunityReferenceTrialRecords()
+            .filter {
+                factory.matches($0, tune: currentTune)
+                    && factory.matches($0, tune: tune)
+            }
+            .sorted(by: Self.communityTrialPrecedes)
+    }
+
+    @MainActor
+    func appendFH6CommunityReferenceTrialRecord(
+        _ record: FH6CommunityReferenceTrialRecord
+    ) throws {
+        guard let currentTune = tuneResult,
+              FH6CommunityReferenceTrialFactory().matches(
+                record,
+                tune: currentTune
+              ) else {
+            throw SavedTuneFH6CommunityReferenceTrialError
+                .staleSavedRevision
+        }
+        var records = try decodedFH6CommunityReferenceTrialRecords()
+        guard !records.contains(where: { $0.recordID == record.recordID })
+        else { return }
+        records.append(record)
+        records.sort(by: Self.communityTrialPrecedes)
+        fh6CommunityReferenceTrialRecordsData =
+            try Self.encoder.encode(records)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteFH6CommunityReferenceTrialRecord(id: UUID) throws -> Bool {
+        var records = try decodedFH6CommunityReferenceTrialRecords()
+        let priorCount = records.count
+        records.removeAll { $0.recordID == id }
+        guard records.count != priorCount else { return false }
+        fh6CommunityReferenceTrialRecordsData = records.isEmpty
+            ? nil
+            : try Self.encoder.encode(records)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
     private func decodedValidationRecords() throws -> [FirstPartyValidationRecord] {
         guard let firstPartyValidationRecordsData else { return [] }
         do {
@@ -816,6 +890,26 @@ final class SavedTune {
         }
     }
 
+    @MainActor
+    private func decodedFH6CommunityReferenceTrialRecords() throws
+        -> [FH6CommunityReferenceTrialRecord] {
+        guard let fh6CommunityReferenceTrialRecordsData else { return [] }
+        do {
+            let records = try Self.decoder.decode(
+                [FH6CommunityReferenceTrialRecord].self,
+                from: fh6CommunityReferenceTrialRecordsData
+            )
+            guard records.allSatisfy(
+                FH6CommunityReferenceTrialFactory().isValid
+            ) else {
+                throw SavedTuneFH6CommunityReferenceTrialError.corruptStorage
+            }
+            return records
+        } catch {
+            throw SavedTuneFH6CommunityReferenceTrialError.corruptStorage
+        }
+    }
+
 #if DEBUG
     @MainActor
     func replaceTuneDataForTesting(_ data: Data) {
@@ -853,7 +947,24 @@ final class SavedTune {
     func replaceFH6ValidationReviewEntriesDataForTesting(_ data: Data?) {
         fh6ValidationReviewEntriesData = data
     }
+
+    @MainActor
+    func replaceFH6CommunityReferenceTrialRecordsDataForTesting(
+        _ data: Data?
+    ) {
+        fh6CommunityReferenceTrialRecordsData = data
+    }
 #endif
+
+    private static func communityTrialPrecedes(
+        _ lhs: FH6CommunityReferenceTrialRecord,
+        _ rhs: FH6CommunityReferenceTrialRecord
+    ) -> Bool {
+        if lhs.createdAt != rhs.createdAt {
+            return lhs.createdAt < rhs.createdAt
+        }
+        return lhs.recordID.uuidString < rhs.recordID.uuidString
+    }
 
     private static let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -873,12 +984,36 @@ struct SavedTuneBetaValidationEvidenceSnapshot: Equatable, Sendable {
     let fh5ResearchObservationCount: Int
     let fh5ResearchReviewCount: Int
     let fh5ControlledExperimentCount: Int
+    let fh6CommunityReferenceTrialCount: Int
 
     var totalRecordCount: Int {
         validationRecordCount
             + fh5ResearchObservationCount
             + fh5ResearchReviewCount
             + fh5ControlledExperimentCount
+            + fh6CommunityReferenceTrialCount
+    }
+}
+
+enum SavedTuneFH6CommunityReferenceTrialError:
+    LocalizedError, Equatable {
+    case corruptStorage
+    case staleSavedRevision
+
+    var errorDescription: String? {
+        switch self {
+        case .corruptStorage:
+            "Stored community reference comparisons are corrupt. No records were changed."
+        case .staleSavedRevision:
+            "This community comparison does not match the current saved FH6 tune."
+        }
+    }
+}
+
+private extension Result {
+    var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
     }
 }
 

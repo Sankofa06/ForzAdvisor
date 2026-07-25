@@ -4,6 +4,7 @@
 //
 
 import XCTest
+import SwiftData
 @testable import forzadvisor
 
 final class FH6CommunityReferenceTrialTests: XCTestCase {
@@ -11,6 +12,430 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
     private let recordID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
     private let submissionID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
     private let permissionID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
+
+    func testSourceIDIsDerivedAndMismatchedSuppliedIDIsRejected()
+        async throws {
+        let tune = try await eligibleTune()
+        let factory = FH6CommunityReferenceTrialFactory()
+        let url = "https://youtu.be/abc123"
+        let first = try XCTUnwrap(
+            factory.sourceID(for: url, kind: .youtube)
+        )
+        let canonical = try XCTUnwrap(
+            factory.sourceID(
+                for: "https://youtu.be/abc123/",
+                kind: .youtube
+            )
+        )
+        XCTAssertEqual(first, canonical)
+
+        var capture = try validCapture(for: tune)
+        capture.source.sourceID = "youtube:\(String(repeating: "0", count: 64))"
+        XCTAssertMakeThrows(
+            factory,
+            tune,
+            capture,
+            .invalidSourceMetadata
+        )
+    }
+
+    func testDraftReadinessMatchesSourceBoundsAndClearsHiddenSymptoms()
+        async throws {
+        let tune = try await eligibleTune()
+        var draft = validDraft()
+        XCTAssertTrue(draft.isReady)
+        XCTAssertNotNil(draft.capture(
+            candidate: try candidateAssociation(for: tune)
+        ))
+
+        draft.publisherDisplayName = String(repeating: "x", count: 121)
+        XCTAssertFalse(draft.isReady)
+        draft.publisherDisplayName = "bad\npublisher"
+        XCTAssertFalse(draft.isReady)
+        draft.publisherDisplayName = "Community Tuner"
+        XCTAssertTrue(draft.isReady)
+
+        draft.outcome = .referencePreferred
+        draft.candidateDeficiencySymptoms = [.pushesWide]
+        XCTAssertTrue(draft.isReady)
+        draft.outcome = .noClearDifference
+        XCTAssertTrue(draft.candidateDeficiencySymptoms.isEmpty)
+        XCTAssertTrue(draft.isReady)
+    }
+
+    @MainActor
+    func testSavedTunePersistenceDedupeDeleteCorruptionAndStaleRevision()
+        async throws {
+        let tune = try await eligibleTune()
+        let saved = try SavedTune(tune: tune)
+        let factory = FH6CommunityReferenceTrialFactory()
+        let first = try factory.make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validCapture(for: tune),
+            recordID: recordID,
+            createdAt: capturedAt
+        )
+        let second = try factory.make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validCapture(for: tune),
+            recordID: UUID(
+                uuidString:
+                    "44444444-4444-4444-4444-444444444444"
+            )!,
+            createdAt: capturedAt
+        )
+
+        try saved.appendFH6CommunityReferenceTrialRecord(first)
+        try saved.appendFH6CommunityReferenceTrialRecord(first)
+        try saved.appendFH6CommunityReferenceTrialRecord(second)
+        XCTAssertEqual(
+            try saved.allFH6CommunityReferenceTrialRecords()
+                .map(\.recordID),
+            [recordID, second.recordID]
+        )
+        XCTAssertEqual(
+            try saved.fh6CommunityReferenceTrialRecords(
+                matching: tune
+            ).count,
+            2
+        )
+
+        XCTAssertTrue(
+            try saved.deleteFH6CommunityReferenceTrialRecord(
+                id: first.recordID
+            )
+        )
+        XCTAssertEqual(
+            try saved.allFH6CommunityReferenceTrialRecords()
+                .map(\.recordID),
+            [second.recordID]
+        )
+
+        var retuned = tune
+        retuned.request.car.weightPounds += 1
+        try saved.update(with: retuned)
+        XCTAssertTrue(
+            try saved.fh6CommunityReferenceTrialRecords(
+                matching: retuned
+            ).isEmpty
+        )
+        XCTAssertEqual(
+            try saved.allFH6CommunityReferenceTrialRecords().count,
+            1
+        )
+        XCTAssertThrowsError(
+            try saved.appendFH6CommunityReferenceTrialRecord(first)
+        ) {
+            XCTAssertEqual(
+                $0 as? SavedTuneFH6CommunityReferenceTrialError,
+                .staleSavedRevision
+            )
+        }
+
+        var wrongGame = tune
+        wrongGame.request.car.game = .fh5
+        try saved.update(with: wrongGame)
+        XCTAssertThrowsError(
+            try saved.appendFH6CommunityReferenceTrialRecord(first)
+        )
+
+        var legacy = tune
+        legacy.projectionReport = nil
+        try saved.update(with: legacy)
+        XCTAssertThrowsError(
+            try saved.appendFH6CommunityReferenceTrialRecord(first)
+        )
+
+        try saved.update(with: tune)
+        saved.replaceFH6CommunityReferenceTrialRecordsDataForTesting(
+            Data("corrupt".utf8)
+        )
+        XCTAssertThrowsError(
+            try saved.allFH6CommunityReferenceTrialRecords()
+        ) {
+            XCTAssertEqual(
+                $0 as? SavedTuneFH6CommunityReferenceTrialError,
+                .corruptStorage
+            )
+        }
+        XCTAssertThrowsError(
+            try saved.appendFH6CommunityReferenceTrialRecord(first)
+        ) {
+            XCTAssertEqual(
+                $0 as? SavedTuneFH6CommunityReferenceTrialError,
+                .corruptStorage
+            )
+        }
+        XCTAssertThrowsError(
+            try saved.deleteFH6CommunityReferenceTrialRecord(
+                id: first.recordID
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? SavedTuneFH6CommunityReferenceTrialError,
+                .corruptStorage
+            )
+        }
+        XCTAssertThrowsError(
+            try saved.allFH6CommunityReferenceTrialRecords()
+        )
+    }
+
+    @MainActor
+    func testCommunityTrialsReopenWithoutMutatingTuneOrOtherEvidence()
+        async throws {
+        let tune = try await eligibleTune()
+        let validationRecord = try FirstPartyValidationRecordFactory()
+            .make(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                capture: .init(
+                    courseType: .testTrack,
+                    surface: .dry,
+                    input: .controller,
+                    runCount: 1,
+                    verdict: .keep,
+                    feedback: [],
+                    exactSetupConfirmed: true,
+                    allExportedSettingsApplied: true,
+                    firstPartyAuthorshipConfirmed: true,
+                    deidentifiedReusePermitted: true
+                )
+            )
+        let directory = FileManager.default.temporaryDirectory
+            .appending(
+                path: "forzadvisor-community-trial-\(UUID().uuidString)",
+                directoryHint: .isDirectory
+            )
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let configuration = ModelConfiguration(
+            url: directory.appending(path: "store.sqlite")
+        )
+        let record = try FH6CommunityReferenceTrialFactory().make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validCapture(for: tune)
+        )
+
+        do {
+            let container = try ModelContainer(
+                for: SavedTune.self,
+                configurations: configuration
+            )
+            let context = ModelContext(container)
+            let saved = try SavedTune(
+                tune: tune,
+                playerNotes: "keep notes",
+                thumbnailData: Data("keep thumbnail".utf8)
+            )
+            context.insert(saved)
+            try saved.appendValidationRecord(validationRecord)
+            try saved.appendFH6CommunityReferenceTrialRecord(record)
+            try context.save()
+        }
+
+        do {
+            let container = try ModelContainer(
+                for: SavedTune.self,
+                configurations: configuration
+            )
+            let context = ModelContext(container)
+            let reopened = try XCTUnwrap(
+                context.fetch(FetchDescriptor<SavedTune>()).first
+            )
+            XCTAssertEqual(reopened.tuneResult, tune)
+            XCTAssertEqual(reopened.playerNotes, "keep notes")
+            XCTAssertEqual(
+                reopened.thumbnailData,
+                Data("keep thumbnail".utf8)
+            )
+            XCTAssertEqual(
+                reopened.firstPartyValidationRecords
+                    .map(\.contentFingerprint),
+                [validationRecord.contentFingerprint]
+            )
+            XCTAssertEqual(
+                try reopened
+                    .allFH6CommunityReferenceTrialRecords()
+                    .map(\.contentFingerprint),
+                [record.contentFingerprint]
+            )
+            XCTAssertTrue(
+                try reopened
+                    .deleteFH6CommunityReferenceTrialRecord(
+                        id: record.recordID
+                    )
+            )
+            try context.save()
+        }
+
+        do {
+            let container = try ModelContainer(
+                for: SavedTune.self,
+                configurations: configuration
+            )
+            let context = ModelContext(container)
+            let reopened = try XCTUnwrap(
+                context.fetch(FetchDescriptor<SavedTune>()).first
+            )
+            XCTAssertTrue(
+                try reopened
+                    .allFH6CommunityReferenceTrialRecords().isEmpty
+            )
+            XCTAssertEqual(
+                reopened.firstPartyValidationRecords
+                    .map(\.contentFingerprint),
+                [validationRecord.contentFingerprint]
+            )
+            XCTAssertEqual(reopened.tuneResult, tune)
+        }
+    }
+
+    @MainActor
+    func testMissionUsesCurrentTrialCountAndCorruptionFailsClosed()
+        async throws {
+        let tune = try await eligibleTune()
+        let saved = try SavedTune(tune: tune)
+        let before = BetaValidationMissionPlanner().makeBoard(
+            savedTunes: [saved]
+        )
+        XCTAssertFalse(
+            before.missions.contains {
+                $0.kind == .runFH6CommunityReferenceTrial
+                    && $0.savedTuneID == saved.id
+            }
+        )
+        XCTAssertTrue(
+            before.missions.contains {
+                $0.kind == .recordTestDrive
+                    && $0.savedTuneID == saved.id
+            }
+        )
+
+        let validationRecord = try FirstPartyValidationRecordFactory().make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validValidationCapture()
+        )
+        try saved.appendValidationRecord(validationRecord)
+        let afterTestDrive = BetaValidationMissionPlanner().makeBoard(
+            savedTunes: [saved]
+        )
+        XCTAssertTrue(
+            afterTestDrive.missions.contains {
+                $0.kind == .runFH6CommunityReferenceTrial
+                    && $0.savedTuneID == saved.id
+            }
+        )
+        XCTAssertFalse(
+            afterTestDrive.missions.contains {
+                $0.kind == .recordTestDrive
+            }
+        )
+
+        let record = try FH6CommunityReferenceTrialFactory().make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validCapture(for: tune)
+        )
+        try saved.appendFH6CommunityReferenceTrialRecord(record)
+        let after = BetaValidationMissionPlanner().makeBoard(
+            savedTunes: [saved]
+        )
+        XCTAssertFalse(
+            after.missions.contains {
+                $0.kind == .runFH6CommunityReferenceTrial
+            }
+        )
+        XCTAssertEqual(
+            after.progress.evidenceRecordCount,
+            before.progress.evidenceRecordCount + 2
+        )
+
+        saved.replaceFH6CommunityReferenceTrialRecordsDataForTesting(
+            Data("corrupt".utf8)
+        )
+        let corrupt = BetaValidationMissionPlanner().makeBoard(
+            savedTunes: [saved]
+        )
+        XCTAssertEqual(corrupt.progress.savedSetupCount, 0)
+        XCTAssertEqual(corrupt.progress.evidenceRecordCount, 0)
+        XCTAssertEqual(
+            corrupt.missions.map(\.kind),
+            [.startFH5Plan, .startFH6Tune]
+        )
+    }
+
+    @MainActor
+    func testSubmissionRejectsChangedPersistedCandidateAndWritesUnchangedCandidate()
+        async throws {
+        let displayedTune = try await eligibleTune()
+        let saved = try SavedTune(tune: displayedTune)
+        var changedCandidate = displayedTune
+        let lineIndex = try XCTUnwrap(
+            changedCandidate.sections[0].lines.firstIndex {
+                $0.fieldID == .frontTirePressure
+            }
+        )
+        let originalValue = try XCTUnwrap(
+            Double(changedCandidate.sections[0].lines[lineIndex].value)
+        )
+        changedCandidate.sections[0].lines[lineIndex].value =
+            String(format: "%.1f", originalValue + 0.5)
+        changedCandidate = TuneOutputProjector().project(changedCandidate)
+        XCTAssertEqual(
+            displayedTune.request.car.catalogReference,
+            changedCandidate.request.car.catalogReference
+        )
+        XCTAssertEqual(
+            displayedTune.request.car.performanceClass,
+            changedCandidate.request.car.performanceClass
+        )
+        XCTAssertEqual(
+            displayedTune.request.car.performanceIndex,
+            changedCandidate.request.car.performanceIndex
+        )
+        try saved.update(with: changedCandidate)
+
+        XCTAssertThrowsError(
+            try FH6CommunityReferenceTrialFactory().make(
+                tune: displayedTune,
+                savedTune: saved.tuneResult,
+                isStreaming: false,
+                capture: validCapture(for: displayedTune)
+            )
+        )
+        XCTAssertTrue(
+            try saved.allFH6CommunityReferenceTrialRecords().isEmpty
+        )
+
+        let unchangedRecord =
+            try FH6CommunityReferenceTrialFactory().make(
+                tune: changedCandidate,
+                savedTune: saved.tuneResult,
+                isStreaming: false,
+                capture: validCapture(for: changedCandidate)
+            )
+        try saved.appendFH6CommunityReferenceTrialRecord(
+            unchangedRecord
+        )
+        XCTAssertEqual(
+            try saved.allFH6CommunityReferenceTrialRecords().count,
+            1
+        )
+    }
 
     func testHappyPathUsesExactCandidateWithoutMutatingInput() async throws {
         let tune = try await eligibleTune()
@@ -325,6 +750,12 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         var capture = try validCapture(for: tune)
         capture.source.contentURL =
             "https://WWW.YouTube.com/watch?utm_source=x&v=abc&feature=share"
+        capture.source.sourceID = try XCTUnwrap(
+            factory.sourceID(
+                for: capture.source.contentURL,
+                kind: .youtube
+            )
+        )
         let normalized = try factory.make(
             tune: tune, savedTune: tune, isStreaming: false, capture: capture
         )
@@ -380,6 +811,12 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         var forward = try validCapture(for: tune)
         forward.source.contentURL =
             "https://youtube.com/watch?utm_source=x&v=abc&feature=share"
+        forward.source.sourceID = try XCTUnwrap(
+            factory.sourceID(
+                for: forward.source.contentURL,
+                kind: .youtube
+            )
+        )
         var reverse = forward
         reverse.source.contentURL =
             "https://youtube.com/watch?feature=share&v=abc&utm_source=x"
@@ -556,7 +993,14 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         XCTAssertNotEqual(base.contentFingerprint, publisher.contentFingerprint)
 
         var contentCapture = try validCapture(for: tune)
-        contentCapture.source.sourceID = "youtube:xyz"
+        contentCapture.source.contentURL =
+            "https://www.youtube.com/watch?v=xyz"
+        contentCapture.source.sourceID = try XCTUnwrap(
+            factory.sourceID(
+                for: contentCapture.source.contentURL,
+                kind: .youtube
+            )
+        )
         let content = try factory.make(
             tune: tune, savedTune: tune, isStreaming: false, capture: contentCapture
         )
@@ -638,12 +1082,19 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         reuse: Bool = false
     ) throws -> FH6CommunityReferenceTrialCapture {
         let catalogID = try XCTUnwrap(tune.request.car.catalogReference?.entryID)
+        let contentURL = "https://www.youtube.com/watch?v=abc123"
+        let sourceID = try XCTUnwrap(
+            FH6CommunityReferenceTrialFactory().sourceID(
+                for: contentURL,
+                kind: .youtube
+            )
+        )
         return .init(
             source: .init(
                 kind: .youtube,
-                contentURL: "https://www.youtube.com/watch?v=abc123",
+                contentURL: contentURL,
                 publisherDisplayName: "Community Tuner",
-                sourceID: "youtube:abc123",
+                sourceID: sourceID,
                 retrievedAt: capturedAt,
                 derivativeOfSourceID: "youtube:parent"
             ),
@@ -671,6 +1122,59 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             firstPartyAuthorshipConfirmed: true,
             localStoragePermitted: true,
             deidentifiedOutcomeReusePermitted: reuse
+        )
+    }
+
+    private func validDraft() -> FH6CommunityReferenceTrialDraft {
+        var draft = FH6CommunityReferenceTrialDraft()
+        draft.contentURL =
+            "https://www.youtube.com/watch?v=abc123"
+        draft.publisherDisplayName = "Community Tuner"
+        draft.runs = FH6CommunityReferenceTrialRecord.requiredRoles
+            .map {
+                .init(
+                    role: $0,
+                    completed: true,
+                    correctTuneConfirmed: true
+                )
+            }
+        draft.outcome = .noClearDifference
+        draft.sameRouteAndConditionsConfirmed = true
+        draft.sameAssistsAndInputConfirmed = true
+        draft.candidateSettingsAppliedConfirmed = true
+        draft.communityIdentityConfirmed = true
+        draft.finalCandidateRestoredConfirmed = true
+        draft.firstPartyAuthorshipConfirmed = true
+        draft.localStoragePermitted = true
+        return draft
+    }
+
+    private func validValidationCapture()
+        -> FirstPartyValidationCapture {
+        FirstPartyValidationCapture(
+            courseType: .testTrack,
+            surface: .dry,
+            input: .controller,
+            runCount: 3,
+            verdict: .adjust,
+            feedback: [.pushesWide],
+            exactSetupConfirmed: true,
+            allExportedSettingsApplied: true,
+            firstPartyAuthorshipConfirmed: true,
+            deidentifiedReusePermitted: true
+        )
+    }
+
+    private func candidateAssociation(
+        for tune: TuneResult
+    ) throws -> FH6CommunityReferenceCandidateAssociation {
+        .init(
+            catalogID: try XCTUnwrap(
+                tune.request.car.catalogReference?.entryID
+            ),
+            performanceClass: tune.request.car.performanceClass,
+            performanceIndex: tune.request.car.performanceIndex,
+            confirmed: true
         )
     }
 

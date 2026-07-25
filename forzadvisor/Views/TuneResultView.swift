@@ -54,6 +54,12 @@ struct TuneResultView: View {
     let onImportFH6ValidationReviewEntry:
         ((FH6ValidationReviewEntry) -> String?)?
     let onDeleteFH6ValidationReviewEntry: (FH6ValidationReviewEntry) -> Void
+    let fh6CommunityReferenceTrialRecords:
+        [FH6CommunityReferenceTrialRecord]
+    let fh6CommunityReferenceTrialLoadError: String?
+    let onRunFH6CommunityReferenceTrial: (() -> Void)?
+    let onDeleteFH6CommunityReferenceTrialRecord:
+        (FH6CommunityReferenceTrialRecord) -> Void
     let onFeedback: (TuneFeedback) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
@@ -66,6 +72,8 @@ struct TuneResultView: View {
     @State private var showsFH5ResearchReview = false
     @State private var showsFH5CandidateOutcomeReview = false
     @State private var showsFH6ValidationReview = false
+    @State private var communityTrialPendingDeletion:
+        FH6CommunityReferenceTrialRecord?
 
     private var isAdjusting: Bool {
         activeFeedback != nil
@@ -80,7 +88,8 @@ struct TuneResultView: View {
     }
 
     var body: some View {
-        List {
+        AnyView(List {
+            Group {
             Section {
                 HStack(spacing: 12) {
                     if let thumbnailData,
@@ -128,123 +137,7 @@ struct TuneResultView: View {
             }
 
             if let report = tune.projectionReport {
-                if tune.purpose == .fh5BuildPlan {
-                    Section("FH5 Plan-Only Result") {
-                        Label(
-                            "Numeric FH5 tuning settings are unavailable until a separate validated FH5 ruleset exists. This local result is a build plan only.",
-                            systemImage: "exclamationmark.shield"
-                        )
-                        .font(.subheadline)
-                        .foregroundStyle(ForzAdvisorTheme.warning)
-                        .accessibilityIdentifier("fh5PlanOnlyCaution")
-                    }
-                    .forzAdvisorRowBackground()
-                }
-
-                Section("Tune Coverage") {
-                    TuneCoverageView(
-                        report: report,
-                        showsAlternativePathSummary: !upgradePaths.isEmpty,
-                        isPlanOnly: tune.purpose == .fh5BuildPlan
-                    )
-                }
-                .forzAdvisorRowBackground()
-
-                FH5ResearchOutcomeSection(
-                    isStreaming: isStreaming,
-                    readiness: fh5NumericReadiness,
-                    onOpenResearch: onOpenFH5Research,
-                    researchRecord: latestFH5ResearchRecord,
-                    canOpenReview: onImportFH5ResearchReviewEntry != nil,
-                    onOpenReview: {
-                        showsFH5ResearchReview = true
-                    },
-                    experimentRecord: latestFH5ControlledExperimentRecord,
-                    candidateTrialAvailable: fh5CandidateTrialAvailable,
-                    candidateOutcomeReport: fh5CandidateOutcomeReport,
-                    candidateTrialArtifact:
-                        fh5CandidateTrialArtifact,
-                    candidateOutcomeCollectionReport:
-                        fh5CandidateOutcomeCollectionReport,
-                    canOpenCandidateOutcomeReview:
-                        onImportFH5CandidateOutcomeReviewEntry != nil,
-                    onOpenCandidateOutcomeReview: {
-                        showsFH5CandidateOutcomeReview = true
-                    },
-                    onOpenExperiment: onOpenFH5ControlledExperiment,
-                    onRequestDeleteResearch: {
-                        researchRecordPendingDeletion = $0
-                    },
-                    onRequestDeleteExperiment: {
-                        experimentRecordPendingDeletion = $0
-                    }
-                )
-
-                if !isStreaming, let onVerifyTuneMenu {
-                    Section("Tune Menu Lab") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Label("Verify the exact stock tune menu", systemImage: "slider.horizontal.3")
-                                .font(.subheadline.weight(.semibold))
-                            Text("Record every FH6 control as Adjustable, Shown locked, or Not shown. Exact ranges and steps let ForzAdvisor regenerate only values that fit this untouched stock build.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Button("Verify Exact Tune Menu", action: onVerifyTuneMenu)
-                                .buttonStyle(.borderedProminent)
-                                .accessibilityIdentifier("verifyTuneMenuButton")
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .forzAdvisorRowBackground()
-                }
-
-                if !isStreaming, let onVerifyTirePressures {
-                    Section("Tune Lab") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Label("Unlock verified tire settings", systemImage: "gauge.with.dots.needle.33percent")
-                                .font(.subheadline.weight(.semibold))
-                            Text("Read the forward gear count from the FH6 transmission/gearing screen and the front and rear ranges from the tire-pressure screen. ForzAdvisor keeps the observation on this device and regenerates this tune against the exact controls.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Button("Verify Tire Pressures", action: onVerifyTirePressures)
-                                .buttonStyle(.borderedProminent)
-                                .accessibilityIdentifier("verifyTirePressuresButton")
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .forzAdvisorRowBackground()
-                }
-
-                if !isStreaming, let onVerifyUpgradeParts {
-                    Section("Upgrade Lab") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Label("Verify tuning-control upgrades", systemImage: "wrench.and.screwdriver")
-                                .font(.subheadline.weight(.semibold))
-                            Text("Check the untouched stock car's upgrade shop in \(tune.request.car.game.shortTitle). ForzAdvisor will build exact alternative buy lists from only the parts you mark Offered.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Button("Verify Upgrade Parts", action: onVerifyUpgradeParts)
-                                .buttonStyle(.borderedProminent)
-                                .accessibilityIdentifier("verifyUpgradePartsButton")
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .forzAdvisorRowBackground()
-                }
-
-                if !isStreaming, !upgradePaths.isEmpty {
-                    Section("Tuning-Control Upgrade Paths") {
-                        TuneControlUpgradePathsView(paths: upgradePaths)
-                    }
-                    .forzAdvisorRowBackground()
-                }
-
-                TuneExportSection(
-                    tune: tune,
-                    shareCard: verifiedBuildShareCard,
-                    isStreaming: isStreaming,
-                    copiedExport: $copiedExport,
-                    copiedLineID: $copiedLineID
-                )
+                projectedResultSections(report: report)
             } else {
                 Section("Unverified Legacy Tune") {
                     Label(
@@ -256,7 +149,9 @@ struct TuneResultView: View {
                 }
                 .forzAdvisorRowBackground()
             }
+            }
 
+            Group {
             if isStreaming {
                 Section {
                     HStack(spacing: 10) {
@@ -271,15 +166,7 @@ struct TuneResultView: View {
                 .forzAdvisorRowBackground()
             }
 
-            FH6AccuracyEvidenceSection(
-                isStreaming: isStreaming,
-                onRecordTestDrive: onRecordTestDrive,
-                latestValidationRecord: latestValidationRecord,
-                canOpenValidationReview:
-                    onImportFH6ValidationReviewEntry != nil,
-                recordPendingDeletion: $recordPendingDeletion,
-                showsValidationReview: $showsFH6ValidationReview
-            )
+            fh6EvidenceSections
 
             GuidedRefinementSection(
                 isVisible:
@@ -304,7 +191,8 @@ struct TuneResultView: View {
             TuneNotesSection(tune: tune)
 
             GarageNotesSection(playerNotes: playerNotes)
-        }
+            }
+        })
         .navigationTitle(tune.purpose == .fh5BuildPlan ? "Build Plan" : "Tune")
         .forzAdvisorScreenChrome()
         .toolbar {
@@ -339,6 +227,28 @@ struct TuneResultView: View {
             }
         } message: { _ in
             Text("This removes only the local copy. It cannot recall JSON files you already shared.")
+        }
+        .alert(
+            "Delete local community comparison?",
+            isPresented: Binding(
+                get: { communityTrialPendingDeletion != nil },
+                set: {
+                    if !$0 { communityTrialPendingDeletion = nil }
+                }
+            ),
+            presenting: communityTrialPendingDeletion
+        ) { record in
+            Button("Delete Local Comparison", role: .destructive) {
+                onDeleteFH6CommunityReferenceTrialRecord(record)
+                communityTrialPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                communityTrialPendingDeletion = nil
+            }
+        } message: { _ in
+            Text(
+                "This removes only the local record. Exports you explicitly shared cannot be recalled."
+            )
         }
         .alert(
             "Delete local FH5 observation?",
@@ -393,7 +303,11 @@ struct TuneResultView: View {
                     entries: fh6ValidationReviewEntries,
                     storageError: fh6ValidationReviewLoadError,
                     onImport: onImportFH6ValidationReviewEntry,
-                    onDelete: onDeleteFH6ValidationReviewEntry
+                    onDelete: onDeleteFH6ValidationReviewEntry,
+                    communityReferenceRecords:
+                        fh6CommunityReferenceTrialRecords,
+                    onRunCommunityReferenceTrial:
+                        onRunFH6CommunityReferenceTrial
                 )
             }
         }
@@ -415,8 +329,154 @@ struct TuneResultView: View {
         }
     }
 
+    @ViewBuilder
+    private func projectedResultSections(
+        report: TuneProjectionReport
+    ) -> some View {
+        if tune.purpose == .fh5BuildPlan {
+            Section("FH5 Plan-Only Result") {
+                Label(
+                    "Numeric FH5 tuning settings are unavailable until a separate validated FH5 ruleset exists. This local result is a build plan only.",
+                    systemImage: "exclamationmark.shield"
+                )
+                .font(.subheadline)
+                .foregroundStyle(ForzAdvisorTheme.warning)
+                .accessibilityIdentifier("fh5PlanOnlyCaution")
+            }
+            .forzAdvisorRowBackground()
+        }
+
+        Section("Tune Coverage") {
+            TuneCoverageView(
+                report: report,
+                showsAlternativePathSummary: !upgradePaths.isEmpty,
+                isPlanOnly: tune.purpose == .fh5BuildPlan
+            )
+        }
+        .forzAdvisorRowBackground()
+
+        FH5ResearchOutcomeSection(
+            isStreaming: isStreaming,
+            readiness: fh5NumericReadiness,
+            onOpenResearch: onOpenFH5Research,
+            researchRecord: latestFH5ResearchRecord,
+            canOpenReview: onImportFH5ResearchReviewEntry != nil,
+            onOpenReview: { showsFH5ResearchReview = true },
+            experimentRecord: latestFH5ControlledExperimentRecord,
+            candidateTrialAvailable: fh5CandidateTrialAvailable,
+            candidateOutcomeReport: fh5CandidateOutcomeReport,
+            candidateTrialArtifact: fh5CandidateTrialArtifact,
+            candidateOutcomeCollectionReport:
+                fh5CandidateOutcomeCollectionReport,
+            canOpenCandidateOutcomeReview:
+                onImportFH5CandidateOutcomeReviewEntry != nil,
+            onOpenCandidateOutcomeReview: {
+                showsFH5CandidateOutcomeReview = true
+            },
+            onOpenExperiment: onOpenFH5ControlledExperiment,
+            onRequestDeleteResearch: {
+                researchRecordPendingDeletion = $0
+            },
+            onRequestDeleteExperiment: {
+                experimentRecordPendingDeletion = $0
+            }
+        )
+
+        if !isStreaming, let onVerifyTuneMenu {
+            labSection(
+                title: "Tune Menu Lab",
+                label: "Verify the exact stock tune menu",
+                systemImage: "slider.horizontal.3",
+                detail: "Record every FH6 control as Adjustable, Shown locked, or Not shown. Exact ranges and steps let ForzAdvisor regenerate only values that fit this untouched stock build.",
+                buttonTitle: "Verify Exact Tune Menu",
+                buttonIdentifier: "verifyTuneMenuButton",
+                action: onVerifyTuneMenu
+            )
+        }
+        if !isStreaming, let onVerifyTirePressures {
+            labSection(
+                title: "Tune Lab",
+                label: "Unlock verified tire settings",
+                systemImage: "gauge.with.dots.needle.33percent",
+                detail: "Read the forward gear count from the FH6 transmission/gearing screen and the front and rear ranges from the tire-pressure screen. ForzAdvisor keeps the observation on this device and regenerates this tune against the exact controls.",
+                buttonTitle: "Verify Tire Pressures",
+                buttonIdentifier: "verifyTirePressuresButton",
+                action: onVerifyTirePressures
+            )
+        }
+        if !isStreaming, let onVerifyUpgradeParts {
+            labSection(
+                title: "Upgrade Lab",
+                label: "Verify tuning-control upgrades",
+                systemImage: "wrench.and.screwdriver",
+                detail: "Check the untouched stock car's upgrade shop in \(tune.request.car.game.shortTitle). ForzAdvisor will build exact alternative buy lists from only the parts you mark Offered.",
+                buttonTitle: "Verify Upgrade Parts",
+                buttonIdentifier: "verifyUpgradePartsButton",
+                action: onVerifyUpgradeParts
+            )
+        }
+        if !isStreaming, !upgradePaths.isEmpty {
+            Section("Tuning-Control Upgrade Paths") {
+                TuneControlUpgradePathsView(paths: upgradePaths)
+            }
+            .forzAdvisorRowBackground()
+        }
+        TuneExportSection(
+            tune: tune,
+            shareCard: verifiedBuildShareCard,
+            isStreaming: isStreaming,
+            copiedExport: $copiedExport,
+            copiedLineID: $copiedLineID
+        )
+    }
+
+    private func labSection(
+        title: String,
+        label: String,
+        systemImage: String,
+        detail: String,
+        buttonTitle: String,
+        buttonIdentifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Section(title) {
+            VStack(alignment: .leading, spacing: 10) {
+                Label(label, systemImage: systemImage)
+                    .font(.subheadline.weight(.semibold))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button(buttonTitle, action: action)
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier(buttonIdentifier)
+            }
+            .padding(.vertical, 4)
+        }
+        .forzAdvisorRowBackground()
+    }
+
     private var displaySections: [TuneSection] {
         tune.sections
+    }
+
+    @ViewBuilder
+    private var fh6EvidenceSections: some View {
+        FH6AccuracyEvidenceSection(
+            isStreaming: isStreaming,
+            onRecordTestDrive: onRecordTestDrive,
+            latestValidationRecord: latestValidationRecord,
+            canOpenValidationReview:
+                onImportFH6ValidationReviewEntry != nil,
+            recordPendingDeletion: $recordPendingDeletion,
+            showsValidationReview: $showsFH6ValidationReview
+        )
+
+        FH6CommunityReferenceEvidenceSection(
+            records: fh6CommunityReferenceTrialRecords,
+            loadError: fh6CommunityReferenceTrialLoadError,
+            onRun: onRunFH6CommunityReferenceTrial,
+            pendingDeletion: $communityTrialPendingDeletion
+        )
     }
 
     private var eligibleFeedback: [TuneFeedback] {
@@ -621,6 +681,105 @@ private struct FH6AccuracyEvidenceSection: View {
         let session = record.session
         let runSuffix = session.runCount == 1 ? "" : "s"
         return "\(session.courseType.title) · \(session.runCount) run\(runSuffix) · \(record.outcome.verdict.rawValue.capitalized)"
+    }
+}
+
+private struct FH6CommunityReferenceEvidenceSection: View {
+    let records: [FH6CommunityReferenceTrialRecord]
+    let loadError: String?
+    let onRun: (() -> Void)?
+    @Binding var pendingDeletion: FH6CommunityReferenceTrialRecord?
+
+    private var latest: FH6CommunityReferenceTrialRecord? {
+        records.last
+    }
+
+    var body: some View {
+        if onRun != nil || latest != nil || loadError != nil {
+            Section("Community Reference Comparisons") {
+                Text(
+                    "These are local comparative observations from a fixed A-B-B-A test. They are not validation, ground truth, a ranking, or a promotion."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                if let loadError {
+                    Label(
+                        loadError,
+                        systemImage: "externaldrive.badge.exclamationmark"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(ForzAdvisorTheme.warning)
+                }
+
+                if let onRun {
+                    Button(
+                        "Run Community Reference Comparison",
+                        action: onRun
+                    )
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier(
+                        "runCommunityReferenceComparisonButton"
+                    )
+                }
+
+                if let latest {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(
+                            "Latest: \(latest.outcome.title)",
+                            systemImage: "arrow.triangle.2.circlepath"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        Text(
+                            "\(latest.source.kind.title) · \(latest.source.publisherDisplayName) · \(latest.createdAt.formatted(date: .abbreviated, time: .shortened))"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        Text(
+                            latest.canExport
+                                ? "Reusable only through explicit export"
+                                : "Local only"
+                        )
+                        .font(.caption.weight(.semibold))
+
+                        if latest.canExport,
+                           let json = latest.deterministicJSONString {
+                            ShareLink(
+                                item: json,
+                                subject: Text(
+                                    "ForzAdvisor community comparison"
+                                )
+                            ) {
+                                Label(
+                                    "Share comparison JSON",
+                                    systemImage: "square.and.arrow.up"
+                                )
+                                .frame(
+                                    maxWidth: .infinity,
+                                    minHeight: 44,
+                                    alignment: .leading
+                                )
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityIdentifier(
+                                "shareCommunityComparisonButton"
+                            )
+                        }
+
+                        Button(
+                            "Delete latest local comparison",
+                            role: .destructive
+                        ) {
+                            pendingDeletion = latest
+                        }
+                        .accessibilityIdentifier(
+                            "deleteCommunityComparisonButton"
+                        )
+                    }
+                }
+            }
+            .forzAdvisorRowBackground()
+        }
     }
 }
 

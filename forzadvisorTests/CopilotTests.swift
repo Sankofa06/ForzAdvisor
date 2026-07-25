@@ -52,7 +52,7 @@ final class CopilotTests: XCTestCase {
 
     func testEveryWorkflowPhaseAnswersEverySupportedIntent() {
         let engine = CopilotEngine()
-        XCTAssertEqual(CopilotPhase.allCases.count, 17)
+        XCTAssertEqual(CopilotPhase.allCases.count, 18)
 
         for phase in CopilotPhase.allCases {
             let context = syntheticContext(for: phase)
@@ -107,6 +107,7 @@ final class CopilotTests: XCTestCase {
             (.tirePressureCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""), .tirePressureCapture),
             (.upgradePartCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""), .upgradePartCapture),
             (.recordTestDrive(tune, savedTuneID: UUID(), thumbnailData: nil, playerNotes: ""), .recordTestDrive),
+            (.fh6CommunityReferenceTrialCapture(tune, savedTuneID: UUID(), thumbnailData: nil, playerNotes: ""), .fh6CommunityReferenceTrialCapture),
             (.editSavedTune(tune, savedTuneID: UUID(), playerNotes: "", thumbnailData: nil), .editSavedTune)
         ]
         let factory = CopilotContextFactory()
@@ -130,6 +131,7 @@ final class CopilotTests: XCTestCase {
             .tirePressureCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""),
             .upgradePartCapture(tune, savedTuneID: nil, thumbnailData: nil, playerNotes: ""),
             .recordTestDrive(tune, savedTuneID: UUID(), thumbnailData: nil, playerNotes: "secret-note"),
+            .fh6CommunityReferenceTrialCapture(tune, savedTuneID: UUID(), thumbnailData: nil, playerNotes: "secret-note"),
             .editSavedTune(tune, savedTuneID: UUID(), playerNotes: "secret-note", thumbnailData: nil)
         ]
 
@@ -304,6 +306,18 @@ final class CopilotTests: XCTestCase {
             isSaved: true,
             isStreaming: false
         )
+        let community = CopilotProjectionFacts(
+            readyCount: 2,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: false,
+            tireLabEligible: false,
+            upgradeLabEligible: false,
+            fh6CommunityReferenceTrialEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: false
+        )
 
         XCTAssertEqual(
             engine.defaultResponse(in: resultContext(tuneMenu)).action,
@@ -316,6 +330,14 @@ final class CopilotTests: XCTestCase {
         XCTAssertEqual(
             engine.defaultResponse(in: resultContext(upgrade)).action,
             .openUpgradeLab
+        )
+        XCTAssertEqual(
+            engine.defaultResponse(in: resultContext(community)).action,
+            .openFH6CommunityReferenceTrial
+        )
+        XCTAssertTrue(
+            engine.defaultResponse(in: resultContext(community))
+                .message.contains("not validation")
         )
     }
 
@@ -411,7 +433,8 @@ final class CopilotTests: XCTestCase {
             Set([
                 .openFH6TuneMenuLab,
                 .openTireLab,
-                .openUpgradeLab
+                .openUpgradeLab,
+                .openFH6CommunityReferenceTrial
             ])
         )
         for action in CopilotAction.allCases {

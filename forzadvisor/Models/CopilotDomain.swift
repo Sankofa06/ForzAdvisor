@@ -25,6 +25,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
     case fh5ResearchCapture
     case fh5ControlledExperimentCapture
     case recordTestDrive
+    case fh6CommunityReferenceTrialCapture
     case editSavedTune
 
     var title: String {
@@ -45,6 +46,8 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
         case .fh5ResearchCapture: "FH5 Research Lab"
         case .fh5ControlledExperimentCapture: "FH5 Outcome Lab"
         case .recordTestDrive: "Record Test Drive"
+        case .fh6CommunityReferenceTrialCapture:
+            "Community Comparison"
         case .editSavedTune: "Edit Saved Tune"
         }
     }
@@ -103,12 +106,15 @@ enum CopilotAction: String, CaseIterable, Codable, Sendable {
     case openFH6TuneMenuLab
     case openTireLab
     case openUpgradeLab
+    case openFH6CommunityReferenceTrial
 
     var title: String {
         switch self {
         case .openFH6TuneMenuLab: "Open FH6 Tune Menu Lab"
         case .openTireLab: "Open Tire Lab"
         case .openUpgradeLab: "Open Upgrade Lab"
+        case .openFH6CommunityReferenceTrial:
+            "Run Community Reference Comparison"
         }
     }
 }
@@ -129,6 +135,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
     let fh5ResearchLabEligible: Bool?
     let fh5ObservationRecorded: Bool?
     let fh5CandidateTrialAvailable: Bool?
+    let fh6CommunityReferenceTrialEligible: Bool?
     let exactUpgradePathCount: Int?
     let isSaved: Bool?
     let isStreaming: Bool
@@ -144,6 +151,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
         fh5ResearchLabEligible: Bool? = nil,
         fh5ObservationRecorded: Bool? = nil,
         fh5CandidateTrialAvailable: Bool? = nil,
+        fh6CommunityReferenceTrialEligible: Bool? = nil,
         exactUpgradePathCount: Int?,
         isSaved: Bool?,
         isStreaming: Bool
@@ -159,6 +167,8 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
         self.fh5ObservationRecorded = fh5ObservationRecorded
         self.fh5CandidateTrialAvailable =
             fh5CandidateTrialAvailable
+        self.fh6CommunityReferenceTrialEligible =
+            fh6CommunityReferenceTrialEligible
         self.exactUpgradePathCount = exactUpgradePathCount
         self.isSaved = isSaved
         self.isStreaming = isStreaming
@@ -177,6 +187,7 @@ extension CopilotProjectionFacts {
         case fh5ResearchLabEligible
         case fh5ObservationRecorded
         case fh5CandidateTrialAvailable
+        case fh6CommunityReferenceTrialEligible
         case exactUpgradePathCount
         case isSaved
         case isStreaming
@@ -200,6 +211,11 @@ extension CopilotProjectionFacts {
             Bool.self,
             forKey: .fh5CandidateTrialAvailable
         )
+        fh6CommunityReferenceTrialEligible =
+            try container.decodeIfPresent(
+                Bool.self,
+                forKey: .fh6CommunityReferenceTrialEligible
+            )
         exactUpgradePathCount = try container.decodeIfPresent(Int.self, forKey: .exactUpgradePathCount)
         isSaved = try container.decodeIfPresent(Bool.self, forKey: .isSaved)
         isStreaming = try container.decode(Bool.self, forKey: .isStreaming)
@@ -219,6 +235,10 @@ extension CopilotProjectionFacts {
         try container.encodeIfPresent(
             fh5CandidateTrialAvailable,
             forKey: .fh5CandidateTrialAvailable
+        )
+        try container.encodeIfPresent(
+            fh6CommunityReferenceTrialEligible,
+            forKey: .fh6CommunityReferenceTrialEligible
         )
         try container.encodeIfPresent(exactUpgradePathCount, forKey: .exactUpgradePathCount)
         try container.encodeIfPresent(isSaved, forKey: .isSaved)
@@ -328,6 +348,13 @@ struct CopilotContext: Identifiable, Codable, Equatable, Sendable {
                         value: "Experimental hypothesis ready"
                     ))
                 }
+                if let eligible =
+                    projection.fh6CommunityReferenceTrialEligible {
+                    result.append(CopilotFact(
+                        label: "Community comparison",
+                        value: eligible ? "Ready to run" : "Not offered"
+                    ))
+                }
                 if let exactUpgradePathCount = projection.exactUpgradePathCount {
                     result.append(CopilotFact(
                         label: "Exact upgrade paths",
@@ -435,6 +462,8 @@ struct CopilotEngine {
             return unsavedEditsMessage("Complete the fixed A-B-B-A sequence, keep every condition constant, restore the stock value, and record only the comparative outcome.")
         case .recordTestDrive:
             return unsavedEditsMessage("Describe this one session, confirm the tested setup, then explicitly opt in if you want to create reusable deidentified evidence.")
+        case .fh6CommunityReferenceTrialCapture:
+            return unsavedEditsMessage("Keep the exact route, conditions, assists, and input fixed; complete A-B-B-A; restore the ForzAdvisor candidate; then save only your comparative observation.")
         case .editSavedTune:
             return unsavedEditsMessage("Use Save for metadata and notes. Use Save & Re-tune when the underlying screen recommends recalculating after material car changes.")
         }
@@ -444,7 +473,7 @@ struct CopilotEngine {
         switch context.phase {
         case .catalogPicker, .catalogReview:
             return "Treat the reviewed catalog as a starting point and confirm its stock facts in your current game build."
-        case .catalogEdit, .ocrReview, .manualEntry, .fh6TuneMenuCapture, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .fh5ControlledExperimentCapture, .recordTestDrive, .editSavedTune:
+        case .catalogEdit, .ocrReview, .manualEntry, .fh6TuneMenuCapture, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .fh5ControlledExperimentCapture, .recordTestDrive, .fh6CommunityReferenceTrialCapture, .editSavedTune:
             return unsavedEditsMessage("Trust only facts you personally confirm in the underlying screen and any validation it shows.")
         case .loading:
             guard let projection = context.projection else {
@@ -497,6 +526,8 @@ struct CopilotEngine {
             return unsavedEditsMessage("The underlying protocol identifies missing one-variable, A-B-B-A, conditions, restoration, authorship, or storage confirmations.")
         case .recordTestDrive:
             return unsavedEditsMessage("The underlying form identifies missing session facts, confirmations, symptoms, or reuse permission.")
+        case .fh6CommunityReferenceTrialCapture:
+            return unsavedEditsMessage("The underlying form identifies missing direct-source metadata, A-B-B-A checks, outcome details, restoration, authorship, or local-storage permission.")
         case .editSavedTune:
             return unsavedEditsMessage("The underlying form shows validation issues and whether material changes need Save & Re-tune.")
         }
@@ -529,6 +560,9 @@ struct CopilotEngine {
         }
         if projection.upgradeLabEligible == true {
             return .openUpgradeLab
+        }
+        if projection.fh6CommunityReferenceTrialEligible == true {
+            return .openFH6CommunityReferenceTrial
         }
         return nil
     }
@@ -569,6 +603,9 @@ struct CopilotEngine {
         }
         if projection.upgradeLabEligible == true {
             return "Open Upgrade Lab from the underlying result to verify which tuning-control parts are available."
+        }
+        if projection.fh6CommunityReferenceTrialEligible == true {
+            return "Run a Community Reference Comparison to record one local A-B-B-A comparative observation. It is not validation, a ranking, or ground truth."
         }
         if projection.readyCount == 0 {
             return "All tune values are withheld. Follow the blocked status and reason labels before trying to use this tune."

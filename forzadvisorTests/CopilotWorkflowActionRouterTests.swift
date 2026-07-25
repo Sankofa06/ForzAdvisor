@@ -110,6 +110,68 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         )
     }
 
+    func testCommunityActionRequiresLiveExactSavedTuneAndZeroTrials()
+        async throws {
+        let tune = try await eligibleCommunityTune()
+        var oldTune = tune
+        oldTune.id = UUID()
+        let oldStep = resultStep(oldTune)
+        let freshThumbnail = Data("fresh-thumbnail".utf8)
+        let freshNotes = "Fresh persisted notes"
+        let freshResult = CopilotPersistedResultPayload(
+            tune: tune,
+            thumbnailData: freshThumbnail,
+            playerNotes: freshNotes
+        )
+        let destination = try XCTUnwrap(
+            router.destination(
+                for: .openFH6CommunityReferenceTrial,
+                from: oldStep,
+                persistedResult: freshResult,
+                matchingCommunityTrialCount: 0
+            )
+        )
+        guard case .fh6CommunityReferenceTrialCapture(
+            let routedTune,
+            let routedSavedTuneID,
+            let routedThumbnail,
+            let routedNotes
+        ) = destination else {
+            return XCTFail("Expected community comparison capture")
+        }
+        XCTAssertEqual(routedTune, tune)
+        XCTAssertEqual(routedSavedTuneID, savedTuneID)
+        XCTAssertEqual(routedThumbnail, freshThumbnail)
+        XCTAssertEqual(routedNotes, freshNotes)
+        XCTAssertNotEqual(routedTune.id, oldTune.id)
+        XCTAssertNotEqual(routedThumbnail, thumbnailData)
+        XCTAssertNotEqual(routedNotes, playerNotes)
+
+        XCTAssertNil(router.destination(
+            for: .openFH6CommunityReferenceTrial,
+            from: oldStep,
+            persistedResult: freshResult,
+            matchingCommunityTrialCount: 1
+        ))
+        XCTAssertNil(router.destination(
+            for: .openFH6CommunityReferenceTrial,
+            from: oldStep,
+            persistedResult: nil,
+            matchingCommunityTrialCount: 0
+        ))
+        let higherPriorityTune = try eligibleTune(for: .tuneMenu)
+        XCTAssertNil(router.destination(
+            for: .openFH6CommunityReferenceTrial,
+            from: oldStep,
+            persistedResult: CopilotPersistedResultPayload(
+                tune: higherPriorityTune,
+                thumbnailData: freshThumbnail,
+                playerNotes: freshNotes
+            ),
+            matchingCommunityTrialCount: 0
+        ))
+    }
+
     private func eligibleTune(
         for route: Route,
         game: ForzaGame = .fh6
@@ -179,6 +241,62 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
                 diagnostics: []
             )
         )
+    }
+
+    private func eligibleCommunityTune() async throws -> TuneResult {
+        let catalog = try BundledCarCatalog.load().get()
+        let entry = try XCTUnwrap(
+            catalog.entries.first { $0.game == .fh6 }
+        )
+        let selection = catalog.selection(for: entry)
+        let capturedAt = Date(timeIntervalSinceReferenceDate: 909)
+        let capability = selection.capabilityOnlyBuildSnapshot(
+            capturedAt: capturedAt
+        )
+        let parts = try UpgradePartCapture(
+            gameBuildVersion: "test-build",
+            parts: TunePartID.allCases.map {
+                UpgradePartCaptureValue(
+                    partID: $0,
+                    status: .offered
+                )
+            },
+            exactStockBuildConfirmed: true,
+            localUsePermitted: true
+        ).verifiedSnapshot(
+            upgrading: capability,
+            capturedAt: capturedAt
+        )
+        let exact = try TirePressureCapture(
+            gameBuildVersion: "test-build",
+            tireCompound: "Stock",
+            gearCount: 6,
+            front: .init(
+                minimumPSI: 15,
+                maximumPSI: 40,
+                stepPSI: 0.5,
+                currentPSI: 30
+            ),
+            rear: .init(
+                minimumPSI: 15,
+                maximumPSI: 40,
+                stepPSI: 0.5,
+                currentPSI: 30
+            ),
+            exactStockBuildConfirmed: true,
+            localUsePermitted: true
+        ).exactBuildSnapshot(
+            upgrading: parts,
+            capturedAt: capturedAt,
+            evidenceID: "copilot-community"
+        )
+        return try await CapabilityProjectingTuneProvider(
+            base: LocalSampleTuneProvider()
+        ).generateTune(for: TuneRequest(
+            car: exact.car,
+            discipline: .road,
+            buildSnapshot: exact
+        ))
     }
 
     private func resultStep(_ tune: TuneResult) -> WorkflowStep {

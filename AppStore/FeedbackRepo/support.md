@@ -30,7 +30,7 @@ Open a saved tune and use Guided Refinement to request changes such as more rota
 
 ### What are Beta Validation Missions?
 
-Open Beta Validation Missions from the garage to see the next local testing tasks supported by your saved FH5 and FH6 setups. An empty garage offers one starter mission for each game. Eligible saved setups can offer Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, or Record Test Drive missions, and completed or stale tasks disappear when you reopen the board.
+Open Beta Validation Missions from the garage to see the next local testing tasks supported by your saved FH5 and FH6 setups. An empty garage offers one starter mission for each game. Eligible saved setups can offer Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, Record Test Drive, or an FH6 Community Reference Comparison mission, and completed or stale tasks disappear when you reopen the board.
 
 The mission board does not upload progress or create evidence by itself. Share Beta Progress opens the iOS system share sheet with aggregate counts only and excludes car names, tune values, notes, identifiers, screenshots, and analytics.
 
@@ -47,6 +47,10 @@ Send feedback through TestFlight's Send Beta Feedback with the car, game build, 
 After a matching Research Lab record and complete Upgrade Lab observation exist, Outcome Lab guides a fixed A-B-B-A Horizon Test Track experiment. You compare stock with one user-selected slider step while keeping the route, conditions, assists, input, and every other setting unchanged, then restore the stock value.
 
 The result remains calibration evidence. It does not generate a tune, collect lap times or telemetry, register a ruleset, or unlock numeric FH5 settings. Deidentified reuse is off by default. Generic calibration retains its schema-v1 share. A generated Candidate Outcome also requires a separate confirmation for each manual share. Candidate Outcome Review accepts it only after this device regenerates the exact candidate and you confirm direct receipt and reuse permission. Reviewed outcomes stay in a separate local queue and cannot affect readiness or numeric output. UUIDs and hashes bind bytes, not tester identity. There is no background upload, and deleting local evidence cannot recall a shared copy.
+
+### What is an FH6 Community Reference Comparison?
+
+On an eligible saved exact FH6 tune, apply the ForzAdvisor candidate as A and one direct YouTube or Reddit reference as B, then complete the fixed A-B-B-A protocol under constant conditions and restore A. The app stores metadata and your comparative observation, never community settings, parts, share codes, source prose/media, metrics, telemetry, accounts, or device identifiers. It is not validation, ground truth, a ranking, or promotion. Reuse and explicit JSON sharing are optional and off by default; there is no import, source lookup, or background upload.
 
 ### How do I delete a tune?
 

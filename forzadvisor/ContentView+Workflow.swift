@@ -11,9 +11,42 @@ import SwiftData
 
 extension ContentView {
     func performCopilotAction(_ action: CopilotAction) {
+        let liveState: (
+            persistedResult: CopilotPersistedResultPayload?,
+            matchingCommunityTrialCount: Int?
+        ) = {
+            guard action == .openFH6CommunityReferenceTrial,
+                  case .result(
+                    _,
+                    let savedTuneID,
+                    _,
+                    _,
+                    _
+                  ) = step,
+                  let savedTuneID,
+                  let savedTune = try? savedTune(for: savedTuneID),
+                  let persistedTune = savedTune.tuneResult,
+                  let records = try? savedTune
+                    .fh6CommunityReferenceTrialRecords(
+                        matching: persistedTune
+                    ) else {
+                return (nil, nil)
+            }
+            return (
+                CopilotPersistedResultPayload(
+                    tune: persistedTune,
+                    thumbnailData: savedTune.thumbnailData,
+                    playerNotes: savedTune.playerNotes
+                ),
+                records.count
+            )
+        }()
         guard let destination = CopilotWorkflowActionRouter().destination(
             for: action,
-            from: step
+            from: step,
+            persistedResult: liveState.persistedResult,
+            matchingCommunityTrialCount:
+                liveState.matchingCommunityTrialCount
         ) else {
             return
         }
@@ -615,6 +648,92 @@ extension ContentView {
         }
     }
 
+    func recordFH6CommunityReferenceTrial(
+        _ capture: FH6CommunityReferenceTrialCapture,
+        for tune: TuneResult,
+        savedTuneID: UUID,
+        thumbnailData: Data?,
+        playerNotes: String
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID),
+                  let persistedTune = savedTune.tuneResult else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            let record = try FH6CommunityReferenceTrialFactory().make(
+                tune: tune,
+                savedTune: persistedTune,
+                isStreaming: false,
+                capture: capture
+            )
+            try savedTune.appendFH6CommunityReferenceTrialRecord(record)
+            try modelContext.save()
+            step = .result(
+                TuneResultBoundarySanitizer().sanitize(persistedTune),
+                savedTuneID: savedTuneID,
+                adjustmentChanges: [],
+                thumbnailData: savedTune.thumbnailData ?? thumbnailData,
+                playerNotes: savedTune.playerNotes
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func openFH6CommunityReferenceTrial(
+        savedTuneID: UUID,
+        requiresNoCurrentTrial: Bool
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID),
+                  let persistedTune = savedTune.tuneResult,
+                  case .success(let exactTune) =
+                    FH6CommunityReferenceTrialFactory().eligibility(
+                        for: persistedTune,
+                        savedTune: persistedTune,
+                        isStreaming: false
+                    ) else {
+                throw ContentWorkflowError.staleCommunityReferenceTrial
+            }
+            if requiresNoCurrentTrial {
+                guard try savedTune
+                    .fh6CommunityReferenceTrialRecords(
+                        matching: exactTune
+                    ).isEmpty else {
+                    throw ContentWorkflowError
+                        .staleCommunityReferenceTrial
+                }
+            }
+            tuneWorkflow.cancelAdjustment()
+            step = .fh6CommunityReferenceTrialCapture(
+                TuneResultBoundarySanitizer().sanitize(exactTune),
+                savedTuneID: savedTuneID,
+                thumbnailData: savedTune.thumbnailData,
+                playerNotes: savedTune.playerNotes
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deleteFH6CommunityReferenceTrialRecord(
+        _ record: FH6CommunityReferenceTrialRecord,
+        savedTuneID: UUID
+    ) {
+        do {
+            guard let savedTune = try savedTune(for: savedTuneID) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            _ = try savedTune.deleteFH6CommunityReferenceTrialRecord(
+                id: record.recordID
+            )
+            try modelContext.save()
+        } catch {
+            errorMessage =
+                "Could not delete this community comparison: \(error.localizedDescription)"
+        }
+    }
+
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
         if let tune = savedTune.tuneResult {
@@ -795,6 +914,11 @@ extension ContentView {
                         thumbnailData: savedTune.thumbnailData,
                         playerNotes: savedTune.playerNotes
                     )
+                case .runFH6CommunityReferenceTrial:
+                    openFH6CommunityReferenceTrial(
+                        savedTuneID: savedTuneID,
+                        requiresNoCurrentTrial: true
+                    )
                 case .startFH5Plan, .startFH6Tune:
                     throw ContentWorkflowError.staleBetaMission
                 }
@@ -837,6 +961,7 @@ enum WorkflowStep {
     case fh5ResearchCapture(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
     case fh5ControlledExperimentCapture(TuneResult, savedTuneID: UUID, researchRecord: FH5ResearchObservationRecord, candidateTrialAvailable: Bool, thumbnailData: Data?, playerNotes: String)
     case recordTestDrive(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
+    case fh6CommunityReferenceTrialCapture(TuneResult, savedTuneID: UUID, thumbnailData: Data?, playerNotes: String)
     case editSavedTune(TuneResult, savedTuneID: UUID, playerNotes: String, thumbnailData: Data?)
 }
 
@@ -895,6 +1020,7 @@ struct ActiveTuneAdjustment {
 enum ContentWorkflowError: LocalizedError {
     case missingSavedTune
     case staleBetaMission
+    case staleCommunityReferenceTrial
 
     var errorDescription: String? {
         switch self {
@@ -902,6 +1028,8 @@ enum ContentWorkflowError: LocalizedError {
             "The saved tune could not be found."
         case .staleBetaMission:
             "This mission is no longer eligible. Reopen Beta Missions for the current list."
+        case .staleCommunityReferenceTrial:
+            "This saved tune is no longer eligible for a community comparison. Reopen the current saved FH6 tune."
         }
     }
 }

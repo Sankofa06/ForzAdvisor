@@ -163,6 +163,71 @@ final class BetaValidationMissionTests: XCTestCase {
         )
     }
 
+    func testCommunityComparisonMissionFollowsTestDriveAndDisappears() {
+        let beforeTestDrive = facts(
+            id: fh6ID,
+            game: .fh6,
+            name: "Comparison Sentinel",
+            research: false,
+            tires: false,
+            upgrades: false,
+            testDrive: true,
+            evidence: 0,
+            exactPaths: true,
+            communityTrial: true,
+            hasValidationRecord: false
+        )
+        XCTAssertEqual(
+            BetaValidationMissionPlanner()
+                .makeBoard(setups: [beforeTestDrive])
+                .missions.map(\.kind),
+            [.startFH5Plan, .recordTestDrive]
+        )
+
+        let afterTestDrive = facts(
+            id: fh6ID,
+            game: .fh6,
+            name: "Comparison Sentinel",
+            research: false,
+            tires: false,
+            upgrades: false,
+            testDrive: false,
+            evidence: 1,
+            exactPaths: true,
+            communityTrial: true,
+            hasValidationRecord: true
+        )
+        XCTAssertEqual(
+            BetaValidationMissionPlanner()
+                .makeBoard(setups: [afterTestDrive])
+                .missions.map(\.kind),
+            [
+                .startFH5Plan,
+                .runFH6CommunityReferenceTrial
+            ]
+        )
+
+        let completed = facts(
+            id: fh6ID,
+            game: .fh6,
+            name: "Comparison Sentinel",
+            research: false,
+            tires: false,
+            upgrades: false,
+            testDrive: false,
+            evidence: 2,
+            exactPaths: true,
+            communityTrial: false,
+            hasValidationRecord: true
+        )
+        XCTAssertEqual(
+            BetaValidationMissionPlanner()
+                .makeBoard(setups: [completed])
+                .missions.map(\.kind),
+            [.startFH5Plan]
+        )
+    }
+
     func testCandidateReadyMissionUsesExperimentalBoundaryCopy() {
         let board = BetaValidationMissionPlanner().makeBoard(setups: [
             facts(
@@ -476,7 +541,9 @@ final class BetaValidationMissionTests: XCTestCase {
         evidence: Int,
         exactPaths: Bool,
         experiment: Bool = false,
-        candidateTrial: Bool = false
+        candidateTrial: Bool = false,
+        communityTrial: Bool = false,
+        hasValidationRecord: Bool = false
     ) -> BetaValidationSetupFacts {
         BetaValidationSetupFacts(
             savedTuneID: id,
@@ -489,6 +556,8 @@ final class BetaValidationMissionTests: XCTestCase {
             canVerifyTireRanges: tires,
             canVerifyUpgradeParts: upgrades,
             canRecordTestDrive: testDrive,
+            canRunFH6CommunityReferenceTrial: communityTrial,
+            hasFirstPartyValidationRecord: hasValidationRecord,
             evidenceRecordCount: evidence,
             hasExactUpgradePaths: exactPaths,
             fh5CandidateTrialAvailable: candidateTrial

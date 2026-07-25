@@ -14,6 +14,8 @@ struct FH6ValidationReviewView: View {
     let storageError: String?
     let onImport: (FH6ValidationReviewEntry) -> String?
     let onDelete: (FH6ValidationReviewEntry) -> Void
+    let communityReferenceRecords: [FH6CommunityReferenceTrialRecord]
+    let onRunCommunityReferenceTrial: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var pastedJSON = ""
@@ -191,6 +193,46 @@ struct FH6ValidationReviewView: View {
                             )
                         }
                         .padding(.vertical, 3)
+                    }
+                }
+                .forzAdvisorRowBackground()
+
+                Section("Community Reference Comparisons") {
+                    Text(
+                        "Separate local comparative observations. These counts are not imported validation sessions and do not affect promotion or tune settings."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    LabeledContent(
+                        "YouTube",
+                        value: "\(communityReferenceRecords.filter { $0.source.kind == .youtube }.count)"
+                    )
+                    LabeledContent(
+                        "Reddit",
+                        value: "\(communityReferenceRecords.filter { $0.source.kind == .reddit }.count)"
+                    )
+                    ForEach(
+                        FH6CommunityReferenceTrialOutcome.allCases,
+                        id: \.self
+                    ) { outcome in
+                        let count = communityReferenceRecords.filter {
+                            $0.outcome == outcome
+                        }.count
+                        if count > 0 {
+                            LabeledContent(
+                                outcome.title,
+                                value: "\(count)"
+                            )
+                        }
+                    }
+                    if let onRunCommunityReferenceTrial {
+                        Button("Run Community Reference Comparison") {
+                            dismiss()
+                            onRunCommunityReferenceTrial()
+                        }
+                        .accessibilityIdentifier(
+                            "validationReviewRunCommunityComparisonButton"
+                        )
                     }
                 }
                 .forzAdvisorRowBackground()

@@ -379,6 +379,33 @@ struct ContentView: View {
                             )
                         }
                     )
+                case .fh6CommunityReferenceTrialCapture(
+                    let tune,
+                    let savedTuneID,
+                    let thumbnailData,
+                    let playerNotes
+                ):
+                    FH6CommunityReferenceTrialCaptureView(
+                        tune: tune,
+                        onBack: {
+                            step = .result(
+                                tune,
+                                savedTuneID: savedTuneID,
+                                adjustmentChanges: [],
+                                thumbnailData: thumbnailData,
+                                playerNotes: playerNotes
+                            )
+                        },
+                        onSubmit: { capture in
+                            recordFH6CommunityReferenceTrial(
+                                capture,
+                                for: tune,
+                                savedTuneID: savedTuneID,
+                                thumbnailData: thumbnailData,
+                                playerNotes: playerNotes
+                            )
+                        }
+                    )
                 case .editSavedTune(let tune, let savedTuneID, let playerNotes, let thumbnailData):
                     SavedTuneEditView(
                         draft: SavedTuneEditDraft(tune: tune, playerNotes: playerNotes),
@@ -469,8 +496,38 @@ struct ContentView: View {
             fh5ResearchLabEligible: currentFH5ResearchLabEligible,
             fh5ObservationRecorded: currentFH5ObservationRecorded,
             fh5CandidateTrialAvailable:
-                currentFH5CandidateTrialAvailable
+                currentFH5CandidateTrialAvailable,
+            fh6CommunityReferenceTrialEligible:
+                currentFH6CommunityReferenceTrialEligible
         )
+    }
+
+    private var currentFH6CommunityReferenceTrialEligible: Bool {
+        guard case .result(
+            let tune,
+            let savedTuneID,
+            _,
+            _,
+            _
+        ) = step,
+        eligibleFH6TuneMenuCaptureSnapshot(for: tune) == nil,
+        eligibleTireCaptureSnapshot(for: tune) == nil,
+        eligibleUpgradeCaptureSnapshot(for: tune) == nil,
+        let savedTuneID,
+        let savedTune = try? savedTune(for: savedTuneID),
+        let persistedTune = savedTune.tuneResult,
+        case .success =
+            FH6CommunityReferenceTrialFactory().eligibility(
+                for: tune,
+                savedTune: persistedTune,
+                isStreaming: false
+            ),
+        let records = try? savedTune
+            .fh6CommunityReferenceTrialRecords(matching: tune),
+        records.isEmpty else {
+            return false
+        }
+        return true
     }
 
     private var currentFH5ResearchLabEligible: Bool {
@@ -576,6 +633,29 @@ struct ContentView: View {
                     try resolvedSavedTune.fh6ValidationReviewEntries(
                         matching: tune
                     ),
+                    nil
+                )
+            } catch {
+                return ([], error.localizedDescription)
+            }
+        }()
+        let communityTrialEligibility =
+            FH6CommunityReferenceTrialFactory().eligibility(
+                for: tune,
+                savedTune: persistedTune,
+                isStreaming: isStreaming
+            )
+        let communityTrialState: (
+            records: [FH6CommunityReferenceTrialRecord],
+            loadError: String?
+        ) = {
+            guard let resolvedSavedTune else { return ([], nil) }
+            do {
+                return (
+                    try resolvedSavedTune
+                        .fh6CommunityReferenceTrialRecords(
+                            matching: tune
+                        ),
                     nil
                 )
             } catch {
@@ -872,6 +952,28 @@ struct ContentView: View {
                 guard let resolvedSavedTuneID else { return }
                 deleteFH6ValidationReviewEntry(
                     entry,
+                    savedTuneID: resolvedSavedTuneID
+                )
+            },
+            fh6CommunityReferenceTrialRecords:
+                communityTrialState.records,
+            fh6CommunityReferenceTrialLoadError:
+                communityTrialState.loadError,
+            onRunFH6CommunityReferenceTrial:
+                communityTrialEligibility.isSuccess
+                    && resolvedSavedTuneID != nil
+                ? {
+                    guard let resolvedSavedTuneID else { return }
+                    openFH6CommunityReferenceTrial(
+                        savedTuneID: resolvedSavedTuneID,
+                        requiresNoCurrentTrial: false
+                    )
+                }
+                : nil,
+            onDeleteFH6CommunityReferenceTrialRecord: { record in
+                guard let resolvedSavedTuneID else { return }
+                deleteFH6CommunityReferenceTrialRecord(
+                    record,
                     savedTuneID: resolvedSavedTuneID
                 )
             },

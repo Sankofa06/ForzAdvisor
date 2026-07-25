@@ -100,6 +100,59 @@ struct FH6CommunityReferenceTrialFactory {
         )
     }
 
+    func sourceID(
+        for contentURL: String,
+        kind: FH6CommunityReferenceKind
+    ) -> String? {
+        guard let canonicalURL = normalizedContentURL(contentURL, kind: kind),
+              let digest = try? hash(SourceIDPayload(
+                kind: kind,
+                canonicalContentURL: canonicalURL
+              )) else {
+            return nil
+        }
+        return "\(kind.rawValue):\(digest)"
+    }
+
+    func isValidSourceCapture(
+        kind: FH6CommunityReferenceKind,
+        contentURL: String,
+        publisherDisplayName: String
+    ) -> Bool {
+        guard let sourceID = sourceID(
+            for: contentURL,
+            kind: kind
+        ) else {
+            return false
+        }
+        return (try? makeSource(from: .init(
+            kind: kind,
+            contentURL: contentURL,
+            publisherDisplayName: publisherDisplayName,
+            sourceID: sourceID,
+            retrievedAt: Date(timeIntervalSince1970: 0)
+        ))) != nil
+    }
+
+    func matches(
+        _ record: FH6CommunityReferenceTrialRecord,
+        tune: TuneResult
+    ) -> Bool {
+        guard isValid(record),
+              record.candidateTuneID == tune.id,
+              case .success(let eligibleTune) = eligibility(
+                for: tune,
+                savedTune: tune,
+                isStreaming: false
+              ),
+              let proof = try? makeCandidateProof(from: eligibleTune),
+              proof == record.candidateProof,
+              let fingerprint = candidateFingerprint(for: proof) else {
+            return false
+        }
+        return record.candidateAssociation.candidateFingerprint == fingerprint
+    }
+
     func isValid(_ record: FH6CommunityReferenceTrialRecord) -> Bool {
         guard record.schemaVersion == FH6CommunityReferenceTrialRecord.currentSchemaVersion,
               record.consentVersion == FH6CommunityReferenceTrialRecord.currentConsentVersion,
@@ -223,6 +276,12 @@ struct FH6CommunityReferenceTrialFactory {
         }
         guard derivative != sourceID else {
             throw FH6CommunityReferenceTrialIssue.selfDerivative
+        }
+        guard sourceID == self.sourceID(
+            for: url,
+            kind: capture.kind
+        ) else {
+            throw FH6CommunityReferenceTrialIssue.invalidSourceMetadata
         }
         let publisherFingerprint = try hash(PublisherIdentityPayload(
             kind: capture.kind,
@@ -693,6 +752,11 @@ struct FH6CommunityReferenceTrialFactory {
         var canonicalContentURL: String
         var sourceID: String
         var derivativeOfSourceID: String?
+    }
+
+    private struct SourceIDPayload: Codable {
+        var kind: FH6CommunityReferenceKind
+        var canonicalContentURL: String
     }
 
     private struct CandidateProofPayload: Codable {

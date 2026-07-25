@@ -29,6 +29,8 @@ Deidentified calibration reuse and JSON sharing are off by default for each expe
 
 FH6 Validation Review imports exact ForzAdvisor Test Drive JSON only for an eligible matching saved setup after local confirmation of direct receipt and deidentified reuse permission. Imported entries are stored separately from locally authored validation records. The review reports controlled outcomes and conditions only and does not modify tunes, contact a provider, or promote the experimental ruleset.
 
+FH6 Community Reference Comparisons store only tester-entered YouTube or Reddit source metadata, controlled A-B-B-A context, confirmations, comparative outcomes, attestations, and integrity fields for the exact current saved candidate. They do not collect source tune settings, parts, share codes, prose, media, metrics, telemetry, accounts, or device identifiers. Reuse/export is optional and off by default, sharing is manual, and the records cannot validate, rank, promote, or modify a tune.
+
 Tracking:
 
 - `NSPrivacyTracking`: false
@@ -65,6 +67,7 @@ Do not mark photos/videos as collected for the current build unless the app chan
 - FH5 Research Lab records and exports are generated locally. The app has no background uploader, receiver, or remote-revocation mechanism for them.
 - FH5 Outcome Lab records remain local unless the user explicitly shares an eligible allow-listed JSON copy; the app has no background experiment uploader or importer, and records cannot promote themselves into a ruleset or numeric tune.
 - Imported FH6 Validation Review entries remain local unless the user separately acts through another app or system share destination; ForzAdvisor has no background review uploader.
+- FH6 Community Reference Comparison records remain local unless the user explicitly enables deidentified reuse and manually shares an allow-listed JSON copy; ForzAdvisor performs no source lookup, import, or background upload.
 
 ## Sources
 

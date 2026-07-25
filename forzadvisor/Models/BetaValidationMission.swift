@@ -18,6 +18,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
     case verifyTireRanges
     case verifyUpgradeParts
     case recordTestDrive
+    case runFH6CommunityReferenceTrial
 
     var title: String {
         switch self {
@@ -29,6 +30,8 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         case .verifyTireRanges: "Verify FH6 tire ranges"
         case .verifyUpgradeParts: "Verify offered tuning parts"
         case .recordTestDrive: "Record an FH6 test drive"
+        case .runFH6CommunityReferenceTrial:
+            "Run an FH6 community comparison"
         }
     }
 
@@ -41,6 +44,8 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         case .verifyTireRanges: "gauge.with.dots.needle.50percent"
         case .verifyUpgradeParts: "wrench.and.screwdriver"
         case .recordTestDrive: "flag.checkered"
+        case .runFH6CommunityReferenceTrial:
+            "arrow.triangle.2.circlepath"
         }
     }
 
@@ -54,6 +59,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
         case .verifyTireRanges: 25
         case .verifyUpgradeParts: 30
         case .recordTestDrive: 40
+        case .runFH6CommunityReferenceTrial: 45
         }
     }
 }
@@ -113,6 +119,8 @@ struct BetaValidationMission: Equatable, Identifiable, Sendable {
             return "\(setup): confirm every tuning-control part offered by the stock car."
         case .recordTestDrive:
             return "\(setup): record one controlled first-party validation session."
+        case .runFH6CommunityReferenceTrial:
+            return "\(setup): compare the exact saved candidate with one YouTube or Reddit reference using the fixed A-B-B-A protocol."
         case .startFH5Plan, .startFH6Tune:
             return setup
         }
@@ -189,6 +197,8 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
     let canVerifyTireRanges: Bool
     let canVerifyUpgradeParts: Bool
     let canRecordTestDrive: Bool
+    let canRunFH6CommunityReferenceTrial: Bool
+    let hasFirstPartyValidationRecord: Bool
     let evidenceRecordCount: Int
     let hasExactUpgradePaths: Bool
     let fh5CandidateTrialAvailable: Bool
@@ -204,6 +214,8 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
         canVerifyTireRanges: Bool,
         canVerifyUpgradeParts: Bool,
         canRecordTestDrive: Bool,
+        canRunFH6CommunityReferenceTrial: Bool = false,
+        hasFirstPartyValidationRecord: Bool = false,
         evidenceRecordCount: Int,
         hasExactUpgradePaths: Bool,
         fh5CandidateTrialAvailable: Bool = false
@@ -218,6 +230,10 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
         self.canVerifyTireRanges = canVerifyTireRanges
         self.canVerifyUpgradeParts = canVerifyUpgradeParts
         self.canRecordTestDrive = canRecordTestDrive
+        self.canRunFH6CommunityReferenceTrial =
+            canRunFH6CommunityReferenceTrial
+        self.hasFirstPartyValidationRecord =
+            hasFirstPartyValidationRecord
         self.evidenceRecordCount = evidenceRecordCount
         self.hasExactUpgradePaths = hasExactUpgradePaths
         self.fh5CandidateTrialAvailable =
@@ -259,6 +275,12 @@ struct BetaValidationMissionPlanner {
             }
             if setup.canRecordTestDrive {
                 missions.append(mission(.recordTestDrive, setup: setup))
+            }
+            if setup.canRunFH6CommunityReferenceTrial,
+               setup.hasFirstPartyValidationRecord {
+                missions.append(
+                    mission(.runFH6CommunityReferenceTrial, setup: setup)
+                )
             }
         }
         missions.sort(by: missionPrecedes)
@@ -315,6 +337,19 @@ struct BetaValidationMissionPlanner {
         } else {
             validationEligible = false
         }
+        let communityTrialEligible: Bool
+        if tune.request.car.game == .fh6,
+           evidence.validationRecordCount > 0,
+           evidence.fh6CommunityReferenceTrialCount == 0 {
+            communityTrialEligible =
+                FH6CommunityReferenceTrialFactory().eligibility(
+                    for: tune,
+                    savedTune: tune,
+                    isStreaming: false
+                ).isSuccess
+        } else {
+            communityTrialEligible = false
+        }
         let experimentEligibility: (eligible: Bool, candidate: Bool)
         if tune.request.car.game == .fh5,
            evidence.fh5ControlledExperimentCount == 0 {
@@ -357,6 +392,9 @@ struct BetaValidationMissionPlanner {
             canVerifyUpgradeParts:
                 UpgradePartCaptureEligibility().snapshot(for: tune) != nil,
             canRecordTestDrive: validationEligible,
+            canRunFH6CommunityReferenceTrial: communityTrialEligible,
+            hasFirstPartyValidationRecord:
+                evidence.validationRecordCount > 0,
             evidenceRecordCount: evidence.totalRecordCount,
             hasExactUpgradePaths:
                 !TuneControlUpgradePlanner().paths(for: tune).isEmpty,
