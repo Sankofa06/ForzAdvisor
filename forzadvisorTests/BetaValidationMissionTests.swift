@@ -457,6 +457,104 @@ final class BetaValidationMissionTests: XCTestCase {
         }
     }
 
+    func testFH6CommunityResearchPartnerInviteStatesExactFlowAndBoundaries() {
+        let first = FH6CommunityResearchPartnerInvite.current
+        let second = FH6CommunityResearchPartnerInvite.current
+
+        XCTAssertEqual(first, second)
+        XCTAssertEqual(
+            first.subject,
+            "Join the ForzAdvisor FH6 Community Research Partners"
+        )
+
+        let requiredPhrases = [
+            "Forza Horizon 6",
+            "iPhone with iOS 17 or later",
+            "latest ForzAdvisor beta in TestFlight",
+            "Apple controls external beta availability",
+            "does not guarantee beta access",
+            "create and save an eligible exact FH6 tune",
+            "that exact current saved tune",
+            "first-party Record Test Drive for that exact current saved tune before",
+            "Community Reference Comparison",
+            "fixed A-B-B-A protocol",
+            "Restore the ForzAdvisor candidate",
+            "explicitly permitted",
+            "canonical permission-bound Community Outcome export",
+            "Community Outcome Review",
+            "confirm direct receipt and reuse permission",
+            "collection-only",
+            "do not validate a tune",
+            "establish ground truth",
+            "rank a source",
+            "promote a candidate or ruleset",
+            "change tuning",
+            "Community outcomes are not an accuracy or quality score",
+            "are not a recommendation",
+            "ForzAdvisor does not authenticate tester identity",
+            "no recruitment analytics or background network activity",
+            "TestFlight's Send Beta Feedback"
+        ]
+        for phrase in requiredPhrases {
+            XCTAssertTrue(first.text.contains(phrase), phrase)
+        }
+    }
+
+    func testFH6CommunityResearchPartnerInviteExcludesLocalAndPrivateData() {
+        let forbiddenTokens = [
+            "Saved setups:",
+            "Permission-bound evidence records:",
+            "Validation missions ready:",
+            "SECRET-CAR-NAME",
+            "29.5 PSI",
+            "11111111-1111-1111-1111-111111111111",
+            "candidateFingerprint",
+            "submissionID",
+            "permissionReceiptID",
+            "sourcePermalink",
+            "publisherLabel",
+            "\"schemaVersion\"",
+            "\"comparisonSessionID\"",
+            "https://",
+            "testflight.apple.com/join/"
+        ]
+
+        for token in forbiddenTokens {
+            XCTAssertFalse(
+                FH6CommunityResearchPartnerInvite.current.text
+                    .localizedCaseInsensitiveContains(token),
+                token
+            )
+        }
+    }
+
+    func testFH6CommunityResearchPartnerInviteHasShareOnlyUIPolicyWithoutTestFlightURL() {
+        XCTAssertEqual(
+            FH6CommunityResearchPartnerInvite.sectionTitle,
+            "FH6 Community Research Partners"
+        )
+        XCTAssertEqual(
+            FH6CommunityResearchPartnerInvite.shareButtonTitle,
+            "Share FH6 Community Research Invite"
+        )
+        XCTAssertEqual(
+            FH6CommunityResearchPartnerInvite.shareButtonIdentifier,
+            "shareFH6CommunityResearchPartnerInvite"
+        )
+        XCTAssertTrue(
+            FH6CommunityResearchPartnerInvite.sectionSummary
+                .contains("Apple controls external beta availability")
+        )
+        XCTAssertFalse(
+            FH6CommunityResearchPartnerInvite.current.text
+                .contains("testflight.apple.com")
+        )
+        XCTAssertFalse(
+            FH6CommunityResearchPartnerInvite.sectionSummary
+                .localizedCaseInsensitiveContains("open testflight")
+        )
+    }
+
     @MainActor
     func testSavedFH5PlanUsesProductionEligibilityAndCorruptStorageFailsClosed() async throws {
         let plan = try await makeFH5Plan()

@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.22.0 (Build 47) - 2026-07-25
+
+- Adds a public-only FH6 Community Research Partners invitation in Beta Missions.
+- Explains the exact Test Drive, fixed A-B-B-A comparison, permission-bound export, and matching Community Outcome Review handoff without attaching local progress or evidence.
+- Keeps recruitment share-only and user initiated, with no FH6 TestFlight link, analytics, background networking, or claims of validation, scoring, recommendation, ranking, promotion, or identity authentication.
+
 ## Version 1.21.0 (Build 46) - 2026-07-25
 
 - Makes contextual Copilot available inside Settings, Beta Missions, and four evidence-review screens.

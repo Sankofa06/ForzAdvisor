@@ -44,6 +44,14 @@ Partners need FH5 and an iPhone with iOS 17 or later. Apple controls external be
 
 Use TestFlight's Send Beta Feedback and include the car, FH5 game build, input, surface, and exact step that was unclear or unexpectedly rejected. Do not include private JSON or identifiers in an invitation or feedback report.
 
+### How do I invite an FH6 Community Research Partner?
+
+In Beta Validation Missions, share the FH6 Community Research Partners invitation with an FH6 player who already has the latest ForzAdvisor beta. This FH6 invitation contains no TestFlight link. Apple controls external beta availability, and the invitation does not guarantee access.
+
+The partner must save an eligible exact FH6 tune, complete a first-party Record Test Drive for that exact current saved tune, and only then run the fixed Community Reference A-B-B-A comparison under constant conditions. Deidentified structured reuse must be explicitly permitted before the tester manually shares the canonical permission-bound Community Outcome export. The receiver opens Community Outcome Review for the matching exact current saved tune and separately confirms direct receipt and reuse permission.
+
+The invitation contains no local progress, car or tune values, notes, identifiers, fingerprints, receipts, JSON, source permalink, publisher, or local state. Sharing is user initiated and adds no analytics or background network activity. Outcomes remain collection-only and cannot validate a tune, establish ground truth, rank a source, promote a candidate or ruleset, or change tuning. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity. Use TestFlight's Send Beta Feedback without attaching private JSON or identifiers.
+
 ### What is FH6 Validation Review?
 
 Open an eligible saved exact-build FH6 tune and choose Open Validation Review under Accuracy Evidence. Paste an exact ForzAdvisor Test Drive JSON export for that setup. The app validates the canonical bytes, current game build and ruleset, verified shop availability, car, discipline, and applied settings before it can be imported.

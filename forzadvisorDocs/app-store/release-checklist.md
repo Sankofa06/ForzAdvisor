@@ -4,15 +4,15 @@ Last updated: 2026-07-25
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.21.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.22.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.21.0`.
-- Current project build is `46`.
+- Current project version is `1.22.0`.
+- Current project build is `47`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -49,6 +49,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - Contextual Copilot sequences eligible FH6 accuracy work through unfinished first-party labs, an exact Record Test Drive, and only then a Community Reference Comparison. Every action refetches and revalidates the persisted setup and carries no tune payload of its own.
 - Settings, Beta Missions, and the four evidence-review modals expose guidance-only Copilot through their existing navigation stacks. Modal contexts use strict committed-fact allow-lists, cannot execute workflow actions, and exclude credentials, draft evidence, tune values, notes, images, identifiers, and fingerprints.
 - Beta Validation Missions are derived locally from existing eligibility checks, create no records by themselves, and share aggregate counts only through a user-initiated system share sheet.
+- FH6 Community Research Partners provides a separate public-only, user-initiated invite for testers who already have the latest beta. The invite contains no FH6 TestFlight URL and no local progress, car or tune values, notes, IDs, fingerprints, receipts, JSON, source details, or local state. It describes the required first-party Record Test Drive for that exact current saved tune, fixed A-B-B-A comparison, explicit reuse permission, manual permission-bound Community Outcome export, matching Community Outcome Review handoff, collection-only boundary, Apple-controlled availability, and TestFlight Send Beta Feedback path without analytics or background networking. Community outcomes are not an accuracy or quality score and are not a recommendation; ForzAdvisor does not authenticate tester identity.
 - FH6 offline formula tuning is the default numeric provider and requires no account or API key.
 - Optional on-device model assistance and user-key Anthropic API mode apply to FH6 generation; reviewers can complete both catalog flows offline.
 - Screenshots and camera photos are processed locally for OCR. Current code does not upload screenshot images.

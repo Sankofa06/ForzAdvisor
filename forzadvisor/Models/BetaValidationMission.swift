@@ -166,6 +166,38 @@ struct FH5ResearchPartnerInvite: Equatable, Sendable {
     let text: String
 }
 
+struct FH6CommunityResearchPartnerInvite: Equatable, Sendable {
+    static let sectionTitle = "FH6 Community Research Partners"
+    static let sectionSummary =
+        "Invite an FH6 player who has the latest ForzAdvisor beta to complete the exact first-party-to-community comparison flow. Apple controls external beta availability."
+    static let shareButtonTitle =
+        "Share FH6 Community Research Invite"
+    static let shareButtonIdentifier =
+        "shareFH6CommunityResearchPartnerInvite"
+    static let current = FH6CommunityResearchPartnerInvite(
+        subject:
+            "Join the ForzAdvisor FH6 Community Research Partners",
+        text: """
+        Join the ForzAdvisor FH6 Community Research Partners
+
+        Play Forza Horizon 6 and use an iPhone with iOS 17 or later? Install the latest ForzAdvisor beta in TestFlight before starting this research flow.
+
+        Apple controls external beta availability. This invitation does not guarantee beta access.
+
+        In ForzAdvisor, create and save an eligible exact FH6 tune. Complete a first-party Record Test Drive for that exact current saved tune before starting a Community Reference Comparison. Then compare the exact saved ForzAdvisor candidate with one direct YouTube or Reddit reference using the fixed A-B-B-A protocol under the same route, conditions, assists, and input. Restore the ForzAdvisor candidate before saving or leaving.
+
+        Deidentified structured reuse must be explicitly permitted before the tester manually shares the canonical permission-bound Community Outcome export. The receiver must open Community Outcome Review for the matching exact current saved tune and separately confirm direct receipt and reuse permission.
+
+        Outcomes remain collection-only. They do not validate a tune, establish ground truth, rank a source, promote a candidate or ruleset, or change tuning. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity. ForzAdvisor adds no recruitment analytics or background network activity.
+
+        Send feedback through TestFlight's Send Beta Feedback. Include the FH6 game build, route type, input, and exact step that was unclear or unexpectedly rejected. Do not include canonical JSON, notes, identifiers, fingerprints, receipts, source details, or other private data in the invitation or feedback.
+        """
+    )
+
+    let subject: String
+    let text: String
+}
+
 struct BetaValidationMissionBoard: Equatable, Sendable {
     let missions: [BetaValidationMission]
     let progress: BetaValidationProgress

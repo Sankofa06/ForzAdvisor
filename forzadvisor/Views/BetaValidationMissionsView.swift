@@ -96,6 +96,37 @@ struct BetaValidationMissionsView: View {
                 }
                 .forzAdvisorRowBackground()
 
+                Section(
+                    FH6CommunityResearchPartnerInvite.sectionTitle
+                ) {
+                    Text(
+                        FH6CommunityResearchPartnerInvite
+                            .sectionSummary
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    ShareLink(
+                        item:
+                            FH6CommunityResearchPartnerInvite
+                            .current.text,
+                        subject: Text(
+                            FH6CommunityResearchPartnerInvite
+                                .current.subject
+                        )
+                    ) {
+                        Label(
+                            FH6CommunityResearchPartnerInvite
+                                .shareButtonTitle,
+                            systemImage: "person.badge.plus"
+                        )
+                    }
+                    .accessibilityIdentifier(
+                        FH6CommunityResearchPartnerInvite
+                            .shareButtonIdentifier
+                    )
+                }
+                .forzAdvisorRowBackground()
+
                 Section("FH5 Research Partners") {
                     Text("Invite an FH5 player to join the Research Partners TestFlight group and coordinate one exact, permission-bound Candidate Trial. Apple controls external beta availability.")
                         .font(.caption)

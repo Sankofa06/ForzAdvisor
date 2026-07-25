@@ -4,15 +4,15 @@ Last updated: 2026-07-25
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.21.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.22.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.21.0`.
-- Current project build is `46`.
+- Current project version is `1.22.0`.
+- Current project build is `47`.
 - Target device family is iPhone.
 - The reviewed selectable catalog contains three FH5 cars and eight FH6 cars.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
@@ -52,6 +52,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - FH6 Tune Menu Lab stores a complete first-party stock-menu observation inside the regenerated local tune, replaces stale exact Tire Lab constraints, preserves same-build Upgrade Lab facts, and keeps locked, missing, malformed, mismatched, duplicate, out-of-range, and individual-gear values withheld. Formula-backed fields and Guided Refinement changes use the exact captured slider grid.
 - Beta Validation Missions are derived locally from existing eligibility checks, create no records by themselves, and share aggregate counts only through a user-initiated system share sheet.
 - FH5 Research Partners uses the exact public TestFlight URL `https://testflight.apple.com/join/ec1RxDV3`. Its separate invite contains no local counts, car values, IDs, fingerprints, or JSON; it states exact-plan/evidence and permission prerequisites, the collection-only numeric boundary, and the TestFlight Send Beta Feedback path.
+- FH6 Community Research Partners provides a separate public-only, user-initiated invite for testers who already have the latest beta. The invite contains no FH6 TestFlight URL and no local progress, car or tune values, notes, IDs, fingerprints, receipts, JSON, source details, or local state. It describes the required first-party Record Test Drive for that exact current saved tune, fixed A-B-B-A comparison, explicit reuse permission, manual permission-bound Community Outcome export, matching Community Outcome Review handoff, collection-only boundary, Apple-controlled availability, and TestFlight Send Beta Feedback path without analytics or background networking. Community outcomes are not an accuracy or quality score and are not a recommendation; ForzAdvisor does not authenticate tester identity.
 - FH6 offline formula tuning is the default numeric provider and requires no account or API key.
 - Optional on-device model assistance and user-key Anthropic API mode apply to FH6 generation; reviewers can complete both catalog flows offline.
 - Screenshots and camera photos are processed locally for OCR. Current code does not upload screenshot images.

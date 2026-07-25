@@ -28,6 +28,8 @@ From Beta Validation Missions, you can open the iOS system share sheet with a pr
 
 The separate FH5 Research Partner invite contains only the public TestFlight link, testing prerequisites, safety boundaries, and feedback instructions. It contains no local counts, car values, IDs, fingerprints, receipts, or Candidate Outcome JSON. Opening or sharing it is user-initiated and adds no recruitment analytics, authentication, background upload, or share-history recording. Candidate Outcome reuse remains governed by its own explicit permission and direct-receipt checks.
 
+The separate FH6 Community Research Partner invite is static public copy shared only through a user-initiated system share sheet. It contains no FH6 TestFlight link, local progress or counts, car or tune values, notes, IDs, fingerprints, receipts, JSON, source permalink, publisher, or local state. It adds no recruitment analytics, authentication, background network activity, or share-history recording. Evidence reuse, manual permission-bound Community Outcome export, direct receipt, and Community Outcome Review permissions remain separate explicit decisions. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.

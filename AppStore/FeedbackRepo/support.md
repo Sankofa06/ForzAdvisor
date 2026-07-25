@@ -42,6 +42,12 @@ Partners need FH5 and an iPhone with iOS 17 or later. Apple controls external be
 
 Send feedback through TestFlight's Send Beta Feedback with the car, game build, input, surface, and exact unclear or unexpectedly rejected step. Do not include private JSON or identifiers.
 
+### How do I invite an FH6 Community Research Partner?
+
+In Beta Validation Missions, share the FH6 Community Research Partners invitation with a player who already has the latest ForzAdvisor beta. This FH6 invitation contains no TestFlight link. Apple controls beta availability, and the invitation does not guarantee access.
+
+Partners save an eligible exact FH6 tune, complete Record Test Drive for that exact current saved tune first, then run the fixed Community Reference A-B-B-A comparison. Explicit reuse permission is required before a manual canonical permission-bound Community Outcome export; the receiver uses Community Outcome Review for the matching exact current saved tune and separately confirms direct receipt and reuse permission. The public-only invitation includes no local progress, car or tune values, notes, IDs, fingerprints, receipts, JSON, source permalink, publisher, or local state. It adds no analytics or background network activity. Outcomes are collection-only, never validation, ground truth, ranking, promotion, or a tuning change. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity.
+
 ### What is FH5 Outcome Lab?
 
 After a matching Research Lab record and complete Upgrade Lab observation exist, Outcome Lab guides a fixed A-B-B-A Horizon Test Track experiment. You compare stock with one user-selected slider step while keeping the route, conditions, assists, input, and every other setting unchanged, then restore the stock value.
