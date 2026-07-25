@@ -98,6 +98,27 @@ final class TuningDomainTests: XCTestCase {
         XCTAssertTrue(draft.validationIssues.contains(.missingDrivetrain))
     }
 
+    func testCatalogFallbackDraftPreservesOnlySelectedGame() {
+        for game in [ForzaGame.fh5, .fh6] {
+            let draft = ManualEntryDraft(game: game)
+
+            XCTAssertEqual(draft.game, game)
+            XCTAssertNil(draft.year)
+            XCTAssertEqual(draft.make, "")
+            XCTAssertEqual(draft.model, "")
+            XCTAssertNil(draft.weightPounds)
+            XCTAssertNil(draft.frontWeightPercent)
+            XCTAssertNil(draft.performanceIndex)
+            XCTAssertNil(draft.performanceClass)
+            XCTAssertNil(draft.drivetrain)
+            XCTAssertNil(draft.peakHorsepower)
+            XCTAssertNil(draft.peakTorqueFootPounds)
+            XCTAssertNil(draft.confirmedCarInput())
+            XCTAssertNil(draft.catalogReference)
+            XCTAssertFalse(draft.catalogValuesModified)
+        }
+    }
+
     func testValidationCatchesRequiredInputRanges() {
         var car = SampleTuningData.starterCar
         car.make = " "

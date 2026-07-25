@@ -1,5 +1,10 @@
 # Release Notes
 
+## Version 1.15.0 (Build 40) - 2026-07-25
+
+- Adds a clear manual-entry path for cars that are not yet in the reviewed catalog.
+- Preserves the selected FH5 or FH6 game while keeping manually entered stock values clearly unverified.
+
 ## Version 1.14.0 (Build 39) - 2026-07-25
 
 - Shows Copilot's contextual next step immediately whenever it opens, without requiring a second prompt.

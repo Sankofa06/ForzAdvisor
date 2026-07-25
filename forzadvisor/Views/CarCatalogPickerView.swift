@@ -10,7 +10,7 @@ import SwiftUI
 struct CarCatalogPickerView: View {
     let catalogResult: Result<CarCatalogSnapshot, CatalogLoadError>
     let onBack: () -> Void
-    let onManualEntry: () -> Void
+    let onManualEntry: (ForzaGame) -> Void
     let onSelect: (CatalogCarSelection) -> Void
 
     @State private var selectedGame: ForzaGame
@@ -20,7 +20,7 @@ struct CarCatalogPickerView: View {
         catalogResult: Result<CarCatalogSnapshot, CatalogLoadError>,
         initialGame: ForzaGame = .fh6,
         onBack: @escaping () -> Void,
-        onManualEntry: @escaping () -> Void,
+        onManualEntry: @escaping (ForzaGame) -> Void,
         onSelect: @escaping (CatalogCarSelection) -> Void
     ) {
         self.catalogResult = catalogResult
@@ -46,6 +46,7 @@ struct CarCatalogPickerView: View {
             case .success(let snapshot):
                 catalogControls(snapshot: snapshot)
                 catalogResults(snapshot: snapshot)
+                manualEntrySection
             case .failure(let error):
                 Section {
                     ContentUnavailableView(
@@ -53,8 +54,11 @@ struct CarCatalogPickerView: View {
                         systemImage: "exclamationmark.triangle",
                         description: Text(error.localizedDescription)
                     )
-                    Button("Enter Manually", action: onManualEntry)
-                        .buttonStyle(.borderedProminent)
+                    Button("Enter Manually") {
+                        onManualEntry(selectedGame)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("catalogManualEntryButton")
                 }
                 .forzAdvisorRowBackground()
             }
@@ -106,6 +110,19 @@ struct CarCatalogPickerView: View {
                     .accessibilityIdentifier("catalogCarRow-\(entry.id)")
                 }
             }
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var manualEntrySection: some View {
+        Section("Car not listed?") {
+            Text("Enter and confirm the car's stock values manually. Manual values are not verified by the reviewed catalog.")
+                .foregroundStyle(.secondary)
+            Button("Enter Manually") {
+                onManualEntry(selectedGame)
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("catalogManualEntryButton")
         }
         .forzAdvisorRowBackground()
     }

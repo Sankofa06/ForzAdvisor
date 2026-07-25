@@ -59,8 +59,11 @@ struct ContentView: View {
                         catalogResult: catalogResult,
                         initialGame: initialGame,
                         onBack: { step = .newTune },
-                        onManualEntry: {
-                            step = .manualEntry(.empty, thumbnailData: nil)
+                        onManualEntry: { game in
+                            step = .manualEntry(
+                                ManualEntryDraft(game: game),
+                                thumbnailData: nil
+                            )
                         },
                         onSelect: { selection in
                             step = .catalogReview(selection)
