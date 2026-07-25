@@ -162,6 +162,17 @@ struct BetaValidationMissionBoard: Equatable, Sendable {
     let missions: [BetaValidationMission]
     let progress: BetaValidationProgress
 
+    var emptyGarageFirstWinMission: BetaValidationMission? {
+        guard progress.savedSetupCount == 0 else { return nil }
+        let matches = missions.filter { mission in
+            mission.kind == .startFH6Tune
+                && mission.game == .fh6
+                && mission.savedTuneID == nil
+                && mission.destination == .catalog(.fh6)
+        }
+        return matches.count == 1 ? matches[0] : nil
+    }
+
     var progressShare: BetaValidationProgressShare {
         BetaValidationProgressShareFactory().make(progress: progress)
     }

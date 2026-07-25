@@ -32,6 +32,11 @@ final class BetaValidationMissionTests: XCTestCase {
                 availableMissionCount: 2
             )
         )
+        XCTAssertEqual(
+            board.emptyGarageFirstWinMission,
+            board.missions[1]
+        )
+        XCTAssertEqual(board.missions.count, 2)
     }
 
     func testEligibleSavedSetupsProduceStableOrderedMissionsAndProgress() {
@@ -218,6 +223,64 @@ final class BetaValidationMissionTests: XCTestCase {
 
         XCTAssertEqual(fh5Only.missions.map(\.kind), [.startFH6Tune])
         XCTAssertEqual(fh6Only.missions.map(\.kind), [.startFH5Plan])
+        XCTAssertNil(fh5Only.emptyGarageFirstWinMission)
+        XCTAssertNil(fh6Only.emptyGarageFirstWinMission)
+    }
+
+    func testEmptyGarageFirstWinMissionFailsClosedForInvalidMissionSets() {
+        let exact = BetaValidationMission(
+            kind: .startFH6Tune,
+            game: .fh6,
+            savedTuneID: nil,
+            carDisplayName: nil,
+            disciplineTitle: nil
+        )
+        let wrongGame = BetaValidationMission(
+            kind: .startFH6Tune,
+            game: .fh5,
+            savedTuneID: nil,
+            carDisplayName: nil,
+            disciplineTitle: nil
+        )
+        let wrongKind = BetaValidationMission(
+            kind: .startFH5Plan,
+            game: .fh6,
+            savedTuneID: nil,
+            carDisplayName: nil,
+            disciplineTitle: nil
+        )
+        let wrongDestination = BetaValidationMission(
+            kind: .startFH6Tune,
+            game: .fh6,
+            savedTuneID: fh6ID,
+            carDisplayName: nil,
+            disciplineTitle: nil
+        )
+        let progress = BetaValidationProgress(
+            savedSetupCount: 0,
+            evidenceRecordCount: 0,
+            exactUpgradePathSetupCount: 0,
+            availableMissionCount: 0
+        )
+
+        let boards = [
+            BetaValidationMissionBoard(
+                missions: [],
+                progress: progress
+            ),
+            BetaValidationMissionBoard(
+                missions: [exact, exact],
+                progress: progress
+            ),
+            BetaValidationMissionBoard(
+                missions: [wrongGame, wrongKind, wrongDestination],
+                progress: progress
+            )
+        ]
+
+        for board in boards {
+            XCTAssertNil(board.emptyGarageFirstWinMission)
+        }
     }
 
     func testProgressShareIsDeterministicAggregateOnlyAndUsesMarketingURL() {

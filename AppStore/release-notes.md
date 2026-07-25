@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.16.0 (Build 41) - 2026-07-25
+
+- Turns an empty garage into a clear first-win path through the reviewed FH6 catalog.
+- Explains the three steps to generate and save a first tune while keeping unknown controls withheld until verified.
+- Rechecks live garage and mission state before opening the starter path.
+
 ## Version 1.15.0 (Build 40) - 2026-07-25
 
 - Adds a clear manual-entry path for cars that are not yet in the reviewed catalog.

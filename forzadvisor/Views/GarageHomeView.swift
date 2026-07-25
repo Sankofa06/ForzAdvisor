@@ -15,6 +15,7 @@ struct GarageHomeView: View {
     let onDeleteTune: (SavedTune) -> Void
     let betaMissionCount: Int
     let onBetaMissions: () -> Void
+    let onEmptyGarageFirstWin: (() -> Void)?
     let onSettings: () -> Void
 
     @State private var searchText = ""
@@ -92,12 +93,42 @@ struct GarageHomeView: View {
 
             Section("Garage") {
                 if savedTunes.isEmpty {
-                    ContentUnavailableView(
-                        "No saved tunes",
-                        systemImage: "wrench.adjustable",
-                        description: Text("Create a tune from a photo, screenshot, or manual entry to start filling the garage.")
-                    )
-                    .listRowBackground(ForzAdvisorTheme.surface)
+                    if let onEmptyGarageFirstWin {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Build your first FH6 tune")
+                                .font(.title3.bold())
+                            Text("Start with a reviewed stock car, confirm its facts, choose how you drive, and save the result. Unknown tuning controls remain withheld until they are verified.")
+                                .foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("1. Choose a reviewed FH6 stock car.")
+                                Text("2. Confirm its facts and choose a driving style.")
+                                Text("3. Generate and save your tune.")
+                            }
+                            .font(.subheadline)
+                            Button(action: onEmptyGarageFirstWin) {
+                                Text("Choose an FH6 Car")
+                                    .frame(
+                                        maxWidth: .infinity,
+                                        minHeight: 44
+                                    )
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityLabel("Choose an FH6 car for your first tune")
+                            .accessibilityHint("Opens the reviewed FH6 car catalog so you can confirm its stock facts before tuning.")
+                            .accessibilityIdentifier("emptyGarageFirstFH6TuneButton")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 8)
+                        .accessibilityIdentifier("emptyGarageFirstWin")
+                        .listRowBackground(ForzAdvisorTheme.surface)
+                    } else {
+                        ContentUnavailableView(
+                            "No saved tunes",
+                            systemImage: "wrench.adjustable",
+                            description: Text("Create a tune from a photo, screenshot, or manual entry to start filling the garage.")
+                        )
+                        .listRowBackground(ForzAdvisorTheme.surface)
+                    }
                 } else if filteredTunes.isEmpty {
                     ContentUnavailableView.search(text: searchText)
                         .listRowBackground(ForzAdvisorTheme.surface)

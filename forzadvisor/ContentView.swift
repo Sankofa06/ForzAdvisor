@@ -30,6 +30,7 @@ struct ContentView: View {
             Group {
                 switch step {
                 case .home:
+                    let missionBoard = betaValidationMissionBoard
                     GarageHomeView(
                         savedTunes: savedTunes,
                         onNewTune: {
@@ -39,8 +40,10 @@ struct ContentView: View {
                         onOpenTune: open,
                         onDeleteTune: delete,
                         betaMissionCount:
-                            betaValidationMissionBoard.progress.availableMissionCount,
+                            missionBoard.progress.availableMissionCount,
                         onBetaMissions: { rootSheet = .betaMissions },
+                        onEmptyGarageFirstWin:
+                            emptyGarageFirstWinAction(for: missionBoard),
                         onSettings: { rootSheet = .settings }
                     )
                 case .newTune:
@@ -522,6 +525,23 @@ struct ContentView: View {
 
     private var betaValidationMissionBoard: BetaValidationMissionBoard {
         BetaValidationMissionPlanner().makeBoard(savedTunes: savedTunes)
+    }
+
+    private func emptyGarageFirstWinAction(
+        for board: BetaValidationMissionBoard
+    ) -> (() -> Void)? {
+        guard savedTunes.isEmpty,
+              board.emptyGarageFirstWinMission != nil else {
+            return nil
+        }
+        return {
+            guard savedTunes.isEmpty,
+                  let mission =
+                    betaValidationMissionBoard.emptyGarageFirstWinMission else {
+                return
+            }
+            openBetaValidationMission(mission)
+        }
     }
 
     @ViewBuilder
