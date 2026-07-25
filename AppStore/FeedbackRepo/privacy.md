@@ -18,7 +18,9 @@ Deidentified calibration reuse and JSON sharing are off by default for each expe
 
 Candidate Outcome Review accepts canonical JSON only when this device independently regenerates the exact candidate and you confirm direct receipt and deidentified structured reuse permission. It stores canonical bytes and a local review receipt in a separate on-device queue. UUIDs and hashes bind bytes but do not authenticate identity. Duplicate, conflicting, and replayed evidence is quarantined. Reviewed outcomes are collection-only and cannot register or promote a ruleset, affect readiness, create a tune, or unlock/copy numeric FH5 output.
 
-FH6 Community Reference Comparison can store a separate local A-B-B-A comparative observation for an exact saved candidate. It stores only YouTube or Reddit metadata, controlled context, completion checks, the tester-authored comparative outcome, required attestations, and integrity identifiers. It does not store community settings, parts, share codes, source prose or media, metrics, telemetry, accounts, or device identifiers. Reuse and manual allow-listed JSON export are off by default. There is no import, source lookup, background upload, ranking, validation, ruleset promotion, or share-history recording.
+FH6 Community Reference Comparison can store a separate local A-B-B-A comparative observation for an exact saved candidate. It stores only YouTube or Reddit metadata, controlled context, completion checks, the tester-authored comparative outcome, required attestations, and integrity identifiers. It does not store community settings, parts, share codes, source prose or media, metrics, telemetry, accounts, or device identifiers. Reuse and manual allow-listed JSON export are off by default.
+
+FH6 Community Outcome Review accepts only canonical permission-bound comparison JSON matching the exact current saved candidate, after separate direct-receipt and structured-reuse confirmations. It keeps canonical bytes and a bound local permission receipt in a separate optional queue. Hashes and UUIDs bind bytes, not identity. Invalid, duplicate, conflicting, receipt-replayed, and session-replayed evidence is excluded or quarantined. Collection-only summaries cannot import source tune values, affect tuning, validate or rank a candidate, promote a ruleset, perform source lookup, or upload in the background.
 
 ## User-Initiated Beta Progress Sharing
 
@@ -44,7 +46,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes, local FH6 Community Reference Comparisons, and local FH5 Outcome Lab experiments in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, local FH6 Community Reference Comparisons, imported FH6 Community Outcome Review entries, and local FH5 Outcome Lab experiments in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

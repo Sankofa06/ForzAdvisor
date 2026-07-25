@@ -734,6 +734,78 @@ extension ContentView {
         }
     }
 
+    @discardableResult
+    func importFH6CommunityOutcomeReviewEntry(
+        _ entry: FH6CommunityOutcomeReviewEntry,
+        savedTuneID: UUID
+    ) -> String? {
+        do {
+            guard let savedTune =
+                try FH6CommunityOutcomeSavedTuneResolver()
+                    .fetch(
+                        id: savedTuneID,
+                        from: modelContext
+                    )
+            else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            try savedTune
+                .appendFH6CommunityOutcomeReviewEntry(entry)
+            try modelContext.save()
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    func deleteFH6CommunityOutcomeReviewEntry(
+        _ entry: FH6CommunityOutcomeReviewEntry,
+        savedTuneID: UUID
+    ) {
+        do {
+            guard let savedTune = try savedTune(
+                for: savedTuneID
+            ) else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            _ = try savedTune
+                .deleteFH6CommunityOutcomeReviewEntry(
+                    id: entry.id
+                )
+            try modelContext.save()
+        } catch {
+            errorMessage =
+                "Could not delete this Community Outcome review: \(error.localizedDescription)"
+        }
+    }
+
+    func validateFH6CommunityOutcomeReviewJSON(
+        _ data: Data,
+        displayedTune: TuneResult,
+        savedTuneID: UUID
+    ) -> String? {
+        do {
+            guard let savedTune =
+                try FH6CommunityOutcomeSavedTuneResolver()
+                    .fetch(
+                        id: savedTuneID,
+                        from: modelContext
+                    )
+            else {
+                throw ContentWorkflowError.missingSavedTune
+            }
+            _ = try FH6CommunityOutcomeReviewIngestor()
+                .validateCurrentCandidate(
+                    data,
+                    displayedTune: displayedTune,
+                    persistedTune: savedTune.tuneResult
+                )
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
         if let tune = savedTune.tuneResult {

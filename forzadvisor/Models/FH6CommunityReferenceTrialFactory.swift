@@ -188,6 +188,69 @@ struct FH6CommunityReferenceTrialFactory {
         return expected == record.contentFingerprint
     }
 
+    func isValid(_ export: FH6CommunityReferenceTrialExport) -> Bool {
+        guard export.schemaVersion
+                == FH6CommunityReferenceTrialRecord.currentSchemaVersion,
+              export.consentVersion
+                == FH6CommunityReferenceTrialRecord.currentConsentVersion,
+              export.protocolVersion
+                == FH6CommunityReferenceTrialRecord.currentProtocolVersion,
+              export.game == .fh6,
+              export.consentScope
+                == FH6CommunityReferenceTrialRecord.consentScope,
+              export.unknowns
+                == FH6CommunityReferenceTrialRecord.unknowns,
+              export.privacyExclusions
+                == FH6CommunityReferenceTrialRecord.privacyExclusions,
+              export.attestations
+                .deidentifiedOutcomeReusePermitted,
+              isCanonicalFingerprint(export.contentFingerprint),
+              isValidSource(export.source),
+              isValidAssociation(export.candidateAssociation),
+              validateExportProtocol(export),
+              let expected = try? semanticFingerprint(
+                source: export.source,
+                candidateAssociation: export.candidateAssociation,
+                context: export.context,
+                runs: export.runs,
+                outcome: export.outcome,
+                symptoms: export.candidateDeficiencySymptoms,
+                attestations: export.attestations
+              ) else {
+            return false
+        }
+        return expected == export.contentFingerprint
+    }
+
+    func matches(
+        _ export: FH6CommunityReferenceTrialExport,
+        tune: TuneResult
+    ) -> Bool {
+        guard isValid(export),
+              case .success(let eligibleTune) = eligibility(
+                for: tune,
+                savedTune: tune,
+                isStreaming: false
+              ),
+              let proof = try? makeCandidateProof(
+                from: eligibleTune
+              ),
+              let fingerprint = candidateFingerprint(
+                for: proof
+              ) else {
+            return false
+        }
+        return export.candidateAssociation == .init(
+            catalogID: proof.vehicle.catalogID,
+            performanceClass:
+                proof.vehicle.performanceClass,
+            performanceIndex:
+                proof.vehicle.performanceIndex,
+            confirmed: true,
+            candidateFingerprint: fingerprint
+        )
+    }
+
     func normalizedContentURL(
         _ rawValue: String,
         kind: FH6CommunityReferenceKind
@@ -445,6 +508,52 @@ struct FH6CommunityReferenceTrialFactory {
                 && !record.candidateDeficiencySymptoms.isEmpty)
             || (record.outcome != .referencePreferred
                 && record.candidateDeficiencySymptoms.isEmpty)
+    }
+
+    private func validateExportProtocol(
+        _ export: FH6CommunityReferenceTrialExport
+    ) -> Bool {
+        guard export.runs.map(\.role)
+                == FH6CommunityReferenceTrialRecord.requiredRoles,
+              export.runs.allSatisfy({
+                  $0.completed && $0.correctTuneConfirmed
+              }),
+              export.attestations.sameRouteAndConditions,
+              export.attestations.sameAssistsAndInput,
+              export.attestations.candidateSettingsApplied,
+              export.attestations.communityIdentityConfirmed,
+              export.attestations.finalCandidateRestored,
+              export.attestations.firstPartyAuthorship,
+              export.attestations.localStoragePermitted,
+              export.candidateDeficiencySymptoms
+                == export.candidateDeficiencySymptoms.sorted(by: {
+                    $0.rawValue < $1.rawValue
+                }),
+              Set(export.candidateDeficiencySymptoms).count
+                == export.candidateDeficiencySymptoms.count else {
+            return false
+        }
+        return (export.outcome == .referencePreferred
+                && !export.candidateDeficiencySymptoms.isEmpty)
+            || (export.outcome != .referencePreferred
+                && export.candidateDeficiencySymptoms.isEmpty)
+    }
+
+    private func isValidAssociation(
+        _ association:
+            FH6CommunityReferenceCandidateAssociation
+    ) -> Bool {
+        canonicalString(
+            association.catalogID,
+            maximumLength: 160
+        ) == association.catalogID
+            && association.confirmed
+            && isCanonicalFingerprint(
+                association.candidateFingerprint
+            )
+            && ForzaGame.fh6.performanceIndexRange(
+                for: association.performanceClass
+            )?.contains(association.performanceIndex) == true
     }
 
     private func isValidSource(

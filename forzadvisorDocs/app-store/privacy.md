@@ -31,6 +31,8 @@ FH6 Validation Review imports exact ForzAdvisor Test Drive JSON only for an elig
 
 FH6 Community Reference Comparisons store only tester-entered YouTube or Reddit source metadata, controlled A-B-B-A context, confirmations, comparative outcomes, attestations, and integrity fields for the exact current saved candidate. They do not collect source tune settings, parts, share codes, prose, media, metrics, telemetry, accounts, or device identifiers. Reuse/export is optional and off by default, sharing is manual, and the records cannot validate, rank, promote, or modify a tune.
 
+FH6 Community Outcome Review accepts canonical permission-bound comparison JSON only after a fresh refetch matches the exact current saved candidate and the reviewer separately confirms direct receipt and structured-reuse permission. It stores canonical bytes and a bound local receipt in a separate optional queue. UUIDs and hashes bind bytes, not identity. Local-only, reviewed-only, and combined dimensions remain collection-only. Invalid, duplicate, conflicting, and replayed evidence is excluded or quarantined. Review imports no source tune values and cannot change tuning, rank or validate a candidate, promote a ruleset, look up a source, or upload in the background.
+
 Tracking:
 
 - `NSPrivacyTracking`: false
@@ -67,7 +69,7 @@ Do not mark photos/videos as collected for the current build unless the app chan
 - FH5 Research Lab records and exports are generated locally. The app has no background uploader, receiver, or remote-revocation mechanism for them.
 - FH5 Outcome Lab records remain local unless the user explicitly shares an eligible allow-listed JSON copy; the app has no background experiment uploader or importer, and records cannot promote themselves into a ruleset or numeric tune.
 - Imported FH6 Validation Review entries remain local unless the user separately acts through another app or system share destination; ForzAdvisor has no background review uploader.
-- FH6 Community Reference Comparison records remain local unless the user explicitly enables deidentified reuse and manually shares an allow-listed JSON copy; ForzAdvisor performs no source lookup, import, or background upload.
+- FH6 Community Reference Comparison records remain local unless the user explicitly enables deidentified reuse and manually shares an allow-listed JSON copy. Community Outcome Review can manually import only that canonical allow-listed JSON into a separate local queue; ForzAdvisor performs no source lookup or background upload.
 
 ## Sources
 

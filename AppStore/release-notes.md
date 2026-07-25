@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.19.0 (Build 44) - 2026-07-25
+
+- Adds Community Outcome Review for permission-bound FH6 comparison exports that match the exact current saved candidate.
+- Keeps imported observations in a separate local queue with deterministic duplicate handling, conflict quarantine, and individual deletion.
+- Reports local, reviewed, and combined collection-only breakdowns without importing reference tune values, changing a tune, or promoting a ruleset.
+
 ## Version 1.18.0 (Build 43) - 2026-07-25
 
 - Adds guided FH6 community reference comparisons for exact saved tunes using a fixed A-B-B-A drive protocol.

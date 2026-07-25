@@ -662,6 +662,28 @@ struct ContentView: View {
                 return ([], error.localizedDescription)
             }
         }()
+        let communityOutcomeReviewState: (
+            entries: [FH6CommunityOutcomeReviewEntry],
+            report: FH6CommunityOutcomeCollectionReport,
+            loadError: String?
+        ) = {
+            guard let resolvedSavedTune else {
+                return ([], .empty, nil)
+            }
+            do {
+                return (
+                    try resolvedSavedTune
+                        .allFH6CommunityOutcomeReviewEntries(),
+                    try resolvedSavedTune
+                        .fh6CommunityOutcomeCollectionReport(
+                            matching: tune
+                        ),
+                    nil
+                )
+            } catch {
+                return ([], .empty, error.localizedDescription)
+            }
+        }()
         let researchEligibility = FH5ResearchEligibility().snapshot(
             for: tune,
             savedTune: persistedTune,
@@ -974,6 +996,48 @@ struct ContentView: View {
                 guard let resolvedSavedTuneID else { return }
                 deleteFH6CommunityReferenceTrialRecord(
                     record,
+                    savedTuneID: resolvedSavedTuneID
+                )
+            },
+            fh6CommunityOutcomeReviewEntries:
+                communityOutcomeReviewState.entries,
+            fh6CommunityOutcomeCollectionReport:
+                communityOutcomeReviewState.report,
+            fh6CommunityOutcomeReviewLoadError:
+                communityOutcomeReviewState.loadError,
+            onImportFH6CommunityOutcomeReviewEntry:
+                communityTrialEligibility.isSuccess
+                    && resolvedSavedTuneID != nil
+                ? { entry in
+                    guard let resolvedSavedTuneID else {
+                        return ContentWorkflowError
+                            .missingSavedTune.localizedDescription
+                    }
+                    return importFH6CommunityOutcomeReviewEntry(
+                        entry,
+                        savedTuneID: resolvedSavedTuneID
+                    )
+                }
+                : nil,
+            onValidateFH6CommunityOutcomeReviewJSON:
+                communityTrialEligibility.isSuccess
+                    && resolvedSavedTuneID != nil
+                ? { data in
+                    guard let resolvedSavedTuneID else {
+                        return ContentWorkflowError
+                            .missingSavedTune.localizedDescription
+                    }
+                    return validateFH6CommunityOutcomeReviewJSON(
+                        data,
+                        displayedTune: tune,
+                        savedTuneID: resolvedSavedTuneID
+                    )
+                }
+                : nil,
+            onDeleteFH6CommunityOutcomeReviewEntry: { entry in
+                guard let resolvedSavedTuneID else { return }
+                deleteFH6CommunityOutcomeReviewEntry(
+                    entry,
                     savedTuneID: resolvedSavedTuneID
                 )
             },

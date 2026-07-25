@@ -24,7 +24,7 @@ For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a 
 
 For FH5 catalog cars, ForzAdvisor creates a provider-independent local build plan without numeric tuning settings. Upgrade Lab records only the tuning-control parts you confirm are offered for the untouched stock car, then produces up to three exact alternative purchase paths. Numeric FH5 tuning stays unavailable until a separate FH5 ruleset is validated.
 
-Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. FH6 Tune Menu Lab records every untouched stock control as adjustable, shown locked, or not shown, and accepts slider values only when their exact range and step validate. Beta Validation Missions turn eligible saved setups into exact local testing tasks for Tune Menu Lab, Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, and Record Test Drive, and can share a public-only invitation to the capped FH5 Research Partners TestFlight group. FH5 Outcome Lab records a fixed one-variable A-B-B-A Test Track experiment as calibration evidence. Generic calibration records retain their schema-v1 sharing path. Reuse-permitted generated-candidate outcomes can be explicitly shared and reviewed only when another device independently regenerates the exact experimental association; reviewed outcomes remain collection-only and cannot unlock tuning. Eligible exact FH6 builds can also use Guided Refinement, verified build sharing, and local Validation Review for permission-bound Test Drive exports that match the current setup.
+Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. FH6 Tune Menu Lab records every untouched stock control as adjustable, shown locked, or not shown, and accepts slider values only when their exact range and step validate. Beta Validation Missions turn eligible saved setups into exact local testing tasks for Tune Menu Lab, Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, and Record Test Drive, and can share a public-only invitation to the capped FH5 Research Partners TestFlight group. FH5 Outcome Lab records a fixed one-variable A-B-B-A Test Track experiment as calibration evidence. Generic calibration records retain their schema-v1 sharing path. Reuse-permitted generated-candidate outcomes can be explicitly shared and reviewed only when another device independently regenerates the exact experimental association; reviewed outcomes remain collection-only and cannot unlock tuning. Eligible exact FH6 builds can also use Guided Refinement, verified build sharing, local Validation Review for permission-bound Test Drive exports, and Community Outcome Review for canonical comparison exports that match the current saved candidate. Community review reports local, reviewed, and combined observations separately without importing reference tune settings or changing a tune.
 
 ForzAdvisor runs offline by default. FH5 build plans always stay local. Optional on-device AI can assist FH6 generation when Apple Foundation Models are available, and optional API mode lets advanced users connect their own Anthropic API key for FH6. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -69,20 +69,22 @@ Suggested FH5 review path:
 
 For FH6 Validation Review, save an eligible exact-build tune, record or receive a ForzAdvisor Test Drive JSON export for that exact setup, then open Accuracy Evidence -> Open Validation Review. Import requires local confirmation of direct receipt and reuse permission. Review reports outcomes and conditions only and does not change the tune.
 
+For FH6 Community Outcome Review, save an eligible exact-build tune, receive a canonical Community Reference Comparison JSON export directly from its tester, then open the saved tune's Community Comparison area or FH6 Validation Review. Import requires separate confirmation of direct receipt and permission for deidentified structured reuse. The review stays local, reports comparison outcomes only, and cannot import reference settings, change tuning, rank a source, or promote a ruleset.
+
 No account or API key is required. FH5 build planning is local and does not use the provider selected in Settings. For an FH6 numeric result, select an FH6 catalog car or use manual entry. Camera access is optional and only used for on-device OCR; photo import uses the system picker. Optional on-device AI and user-key Anthropic API modes apply to FH6 generation.
 
 ## App Information
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.12.0
-- Current project build: 36
+- Current project version: 1.19.0
+- Current project build: 44
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-FH6 Tune Menu Lab now lets you verify every untouched stock tuning control directly from the game. Record adjustable, locked, and unavailable controls plus exact ranges and steps; ForzAdvisor regenerates only settings that match that observed build.
+Community Outcome Review now lets you import permission-bound FH6 comparison exports for the exact current saved candidate. Reviewed evidence stays local and separate, with duplicate/conflict handling and collection-only summaries that never change a tune.
 
 ## Export Compliance Notes
 

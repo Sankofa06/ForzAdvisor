@@ -50,7 +50,11 @@ The result remains calibration evidence. It does not generate a tune, collect la
 
 ### What is an FH6 Community Reference Comparison?
 
-On an eligible saved exact FH6 tune, apply the ForzAdvisor candidate as A and one direct YouTube or Reddit reference as B, then complete the fixed A-B-B-A protocol under constant conditions and restore A. The app stores metadata and your comparative observation, never community settings, parts, share codes, source prose/media, metrics, telemetry, accounts, or device identifiers. It is not validation, ground truth, a ranking, or promotion. Reuse and explicit JSON sharing are optional and off by default; there is no import, source lookup, or background upload.
+On an eligible saved exact FH6 tune, apply the ForzAdvisor candidate as A and one direct YouTube or Reddit reference as B, then complete the fixed A-B-B-A protocol under constant conditions and restore A. The app stores metadata and your comparative observation, never community settings, parts, share codes, source prose/media, metrics, telemetry, accounts, or device identifiers. It is not validation, ground truth, a ranking, or promotion. Reuse and explicit JSON sharing are optional and off by default; there is no source lookup or background upload.
+
+### What is FH6 Community Outcome Review?
+
+Open the separate review from a saved tune's Community Reference Comparisons area or FH6 Validation Review. It accepts only canonical permission-bound comparison JSON for the fresh exact saved candidate. Direct receipt and structured-reuse permission require separate confirmations; hashes and UUIDs bind bytes, not identity. Local and reviewed outcome counts remain collection-only. Duplicates are ignored, conflicts and receipt/session replays are quarantined, and reviewed entries can be deleted. Review never imports source settings, parts, share codes, prose, media, or metrics; changes tuning; creates validation, ranking, or promotion; looks up a source; or uploads in the background.
 
 ### How do I delete a tune?
 

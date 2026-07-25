@@ -36,6 +36,7 @@ final class SavedTune {
     @Attribute(.externalStorage) private var fh5CandidateOutcomeReviewEntriesData: Data? = nil
     @Attribute(.externalStorage) private var fh6ValidationReviewEntriesData: Data? = nil
     @Attribute(.externalStorage) private var fh6CommunityReferenceTrialRecordsData: Data? = nil
+    @Attribute(.externalStorage) private var fh6CommunityOutcomeReviewEntriesData: Data? = nil
 
     @MainActor
     init(
@@ -68,6 +69,7 @@ final class SavedTune {
         self.fh5CandidateOutcomeReviewEntriesData = nil
         self.fh6ValidationReviewEntriesData = nil
         self.fh6CommunityReferenceTrialRecordsData = nil
+        self.fh6CommunityOutcomeReviewEntriesData = nil
     }
 
     @MainActor
@@ -744,6 +746,140 @@ final class SavedTune {
     }
 
     @MainActor
+    func allFH6CommunityOutcomeReviewEntries()
+        throws -> [FH6CommunityOutcomeReviewEntry] {
+        try decodedFH6CommunityOutcomeReviewEntries()
+            .sorted(by: Self.communityOutcomeReviewPrecedes)
+    }
+
+    @MainActor
+    func fh6CommunityOutcomeReviewEntries(
+        matching tune: TuneResult
+    ) throws -> [FH6CommunityOutcomeReviewEntry] {
+        guard let currentTune = tuneResult,
+              FH6CommunityReferenceTrialFactory()
+                .eligibility(
+                    for: tune,
+                    savedTune: currentTune,
+                    isStreaming: false
+                ).isSuccess else {
+            throw FH6CommunityOutcomeReviewError.tuneMismatch
+        }
+        let ingestor = FH6CommunityOutcomeReviewIngestor()
+        return try decodedFH6CommunityOutcomeReviewEntries()
+            .filter { entry in
+                guard ingestor.isValidReviewEntry(entry),
+                      let validated = try? ingestor.validate(
+                          entry.canonicalExportJSON
+                      ) else {
+                    return false
+                }
+                return ingestor.matchesSavedTune(
+                    validated,
+                    tune: currentTune
+                ) && ingestor.matchesSavedTune(
+                    validated,
+                    tune: tune
+                )
+            }
+            .sorted(by: Self.communityOutcomeReviewPrecedes)
+    }
+
+    @MainActor
+    func fh6CommunityOutcomeCollectionReport(
+        matching tune: TuneResult
+    ) throws -> FH6CommunityOutcomeCollectionReport {
+        guard let currentTune = tuneResult,
+              FH6CommunityReferenceTrialFactory()
+                .eligibility(
+                    for: tune,
+                    savedTune: currentTune,
+                    isStreaming: false
+                ).isSuccess else {
+            throw FH6CommunityOutcomeReviewError.tuneMismatch
+        }
+        return FH6CommunityOutcomeCollectionEvaluator()
+            .evaluate(
+                localRecords:
+                    try decodedFH6CommunityReferenceTrialRecords(),
+                reviewedEntries:
+                    try decodedFH6CommunityOutcomeReviewEntries(),
+                tune: currentTune
+            )
+    }
+
+    @MainActor
+    func appendFH6CommunityOutcomeReviewEntry(
+        _ entry: FH6CommunityOutcomeReviewEntry
+    ) throws {
+        let ingestor = FH6CommunityOutcomeReviewIngestor()
+        guard ingestor.isValidReviewEntry(entry),
+              let validated = try? ingestor.validate(
+                  entry.canonicalExportJSON
+              ),
+              let currentTune = tuneResult,
+              ingestor.matchesSavedTune(
+                  validated,
+                  tune: currentTune
+              ) else {
+            throw FH6CommunityOutcomeReviewError.tuneMismatch
+        }
+        let bindingReport =
+            FH6CommunityOutcomeCollectionEvaluator()
+                .evaluate(
+                    localRecords: [],
+                    reviewedEntries: [entry],
+                    tune: currentTune
+                )
+        guard bindingReport.verifiedUniqueSessionCount == 1,
+              bindingReport.validReviewedCount == 1,
+              bindingReport.quarantinedCount == 0,
+              bindingReport.invalidCount == 0 else {
+            throw FH6CommunityOutcomeReviewError
+                .permissionBindingMismatch
+        }
+
+        var entries =
+            try decodedFH6CommunityOutcomeReviewEntries()
+        if entries.contains(where: {
+            $0.permission.canonicalExportDigest
+                == entry.permission.canonicalExportDigest
+        }) {
+            return
+        }
+        guard !entries.contains(where: { $0.id == entry.id })
+        else {
+            throw FH6CommunityOutcomeReviewError
+                .permissionBindingMismatch
+        }
+        entries.append(entry)
+        entries.sort(by: Self.communityOutcomeReviewPrecedes)
+        fh6CommunityOutcomeReviewEntriesData =
+            try Self.encoder.encode(entries)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteFH6CommunityOutcomeReviewEntry(
+        id: UUID
+    ) throws -> Bool {
+        var entries =
+            try decodedFH6CommunityOutcomeReviewEntries()
+        let priorCount = entries.count
+        entries.removeAll { $0.id == id }
+        guard entries.count != priorCount else {
+            return false
+        }
+        fh6CommunityOutcomeReviewEntriesData =
+            entries.isEmpty
+                ? nil
+                : try Self.encoder.encode(entries)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
     private func decodedValidationRecords() throws -> [FirstPartyValidationRecord] {
         guard let firstPartyValidationRecordsData else { return [] }
         do {
@@ -910,6 +1046,22 @@ final class SavedTune {
         }
     }
 
+    @MainActor
+    private func decodedFH6CommunityOutcomeReviewEntries()
+        throws -> [FH6CommunityOutcomeReviewEntry] {
+        guard let fh6CommunityOutcomeReviewEntriesData else {
+            return []
+        }
+        do {
+            return try Self.decoder.decode(
+                [FH6CommunityOutcomeReviewEntry].self,
+                from: fh6CommunityOutcomeReviewEntriesData
+            )
+        } catch {
+            throw FH6CommunityOutcomeReviewError.corruptStorage
+        }
+    }
+
 #if DEBUG
     @MainActor
     func replaceTuneDataForTesting(_ data: Data) {
@@ -954,6 +1106,13 @@ final class SavedTune {
     ) {
         fh6CommunityReferenceTrialRecordsData = data
     }
+
+    @MainActor
+    func replaceFH6CommunityOutcomeReviewEntriesDataForTesting(
+        _ data: Data?
+    ) {
+        fh6CommunityOutcomeReviewEntriesData = data
+    }
 #endif
 
     private static func communityTrialPrecedes(
@@ -964,6 +1123,16 @@ final class SavedTune {
             return lhs.createdAt < rhs.createdAt
         }
         return lhs.recordID.uuidString < rhs.recordID.uuidString
+    }
+
+    private static func communityOutcomeReviewPrecedes(
+        _ lhs: FH6CommunityOutcomeReviewEntry,
+        _ rhs: FH6CommunityOutcomeReviewEntry
+    ) -> Bool {
+        if lhs.importedAt != rhs.importedAt {
+            return lhs.importedAt < rhs.importedAt
+        }
+        return lhs.id.uuidString < rhs.id.uuidString
     }
 
     private static let encoder: JSONEncoder = {

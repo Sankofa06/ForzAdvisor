@@ -16,6 +16,7 @@ struct FH6ValidationReviewView: View {
     let onDelete: (FH6ValidationReviewEntry) -> Void
     let communityReferenceRecords: [FH6CommunityReferenceTrialRecord]
     let onRunCommunityReferenceTrial: (() -> Void)?
+    let onOpenCommunityOutcomeReview: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var pastedJSON = ""
@@ -232,6 +233,15 @@ struct FH6ValidationReviewView: View {
                         }
                         .accessibilityIdentifier(
                             "validationReviewRunCommunityComparisonButton"
+                        )
+                    }
+                    if let onOpenCommunityOutcomeReview {
+                        Button("Open Community Outcome Review") {
+                            dismiss()
+                            onOpenCommunityOutcomeReview()
+                        }
+                        .accessibilityIdentifier(
+                            "validationReviewOpenCommunityOutcomeReviewButton"
                         )
                     }
                 }

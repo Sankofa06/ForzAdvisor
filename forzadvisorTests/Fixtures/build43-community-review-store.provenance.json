@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "492663fe607c8e9445844e9e3810711e0ff0dc1f",
+  "generationProcess": [
+    "git archive 492663fe607c8e9445844e9e3810711e0ff0dc1f | tar -x -C <isolated-directory>",
+    "Patch only the isolated historical test target with testWriteBuild43MigrationFixture.",
+    "DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -quiet -project <isolated-directory>/forzadvisor.xcodeproj -scheme forzadvisor -destination 'platform=iOS Simulator,id=E9B3D0D7-F8E2-446E-9B0E-1DAFB6A1549E' -parallel-testing-enabled NO -maximum-parallel-testing-workers 1 test -skip-testing:forzadvisorUITests -only-testing:forzadvisorTests/FH6CommunityReferenceTrialTests/testWriteBuild43MigrationFixture",
+    "Export its retained XCTest attachment containing the base64-encoded store.sqlite, store.sqlite-wal, and store.sqlite-shm files.",
+    "Encode the attachment JSON as a level-9 raw DEFLATE stream and then base64 for a reviewable repository fixture."
+  ],
+  "archiveEncoding": "base64(raw-deflate(level-9(JSON map of base64 file bytes)))",
+  "compressedArchiveSHA256": "7f26333e8dc9a7cf876c7ab474ef74359f1f08ea93e9a2e9e50f337dc0c8bc94",
+  "decodedFileSHA256": {
+    "store.sqlite": "28899e387f569baa26e354afbafe0316cab23f11a00236271ad57e87c0c431c0",
+    "store.sqlite-shm": "1b6f42e09ed23c9d6940c40dba0e2a898fbc419132f1c1c219af882004f2b6d3",
+    "store.sqlite-wal": "3d183ff70758d295473a1b8ac4bae3ed5693971ab7ecdaff0a06ac3904509634"
+  }
+}

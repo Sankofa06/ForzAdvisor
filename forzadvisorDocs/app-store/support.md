@@ -46,7 +46,13 @@ Import requires confirmation of direct receipt and permission for deidentified s
 
 On an eligible saved exact FH6 tune, choose Run Community Reference Comparison. Apply the exact ForzAdvisor candidate for A and one reference from a direct YouTube or Reddit permalink for B, then complete the fixed A-B-B-A sequence under the same route, conditions, assists, and input. Restore the ForzAdvisor candidate before saving or leaving.
 
-The app stores only source metadata, controlled context, run confirmations, and your comparative outcome. Do not enter community settings, parts, share codes, source prose, media, or metrics. The result is a comparative observation, not validation, ground truth, a ranking, or a promotion. Local storage is required; deidentified reuse and explicit JSON sharing are optional and off by default. There is no community import, source lookup, or background upload.
+The app stores only source metadata, controlled context, run confirmations, and your comparative outcome. Do not enter community settings, parts, share codes, source prose, media, or metrics. The result is a comparative observation, not validation, ground truth, a ranking, or a promotion. Local storage is required; deidentified reuse and explicit JSON sharing are optional and off by default. There is no source lookup or background upload.
+
+### What is FH6 Community Outcome Review?
+
+Open this separate review from a saved tune's Community Reference Comparisons area or from FH6 Validation Review. Paste exact canonical comparison JSON. Before showing an exact-current success, the app freshly refetches the saved tune and independently matches its opaque candidate binding. Direct receipt and deidentified structured-reuse permission require separate confirmations.
+
+The screen reports clearly separate Local, Reviewed, and Combined collection-only counts for platform, outcome, course, surface, input, and candidate-deficiency symptoms. Same-semantic copies are deduplicated with local evidence preferred. Conflicting submissions, permission-receipt replays, and divergent outcomes reused as the same session are quarantined. Reviewed entries can be deleted. Review never imports source tune settings, parts, share codes, prose, media, or metrics; changes tuning; creates validation, ranking, or promotion; looks up a source; or uploads in the background. UUIDs and hashes bind bytes, not identity.
 
 ### What is FH5 Research Lab?
 

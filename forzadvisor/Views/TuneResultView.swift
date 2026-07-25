@@ -60,6 +60,17 @@ struct TuneResultView: View {
     let onRunFH6CommunityReferenceTrial: (() -> Void)?
     let onDeleteFH6CommunityReferenceTrialRecord:
         (FH6CommunityReferenceTrialRecord) -> Void
+    let fh6CommunityOutcomeReviewEntries:
+        [FH6CommunityOutcomeReviewEntry]
+    let fh6CommunityOutcomeCollectionReport:
+        FH6CommunityOutcomeCollectionReport
+    let fh6CommunityOutcomeReviewLoadError: String?
+    let onImportFH6CommunityOutcomeReviewEntry:
+        ((FH6CommunityOutcomeReviewEntry) -> String?)?
+    let onValidateFH6CommunityOutcomeReviewJSON:
+        ((Data) -> String?)?
+    let onDeleteFH6CommunityOutcomeReviewEntry:
+        (FH6CommunityOutcomeReviewEntry) -> Void
     let onFeedback: (TuneFeedback) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
@@ -72,6 +83,7 @@ struct TuneResultView: View {
     @State private var showsFH5ResearchReview = false
     @State private var showsFH5CandidateOutcomeReview = false
     @State private var showsFH6ValidationReview = false
+    @State private var showsFH6CommunityOutcomeReview = false
     @State private var communityTrialPendingDeletion:
         FH6CommunityReferenceTrialRecord?
 
@@ -307,7 +319,44 @@ struct TuneResultView: View {
                     communityReferenceRecords:
                         fh6CommunityReferenceTrialRecords,
                     onRunCommunityReferenceTrial:
-                        onRunFH6CommunityReferenceTrial
+                        onRunFH6CommunityReferenceTrial,
+                    onOpenCommunityOutcomeReview:
+                        onImportFH6CommunityOutcomeReviewEntry == nil
+                        ? nil
+                        : {
+                            showsFH6ValidationReview = false
+                            DispatchQueue.main.async {
+                                showsFH6CommunityOutcomeReview = true
+                            }
+                        }
+                )
+            }
+        }
+        .sheet(
+            isPresented: $showsFH6CommunityOutcomeReview
+        ) {
+            if let onImportFH6CommunityOutcomeReviewEntry {
+                FH6CommunityOutcomeReviewView(
+                    tune: tune,
+                    localRecords:
+                        fh6CommunityReferenceTrialRecords,
+                    entries:
+                        fh6CommunityOutcomeReviewEntries,
+                    report:
+                        fh6CommunityOutcomeCollectionReport,
+                    storageError:
+                        fh6CommunityOutcomeReviewLoadError,
+                    onImport:
+                        onImportFH6CommunityOutcomeReviewEntry,
+                    onValidateCurrentCandidate:
+                        onValidateFH6CommunityOutcomeReviewJSON
+                            ?? { _ in
+                                FH6CommunityOutcomeReviewError
+                                    .tuneMismatch
+                                    .localizedDescription
+                            },
+                    onDelete:
+                        onDeleteFH6CommunityOutcomeReviewEntry
                 )
             }
         }
@@ -475,6 +524,11 @@ struct TuneResultView: View {
             records: fh6CommunityReferenceTrialRecords,
             loadError: fh6CommunityReferenceTrialLoadError,
             onRun: onRunFH6CommunityReferenceTrial,
+            canOpenOutcomeReview:
+                onImportFH6CommunityOutcomeReviewEntry != nil,
+            onOpenOutcomeReview: {
+                showsFH6CommunityOutcomeReview = true
+            },
             pendingDeletion: $communityTrialPendingDeletion
         )
     }
@@ -688,6 +742,8 @@ private struct FH6CommunityReferenceEvidenceSection: View {
     let records: [FH6CommunityReferenceTrialRecord]
     let loadError: String?
     let onRun: (() -> Void)?
+    let canOpenOutcomeReview: Bool
+    let onOpenOutcomeReview: () -> Void
     @Binding var pendingDeletion: FH6CommunityReferenceTrialRecord?
 
     private var latest: FH6CommunityReferenceTrialRecord? {
@@ -720,6 +776,17 @@ private struct FH6CommunityReferenceEvidenceSection: View {
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier(
                         "runCommunityReferenceComparisonButton"
+                    )
+                }
+
+                if canOpenOutcomeReview {
+                    Button(
+                        "Open Community Outcome Review",
+                        action: onOpenOutcomeReview
+                    )
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier(
+                        "openFH6CommunityOutcomeReviewButton"
                     )
                 }
 

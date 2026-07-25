@@ -54,7 +54,13 @@ Import also requires you to confirm direct receipt from the driver and permissio
 
 On an eligible saved exact FH6 tune, choose Run Community Reference Comparison. Apply the exact ForzAdvisor candidate for A and one reference from a direct YouTube or Reddit permalink for B, then complete the fixed A-B-B-A sequence with the same route, conditions, assists, and input. Restore the ForzAdvisor candidate before saving or leaving.
 
-The app stores only source metadata, controlled context, run confirmations, and your comparative outcome. Do not enter community settings, parts, share codes, source prose, media, or metrics. The result is a comparative observation, not validation, ground truth, a ranking, or a promotion. Local storage is required; deidentified reuse and explicit JSON sharing are optional and off by default. There is no community import, source lookup, or background upload.
+The app stores only source metadata, controlled context, run confirmations, and your comparative outcome. Do not enter community settings, parts, share codes, source prose, media, or metrics. The result is a comparative observation, not validation, ground truth, a ranking, or a promotion. Local storage is required; deidentified reuse and explicit JSON sharing are optional and off by default. There is no source lookup or background upload.
+
+### What is FH6 Community Outcome Review?
+
+Open Community Outcome Review from a saved tune's Community Reference Comparisons area, or from the separate Community Reference Comparisons subsection in FH6 Validation Review. Paste the exact canonical JSON shared from another ForzAdvisor comparison. The app validates every schema, protocol, privacy, source, attestation, and fingerprint field and independently matches the opaque candidate binding to the fresh current saved tune.
+
+Direct receipt and deidentified structured-reuse permission are separate required confirmations. UUIDs and hashes bind that decision to exact bytes but do not authenticate identity. Local and reviewed outcomes are summarized separately and together by platform, outcome, course, surface, input, and candidate-deficiency symptom. Duplicates are ignored; administrative conflicts and replayed receipts or sessions are quarantined. The queue is local and deletable. Review imports no source settings, parts, share codes, prose, media, or metrics, and cannot change tuning, rank or validate a candidate, promote a ruleset, perform source lookup, or upload in the background.
 
 ### What is FH5 Research Lab?
 
