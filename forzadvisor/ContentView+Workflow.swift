@@ -11,42 +11,28 @@ import SwiftData
 
 extension ContentView {
     func performCopilotAction(_ action: CopilotAction) {
-        let liveState: (
-            persistedResult: CopilotPersistedResultPayload?,
-            matchingCommunityTrialCount: Int?
-        ) = {
-            guard action == .openFH6CommunityReferenceTrial,
-                  case .result(
-                    _,
-                    let savedTuneID,
-                    _,
-                    _,
-                    _
-                  ) = step,
-                  let savedTuneID,
-                  let savedTune = try? savedTune(for: savedTuneID),
-                  let persistedTune = savedTune.tuneResult,
-                  let records = try? savedTune
-                    .fh6CommunityReferenceTrialRecords(
-                        matching: persistedTune
-                    ) else {
-                return (nil, nil)
+        let authoritativeSnapshot: CopilotPersistedActionSnapshot? = {
+            guard case .result(
+                let displayedTune,
+                let savedTuneID,
+                _,
+                _,
+                _
+            ) = step,
+            let savedTuneID else {
+                return nil
             }
-            return (
-                CopilotPersistedResultPayload(
-                    tune: persistedTune,
-                    thumbnailData: savedTune.thumbnailData,
-                    playerNotes: savedTune.playerNotes
-                ),
-                records.count
-            )
+            return try? CopilotPersistedActionSnapshotResolver()
+                .resolve(
+                    displayedTune: displayedTune,
+                    savedTuneID: savedTuneID,
+                    in: modelContext
+                )
         }()
         guard let destination = CopilotWorkflowActionRouter().destination(
             for: action,
             from: step,
-            persistedResult: liveState.persistedResult,
-            matchingCommunityTrialCount:
-                liveState.matchingCommunityTrialCount
+            authoritativeSnapshot: authoritativeSnapshot
         ) else {
             return
         }

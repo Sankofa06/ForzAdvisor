@@ -161,6 +161,23 @@ final class SavedTune {
     }
 
     @MainActor
+    func validValidationRecords(
+        matching tune: TuneResult
+    ) throws -> [FirstPartyValidationRecord] {
+        let factory = FirstPartyValidationRecordFactory()
+        guard let fingerprint =
+                factory.revisionFingerprint(for: tune) else {
+            return []
+        }
+        return try decodedValidationRecords()
+            .filter {
+                $0.tuneRevisionFingerprint == fingerprint
+                    && factory.isValid($0)
+            }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    @MainActor
     func betaValidationEvidenceSnapshot(
         matching tune: TuneResult
     ) throws -> SavedTuneBetaValidationEvidenceSnapshot {

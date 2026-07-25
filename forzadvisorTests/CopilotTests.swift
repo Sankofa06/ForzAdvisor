@@ -313,6 +313,20 @@ final class CopilotTests: XCTestCase {
             tuneMenuLabEligible: false,
             tireLabEligible: false,
             upgradeLabEligible: false,
+            fh6RecordTestDriveEligible: false,
+            fh6CommunityReferenceTrialEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: false
+        )
+        let recordTestDrive = CopilotProjectionFacts(
+            readyCount: 2,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: false,
+            tireLabEligible: false,
+            upgradeLabEligible: false,
+            fh6RecordTestDriveEligible: true,
             fh6CommunityReferenceTrialEligible: true,
             exactUpgradePathCount: 0,
             isSaved: true,
@@ -332,8 +346,19 @@ final class CopilotTests: XCTestCase {
             .openUpgradeLab
         )
         XCTAssertEqual(
+            engine.defaultResponse(
+                in: resultContext(recordTestDrive)
+            ).action,
+            .openRecordTestDrive
+        )
+        XCTAssertEqual(
             engine.defaultResponse(in: resultContext(community)).action,
             .openFH6CommunityReferenceTrial
+        )
+        XCTAssertTrue(
+            engine.defaultResponse(
+                in: resultContext(recordTestDrive)
+            ).message.contains("first-party validation")
         )
         XCTAssertTrue(
             engine.defaultResponse(in: resultContext(community))
@@ -434,6 +459,7 @@ final class CopilotTests: XCTestCase {
                 .openFH6TuneMenuLab,
                 .openTireLab,
                 .openUpgradeLab,
+                .openRecordTestDrive,
                 .openFH6CommunityReferenceTrial
             ])
         )

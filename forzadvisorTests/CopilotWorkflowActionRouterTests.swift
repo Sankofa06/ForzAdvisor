@@ -3,6 +3,7 @@
 //  forzadvisorTests
 //
 
+import SwiftData
 import XCTest
 @testable import forzadvisor
 
@@ -22,14 +23,28 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         ] {
             let tune = try eligibleTune(for: route)
             let current = resultStep(tune)
+            let freshThumbnail =
+                Data("fresh-\(route)-thumbnail".utf8)
+            let freshNotes = "Fresh \(route) notes"
             let destination = try XCTUnwrap(
-                router.destination(for: action, from: current)
+                router.destination(
+                    for: action,
+                    from: current,
+                    authoritativeSnapshot:
+                        actionSnapshot(
+                            tune,
+                            thumbnailData: freshThumbnail,
+                            playerNotes: freshNotes
+                        )
+                )
             )
 
             assertDestination(
                 destination,
                 route: route,
-                expectedTune: tune
+                expectedTune: tune,
+                expectedThumbnailData: freshThumbnail,
+                expectedPlayerNotes: freshNotes
             )
         }
     }
@@ -41,14 +56,23 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         XCTAssertNotNil(
             router.destination(
                 for: .openFH6TuneMenuLab,
-                from: current
+                from: current,
+                authoritativeSnapshot: actionSnapshot(tune)
             )
         )
         XCTAssertNil(
-            router.destination(for: .openTireLab, from: current)
+            router.destination(
+                for: .openTireLab,
+                from: current,
+                authoritativeSnapshot: actionSnapshot(tune)
+            )
         )
         XCTAssertNil(
-            router.destination(for: .openUpgradeLab, from: current)
+            router.destination(
+                for: .openUpgradeLab,
+                from: current,
+                authoritativeSnapshot: actionSnapshot(tune)
+            )
         )
     }
 
@@ -56,12 +80,24 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         let tune = try eligibleTune(for: .tuneMenu)
 
         XCTAssertNil(
-            router.destination(for: .openFH6TuneMenuLab, from: .home)
+            router.destination(
+                for: .openFH6TuneMenuLab,
+                from: .home,
+                authoritativeSnapshot: actionSnapshot(tune)
+            )
         )
         XCTAssertNil(
             router.destination(
                 for: .openTireLab,
-                from: resultStep(tune)
+                from: resultStep(tune),
+                authoritativeSnapshot: actionSnapshot(tune)
+            )
+        )
+        XCTAssertNil(
+            router.destination(
+                for: .openFH6TuneMenuLab,
+                from: resultStep(tune),
+                authoritativeSnapshot: nil
             )
         )
 
@@ -70,7 +106,9 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         XCTAssertNil(
             router.destination(
                 for: .openFH6TuneMenuLab,
-                from: resultStep(noProjection)
+                from: resultStep(noProjection),
+                authoritativeSnapshot:
+                    actionSnapshot(noProjection)
             )
         )
 
@@ -81,7 +119,9 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         XCTAssertNil(
             router.destination(
                 for: .openFH6TuneMenuLab,
-                from: resultStep(noReadyValues)
+                from: resultStep(noReadyValues),
+                authoritativeSnapshot:
+                    actionSnapshot(noReadyValues)
             )
         )
 
@@ -90,7 +130,8 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         XCTAssertNil(
             router.destination(
                 for: .openFH6TuneMenuLab,
-                from: resultStep(edited)
+                from: resultStep(edited),
+                authoritativeSnapshot: actionSnapshot(tune)
             )
         )
     }
@@ -105,32 +146,50 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         XCTAssertNil(
             router.destination(
                 for: .openUpgradeLab,
-                from: resultStep(tune)
+                from: resultStep(tune),
+                authoritativeSnapshot: actionSnapshot(tune)
             )
         )
     }
 
-    func testCommunityActionRequiresLiveExactSavedTuneAndZeroTrials()
+    func testExactSequenceRequiresValidationBeforeCommunityAndZeroTrials()
         async throws {
         let tune = try await eligibleCommunityTune()
         var oldTune = tune
         oldTune.id = UUID()
-        let oldStep = resultStep(oldTune)
+        let currentStep = resultStep(tune)
         let freshThumbnail = Data("fresh-thumbnail".utf8)
         let freshNotes = "Fresh persisted notes"
-        let freshResult = CopilotPersistedResultPayload(
-            tune: tune,
+        let unvalidated = actionSnapshot(
+            tune,
+            validationCount: 0,
             thumbnailData: freshThumbnail,
             playerNotes: freshNotes
         )
-        let destination = try XCTUnwrap(
+        XCTAssertNotNil(
             router.destination(
-                for: .openFH6CommunityReferenceTrial,
-                from: oldStep,
-                persistedResult: freshResult,
-                matchingCommunityTrialCount: 0
+                for: .openRecordTestDrive,
+                from: currentStep,
+                authoritativeSnapshot: unvalidated
             )
         )
+        XCTAssertNil(router.destination(
+            for: .openFH6CommunityReferenceTrial,
+            from: currentStep,
+            authoritativeSnapshot: unvalidated
+        ))
+
+        let validated = actionSnapshot(
+            tune,
+            validationCount: 1,
+            thumbnailData: freshThumbnail,
+            playerNotes: freshNotes
+        )
+        let destination = try XCTUnwrap(router.destination(
+            for: .openFH6CommunityReferenceTrial,
+            from: currentStep,
+            authoritativeSnapshot: validated
+        ))
         guard case .fh6CommunityReferenceTrialCapture(
             let routedTune,
             let routedSavedTuneID,
@@ -143,33 +202,130 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         XCTAssertEqual(routedSavedTuneID, savedTuneID)
         XCTAssertEqual(routedThumbnail, freshThumbnail)
         XCTAssertEqual(routedNotes, freshNotes)
-        XCTAssertNotEqual(routedTune.id, oldTune.id)
         XCTAssertNotEqual(routedThumbnail, thumbnailData)
         XCTAssertNotEqual(routedNotes, playerNotes)
 
         XCTAssertNil(router.destination(
             for: .openFH6CommunityReferenceTrial,
-            from: oldStep,
-            persistedResult: freshResult,
-            matchingCommunityTrialCount: 1
+            from: currentStep,
+            authoritativeSnapshot: actionSnapshot(
+                tune,
+                validationCount: 1,
+                communityCount: 1
+            )
         ))
         XCTAssertNil(router.destination(
-            for: .openFH6CommunityReferenceTrial,
-            from: oldStep,
-            persistedResult: nil,
-            matchingCommunityTrialCount: 0
+            for: .openRecordTestDrive,
+            from: resultStep(oldTune),
+            authoritativeSnapshot: unvalidated
         ))
         let higherPriorityTune = try eligibleTune(for: .tuneMenu)
         XCTAssertNil(router.destination(
             for: .openFH6CommunityReferenceTrial,
-            from: oldStep,
-            persistedResult: CopilotPersistedResultPayload(
-                tune: higherPriorityTune,
-                thumbnailData: freshThumbnail,
-                playerNotes: freshNotes
-            ),
-            matchingCommunityTrialCount: 0
+            from: resultStep(higherPriorityTune),
+            authoritativeSnapshot: actionSnapshot(
+                higherPriorityTune,
+                validationCount: 1
+            )
         ))
+    }
+
+    @MainActor
+    func testRootSnapshotFetchesFreshPayloadCountsAndFailsClosed()
+        async throws {
+        let tune = try await eligibleCommunityTune()
+        let directory = FileManager.default.temporaryDirectory
+            .appending(
+                path:
+                    "forzadvisor-copilot-root-\(UUID().uuidString)",
+                directoryHint: .isDirectory
+            )
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let container = try ModelContainer(
+            for: SavedTune.self,
+            configurations: ModelConfiguration(
+                url: directory.appending(path: "store.sqlite")
+            )
+        )
+        let writer = ModelContext(container)
+        let saved = try SavedTune(
+            tune: tune,
+            playerNotes: "Fresh root notes",
+            thumbnailData: Data("fresh-root-thumbnail".utf8)
+        )
+        writer.insert(saved)
+        try writer.save()
+
+        let reader = ModelContext(container)
+        let first = try XCTUnwrap(
+            CopilotPersistedActionSnapshotResolver()
+                .resolve(
+                    displayedTune: tune,
+                    savedTuneID: savedTuneID,
+                    in: reader
+                )
+        )
+        XCTAssertEqual(first.result.tune, tune)
+        XCTAssertEqual(
+            first.result.playerNotes,
+            "Fresh root notes"
+        )
+        XCTAssertEqual(
+            first.result.thumbnailData,
+            Data("fresh-root-thumbnail".utf8)
+        )
+        XCTAssertEqual(first.matchingValidationRecordCount, 0)
+        XCTAssertEqual(first.matchingCommunityTrialCount, 0)
+
+        let validation =
+            try FirstPartyValidationRecordFactory().make(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                capture: validValidationCapture()
+            )
+        try saved.appendValidationRecord(validation)
+        try writer.save()
+        let afterValidation = try XCTUnwrap(
+            CopilotPersistedActionSnapshotResolver()
+                .resolve(
+                    displayedTune: tune,
+                    savedTuneID: savedTuneID,
+                    in: ModelContext(container)
+                )
+        )
+        XCTAssertEqual(
+            afterValidation.matchingValidationRecordCount,
+            1
+        )
+
+        var staleDisplayedTune = tune
+        staleDisplayedTune.generatedAt.addTimeInterval(1)
+        XCTAssertNil(
+            try CopilotPersistedActionSnapshotResolver()
+                .resolve(
+                    displayedTune: staleDisplayedTune,
+                    savedTuneID: savedTuneID,
+                    in: ModelContext(container)
+                )
+        )
+
+        saved.replaceValidationRecordsDataForTesting(
+            Data("corrupt".utf8)
+        )
+        try writer.save()
+        XCTAssertThrowsError(
+            try CopilotPersistedActionSnapshotResolver()
+                .resolve(
+                    displayedTune: tune,
+                    savedTuneID: savedTuneID,
+                    in: ModelContext(container)
+                )
+        )
     }
 
     private func eligibleTune(
@@ -216,7 +372,7 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         }
 
         return TuneResult(
-            id: UUID(),
+            id: savedTuneID,
             request: TuneRequest(
                 car: selection.carInput,
                 discipline: .road,
@@ -290,13 +446,17 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
             capturedAt: capturedAt,
             evidenceID: "copilot-community"
         )
-        return try await CapabilityProjectingTuneProvider(
+        var tune = try await CapabilityProjectingTuneProvider(
             base: LocalSampleTuneProvider()
         ).generateTune(for: TuneRequest(
             car: exact.car,
             discipline: .road,
             buildSnapshot: exact
         ))
+        tune.id = savedTuneID
+        tune.generatedAt =
+            Date(timeIntervalSinceReferenceDate: 910)
+        return tune
     }
 
     private func resultStep(_ tune: TuneResult) -> WorkflowStep {
@@ -309,10 +469,34 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         )
     }
 
+    private func actionSnapshot(
+        _ tune: TuneResult,
+        validationCount: Int = 0,
+        communityCount: Int = 0,
+        thumbnailData: Data? = nil,
+        playerNotes: String? = nil
+    ) -> CopilotPersistedActionSnapshot {
+        CopilotPersistedActionSnapshot(
+            result: CopilotPersistedResultPayload(
+                tune: tune,
+                thumbnailData:
+                    thumbnailData ?? self.thumbnailData,
+                playerNotes:
+                    playerNotes ?? self.playerNotes
+            ),
+            matchingValidationRecordCount:
+                validationCount,
+            matchingCommunityTrialCount:
+                communityCount
+        )
+    }
+
     private func assertDestination(
         _ destination: WorkflowStep,
         route: Route,
         expectedTune: TuneResult,
+        expectedThumbnailData: Data?,
+        expectedPlayerNotes: String,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
@@ -373,13 +557,13 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         )
         XCTAssertEqual(
             payload.thumbnailData,
-            thumbnailData,
+            expectedThumbnailData,
             file: file,
             line: line
         )
         XCTAssertEqual(
             payload.playerNotes,
-            playerNotes,
+            expectedPlayerNotes,
             file: file,
             line: line
         )
@@ -425,6 +609,22 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
             candidateParts: [
                 TunePartCatalog.definition(for: .sportTransmission)
             ]
+        )
+    }
+
+    private func validValidationCapture()
+        -> FirstPartyValidationCapture {
+        .init(
+            courseType: .testTrack,
+            surface: .dry,
+            input: .controller,
+            runCount: 3,
+            verdict: .keep,
+            feedback: [],
+            exactSetupConfirmed: true,
+            allExportedSettingsApplied: true,
+            firstPartyAuthorshipConfirmed: true,
+            deidentifiedReusePermitted: true
         )
     }
 

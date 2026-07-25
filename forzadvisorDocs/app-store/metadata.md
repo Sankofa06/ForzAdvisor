@@ -76,14 +76,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.19.0
-- Current project build: 44
+- Current project version: 1.20.0
+- Current project build: 45
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Community Outcome Review now lets you import permission-bound FH6 comparison exports for the exact current saved candidate. Reviewed evidence stays local and separate, with duplicate/conflict handling and collection-only summaries that never change a tune.
+Copilot now guides eligible FH6 accuracy work from unfinished first-party labs to Record Test Drive before offering a community comparison, rechecking the exact saved setup before every handoff.
 
 ## Export Compliance Notes
 

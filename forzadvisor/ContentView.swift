@@ -489,7 +489,8 @@ struct ContentView: View {
     }
 
     private var copilotContext: CopilotContext {
-        CopilotContextFactory().make(
+        let sequence = currentFH6CopilotAccuracySequence
+        return CopilotContextFactory().make(
             step: step,
             savedTuneCount: savedTunes.count,
             catalogCarCount: catalogCarCount,
@@ -497,37 +498,45 @@ struct ContentView: View {
             fh5ObservationRecorded: currentFH5ObservationRecorded,
             fh5CandidateTrialAvailable:
                 currentFH5CandidateTrialAvailable,
+            fh6ActionsPermitted:
+                sequence.hasAuthoritativeSnapshot,
+            fh6RecordTestDriveEligible:
+                sequence.action == .openRecordTestDrive,
             fh6CommunityReferenceTrialEligible:
-                currentFH6CommunityReferenceTrialEligible
+                sequence.action
+                    == .openFH6CommunityReferenceTrial
         )
     }
 
-    private var currentFH6CommunityReferenceTrialEligible: Bool {
+    private var currentFH6CopilotAccuracySequence: (
+        hasAuthoritativeSnapshot: Bool,
+        action: CopilotAction?
+    ) {
         guard case .result(
-            let tune,
+            let displayedTune,
             let savedTuneID,
             _,
             _,
             _
         ) = step,
-        eligibleFH6TuneMenuCaptureSnapshot(for: tune) == nil,
-        eligibleTireCaptureSnapshot(for: tune) == nil,
-        eligibleUpgradeCaptureSnapshot(for: tune) == nil,
         let savedTuneID,
-        let savedTune = try? savedTune(for: savedTuneID),
-        let persistedTune = savedTune.tuneResult,
-        case .success =
-            FH6CommunityReferenceTrialFactory().eligibility(
-                for: tune,
-                savedTune: persistedTune,
-                isStreaming: false
-            ),
-        let records = try? savedTune
-            .fh6CommunityReferenceTrialRecords(matching: tune),
-        records.isEmpty else {
-            return false
+        let snapshot =
+            try? CopilotPersistedActionSnapshotResolver()
+                .resolve(
+                    displayedTune: displayedTune,
+                    savedTuneID: savedTuneID,
+                    in: modelContext
+                ) else {
+            return (false, nil)
         }
-        return true
+        return (
+            true,
+            CopilotWorkflowActionRouter()
+                .authoritativeAction(
+                    for: snapshot,
+                    savedTuneID: savedTuneID
+                )
+        )
     }
 
     private var currentFH5ResearchLabEligible: Bool {

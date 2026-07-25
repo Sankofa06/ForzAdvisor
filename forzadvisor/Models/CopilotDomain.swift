@@ -106,6 +106,7 @@ enum CopilotAction: String, CaseIterable, Codable, Sendable {
     case openFH6TuneMenuLab
     case openTireLab
     case openUpgradeLab
+    case openRecordTestDrive
     case openFH6CommunityReferenceTrial
 
     var title: String {
@@ -113,6 +114,7 @@ enum CopilotAction: String, CaseIterable, Codable, Sendable {
         case .openFH6TuneMenuLab: "Open FH6 Tune Menu Lab"
         case .openTireLab: "Open Tire Lab"
         case .openUpgradeLab: "Open Upgrade Lab"
+        case .openRecordTestDrive: "Open Record Test Drive"
         case .openFH6CommunityReferenceTrial:
             "Run Community Reference Comparison"
         }
@@ -135,6 +137,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
     let fh5ResearchLabEligible: Bool?
     let fh5ObservationRecorded: Bool?
     let fh5CandidateTrialAvailable: Bool?
+    let fh6RecordTestDriveEligible: Bool?
     let fh6CommunityReferenceTrialEligible: Bool?
     let exactUpgradePathCount: Int?
     let isSaved: Bool?
@@ -151,6 +154,7 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
         fh5ResearchLabEligible: Bool? = nil,
         fh5ObservationRecorded: Bool? = nil,
         fh5CandidateTrialAvailable: Bool? = nil,
+        fh6RecordTestDriveEligible: Bool? = nil,
         fh6CommunityReferenceTrialEligible: Bool? = nil,
         exactUpgradePathCount: Int?,
         isSaved: Bool?,
@@ -167,6 +171,8 @@ struct CopilotProjectionFacts: Codable, Equatable, Sendable {
         self.fh5ObservationRecorded = fh5ObservationRecorded
         self.fh5CandidateTrialAvailable =
             fh5CandidateTrialAvailable
+        self.fh6RecordTestDriveEligible =
+            fh6RecordTestDriveEligible
         self.fh6CommunityReferenceTrialEligible =
             fh6CommunityReferenceTrialEligible
         self.exactUpgradePathCount = exactUpgradePathCount
@@ -187,6 +193,7 @@ extension CopilotProjectionFacts {
         case fh5ResearchLabEligible
         case fh5ObservationRecorded
         case fh5CandidateTrialAvailable
+        case fh6RecordTestDriveEligible
         case fh6CommunityReferenceTrialEligible
         case exactUpgradePathCount
         case isSaved
@@ -211,6 +218,11 @@ extension CopilotProjectionFacts {
             Bool.self,
             forKey: .fh5CandidateTrialAvailable
         )
+        fh6RecordTestDriveEligible =
+            try container.decodeIfPresent(
+                Bool.self,
+                forKey: .fh6RecordTestDriveEligible
+            )
         fh6CommunityReferenceTrialEligible =
             try container.decodeIfPresent(
                 Bool.self,
@@ -235,6 +247,10 @@ extension CopilotProjectionFacts {
         try container.encodeIfPresent(
             fh5CandidateTrialAvailable,
             forKey: .fh5CandidateTrialAvailable
+        )
+        try container.encodeIfPresent(
+            fh6RecordTestDriveEligible,
+            forKey: .fh6RecordTestDriveEligible
         )
         try container.encodeIfPresent(
             fh6CommunityReferenceTrialEligible,
@@ -548,6 +564,7 @@ struct CopilotEngine {
               context.phase == .result,
               let projection = context.projection,
               !projection.isStreaming,
+              projection.isSaved == true,
               projection.resultPurpose == .numericTune,
               projection.readyCount > 0 else {
             return nil
@@ -560,6 +577,9 @@ struct CopilotEngine {
         }
         if projection.upgradeLabEligible == true {
             return .openUpgradeLab
+        }
+        if projection.fh6RecordTestDriveEligible == true {
+            return .openRecordTestDrive
         }
         if projection.fh6CommunityReferenceTrialEligible == true {
             return .openFH6CommunityReferenceTrial
@@ -604,6 +624,9 @@ struct CopilotEngine {
         if projection.upgradeLabEligible == true {
             return "Open Upgrade Lab from the underlying result to verify which tuning-control parts are available."
         }
+        if projection.fh6RecordTestDriveEligible == true {
+            return "Open Record Test Drive to save one exact first-party validation session before comparing community references."
+        }
         if projection.fh6CommunityReferenceTrialEligible == true {
             return "Run a Community Reference Comparison to record one local A-B-B-A comparative observation. It is not validation, a ranking, or ground truth."
         }
@@ -646,6 +669,16 @@ struct CopilotEngine {
         }
         if projection.upgradeLabEligible == true {
             details.append("Upgrade Lab verification is available")
+        }
+        if projection.fh6RecordTestDriveEligible == true {
+            details.append(
+                "An exact current first-party validation session is missing"
+            )
+        }
+        if projection.fh6CommunityReferenceTrialEligible == true {
+            details.append(
+                "A current community reference comparison is available after first-party validation"
+            )
         }
         if let exactUpgradePathCount = projection.exactUpgradePathCount,
            exactUpgradePathCount > 0 {

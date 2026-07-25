@@ -15,6 +15,8 @@ struct CopilotContextFactory {
         fh5ResearchLabEligible: Bool = false,
         fh5ObservationRecorded: Bool = false,
         fh5CandidateTrialAvailable: Bool = false,
+        fh6ActionsPermitted: Bool = true,
+        fh6RecordTestDriveEligible: Bool = false,
         fh6CommunityReferenceTrialEligible: Bool = false
     ) -> CopilotContext {
         switch step {
@@ -52,6 +54,10 @@ struct CopilotContextFactory {
                 fh5ObservationRecorded: fh5ObservationRecorded,
                 fh5CandidateTrialAvailable:
                     fh5CandidateTrialAvailable,
+                fh6ActionsPermitted:
+                    fh6ActionsPermitted,
+                fh6RecordTestDriveEligible:
+                    fh6RecordTestDriveEligible,
                 fh6CommunityReferenceTrialEligible:
                     fh6CommunityReferenceTrialEligible
             )
@@ -96,6 +102,8 @@ struct CopilotContextFactory {
         fh5ResearchLabEligible: Bool = false,
         fh5ObservationRecorded: Bool = false,
         fh5CandidateTrialAvailable: Bool = false,
+        fh6ActionsPermitted: Bool = true,
+        fh6RecordTestDriveEligible: Bool = false,
         fh6CommunityReferenceTrialEligible: Bool = false,
         cannotSeeUnsavedEdits: Bool = false
     ) -> CopilotContext {
@@ -111,6 +119,10 @@ struct CopilotContextFactory {
                 fh5ObservationRecorded: fh5ObservationRecorded,
                 fh5CandidateTrialAvailable:
                     fh5CandidateTrialAvailable,
+                fh6ActionsPermitted:
+                    fh6ActionsPermitted,
+                fh6RecordTestDriveEligible:
+                    fh6RecordTestDriveEligible,
                 fh6CommunityReferenceTrialEligible:
                     fh6CommunityReferenceTrialEligible
             ),
@@ -149,6 +161,8 @@ struct CopilotContextFactory {
         fh5ResearchLabEligible: Bool = false,
         fh5ObservationRecorded: Bool = false,
         fh5CandidateTrialAvailable: Bool = false,
+        fh6ActionsPermitted: Bool = true,
+        fh6RecordTestDriveEligible: Bool = false,
         fh6CommunityReferenceTrialEligible: Bool = false
     ) -> CopilotProjectionFacts? {
         guard let report = tune.projectionReport else {
@@ -160,18 +174,28 @@ struct CopilotContextFactory {
             readyCount: report.readyCount,
             blockedByStatus: statusCounts(in: report),
             blockedByReason: reasonCounts(in: report),
-            tuneMenuLabEligible: isStreaming
+            tuneMenuLabEligible: isStreaming || !fh6ActionsPermitted
                 ? nil
                 : FH6TuneMenuCaptureEligibility().snapshot(
                     for: tune,
                     isStreaming: false
                 ) != nil,
-            tireLabEligible: isStreaming ? nil : TirePressureCaptureEligibility().snapshot(for: tune) != nil,
-            upgradeLabEligible: isStreaming ? nil : UpgradePartCaptureEligibility().snapshot(for: tune) != nil,
+            tireLabEligible:
+                isStreaming || !fh6ActionsPermitted
+                    ? nil
+                    : TirePressureCaptureEligibility()
+                        .snapshot(for: tune) != nil,
+            upgradeLabEligible:
+                isStreaming || !fh6ActionsPermitted
+                    ? nil
+                    : UpgradePartCaptureEligibility()
+                        .snapshot(for: tune) != nil,
             fh5ResearchLabEligible: isStreaming ? nil : fh5ResearchLabEligible,
             fh5ObservationRecorded: isStreaming ? nil : fh5ObservationRecorded,
             fh5CandidateTrialAvailable:
                 isStreaming ? nil : fh5CandidateTrialAvailable,
+            fh6RecordTestDriveEligible:
+                isStreaming ? nil : fh6RecordTestDriveEligible,
             fh6CommunityReferenceTrialEligible:
                 isStreaming
                     ? nil

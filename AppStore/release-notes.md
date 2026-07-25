@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.20.0 (Build 45) - 2026-07-25
+
+- Adds a direct Copilot handoff to Record Test Drive for eligible saved FH6 tunes.
+- Guides accuracy work in order: finish first-party labs, record an exact Test Drive, then run a community comparison.
+- Rechecks the persisted tune, notes, thumbnail, and exact evidence counts before every Copilot handoff so stale actions fail safely.
+
 ## Version 1.19.0 (Build 44) - 2026-07-25
 
 - Adds Community Outcome Review for permission-bound FH6 comparison exports that match the exact current saved candidate.
