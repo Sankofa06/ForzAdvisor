@@ -1204,6 +1204,14 @@ final class FH6CommunityOutcomeReviewTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: [
+                try FirstPartyValidationRecordFactory().make(
+                    tune: tune,
+                    savedTune: tune,
+                    isStreaming: false,
+                    capture: validationCapture()
+                )
+            ],
             capture: capture,
             submissionID: submissionID,
             permissionReceiptID: receiptID,

@@ -15,6 +15,8 @@ struct FH6ValidationReviewView: View {
     let onImport: (FH6ValidationReviewEntry) -> String?
     let onDelete: (FH6ValidationReviewEntry) -> Void
     let communityReferenceRecords: [FH6CommunityReferenceTrialRecord]
+    let accuracyEvidenceChain:
+        FH6AccuracyEvidenceChainAssessment
     let onRunCommunityReferenceTrial: (() -> Void)?
     let onOpenCommunityOutcomeReview: (() -> Void)?
 
@@ -199,6 +201,19 @@ struct FH6ValidationReviewView: View {
                 .forzAdvisorRowBackground()
 
                 Section("Community Reference Comparisons") {
+                    Label(
+                        chainTitle,
+                        systemImage: "point.3.connected.trianglepath.dotted"
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    .accessibilityIdentifier(
+                        "validationReviewAccuracyEvidenceChainState"
+                    )
+                    Text(
+                        "\(accuracyEvidenceChain.matchingValidationCount) matching test drive(s) · \(accuracyEvidenceChain.matchingCommunityComparisonCount) matching community comparison(s). This sequence does not establish accuracy."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     Text(
                         "Separate local comparative observations. These counts are not imported validation sessions and do not affect promotion or tune settings."
                     )
@@ -290,6 +305,17 @@ struct FH6ValidationReviewView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var chainTitle: String {
+        switch accuracyEvidenceChain.stage {
+        case .needsFirstPartyValidation:
+            "First-party test drive required"
+        case .readyForCommunityComparison:
+            "Ready for a community comparison"
+        case .communityComparisonCollected:
+            "Community comparison collected"
         }
     }
 

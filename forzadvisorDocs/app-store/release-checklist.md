@@ -4,15 +4,15 @@ Last updated: 2026-07-25
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.27.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.28.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.27.0`.
-- Current project build is `52`.
+- Current project version is `1.28.0`.
+- Current project build is `53`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -49,6 +49,8 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - FH5 Outcome Lab stores exact-plan, one-variable A-B-B-A experiment evidence locally, requires stock restoration, and cannot register a ruleset or unlock numeric tuning. Sharing is off by default and only an explicitly permitted allow-listed JSON copy can leave through the user-initiated system share sheet; there is no background experiment uploader or importer.
 - FH6 Validation Review stores exact permission-bound Test Drive JSON in a separate local queue, requires the same eligible exact-build boundary as local Test Drive capture, and reports outcomes without modifying tunes or promoting the experimental ruleset.
 - FH6 Community Reference Comparisons store only tester-entered source metadata and controlled A-B-B-A outcomes for the exact current saved candidate. They remain separate from validation, ranking, ground truth, and tune promotion; source settings, parts, share codes, prose, media, and metrics are never collected.
+- Every direct UI, workflow, domain-factory, and persistence route requires at least one valid first-party Test Drive for the exact current FH6 candidate before a new Community Reference Comparison can be created or saved. Removing the last matching Test Drive blocks new comparisons without deleting existing comparison history. Evidence-chain stages and counts describe collection sequence only and never establish accuracy.
+- This gate changes no persisted schema, comparison export, imported Community Outcome Review policy, tune values, ruleset, or catalog data. YouTube and Reddit remain metadata-only reference sources; no community tune values are copied into the app.
 - FH6 Community Outcome Review accepts only canonical, permission-bound comparison exports that freshly match the exact persisted candidate. Imports stay in a separate local queue with deterministic duplicate handling, replay/conflict quarantine, individual deletion, and separate local/reviewed/combined collection-only reporting; they cannot change tuning or promote a ruleset.
 - Contextual Copilot sequences eligible FH6 accuracy work through unfinished first-party labs, an exact Record Test Drive, and only then a Community Reference Comparison. Every action refetches and revalidates the persisted setup and carries no tune payload of its own.
 - FH5 contextual Copilot offers **Open Upgrade Lab** only for the exact current saved build plan after persisted equality, plan-only safety, and eligibility checks. It preserves the tune, thumbnail, and notes; yields to Candidate Trial, recorded-observation, and eligible Research Lab guidance; and cannot generate numeric settings, transact parts, claim PI, cost, or performance, call a provider or network, or bypass exact in-game availability. FH6 sequencing is unchanged.

@@ -16,8 +16,16 @@ struct CopilotPersistedResultPayload {
 
 struct CopilotPersistedActionSnapshot {
     let result: CopilotPersistedResultPayload
-    let matchingValidationRecordCount: Int
-    let matchingCommunityTrialCount: Int
+    let accuracyEvidenceChain:
+        FH6AccuracyEvidenceChainAssessment
+
+    var matchingValidationRecordCount: Int {
+        accuracyEvidenceChain.matchingValidationCount
+    }
+
+    var matchingCommunityTrialCount: Int {
+        accuracyEvidenceChain.matchingCommunityComparisonCount
+    }
 }
 
 @MainActor
@@ -46,16 +54,10 @@ struct CopilotPersistedActionSnapshotResolver {
                 thumbnailData: savedTune.thumbnailData,
                 playerNotes: savedTune.playerNotes
             ),
-            matchingValidationRecordCount:
-                try savedTune
-                    .validValidationRecords(
-                        matching: persistedTune
-                    ).count,
-            matchingCommunityTrialCount:
-                try savedTune
-                    .fh6CommunityReferenceTrialRecords(
-                        matching: persistedTune
-                    ).count
+            accuracyEvidenceChain:
+                try savedTune.fh6AccuracyEvidenceChain(
+                    matching: persistedTune
+                )
         )
     }
 }
@@ -172,10 +174,12 @@ struct CopilotWorkflowActionRouter {
                     ) else {
             return nil
         }
-        if snapshot.matchingValidationRecordCount == 0 {
+        if snapshot.accuracyEvidenceChain.stage
+            == .needsFirstPartyValidation {
             return .openRecordTestDrive
         }
-        guard snapshot.matchingCommunityTrialCount == 0 else {
+        guard snapshot.accuracyEvidenceChain.stage
+            == .readyForCommunityComparison else {
             return nil
         }
         return .openFH6CommunityReferenceTrial

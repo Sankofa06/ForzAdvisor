@@ -175,7 +175,7 @@ final class BetaValidationMissionTests: XCTestCase {
             evidence: 0,
             exactPaths: true,
             communityTrial: true,
-            hasValidationRecord: false
+            accuracyChainStage: .needsFirstPartyValidation
         )
         XCTAssertEqual(
             BetaValidationMissionPlanner()
@@ -195,7 +195,7 @@ final class BetaValidationMissionTests: XCTestCase {
             evidence: 1,
             exactPaths: true,
             communityTrial: true,
-            hasValidationRecord: true
+            accuracyChainStage: .readyForCommunityComparison
         )
         XCTAssertEqual(
             BetaValidationMissionPlanner()
@@ -218,7 +218,7 @@ final class BetaValidationMissionTests: XCTestCase {
             evidence: 2,
             exactPaths: true,
             communityTrial: false,
-            hasValidationRecord: true
+            accuracyChainStage: .communityComparisonCollected
         )
         XCTAssertEqual(
             BetaValidationMissionPlanner()
@@ -641,7 +641,7 @@ final class BetaValidationMissionTests: XCTestCase {
         experiment: Bool = false,
         candidateTrial: Bool = false,
         communityTrial: Bool = false,
-        hasValidationRecord: Bool = false
+        accuracyChainStage: FH6AccuracyEvidenceChainStage? = nil
     ) -> BetaValidationSetupFacts {
         BetaValidationSetupFacts(
             savedTuneID: id,
@@ -655,7 +655,7 @@ final class BetaValidationMissionTests: XCTestCase {
             canVerifyUpgradeParts: upgrades,
             canRecordTestDrive: testDrive,
             canRunFH6CommunityReferenceTrial: communityTrial,
-            hasFirstPartyValidationRecord: hasValidationRecord,
+            fh6AccuracyEvidenceChainStage: accuracyChainStage,
             evidenceRecordCount: evidence,
             hasExactUpgradePaths: exactPaths,
             fh5CandidateTrialAvailable: candidateTrial

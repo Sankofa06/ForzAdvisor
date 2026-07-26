@@ -624,10 +624,18 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
                 playerNotes:
                     playerNotes ?? self.playerNotes
             ),
-            matchingValidationRecordCount:
-                validationCount,
-            matchingCommunityTrialCount:
-                communityCount
+            accuracyEvidenceChain: .init(
+                stage:
+                    validationCount == 0
+                        ? .needsFirstPartyValidation
+                        : communityCount == 0
+                            ? .readyForCommunityComparison
+                            : .communityComparisonCollected,
+                matchingValidationCount:
+                    validationCount,
+                matchingCommunityComparisonCount:
+                    communityCount
+            )
         )
     }
 

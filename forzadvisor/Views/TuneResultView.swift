@@ -56,6 +56,8 @@ struct TuneResultView: View {
     let onDeleteFH6ValidationReviewEntry: (FH6ValidationReviewEntry) -> Void
     let fh6CommunityReferenceTrialRecords:
         [FH6CommunityReferenceTrialRecord]
+    let fh6AccuracyEvidenceChain:
+        FH6AccuracyEvidenceChainAssessment?
     let fh6CommunityReferenceTrialLoadError: String?
     let onRunFH6CommunityReferenceTrial: (() -> Void)?
     let onDeleteFH6CommunityReferenceTrialRecord:
@@ -318,6 +320,15 @@ struct TuneResultView: View {
                     onDelete: onDeleteFH6ValidationReviewEntry,
                     communityReferenceRecords:
                         fh6CommunityReferenceTrialRecords,
+                    accuracyEvidenceChain:
+                        fh6AccuracyEvidenceChain
+                            ?? .init(
+                                stage:
+                                    .needsFirstPartyValidation,
+                                matchingValidationCount: 0,
+                                matchingCommunityComparisonCount:
+                                    0
+                            ),
                     onRunCommunityReferenceTrial:
                         onRunFH6CommunityReferenceTrial,
                     onOpenCommunityOutcomeReview:
@@ -522,6 +533,8 @@ struct TuneResultView: View {
 
         FH6CommunityReferenceEvidenceSection(
             records: fh6CommunityReferenceTrialRecords,
+            accuracyEvidenceChain:
+                fh6AccuracyEvidenceChain,
             loadError: fh6CommunityReferenceTrialLoadError,
             onRun: onRunFH6CommunityReferenceTrial,
             canOpenOutcomeReview:
@@ -740,6 +753,8 @@ private struct FH6AccuracyEvidenceSection: View {
 
 private struct FH6CommunityReferenceEvidenceSection: View {
     let records: [FH6CommunityReferenceTrialRecord]
+    let accuracyEvidenceChain:
+        FH6AccuracyEvidenceChainAssessment?
     let loadError: String?
     let onRun: (() -> Void)?
     let canOpenOutcomeReview: Bool
@@ -751,8 +766,26 @@ private struct FH6CommunityReferenceEvidenceSection: View {
     }
 
     var body: some View {
-        if onRun != nil || latest != nil || loadError != nil {
+        if accuracyEvidenceChain != nil
+            || onRun != nil || latest != nil || loadError != nil {
             Section("Community Reference Comparisons") {
+                if let accuracyEvidenceChain {
+                    Label(
+                        chainTitle(accuracyEvidenceChain),
+                        systemImage: chainSymbol(
+                            accuracyEvidenceChain
+                        )
+                    )
+                    .font(.subheadline.weight(.semibold))
+                    .accessibilityIdentifier(
+                        "fh6AccuracyEvidenceChainState"
+                    )
+                    Text(
+                        "\(accuracyEvidenceChain.matchingValidationCount) matching test drive(s) · \(accuracyEvidenceChain.matchingCommunityComparisonCount) matching community comparison(s). This sequence does not establish accuracy."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
                 Text(
                     "These are local comparative observations from a fixed A-B-B-A test. They are not validation, ground truth, a ranking, or a promotion."
                 )
@@ -846,6 +879,30 @@ private struct FH6CommunityReferenceEvidenceSection: View {
                 }
             }
             .forzAdvisorRowBackground()
+        }
+    }
+
+    private func chainTitle(
+        _ assessment: FH6AccuracyEvidenceChainAssessment
+    ) -> String {
+        switch assessment.stage {
+        case .needsFirstPartyValidation:
+            "Next: record a first-party test drive"
+        case .readyForCommunityComparison:
+            "Ready for a community comparison"
+        case .communityComparisonCollected:
+            "Community comparison collected"
+        }
+    }
+
+    private func chainSymbol(
+        _ assessment: FH6AccuracyEvidenceChainAssessment
+    ) -> String {
+        switch assessment.stage {
+        case .needsFirstPartyValidation: "1.circle"
+        case .readyForCommunityComparison: "2.circle"
+        case .communityComparisonCollected:
+            "checkmark.circle"
         }
     }
 }

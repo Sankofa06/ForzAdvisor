@@ -31,6 +31,7 @@ struct FH6CommunityReferenceTrialFactory {
         tune: TuneResult,
         savedTune: TuneResult?,
         isStreaming: Bool,
+        validationRecords: [FirstPartyValidationRecord] = [],
         capture: FH6CommunityReferenceTrialCapture,
         recordID: UUID = UUID(),
         submissionID: UUID = UUID(),
@@ -42,6 +43,17 @@ struct FH6CommunityReferenceTrialFactory {
             savedTune: savedTune,
             isStreaming: isStreaming
         ).get()
+        let chain = FH6AccuracyEvidenceChainPolicy().assess(
+            tune: projected,
+            savedTune: savedTune,
+            isStreaming: isStreaming,
+            validationRecords: validationRecords,
+            communityComparisonRecords: []
+        )
+        guard chain.permitsCommunityComparison else {
+            throw FH6CommunityReferenceTrialIssue
+                .missingFirstPartyValidation
+        }
         let source = try makeSource(from: capture.source)
         let proof = try makeCandidateProof(from: projected)
         guard let candidateFingerprint = candidateFingerprint(for: proof) else {

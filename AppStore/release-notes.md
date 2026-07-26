@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.28.0 (Build 53) - 2026-07-25
+
+- Requires a matching first-party FH6 Test Drive before every route that can create or save a Community Reference Comparison.
+- Shows the exact candidate's evidence-chain stage and counts while preserving existing comparison history if its last Test Drive is deleted.
+- Keeps YouTube and Reddit references metadata-only and states plainly that the collection sequence does not establish accuracy, validation, ranking, recommendation, or promotion.
+
 ## Version 1.27.0 (Build 52) - 2026-07-25
 
 - Adds a canonical, user-initiated maintainer review packet for permission-bound Stock Catalog Contributions.

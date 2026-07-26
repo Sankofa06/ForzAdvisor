@@ -230,7 +230,8 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
     let canVerifyUpgradeParts: Bool
     let canRecordTestDrive: Bool
     let canRunFH6CommunityReferenceTrial: Bool
-    let hasFirstPartyValidationRecord: Bool
+    let fh6AccuracyEvidenceChainStage:
+        FH6AccuracyEvidenceChainStage?
     let evidenceRecordCount: Int
     let hasExactUpgradePaths: Bool
     let fh5CandidateTrialAvailable: Bool
@@ -247,7 +248,8 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
         canVerifyUpgradeParts: Bool,
         canRecordTestDrive: Bool,
         canRunFH6CommunityReferenceTrial: Bool = false,
-        hasFirstPartyValidationRecord: Bool = false,
+        fh6AccuracyEvidenceChainStage:
+            FH6AccuracyEvidenceChainStage? = nil,
         evidenceRecordCount: Int,
         hasExactUpgradePaths: Bool,
         fh5CandidateTrialAvailable: Bool = false
@@ -264,8 +266,8 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
         self.canRecordTestDrive = canRecordTestDrive
         self.canRunFH6CommunityReferenceTrial =
             canRunFH6CommunityReferenceTrial
-        self.hasFirstPartyValidationRecord =
-            hasFirstPartyValidationRecord
+        self.fh6AccuracyEvidenceChainStage =
+            fh6AccuracyEvidenceChainStage
         self.evidenceRecordCount = evidenceRecordCount
         self.hasExactUpgradePaths = hasExactUpgradePaths
         self.fh5CandidateTrialAvailable =
@@ -309,7 +311,8 @@ struct BetaValidationMissionPlanner {
                 missions.append(mission(.recordTestDrive, setup: setup))
             }
             if setup.canRunFH6CommunityReferenceTrial,
-               setup.hasFirstPartyValidationRecord {
+               setup.fh6AccuracyEvidenceChainStage
+                    == .readyForCommunityComparison {
                 missions.append(
                     mission(.runFH6CommunityReferenceTrial, setup: setup)
                 )
@@ -347,6 +350,18 @@ struct BetaValidationMissionPlanner {
         ) else {
             return nil
         }
+        let accuracyChain: FH6AccuracyEvidenceChainAssessment?
+        if tune.request.car.game == .fh6 {
+            guard let current =
+                    try? savedTune.fh6AccuracyEvidenceChain(
+                        matching: tune
+                    ) else {
+                return nil
+            }
+            accuracyChain = current
+        } else {
+            accuracyChain = nil
+        }
         let researchEligible: Bool
         if tune.request.car.game == .fh5,
            evidence.fh5ResearchObservationCount == 0 {
@@ -360,7 +375,7 @@ struct BetaValidationMissionPlanner {
         }
         let validationEligible: Bool
         if tune.request.car.game == .fh6,
-           evidence.validationRecordCount == 0 {
+           accuracyChain?.stage == .needsFirstPartyValidation {
             validationEligible = FirstPartyValidationRecordFactory().eligibility(
                 for: tune,
                 savedTune: tune,
@@ -371,8 +386,7 @@ struct BetaValidationMissionPlanner {
         }
         let communityTrialEligible: Bool
         if tune.request.car.game == .fh6,
-           evidence.validationRecordCount > 0,
-           evidence.fh6CommunityReferenceTrialCount == 0 {
+           accuracyChain?.stage == .readyForCommunityComparison {
             communityTrialEligible =
                 FH6CommunityReferenceTrialFactory().eligibility(
                     for: tune,
@@ -425,8 +439,8 @@ struct BetaValidationMissionPlanner {
                 UpgradePartCaptureEligibility().snapshot(for: tune) != nil,
             canRecordTestDrive: validationEligible,
             canRunFH6CommunityReferenceTrial: communityTrialEligible,
-            hasFirstPartyValidationRecord:
-                evidence.validationRecordCount > 0,
+            fh6AccuracyEvidenceChainStage:
+                accuracyChain?.stage,
             evidenceRecordCount: evidence.totalRecordCount,
             hasExactUpgradePaths:
                 !TuneControlUpgradePlanner().paths(for: tune).isEmpty,

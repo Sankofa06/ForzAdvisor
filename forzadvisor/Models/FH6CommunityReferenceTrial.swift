@@ -271,6 +271,7 @@ struct FH6CommunityReferenceTrialDraft: Equatable, Sendable {
 
 enum FH6CommunityReferenceTrialIssue: Error, LocalizedError, Equatable {
     case ineligibleCandidate(FirstPartyValidationError)
+    case missingFirstPartyValidation
     case invalidSourceURL
     case invalidSourceMetadata
     case selfDerivative
@@ -293,6 +294,8 @@ enum FH6CommunityReferenceTrialIssue: Error, LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .ineligibleCandidate(let issue): issue.errorDescription
+        case .missingFirstPartyValidation:
+            "Record a valid first-party test drive for this exact saved tune before starting a community comparison."
         case .invalidSourceURL: "Use a direct canonical HTTPS YouTube or Reddit content URL."
         case .invalidSourceMetadata: "Community-source metadata is missing, unsafe, or outside its bounds."
         case .selfDerivative: "A source cannot identify itself as its own derivative."

@@ -178,6 +178,24 @@ final class SavedTune {
     }
 
     @MainActor
+    func fh6AccuracyEvidenceChain(
+        matching tune: TuneResult
+    ) throws -> FH6AccuracyEvidenceChainAssessment {
+        guard let currentTune = tuneResult else {
+            throw SavedTuneFH6CommunityReferenceTrialError
+                .staleSavedRevision
+        }
+        return FH6AccuracyEvidenceChainPolicy().assess(
+            tune: tune,
+            savedTune: currentTune,
+            isStreaming: false,
+            validationRecords: try decodedValidationRecords(),
+            communityComparisonRecords:
+                try decodedFH6CommunityReferenceTrialRecords()
+        )
+    }
+
+    @MainActor
     func betaValidationEvidenceSnapshot(
         matching tune: TuneResult
     ) throws -> SavedTuneBetaValidationEvidenceSnapshot {
@@ -738,6 +756,13 @@ final class SavedTune {
             throw SavedTuneFH6CommunityReferenceTrialError
                 .staleSavedRevision
         }
+        let chain = try fh6AccuracyEvidenceChain(
+            matching: currentTune
+        )
+        guard chain.permitsCommunityComparison else {
+            throw SavedTuneFH6CommunityReferenceTrialError
+                .missingFirstPartyValidation
+        }
         var records = try decodedFH6CommunityReferenceTrialRecords()
         guard !records.contains(where: { $0.recordID == record.recordID })
         else { return }
@@ -1185,6 +1210,7 @@ enum SavedTuneFH6CommunityReferenceTrialError:
     LocalizedError, Equatable {
     case corruptStorage
     case staleSavedRevision
+    case missingFirstPartyValidation
 
     var errorDescription: String? {
         switch self {
@@ -1192,6 +1218,8 @@ enum SavedTuneFH6CommunityReferenceTrialError:
             "Stored community reference comparisons are corrupt. No records were changed."
         case .staleSavedRevision:
             "This community comparison does not match the current saved FH6 tune."
+        case .missingFirstPartyValidation:
+            "Record a valid first-party test drive for this exact saved tune before saving a community comparison."
         }
     }
 }

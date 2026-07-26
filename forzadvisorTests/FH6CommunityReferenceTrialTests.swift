@@ -13,6 +13,261 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
     private let submissionID = UUID(uuidString: "22222222-2222-2222-2222-222222222222")!
     private let permissionID = UUID(uuidString: "33333333-3333-3333-3333-333333333333")!
 
+    func testAccuracyEvidenceChainIsCandidateBoundAndDeterministic()
+        async throws {
+        let tune = try await eligibleTune()
+        let validation = try XCTUnwrap(
+            validationEvidence(for: tune).first
+        )
+        let factory = FH6CommunityReferenceTrialFactory()
+
+        XCTAssertThrowsError(
+            try factory.make(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                validationRecords: [],
+                capture: validCapture(for: tune)
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as? FH6CommunityReferenceTrialIssue,
+                .missingFirstPartyValidation
+            )
+        }
+
+        let before = FH6AccuracyEvidenceChainPolicy().assess(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            validationRecords: [validation],
+            communityComparisonRecords: []
+        )
+        XCTAssertEqual(
+            before.stage,
+            .readyForCommunityComparison
+        )
+        XCTAssertEqual(before.matchingValidationCount, 1)
+        XCTAssertEqual(
+            before.matchingCommunityComparisonCount,
+            0
+        )
+        XCTAssertFalse(before.accuracyClaimEstablished)
+        XCTAssertTrue(before.accuracyClaimNotEstablished)
+
+        let comparison = try factory.make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            validationRecords: [validation],
+            capture: validCapture(for: tune)
+        )
+        let after = FH6AccuracyEvidenceChainPolicy().assess(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            validationRecords: [validation, validation],
+            communityComparisonRecords:
+                Array([comparison, comparison].reversed())
+        )
+        let reversed = FH6AccuracyEvidenceChainPolicy().assess(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            validationRecords:
+                Array([validation, validation].reversed()),
+            communityComparisonRecords:
+                [comparison, comparison]
+        )
+        XCTAssertEqual(after, reversed)
+        XCTAssertEqual(
+            after.stage,
+            .communityComparisonCollected
+        )
+        XCTAssertEqual(after.matchingValidationCount, 2)
+        XCTAssertEqual(
+            after.matchingCommunityComparisonCount,
+            2
+        )
+        XCTAssertFalse(after.accuracyClaimEstablished)
+    }
+
+    func testForeignRevisionAndInvalidValidationDoNotAuthorizeComparison()
+        async throws {
+        let tune = try await eligibleTune()
+        var foreignTune = tune
+        foreignTune.generatedAt = tune.generatedAt.addingTimeInterval(1)
+        let foreignValidation = try XCTUnwrap(
+            validationEvidence(for: foreignTune).first
+        )
+        var invalidValidation = try XCTUnwrap(
+            validationEvidence(for: tune).first
+        )
+        invalidValidation.contentFingerprint =
+            String(repeating: "0", count: 64)
+        let policy = FH6AccuracyEvidenceChainPolicy()
+        let factory = FH6CommunityReferenceTrialFactory()
+
+        for validation in [foreignValidation, invalidValidation] {
+            let assessment = policy.assess(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                validationRecords: [validation],
+                communityComparisonRecords: []
+            )
+            XCTAssertEqual(
+                assessment.stage,
+                .needsFirstPartyValidation
+            )
+            XCTAssertEqual(assessment.matchingValidationCount, 0)
+            XCTAssertFalse(assessment.permitsCommunityComparison)
+            XCTAssertThrowsError(
+                try factory.make(
+                    tune: tune,
+                    savedTune: tune,
+                    isStreaming: false,
+                    validationRecords: [validation],
+                    capture: validCapture(for: tune)
+                )
+            ) {
+                XCTAssertEqual(
+                    $0 as? FH6CommunityReferenceTrialIssue,
+                    .missingFirstPartyValidation
+                )
+            }
+        }
+    }
+
+    @MainActor
+    func testSavedTuneAppendRequiresCurrentValidationAndPreservesHistory()
+        async throws {
+        let tune = try await eligibleTune()
+        let validation = try XCTUnwrap(
+            validationEvidence(for: tune).first
+        )
+        let record = try FH6CommunityReferenceTrialFactory()
+            .make(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                validationRecords: [validation],
+                capture: validCapture(for: tune)
+            )
+        let saved = try SavedTune(tune: tune)
+
+        XCTAssertThrowsError(
+            try saved.appendFH6CommunityReferenceTrialRecord(
+                record
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as?
+                    SavedTuneFH6CommunityReferenceTrialError,
+                .missingFirstPartyValidation
+            )
+        }
+        try saved.appendValidationRecord(validation)
+        try saved.appendFH6CommunityReferenceTrialRecord(record)
+        XCTAssertEqual(
+            try saved.fh6AccuracyEvidenceChain(
+                matching: tune
+            ).stage,
+            .communityComparisonCollected
+        )
+
+        XCTAssertTrue(
+            try saved.deleteValidationRecord(
+                id: validation.recordID
+            )
+        )
+        let assessment = try saved.fh6AccuracyEvidenceChain(
+            matching: tune
+        )
+        XCTAssertEqual(
+            assessment.stage,
+            .needsFirstPartyValidation
+        )
+        XCTAssertEqual(assessment.matchingValidationCount, 0)
+        XCTAssertEqual(
+            assessment.matchingCommunityComparisonCount,
+            1
+        )
+        XCTAssertFalse(assessment.permitsCommunityComparison)
+        XCTAssertEqual(
+            try saved.allFH6CommunityReferenceTrialRecords()
+                .map(\.recordID),
+            [record.recordID]
+        )
+        var second = record
+        second.recordID = UUID()
+        XCTAssertThrowsError(
+            try saved.appendFH6CommunityReferenceTrialRecord(
+                second
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as?
+                    SavedTuneFH6CommunityReferenceTrialError,
+                .missingFirstPartyValidation
+            )
+        }
+        XCTAssertEqual(
+            try saved.allFH6CommunityReferenceTrialRecords()
+                .count,
+            1
+        )
+    }
+
+    @MainActor
+    func testCorruptValidationStorageFailsClosedAndPreservesCommunityHistory()
+        async throws {
+        let tune = try await eligibleTune()
+        let validation = try XCTUnwrap(
+            validationEvidence(for: tune).first
+        )
+        let record = try FH6CommunityReferenceTrialFactory()
+            .make(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                validationRecords: [validation],
+                capture: validCapture(for: tune)
+            )
+        let saved = try SavedTune(tune: tune)
+        try saved.appendValidationRecord(validation)
+        try saved.appendFH6CommunityReferenceTrialRecord(record)
+        let historyBefore =
+            try saved.allFH6CommunityReferenceTrialRecords()
+
+        saved.replaceValidationRecordsDataForTesting(
+            Data("corrupt".utf8)
+        )
+        XCTAssertThrowsError(
+            try saved.fh6AccuracyEvidenceChain(matching: tune)
+        ) {
+            XCTAssertEqual(
+                $0 as? SavedTuneValidationRecordError,
+                .corruptStorage
+            )
+        }
+
+        var second = record
+        second.recordID = UUID()
+        XCTAssertThrowsError(
+            try saved.appendFH6CommunityReferenceTrialRecord(second)
+        ) {
+            XCTAssertEqual(
+                $0 as? SavedTuneValidationRecordError,
+                .corruptStorage
+            )
+        }
+        XCTAssertEqual(
+            try saved.allFH6CommunityReferenceTrialRecords(),
+            historyBefore
+        )
+    }
+
     func testSourceIDIsDerivedAndMismatchedSuppliedIDIsRejected()
         async throws {
         let tune = try await eligibleTune()
@@ -68,11 +323,15 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         async throws {
         let tune = try await eligibleTune()
         let saved = try SavedTune(tune: tune)
+        try saved.appendValidationRecord(
+            try XCTUnwrap(validationEvidence(for: tune).first)
+        )
         let factory = FH6CommunityReferenceTrialFactory()
         let first = try factory.make(
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: validCapture(for: tune),
             recordID: recordID,
             createdAt: capturedAt
@@ -81,6 +340,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: validCapture(for: tune),
             recordID: UUID(
                 uuidString:
@@ -224,6 +484,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: [validationRecord],
             capture: validCapture(for: tune)
         )
 
@@ -348,6 +609,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: [validationRecord],
             capture: validCapture(for: tune)
         )
         try saved.appendFH6CommunityReferenceTrialRecord(record)
@@ -414,6 +676,10 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
                 tune: displayedTune,
                 savedTune: saved.tuneResult,
                 isStreaming: false,
+                validationRecords:
+                    try validationEvidence(
+                        for: displayedTune
+                    ),
                 capture: validCapture(for: displayedTune)
             )
         )
@@ -421,11 +687,22 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             try saved.allFH6CommunityReferenceTrialRecords().isEmpty
         )
 
+        try saved.appendValidationRecord(
+            try XCTUnwrap(
+                validationEvidence(
+                    for: changedCandidate
+                ).first
+            )
+        )
         let unchangedRecord =
             try FH6CommunityReferenceTrialFactory().make(
                 tune: changedCandidate,
                 savedTune: saved.tuneResult,
                 isStreaming: false,
+                validationRecords:
+                    try validationEvidence(
+                        for: changedCandidate
+                    ),
                 capture: validCapture(for: changedCandidate)
             )
         try saved.appendFH6CommunityReferenceTrialRecord(
@@ -446,6 +723,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: capture,
             recordID: recordID,
             submissionID: submissionID,
@@ -478,6 +756,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: validCapture(for: tune, reuse: true)
         )
 
@@ -497,6 +776,8 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: changedValueTune,
             savedTune: changedValueTune,
             isStreaming: false,
+            validationRecords:
+                try validationEvidence(for: changedValueTune),
             capture: validCapture(for: changedValueTune, reuse: true)
         )
         XCTAssertEqual(
@@ -522,6 +803,10 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: alternateRulesetTune,
             savedTune: alternateRulesetTune,
             isStreaming: false,
+            validationRecords:
+                try validationEvidence(
+                    for: alternateRulesetTune
+                ),
             capture: validCapture(for: alternateRulesetTune, reuse: true)
         )
         XCTAssertEqual(
@@ -560,6 +845,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: firstCapture,
             recordID: recordID,
             submissionID: submissionID,
@@ -570,6 +856,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: secondCapture,
             recordID: UUID(),
             submissionID: UUID(),
@@ -655,6 +942,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: validCapture(for: tune)
         )
         XCTAssertTrue(factory.isValid(local))
@@ -679,6 +967,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: preferred
         )
         XCTAssertEqual(record.candidateDeficiencySymptoms, [.needsMorePull, .pushesWide])
@@ -757,7 +1046,9 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             )
         )
         let normalized = try factory.make(
-            tune: tune, savedTune: tune, isStreaming: false, capture: capture
+            tune: tune, savedTune: tune, isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
+            capture: capture
         )
         XCTAssertEqual(
             normalized.source.canonicalContentURL,
@@ -821,10 +1112,14 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         reverse.source.contentURL =
             "https://youtube.com/watch?feature=share&v=abc&utm_source=x"
         let forwardRecord = try factory.make(
-            tune: tune, savedTune: tune, isStreaming: false, capture: forward
+            tune: tune, savedTune: tune, isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
+            capture: forward
         )
         let reverseRecord = try factory.make(
-            tune: tune, savedTune: tune, isStreaming: false, capture: reverse
+            tune: tune, savedTune: tune, isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
+            capture: reverse
         )
         XCTAssertEqual(
             forwardRecord.source.contentIdentityFingerprint,
@@ -876,6 +1171,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: validCapture(for: tune, reuse: true),
             recordID: recordID,
             submissionID: submissionID,
@@ -944,6 +1240,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: validCapture(for: tune, reuse: true)
         )
 
@@ -978,13 +1275,16 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             tune: tune,
             savedTune: tune,
             isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
             capture: validCapture(for: tune)
         )
 
         var publisherCapture = try validCapture(for: tune)
         publisherCapture.source.publisherDisplayName = "Another Publisher"
         let publisher = try factory.make(
-            tune: tune, savedTune: tune, isStreaming: false, capture: publisherCapture
+            tune: tune, savedTune: tune, isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
+            capture: publisherCapture
         )
         XCTAssertNotEqual(
             base.source.publisherIdentityFingerprint,
@@ -1002,7 +1302,9 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
             )
         )
         let content = try factory.make(
-            tune: tune, savedTune: tune, isStreaming: false, capture: contentCapture
+            tune: tune, savedTune: tune, isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
+            capture: contentCapture
         )
         XCTAssertNotEqual(
             base.source.contentIdentityFingerprint,
@@ -1013,7 +1315,9 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         outcomeCapture.outcome = .generatedPreferred
         outcomeCapture.candidateDeficiencySymptoms = []
         let outcome = try factory.make(
-            tune: tune, savedTune: tune, isStreaming: false, capture: outcomeCapture
+            tune: tune, savedTune: tune, isStreaming: false,
+            validationRecords: try validationEvidence(for: tune),
+            capture: outcomeCapture
         )
         XCTAssertNotEqual(base.contentFingerprint, outcome.contentFingerprint)
     }
@@ -1165,6 +1469,32 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         )
     }
 
+    private func validationEvidence(
+        for tune: TuneResult
+    ) throws -> [FirstPartyValidationRecord] {
+        [
+            try FirstPartyValidationRecordFactory().make(
+                tune: tune,
+                savedTune: tune,
+                isStreaming: false,
+                capture: validValidationCapture(),
+                recordID: UUID(
+                    uuidString:
+                        "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+                )!,
+                submissionID: UUID(
+                    uuidString:
+                        "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+                )!,
+                permissionReceiptID: UUID(
+                    uuidString:
+                        "cccccccc-cccc-cccc-cccc-cccccccccccc"
+                )!,
+                createdAt: capturedAt
+            )
+        ]
+    }
+
     private func candidateAssociation(
         for tune: TuneResult
     ) throws -> FH6CommunityReferenceCandidateAssociation {
@@ -1214,6 +1544,8 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
                 tune: tune,
                 savedTune: tune,
                 isStreaming: false,
+                validationRecords:
+                    try validationEvidence(for: tune),
                 capture: capture
             ),
             file: file,

@@ -650,6 +650,10 @@ extension ContentView {
                 tune: tune,
                 savedTune: persistedTune,
                 isStreaming: false,
+                validationRecords:
+                    try savedTune.validValidationRecords(
+                        matching: persistedTune
+                    ),
                 capture: capture
             )
             try savedTune.appendFH6CommunityReferenceTrialRecord(record)
@@ -680,6 +684,13 @@ extension ContentView {
                         isStreaming: false
                     ) else {
                 throw ContentWorkflowError.staleCommunityReferenceTrial
+            }
+            let chain = try savedTune.fh6AccuracyEvidenceChain(
+                matching: exactTune
+            )
+            guard chain.permitsCommunityComparison else {
+                throw ContentWorkflowError
+                    .missingFirstPartyValidation
             }
             if requiresNoCurrentTrial {
                 guard try savedTune
@@ -1079,6 +1090,7 @@ enum ContentWorkflowError: LocalizedError {
     case missingSavedTune
     case staleBetaMission
     case staleCommunityReferenceTrial
+    case missingFirstPartyValidation
 
     var errorDescription: String? {
         switch self {
@@ -1088,6 +1100,8 @@ enum ContentWorkflowError: LocalizedError {
             "This mission is no longer eligible. Reopen Beta Missions for the current list."
         case .staleCommunityReferenceTrial:
             "This saved tune is no longer eligible for a community comparison. Reopen the current saved FH6 tune."
+        case .missingFirstPartyValidation:
+            "Record a valid first-party test drive for this exact current tune before starting a community comparison."
         }
     }
 }

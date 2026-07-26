@@ -671,6 +671,23 @@ struct ContentView: View {
                 return ([], error.localizedDescription)
             }
         }()
+        let accuracyEvidenceChain:
+            FH6AccuracyEvidenceChainAssessment? = {
+            guard tune.request.car.game == .fh6 else {
+                return nil
+            }
+            guard let resolvedSavedTune else {
+                return FH6AccuracyEvidenceChainPolicy().assess(
+                    tune: tune,
+                    savedTune: nil,
+                    isStreaming: isStreaming,
+                    validationRecords: [],
+                    communityComparisonRecords: []
+                )
+            }
+            return try? resolvedSavedTune
+                .fh6AccuracyEvidenceChain(matching: tune)
+        }()
         let communityOutcomeReviewState: (
             entries: [FH6CommunityOutcomeReviewEntry],
             report: FH6CommunityOutcomeCollectionReport,
@@ -988,10 +1005,14 @@ struct ContentView: View {
             },
             fh6CommunityReferenceTrialRecords:
                 communityTrialState.records,
+            fh6AccuracyEvidenceChain:
+                accuracyEvidenceChain,
             fh6CommunityReferenceTrialLoadError:
                 communityTrialState.loadError,
             onRunFH6CommunityReferenceTrial:
                 communityTrialEligibility.isSuccess
+                    && accuracyEvidenceChain?
+                        .permitsCommunityComparison == true
                     && resolvedSavedTuneID != nil
                 ? {
                     guard let resolvedSavedTuneID else { return }

@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Review Notes
 
-Last updated: 2026-07-22
+Last updated: 2026-07-25
 
 ## Privacy Manifest
 
@@ -43,7 +43,9 @@ Deidentified calibration reuse and JSON sharing are off by default for each expe
 
 FH6 Validation Review imports exact ForzAdvisor Test Drive JSON only for an eligible matching saved setup after local confirmation of direct receipt and deidentified reuse permission. Imported entries are stored separately from locally authored validation records. The review reports controlled outcomes and conditions only and does not modify tunes, contact a provider, or promote the experimental ruleset.
 
-FH6 Community Reference Comparisons store only tester-entered YouTube or Reddit source metadata, controlled A-B-B-A context, confirmations, comparative outcomes, attestations, and integrity fields for the exact current saved candidate. They do not collect source tune settings, parts, share codes, prose, media, metrics, telemetry, accounts, or device identifiers. Reuse/export is optional and off by default, sharing is manual, and the records cannot validate, rank, promote, or modify a tune.
+FH6 Community Reference Comparisons require a valid first-party Test Drive for the exact current candidate before a new comparison can be opened, created, or saved. Deleting the last matching Test Drive blocks new comparisons but preserves existing history. Evidence-chain stages and counts describe collection sequence only and never establish accuracy.
+
+Comparisons store only tester-entered YouTube or Reddit source metadata, controlled A-B-B-A context, confirmations, comparative outcomes, attestations, and integrity fields for the exact current saved candidate. They do not collect source tune settings, parts, share codes, prose, media, metrics, telemetry, accounts, or device identifiers. Reuse/export is optional and off by default, sharing is manual, and the records cannot validate, rank, recommend, promote, or modify a tune.
 
 FH6 Community Outcome Review accepts canonical permission-bound comparison JSON only after a fresh refetch matches the exact current saved candidate and the reviewer separately confirms direct receipt and structured-reuse permission. It stores canonical bytes and a bound local receipt in a separate optional queue. UUIDs and hashes bind bytes, not identity. Local-only, reviewed-only, and combined dimensions remain collection-only. Invalid, duplicate, conflicting, and replayed evidence is excluded or quarantined. Review imports no source tune values and cannot change tuning, rank or validate a candidate, promote a ruleset, look up a source, or upload in the background.
 

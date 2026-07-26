@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata
 
-Last updated: 2026-07-24
+Last updated: 2026-07-25
 
 ## App Name
 
@@ -34,7 +34,7 @@ Exact alternative buy lists require one complete, permitted, one-decision-per-pa
 
 On a saved current FH5 build plan, Copilot can offer one-tap Upgrade Lab only after fresh persisted-plan, plan-only safety, and eligibility checks; Candidate Trial, recorded-observation, and eligible Research Lab guidance take priority.
 
-Save results to a local garage, search by car, filter by discipline, copy eligible settings or plans, and use contextual Copilot guidance throughout the workflow. Beta Missions route eligible saves to exact local tasks for Tune Menu, Research, Outcome, Tire, Upgrade, and Test Drive labs. FH5 Outcome Lab records controlled A-B-B-A calibration evidence without unlocking numeric tuning. Eligible FH6 builds support Guided Refinement, verified build sharing, local Validation Review, and permission-bound Community Outcome Review. Community outcomes remain collection-only—not an accuracy score, ranking, recommendation, or tuning change.
+Save results to a local garage, search by car, filter by discipline, copy eligible settings or plans, and use contextual Copilot guidance throughout the workflow. Beta Missions route eligible saves to exact local tasks for Tune Menu, Research, Outcome, Tire, Upgrade, and Test Drive labs. FH5 Outcome Lab records controlled A-B-B-A calibration evidence without unlocking numeric tuning. Eligible FH6 builds support Guided Refinement, verified build sharing, local Validation Review, and permission-bound Community Outcome Review. A valid first-party Test Drive for the exact current candidate is required before any new Community Reference Comparison can be created or saved. Community stages and outcomes remain collection-only—not an accuracy score, validation, ranking, recommendation, promotion, or tuning change.
 
 ForzAdvisor runs offline by default. FH5 build plans always stay local. Optional on-device AI can assist FH6 generation when Apple Foundation Models are available, and optional API mode lets advanced users connect their own Anthropic API key for FH6. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -83,6 +83,8 @@ Suggested FH5 review path:
 
 For FH6 Validation Review, save an eligible exact-build tune, record or receive a ForzAdvisor Test Drive JSON export for that exact setup, then open Accuracy Evidence -> Open Validation Review. Import requires local confirmation of direct receipt and reuse permission. Review reports outcomes and conditions only and does not change the tune.
 
+For an FH6 Community Reference Comparison, first save a valid first-party Test Drive for the exact current candidate. The app rechecks that evidence before opening, creating, and saving a comparison. Deleting the last matching Test Drive blocks new comparisons but preserves existing comparison history. The displayed stage and counts describe collection sequence only and do not establish accuracy.
+
 For FH6 Community Outcome Review, save an eligible exact-build tune, receive a canonical Community Reference Comparison JSON export directly from its tester, then open the saved tune's Community Comparison area or FH6 Validation Review. Import requires separate confirmation of direct receipt and permission for deidentified structured reuse. The review stays local, reports comparison outcomes only, and cannot import reference settings, change tuning, rank a source, or promote a ruleset.
 
 For Stock Catalog Contribution, open the UserDefaults-backed catalog contribution workspace and enter every FH5 or FH6 identity and stock field from one exact game build. Confirm the direct in-game and untouched-stock attestations for every field. Local save works without reuse permission. Canonical JSON export requires explicit authorship, deidentified reuse, catalog-curation, and redistribution permissions; import requires separate direct-receipt and rights confirmation. The workspace is separate from Saved Tunes and the bundled catalog and cannot change tuning or readiness.
@@ -97,8 +99,8 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.27.0
-- Current project build: 52
+- Current project version: 1.28.0
+- Current project build: 53
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 

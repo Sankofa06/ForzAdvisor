@@ -62,6 +62,8 @@ Import also requires you to confirm direct receipt from the driver and permissio
 
 On an eligible saved exact FH6 tune, choose Run Community Reference Comparison. Apply the exact ForzAdvisor candidate for A and one reference from a direct YouTube or Reddit permalink for B, then complete the fixed A-B-B-A sequence with the same route, conditions, assists, and input. Restore the ForzAdvisor candidate before saving or leaving.
 
+The app requires a valid first-party Test Drive for the exact current candidate before it will open, create, or save a new comparison. If the last matching Test Drive is deleted, existing comparison history remains available but new comparisons stay blocked until another matching Test Drive is recorded. The displayed evidence-chain stage and counts describe collection order only; they do not establish accuracy, validation, ranking, recommendation, or promotion.
+
 The app stores only source metadata, controlled context, run confirmations, and your comparative outcome. Do not enter community settings, parts, share codes, source prose, media, or metrics. The result is a comparative observation, not validation, ground truth, a ranking, or a promotion. Local storage is required; deidentified reuse and explicit JSON sharing are optional and off by default. There is no source lookup or background upload.
 
 ### What is FH6 Community Outcome Review?
