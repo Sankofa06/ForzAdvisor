@@ -4,6 +4,10 @@ ForzAdvisor helps racing-game players generate, save, copy, and adjust tuning se
 
 Stock Catalog Contribution can prepare a canonical maintainer review packet from complete permission-bound reviewed observations after explicit confirmation. The user-initiated packet preserves exact FH5/FH6 build, platform, facts, and field observation screens; excludes raw contribution JSON and administrative IDs; quarantines replays and conflicts; and compares read-only with the bundled catalog. It never selects sources, verification status, catalog identity, or a winning value and cannot change the catalog or tuning.
 
+If that packet contains one non-conflicting car that is still absent from the exact current catalog and is supported by at least two distinct permission-complete observations, Catalog Curation Preflight can prepare the next review artifact. You must explicitly choose the candidate, proposed ID, new revision, proposed status, and an identity source whose compatible license or explicit permission you independently reviewed. Every stock field is bound to all supporting first-party observation digests. Changing the packet, candidate, catalog, proposal, rights evidence, or confirmations invalidates the prepared copy.
+
+Preflight rejects stale same-revision catalogs, existing normalized car identities, incomplete or foreign field evidence, unsafe rights records, tampering, and noncanonical JSON. It does not decide whether a license or permission is legally sufficient, verify the car, create a catalog entry, edit the bundle, or activate tuning. Share it manually only for a separate release review.
+
 ## Common Questions
 
 ### Do I need an account?

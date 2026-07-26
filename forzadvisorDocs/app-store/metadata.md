@@ -24,6 +24,8 @@ Stock Catalog Contribution records direct in-game, untouched-stock facts for an 
 
 After explicit confirmation, a reviewer can prepare a canonical maintainer packet for separate human curation. It preserves exact build, platform, facts, and field-level observation screens; omits raw contribution JSON and administrative IDs; quarantines replayed or conflicting evidence; and compares facts read-only with the current bundle. The packet does not choose sources, verification status, a catalog ID, or a winning value and cannot modify the catalog or tuning.
 
+For a non-conflicting prospective addition with at least two matching permission-bound observations, Catalog Curation Preflight can explicitly bind the exact packet, selected candidate, complete field provenance, and full current base catalog. It also records an intended ID, revision, verification status, and a compatible-license or explicit-permission identity-source review. The canonical artifact remains evidence for a separate release review; it does not establish legal sufficiency or verification, produce a catalog entry, change the bundle, or activate tuning.
+
 Its toolbar Copilot provides local, phase-only guidance without reading drafts, JSON, permissions, identifiers, or fingerprints; using a model or network; performing actions; approving contributions; or activating tuning.
 
 For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a menu-order setup across the tuning controls supported by the verified build evidence. FH6 formulas remain experimental, and settings that do not pass local capability, range, and provenance checks are withheld.
@@ -98,14 +100,16 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.28.0
-- Current project build: 53
+- Current project version: 1.29.0
+- Current project build: 54
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
 Stock Catalog Contribution can now prepare a privacy-bounded maintainer review packet for separate human curation, with deterministic conflict and replay quarantine and no automatic catalog changes.
+
+Catalog Curation Preflight can now prepare a separately reviewable, exact-catalog-bound prospective-addition artifact from two or more matching permission-bound first-party observations without creating or changing a catalog entry.
 
 ## Export Compliance Notes
 

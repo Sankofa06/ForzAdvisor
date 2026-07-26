@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.29.0 (Build 54) - 2026-07-25
+
+- Adds a canonical Catalog Curation Preflight for prospective cars backed by at least two matching, permission-bound first-party observations.
+- Binds the exact maintainer packet, selected candidate, and full base catalog while requiring complete field provenance and a compatible-license or explicit-permission identity-source review.
+- Keeps every proposal review-only: it cannot establish legal sufficiency or verification, change the bundled catalog, create a catalog entry, or activate tuning.
+
 ## Version 1.28.0 (Build 53) - 2026-07-25
 
 - Requires a matching first-party FH6 Test Drive before every route that can create or save a Community Reference Comparison.

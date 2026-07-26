@@ -35,6 +35,25 @@ struct StockCatalogContributionView: View {
         StockCatalogReviewConfirmationState()
     @State private var maintainerReviewConfirmed = false
     @State private var preparedMaintainerPacket: String?
+    @State private var selectedCurationCandidate = ""
+    @State private var proposedCatalogID = ""
+    @State private var proposedCatalogRevision = ""
+    @State private var proposedVerificationStatus:
+        CatalogVerificationStatus = .officialRoster
+    @State private var identitySourceTitle = ""
+    @State private var identitySourceURL = ""
+    @State private var identitySourceAccessDate = ""
+    @State private var identityRightsBasis:
+        StockCatalogIdentityRightsBasis = .compatibleLicense
+    @State private var identityRightsEvidenceReference = ""
+    @State private var identityRightsEvidenceDigest = ""
+    @State private var rightsIndependentlyReviewed = false
+    @State private var noSourceFactsCopied = false
+    @State private var noSourceProseCopied = false
+    @State private var noSourceMediaCopied = false
+    @State private var allPermissionedFieldEvidenceUsed = false
+    @State private var separateReleaseReviewConfirmed = false
+    @State private var preparedCurationPreflight: String?
     @State private var statusMessage: String?
 
     init(
@@ -66,6 +85,7 @@ struct StockCatalogContributionView: View {
             importSection
             reviewedSection
             maintainerReviewSection
+            curationPreflightSection
 
             Section("Collection-Only Boundary") {
                 Text(
@@ -113,6 +133,12 @@ struct StockCatalogContributionView: View {
                 from: previous,
                 to: current
             )
+        }
+        .onChange(of: curationDraftFingerprint) {
+            previous, current in
+            if previous != current {
+                preparedCurationPreflight = nil
+            }
         }
         .task {
             snapshot = store.load()
@@ -394,6 +420,295 @@ struct StockCatalogContributionView: View {
         .forzAdvisorRowBackground()
     }
 
+    private var curationPreflightSection: some View {
+        Section("Catalog Curation Preflight") {
+            Text(
+                "After preparing a maintainer packet, explicitly select one non-conflicting prospective addition. Preflight binds that exact packet and the entire current base catalog for a separate release review."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            if preparedMaintainerPacket == nil {
+                Text("Prepare a maintainer review packet first.")
+                    .foregroundStyle(.secondary)
+            } else if eligibleCurationCandidates.isEmpty {
+                Text(
+                    "No candidate currently has an absent catalog comparison and two distinct permission-complete observations."
+                )
+                .foregroundStyle(.secondary)
+            } else {
+                Picker(
+                    "Candidate",
+                    selection: $selectedCurationCandidate
+                ) {
+                    Text("Select a candidate").tag("")
+                    ForEach(
+                        eligibleCurationCandidates,
+                        id: \.key
+                    ) { option in
+                        Text(option.title).tag(option.key)
+                    }
+                }
+                .accessibilityIdentifier(
+                    "stockCatalogCurationCandidate"
+                )
+            }
+
+            TextField(
+                "Proposed catalog ID (fh5-… or fh6-…)",
+                text: $proposedCatalogID
+            )
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            TextField(
+                "Proposed catalog revision",
+                text: $proposedCatalogRevision
+            )
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            Picker(
+                "Proposed verification status",
+                selection: $proposedVerificationStatus
+            ) {
+                Text(CatalogVerificationStatus.officialRoster.label)
+                    .tag(CatalogVerificationStatus.officialRoster)
+                Text(
+                    CatalogVerificationStatus
+                        .communityCrossChecked.label
+                )
+                .tag(
+                    CatalogVerificationStatus
+                        .communityCrossChecked
+                )
+                Text(CatalogVerificationStatus.inGameVerified.label)
+                    .tag(CatalogVerificationStatus.inGameVerified)
+            }
+
+            Divider()
+            Text("Official Identity Source Rights Review")
+                .font(.subheadline.weight(.semibold))
+            TextField(
+                "Safe source title",
+                text: $identitySourceTitle
+            )
+            TextField(
+                "HTTPS source URL",
+                text: $identitySourceURL
+            )
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            TextField(
+                "Access date (YYYY-MM-DD)",
+                text: $identitySourceAccessDate
+            )
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            Picker(
+                "Rights basis",
+                selection: $identityRightsBasis
+            ) {
+                ForEach(StockCatalogIdentityRightsBasis.allCases) {
+                    Text($0.label).tag($0)
+                }
+            }
+            TextField(
+                "Rights evidence reference",
+                text: $identityRightsEvidenceReference
+            )
+            TextField(
+                "Rights evidence SHA-256",
+                text: $identityRightsEvidenceDigest
+            )
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            Toggle(
+                "Rights independently reviewed",
+                isOn: $rightsIndependentlyReviewed
+            )
+            Toggle(
+                "No source facts copied into candidate",
+                isOn: $noSourceFactsCopied
+            )
+            Toggle(
+                "No source prose copied into candidate",
+                isOn: $noSourceProseCopied
+            )
+            Toggle(
+                "No source media copied into candidate",
+                isOn: $noSourceMediaCopied
+            )
+            Toggle(
+                "Use all permissioned observation evidence for every field",
+                isOn: $allPermissionedFieldEvidenceUsed
+            )
+            Toggle(
+                "Separate release review required",
+                isOn: $separateReleaseReviewConfirmed
+            )
+
+            Text(StockCatalogCurationPreflightPolicy.reviewBoundary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Button("Prepare Canonical Curation Preflight") {
+                prepareCurationPreflight()
+            }
+            .disabled(!canPrepareCurationPreflight)
+            .accessibilityIdentifier(
+                "prepareStockCatalogCurationPreflight"
+            )
+
+            if let preparedCurationPreflight {
+                ShareLink(item: preparedCurationPreflight) {
+                    Label(
+                        "Share Curation Preflight",
+                        systemImage: "square.and.arrow.up"
+                    )
+                }
+                .accessibilityIdentifier(
+                    "shareStockCatalogCurationPreflight"
+                )
+            }
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private struct CurationCandidateOption {
+        let key: String
+        let title: String
+        let groupID: String
+        let variant:
+            StockCatalogMaintainerEvidenceVariant
+    }
+
+    private var eligibleCurationCandidates:
+        [CurationCandidateOption] {
+        guard let preparedMaintainerPacket,
+              let data = preparedMaintainerPacket.data(using: .utf8),
+              let packet = try?
+                StockCatalogMaintainerReviewPacketExporter()
+                .validate(data) else {
+            return []
+        }
+        return packet.candidates.compactMap { candidate in
+            let variant = candidate.variant
+            guard variant.catalogComparison.status == .absent,
+                  variant.observations.count >= 2,
+                  variant.observations.allSatisfy(
+                      \.permission.isComplete
+                  ) else {
+                return nil
+            }
+            let key =
+                "\(candidate.groupID):\(variant.variantID)"
+            return CurationCandidateOption(
+                key: key,
+                title:
+                    "\(variant.vehicle.year) \(variant.vehicle.make) \(variant.vehicle.model) · \(variant.game.shortTitle) · \(variant.observations.count) observations",
+                groupID: candidate.groupID,
+                variant: variant
+            )
+        }
+    }
+
+    private var canPrepareCurationPreflight: Bool {
+        preparedMaintainerPacket != nil
+            && eligibleCurationCandidates.contains {
+                $0.key == selectedCurationCandidate
+            }
+            && !proposedCatalogID.isEmpty
+            && !proposedCatalogRevision.isEmpty
+            && !identitySourceTitle.isEmpty
+            && !identitySourceURL.isEmpty
+            && !identitySourceAccessDate.isEmpty
+            && !identityRightsEvidenceReference.isEmpty
+            && !identityRightsEvidenceDigest.isEmpty
+            && rightsIndependentlyReviewed
+            && noSourceFactsCopied
+            && noSourceProseCopied
+            && noSourceMediaCopied
+            && allPermissionedFieldEvidenceUsed
+            && separateReleaseReviewConfirmed
+    }
+
+    private func prepareCurationPreflight() {
+        guard canPrepareCurationPreflight,
+              let packetText = preparedMaintainerPacket,
+              let packetData = packetText.data(using: .utf8),
+              let option = eligibleCurationCandidates.first(
+                  where: { $0.key == selectedCurationCandidate }
+              ) else {
+            preparedCurationPreflight = nil
+            statusMessage =
+                "Complete every preflight field and confirmation, then explicitly select an eligible candidate."
+            return
+        }
+        let observations = option.variant.observations
+        let decisions = StockCatalogContributionValidator
+            .expectedFields.map { field in
+                StockCatalogCurationFieldDecision(
+                    field: field,
+                    observationDigests: observations.filter {
+                        $0.permission.isComplete
+                            && $0.fields.contains {
+                                $0.field == field
+                            }
+                    }.map(\.observationDigest).sorted()
+                )
+            }
+        let request = StockCatalogCurationPreflightRequest(
+            groupID: option.groupID,
+            variantID: option.variant.variantID,
+            fieldDecisions: decisions,
+            identitySourceRightsReview: .init(
+                sourceTitle: identitySourceTitle,
+                sourceURL: identitySourceURL,
+                accessedOn: identitySourceAccessDate,
+                rightsBasis: identityRightsBasis,
+                rightsEvidenceReference:
+                    identityRightsEvidenceReference,
+                rightsEvidenceSHA256:
+                    identityRightsEvidenceDigest,
+                rightsIndependentlyReviewed:
+                    rightsIndependentlyReviewed,
+                noSourceFactsCopied: noSourceFactsCopied,
+                noSourceProseCopied: noSourceProseCopied,
+                noSourceMediaCopied: noSourceMediaCopied
+            ),
+            proposal: .init(
+                catalogID: proposedCatalogID,
+                revision: proposedCatalogRevision,
+                verificationStatus:
+                    proposedVerificationStatus
+            ),
+            allPermissionedEvidenceUsedForEveryField:
+                allPermissionedFieldEvidenceUsed,
+            separateReleaseReviewConfirmed:
+                separateReleaseReviewConfirmed
+        )
+        do {
+            let catalog = try BundledCarCatalog.load().get()
+            let artifact = try StockCatalogCurationPreflightExporter()
+                .makeArtifact(
+                    packetCanonicalJSON: packetData,
+                    baseCatalog: catalog,
+                    request: request
+                )
+            guard let text = String(
+                data: artifact.canonicalJSON,
+                encoding: .utf8
+            ) else {
+                throw StockCatalogCurationPreflightError.invalidJSON
+            }
+            preparedCurationPreflight = text
+            statusMessage =
+                "Prepared a canonical prospective curation preflight. It did not change the catalog, verify the candidate, or activate tuning."
+        } catch {
+            preparedCurationPreflight = nil
+            statusMessage = error.localizedDescription
+        }
+    }
+
     private func saveContribution() {
         let capturedAt = Date()
         guard let year = Int(year),
@@ -541,6 +856,8 @@ struct StockCatalogContributionView: View {
                 throw StockCatalogMaintainerReviewPacketError.invalidJSON
             }
             preparedMaintainerPacket = packet
+            selectedCurationCandidate = ""
+            preparedCurationPreflight = nil
             statusMessage =
                 "Prepared \(artifact.packet.candidates.count) candidate group(s) and \(artifact.packet.conflicts.count) conflict group(s); excluded \(artifact.packet.excludedObservationCount) observation(s). No catalog or tune changed."
         } catch {
@@ -552,6 +869,8 @@ struct StockCatalogContributionView: View {
     private func invalidateMaintainerReviewPacket() {
         preparedMaintainerPacket = nil
         maintainerReviewConfirmed = false
+        selectedCurationCandidate = ""
+        preparedCurationPreflight = nil
     }
 
     @discardableResult
@@ -581,6 +900,28 @@ struct StockCatalogContributionView: View {
             model, performanceIndex, performanceClass.rawValue,
             drivetrain.rawValue, weightPounds, frontWeightPercent,
             peakHorsepower, peakTorque, observations
+        ].map(draftPart).joined()
+    }
+
+    private var curationDraftFingerprint: String {
+        [
+            preparedMaintainerPacket ?? "",
+            selectedCurationCandidate,
+            proposedCatalogID,
+            proposedCatalogRevision,
+            proposedVerificationStatus.rawValue,
+            identitySourceTitle,
+            identitySourceURL,
+            identitySourceAccessDate,
+            identityRightsBasis.rawValue,
+            identityRightsEvidenceReference,
+            identityRightsEvidenceDigest,
+            String(rightsIndependentlyReviewed),
+            String(noSourceFactsCopied),
+            String(noSourceProseCopied),
+            String(noSourceMediaCopied),
+            String(allPermissionedFieldEvidenceUsed),
+            String(separateReleaseReviewConfirmed)
         ].map(draftPart).joined()
     }
 
