@@ -884,6 +884,9 @@ final class CopilotTests: XCTestCase {
             tuneMenuLabEligible: false,
             tireLabEligible: false,
             upgradeLabEligible: true,
+            fh5ResearchLabEligible: true,
+            fh5ObservationRecorded: false,
+            fh5CandidateTrialAvailable: false,
             exactUpgradePathCount: 0,
             isSaved: false,
             isStreaming: false
@@ -940,7 +943,8 @@ final class CopilotTests: XCTestCase {
         let higherPriorityCases: [
             (
                 facts: CopilotProjectionFacts,
-                expectedCopy: String
+                expectedCopy: String,
+                expectedAction: CopilotAction?
             )
         ] = [
             (
@@ -959,7 +963,8 @@ final class CopilotTests: XCTestCase {
                     isSaved: true,
                     isStreaming: false
                 ),
-                "experimental FH5 Candidate Trial"
+                "experimental FH5 Candidate Trial",
+                nil
             ),
             (
                 CopilotProjectionFacts(
@@ -977,7 +982,8 @@ final class CopilotTests: XCTestCase {
                     isSaved: true,
                     isStreaming: false
                 ),
-                "raw FH5 stock-menu evidence"
+                "raw FH5 stock-menu evidence",
+                nil
             ),
             (
                 CopilotProjectionFacts(
@@ -995,7 +1001,8 @@ final class CopilotTests: XCTestCase {
                     isSaved: true,
                     isStreaming: false
                 ),
-                "Open FH5 Research Lab"
+                "Open FH5 Research Lab",
+                .openFH5ResearchLab
             )
         ]
         for item in higherPriorityCases {
@@ -1008,7 +1015,7 @@ final class CopilotTests: XCTestCase {
             XCTAssertFalse(
                 response.message.contains("Open Upgrade Lab")
             )
-            XCTAssertNil(response.action)
+            XCTAssertEqual(response.action, item.expectedAction)
         }
         for intent in [
             CopilotIntent.trust, .missing, .privacy
@@ -1055,11 +1062,16 @@ final class CopilotTests: XCTestCase {
 
     func testCopilotActionIsClosedPayloadFreeAndDoesNotExposeTuneValues() throws {
         XCTAssertEqual(
+            CopilotAction.openFH5ResearchLab.title,
+            "Open FH5 Research Lab"
+        )
+        XCTAssertEqual(
             Set(CopilotAction.allCases),
             Set([
                 .openFH6TuneMenuLab,
                 .openTireLab,
                 .openUpgradeLab,
+                .openFH5ResearchLab,
                 .openRecordTestDrive,
                 .openFH6CommunityReferenceTrial
             ])

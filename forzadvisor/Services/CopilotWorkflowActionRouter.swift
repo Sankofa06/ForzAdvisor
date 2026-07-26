@@ -18,6 +18,8 @@ struct CopilotPersistedActionSnapshot {
     let result: CopilotPersistedResultPayload
     let accuracyEvidenceChain:
         FH6AccuracyEvidenceChainAssessment
+    let fh5ResearchLabEligible: Bool
+    let matchingFH5ResearchObservationCount: Int
 
     var matchingValidationRecordCount: Int {
         accuracyEvidenceChain.matchingValidationCount
@@ -48,6 +50,27 @@ struct CopilotPersistedActionSnapshotResolver {
               persistedTune == displayedTune else {
             return nil
         }
+        let isFH5ResearchLabEligible: Bool
+        let matchingFH5ResearchObservationCount: Int
+        if persistedTune.request.car.game == .fh5 {
+            if case .success =
+                FH5ResearchEligibility().snapshot(
+                    for: persistedTune,
+                    savedTune: persistedTune,
+                    isStreaming: false
+                ) {
+                isFH5ResearchLabEligible = true
+            } else {
+                isFH5ResearchLabEligible = false
+            }
+            matchingFH5ResearchObservationCount =
+                try savedTune.exactFH5ResearchObservationRecords(
+                    matching: persistedTune
+                ).count
+        } else {
+            isFH5ResearchLabEligible = false
+            matchingFH5ResearchObservationCount = 0
+        }
         return CopilotPersistedActionSnapshot(
             result: CopilotPersistedResultPayload(
                 tune: persistedTune,
@@ -57,7 +80,11 @@ struct CopilotPersistedActionSnapshotResolver {
             accuracyEvidenceChain:
                 try savedTune.fh6AccuracyEvidenceChain(
                     matching: persistedTune
-                )
+                ),
+            fh5ResearchLabEligible:
+                isFH5ResearchLabEligible,
+            matchingFH5ResearchObservationCount:
+                matchingFH5ResearchObservationCount
         )
     }
 }
@@ -109,6 +136,13 @@ struct CopilotWorkflowActionRouter {
                 thumbnailData: persistedResult.thumbnailData,
                 playerNotes: persistedResult.playerNotes
             )
+        case .openFH5ResearchLab:
+            return .fh5ResearchCapture(
+                persistedResult.tune,
+                savedTuneID: savedTuneID,
+                thumbnailData: persistedResult.thumbnailData,
+                playerNotes: persistedResult.playerNotes
+            )
         case .openRecordTestDrive:
             return .recordTestDrive(
                 persistedResult.tune,
@@ -137,11 +171,16 @@ struct CopilotWorkflowActionRouter {
         if tune.request.car.game == .fh5 {
             guard TuneResultBoundarySanitizer()
                     .isSafeFH5BuildPlan(tune),
-                  UpgradePartCaptureEligibility()
-                    .snapshot(for: tune) != nil else {
+                  snapshot.matchingFH5ResearchObservationCount == 0 else {
                 return nil
             }
-            return .openUpgradeLab
+            if snapshot.fh5ResearchLabEligible {
+                return .openFH5ResearchLab
+            }
+            return UpgradePartCaptureEligibility()
+                .snapshot(for: tune) != nil
+                ? .openUpgradeLab
+                : nil
         }
         guard tune.request.car.game == .fh6,
               tune.purpose == .numericTune,

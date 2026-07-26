@@ -63,7 +63,7 @@ https://Sankofa06.github.io/ForzAdvisor/support/
 
 No login or test account is required.
 
-For FH5 Copilot Upgrade Lab, use a saved current build plan. Copilot refetches and equality-checks the persisted plan, verifies plan-only safety and eligibility, and preserves the tune, thumbnail, and notes. It cannot generate numeric FH5 settings; select, buy, or install parts; claim PI, cost, or performance; call a provider or network; or bypass exact in-game availability. Candidate Trial, recorded-observation, and eligible Research Lab guidance take priority.
+For FH5 Copilot evidence work, use a saved current build plan. Copilot can offer Research Lab only after refetching and equality-checking the persisted plan, verifying plan-only Research eligibility, and confirming that no matching observation exists. Candidate Trial and recorded-observation states stay action-free. When Research is ineligible, Upgrade Lab remains a lower-priority fallback after a fresh eligibility check. Both routes preserve the tune, thumbnail, and notes. They cannot generate numeric FH5 settings; select, buy, or install parts; claim PI, cost, or performance; call a provider or network; or bypass exact in-game availability.
 
 Exact Upgrade Lab alternatives require one complete, permitted local observation with one decision for every expected part, a known canonical FH5 or FH6 build, and a freshly derived matching stock projection. The app fails closed for stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence. The result, copied plan, and Verified Build share card show safe local source, game-build, and stock-snapshot capture attribution without raw source IDs or private data. They do not predict PI, cost, credits, entitlement, performance, or purchase order. Existing saves remain readable, but stale evidence can require running Upgrade Lab again.
 
@@ -103,8 +103,8 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.32.0
-- Current project build: 57
+- Current project version: 1.33.0
+- Current project build: 58
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 

@@ -312,13 +312,21 @@ final class SavedTune {
     func fh5ResearchObservationRecords(
         matching tune: TuneResult
     ) -> [FH5ResearchObservationRecord] {
+        (try? exactFH5ResearchObservationRecords(matching: tune))
+            ?? []
+    }
+
+    @MainActor
+    func exactFH5ResearchObservationRecords(
+        matching tune: TuneResult
+    ) throws -> [FH5ResearchObservationRecord] {
         let factory = FH5ResearchObservationFactory()
         guard let currentTune = tuneResult,
               factory.planRevisionFingerprint(for: currentTune)
                 == factory.planRevisionFingerprint(for: tune) else {
             return []
         }
-        return fh5ResearchObservationRecords
+        return try decodedFH5ResearchObservationRecords()
             .filter { factory.matches($0, tune: currentTune) }
             .sorted { $0.capturedAt < $1.capturedAt }
     }

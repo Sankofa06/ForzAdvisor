@@ -4,15 +4,15 @@ Last updated: 2026-07-25
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.32.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.33.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.32.0`.
-- Current project build is `57`.
+- Current project version is `1.33.0`.
+- Current project build is `58`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -57,7 +57,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - FH6 Validation Review exposes received-packet inspection independently from sender preparation eligibility. Every validation tap creates a fresh read context, excludes pending changes, refetches the persisted exact saved candidate, and runs the canonical packet validator. Pasted JSON, the validated packet, counts, and displayed binding prefixes remain transient view state; candidate change, paste edit, validation failure, or Clear removes the accepted state. Inspection never imports, persists, scores, ranks, promotes, applies, or uploads evidence. Its phase-only Copilot cannot see packet payloads, counts, permission identifiers, bindings, fingerprints, or status and offers no action.
 - Contextual Copilot sequences eligible FH6 accuracy work through unfinished first-party labs, an exact Record Test Drive, and only then a Community Reference Comparison. Every action refetches and revalidates the persisted setup and carries no tune payload of its own.
 - A successful first save from a literally empty garage shows a transient, exact-result-bound local-save confirmation with **Continue with Copilot** and **Not Now**. Both Copilot entry points consume the prompt before presentation; Done, reopening, and navigation also consume it. The prompt is not persisted, creates no evidence, changes no tune, adds no analytics or networking, and never hardcodes a Lab destination.
-- FH5 contextual Copilot offers **Open Upgrade Lab** only for the exact current saved build plan after persisted equality, plan-only safety, and eligibility checks. It preserves the tune, thumbnail, and notes; yields to Candidate Trial, recorded-observation, and eligible Research Lab guidance; and cannot generate numeric settings, transact parts, claim PI, cost, or performance, call a provider or network, or bypass exact in-game availability. FH6 sequencing is unchanged.
+- FH5 contextual Copilot offers **Open FH5 Research Lab** only after a fresh exact persisted-plan match, plan-only Research eligibility, and confirmation that no matching observation exists. Candidate Trial and recorded-observation states remain action-free. When Research is ineligible, **Open Upgrade Lab** remains a lower-priority fallback after fresh Upgrade Lab eligibility checks. Both routes preserve the tune, thumbnail, and notes; reject stale, unsafe, or corrupt evidence; and cannot generate numeric settings, transact parts, claim PI, cost, or performance, call a provider or network, or bypass exact in-game availability. FH6 sequencing is unchanged.
 - Settings, Beta Missions, and the four evidence-review modals expose guidance-only Copilot through their existing navigation stacks. Modal contexts use strict committed-fact allow-lists, cannot execute workflow actions, and exclude credentials, draft evidence, tune values, notes, images, identifiers, and fingerprints.
 - Beta Validation Missions are derived locally from existing eligibility checks, create no records by themselves, and share aggregate counts only through a user-initiated system share sheet.
 - FH6 Community Research Partners provides a separate public-only, user-initiated invite for testers who already have the latest beta. The invite contains no FH6 TestFlight URL and no local progress, car or tune values, notes, IDs, fingerprints, receipts, JSON, source details, or local state. It describes the required first-party Record Test Drive for that exact current saved tune, fixed A-B-B-A comparison, explicit reuse permission, manual permission-bound Community Outcome export, matching Community Outcome Review handoff, collection-only boundary, Apple-controlled availability, and TestFlight Send Beta Feedback path without analytics or background networking. Community outcomes are not an accuracy or quality score and are not a recommendation; ForzAdvisor does not authenticate tester identity.

@@ -120,6 +120,7 @@ enum CopilotAction: String, CaseIterable, Codable, Sendable {
     case openFH6TuneMenuLab
     case openTireLab
     case openUpgradeLab
+    case openFH5ResearchLab
     case openRecordTestDrive
     case openFH6CommunityReferenceTrial
 
@@ -128,6 +129,7 @@ enum CopilotAction: String, CaseIterable, Codable, Sendable {
         case .openFH6TuneMenuLab: "Open FH6 Tune Menu Lab"
         case .openTireLab: "Open Tire Lab"
         case .openUpgradeLab: "Open Upgrade Lab"
+        case .openFH5ResearchLab: "Open FH5 Research Lab"
         case .openRecordTestDrive: "Open Record Test Drive"
         case .openFH6CommunityReferenceTrial:
             "Run Community Reference Comparison"
@@ -658,13 +660,16 @@ struct CopilotEngine {
             return nil
         }
         if projection.resultPurpose == .fh5BuildPlan {
-            guard projection.fh5CandidateTrialAvailable != true,
-                  projection.fh5ObservationRecorded != true,
-                  projection.fh5ResearchLabEligible != true,
-                  projection.upgradeLabEligible == true else {
+            if projection.fh5CandidateTrialAvailable == true
+                || projection.fh5ObservationRecorded == true {
                 return nil
             }
-            return .openUpgradeLab
+            if projection.fh5ResearchLabEligible == true {
+                return .openFH5ResearchLab
+            }
+            return projection.upgradeLabEligible == true
+                ? .openUpgradeLab
+                : nil
         }
         guard projection.resultPurpose == .numericTune,
               projection.readyCount > 0 else {

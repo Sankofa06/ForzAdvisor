@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.33.0 (Build 58) - 2026-07-25
+
+- Makes Copilot's FH5 Research Lab recommendation actionable for eligible saved build plans.
+- Refetches the exact persisted plan and observation state before routing, preserving the saved thumbnail and notes while rejecting stale, corrupt, or already-recorded evidence.
+- Keeps Candidate Trial and recorded-observation states action-free, FH5 numeric tuning unavailable, and Upgrade Lab as the lower-priority fallback.
+
 ## Version 1.32.0 (Build 57) - 2026-07-25
 
 - Celebrates the first setup saved from an empty garage with a clear local-save confirmation.

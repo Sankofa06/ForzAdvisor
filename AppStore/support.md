@@ -110,7 +110,7 @@ The observation is raw first-party evidence, not a tune, and does not contact a 
 
 ### Can Copilot open FH5 Upgrade Lab?
 
-On a saved current FH5 build plan, Copilot can offer one-tap **Open Upgrade Lab** only after it freshly matches the persisted plan, confirms plan-only safety, and rechecks Upgrade Lab eligibility. It preserves the saved tune, thumbnail, and notes. Candidate Trial, recorded-observation, or eligible Research Lab guidance takes priority.
+On a saved current FH5 build plan, Copilot can offer one-tap **Open FH5 Research Lab** only after it freshly matches the persisted plan, confirms plan-only Research eligibility, and finds no matching observation. Candidate Trial and recorded-observation states stay action-free. When Research is ineligible, **Open Upgrade Lab** remains a lower-priority fallback after a fresh eligibility check. Both routes preserve the saved tune, thumbnail, and notes and fail closed for stale, unsafe, or corrupt evidence.
 
 This action does not generate numeric FH5 settings; select, buy, or install parts; predict PI, credits, or performance; call a provider or network; or bypass exact in-game availability.
 
