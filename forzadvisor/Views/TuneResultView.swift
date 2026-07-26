@@ -46,6 +46,14 @@ struct TuneResultView: View {
         ((FH5CandidateOutcomeReviewEntry) -> String?)?
     let onDeleteFH5CandidateOutcomeReviewEntry:
         (FH5CandidateOutcomeReviewEntry) -> Void
+    let onPrepareFH5NumericPromotionReviewPacket:
+        (() throws -> String)?
+    let fh5NumericPromotionPreparedInputStateFingerprint:
+        String?
+    let onValidateFH5NumericPromotionReviewPacket:
+        ((Data) throws -> FH5NumericPromotionReviewPacket)?
+    let fh5NumericPromotionReceiverCandidateFingerprint:
+        String?
     let onOpenFH5ControlledExperiment: (() -> Void)?
     let onDeleteFH5ControlledExperimentRecord:
         (FH5ControlledExperimentRecord) -> Void
@@ -453,7 +461,15 @@ struct TuneResultView: View {
                     onImport:
                         onImportFH5CandidateOutcomeReviewEntry,
                     onDelete:
-                        onDeleteFH5CandidateOutcomeReviewEntry
+                        onDeleteFH5CandidateOutcomeReviewEntry,
+                    onPrepareNumericPromotionReviewPacket:
+                        onPrepareFH5NumericPromotionReviewPacket,
+                    preparedInputStateFingerprint:
+                        fh5NumericPromotionPreparedInputStateFingerprint,
+                    onValidateNumericPromotionReviewPacket:
+                        onValidateFH5NumericPromotionReviewPacket,
+                    receiverCandidateFingerprint:
+                        fh5NumericPromotionReceiverCandidateFingerprint
                 )
             }
         }

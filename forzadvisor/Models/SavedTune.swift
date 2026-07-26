@@ -374,6 +374,13 @@ final class SavedTune {
     func fh5ResearchReviewEntries(
         matching tune: TuneResult
     ) -> [FH5ResearchReviewEntry] {
+        (try? exactFH5ResearchReviewEntries(matching: tune)) ?? []
+    }
+
+    @MainActor
+    func exactFH5ResearchReviewEntries(
+        matching tune: TuneResult
+    ) throws -> [FH5ResearchReviewEntry] {
         let factory = FH5ResearchObservationFactory()
         guard let currentTune = tuneResult,
               let currentRevision = factory.planRevisionFingerprint(for: currentTune),
@@ -381,11 +388,16 @@ final class SavedTune {
             return []
         }
         let ingestor = FH5ResearchReviewIngestor()
-        return fh5ResearchReviewEntries.filter { entry in
+        return try decodedFH5ResearchReviewEntries().filter { entry in
             guard let validated = try? ingestor.validate(entry.canonicalExportJSON) else {
                 return false
             }
             return ingestor.matchesSavedPlan(validated, tune: currentTune)
+        }.sorted {
+            if $0.importedAt != $1.importedAt {
+                return $0.importedAt < $1.importedAt
+            }
+            return $0.id.uuidString < $1.id.uuidString
         }
     }
 
@@ -453,6 +465,17 @@ final class SavedTune {
     @MainActor
     var fh5ControlledExperimentRecords: [FH5ControlledExperimentRecord] {
         (try? decodedFH5ControlledExperimentRecords()) ?? []
+    }
+
+    @MainActor
+    func allFH5ControlledExperimentRecords() throws
+        -> [FH5ControlledExperimentRecord] {
+        try decodedFH5ControlledExperimentRecords().sorted {
+            if $0.createdAt != $1.createdAt {
+                return $0.createdAt < $1.createdAt
+            }
+            return $0.recordID.uuidString < $1.recordID.uuidString
+        }
     }
 
     @MainActor

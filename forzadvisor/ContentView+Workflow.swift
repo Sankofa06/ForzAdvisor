@@ -1214,3 +1214,146 @@ struct FH6IndependentValidationReviewReceiverEligibility {
             .revisionFingerprint(for: candidate)
     }
 }
+
+@MainActor
+struct FH5NumericPromotionReviewCommittedCoordinator {
+    func preparedInputStateFingerprint(
+        displayedTune: TuneResult,
+        displayedArtifact: FH5GeneratedCandidateArtifact,
+        savedTuneID: UUID,
+        in container: ModelContainer
+    ) throws -> String {
+        let context = try committedContext(
+            displayedTune: displayedTune,
+            displayedArtifact: displayedArtifact,
+            savedTuneID: savedTuneID,
+            in: container,
+            includeOutcomeEvidence: true
+        )
+        return try FH5NumericPromotionReviewPacketExporter()
+            .preparedInputStateFingerprint(
+                candidateArtifact: context.artifact,
+                localRecords: context.localRecords,
+                reviewedEntries: context.reviewedEntries
+            )
+    }
+
+    func prepare(
+        displayedTune: TuneResult,
+        displayedArtifact: FH5GeneratedCandidateArtifact,
+        savedTuneID: UUID,
+        in container: ModelContainer
+    ) throws -> String {
+        let context = try committedContext(
+            displayedTune: displayedTune,
+            displayedArtifact: displayedArtifact,
+            savedTuneID: savedTuneID,
+            in: container,
+            includeOutcomeEvidence: true
+        )
+        let packet = try FH5NumericPromotionReviewPacketExporter()
+            .prepare(
+                candidateArtifact: context.artifact,
+                localRecords: context.localRecords,
+                reviewedEntries: context.reviewedEntries
+            )
+        return String(decoding: try packet.deterministicJSON(), as: UTF8.self)
+    }
+
+    func validate(
+        _ data: Data,
+        displayedTune: TuneResult,
+        displayedArtifact: FH5GeneratedCandidateArtifact,
+        savedTuneID: UUID,
+        in container: ModelContainer
+    ) throws -> FH5NumericPromotionReviewPacket {
+        let context = try committedContext(
+            displayedTune: displayedTune,
+            displayedArtifact: displayedArtifact,
+            savedTuneID: savedTuneID,
+            in: container,
+            includeOutcomeEvidence: false
+        )
+        return try FH5NumericPromotionReviewPacketExporter()
+            .validate(
+                data,
+                candidateArtifact: context.artifact
+            )
+    }
+
+    private struct CommittedContext {
+        let artifact: FH5GeneratedCandidateArtifact
+        let localRecords: [FH5ControlledExperimentRecord]
+        let reviewedEntries: [FH5CandidateOutcomeReviewEntry]
+    }
+
+    private func committedContext(
+        displayedTune: TuneResult,
+        displayedArtifact: FH5GeneratedCandidateArtifact,
+        savedTuneID: UUID,
+        in container: ModelContainer,
+        includeOutcomeEvidence: Bool
+    ) throws -> CommittedContext {
+        let readContext = ModelContext(container)
+        readContext.autosaveEnabled = false
+        var descriptor = FetchDescriptor<SavedTune>(
+            predicate: #Predicate<SavedTune> { tune in
+                tune.id == savedTuneID
+            }
+        )
+        descriptor.fetchLimit = 1
+        descriptor.includePendingChanges = false
+        guard let savedTune = try readContext.fetch(descriptor).first,
+              let persistedTune = savedTune.tuneResult else {
+            throw ContentWorkflowError.missingSavedTune
+        }
+        let researchFactory = FH5ResearchObservationFactory()
+        guard displayedTune.id == persistedTune.id,
+              researchFactory.planRevisionFingerprint(
+                for: displayedTune
+              ) == researchFactory.planRevisionFingerprint(
+                for: persistedTune
+              ) else {
+            throw FH5NumericPromotionReviewPacketError
+                .staleOrForeignCandidate
+        }
+        let researchRecords =
+            try savedTune.exactFH5ResearchObservationRecords(
+                matching: persistedTune
+            )
+        let reviewEntries =
+            try savedTune.exactFH5ResearchReviewEntries(
+                matching: persistedTune
+            )
+        let regenerated = try FH5CandidateTrialCoordinator()
+            .generate(
+                tune: persistedTune,
+                savedTune: persistedTune,
+                isStreaming: false,
+                researchRecords: researchRecords,
+                reviewInputs: reviewEntries.map {
+                    FH5ResearchReviewInput(entry: $0)
+                },
+                input: displayedArtifact.context.input,
+                surface: displayedArtifact.context.surface
+            )
+        guard regenerated == displayedArtifact else {
+            throw FH5NumericPromotionReviewPacketError
+                .staleOrForeignCandidate
+        }
+        guard includeOutcomeEvidence else {
+            return CommittedContext(
+                artifact: regenerated,
+                localRecords: [],
+                reviewedEntries: []
+            )
+        }
+        return CommittedContext(
+            artifact: regenerated,
+            localRecords:
+                try savedTune.allFH5ControlledExperimentRecords(),
+            reviewedEntries:
+                try savedTune.allFH5CandidateOutcomeReviewEntries()
+        )
+    }
+}

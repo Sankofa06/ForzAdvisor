@@ -540,7 +540,9 @@ struct CopilotEngine {
         case .fh5ResearchReview:
             return unsavedEditsMessage("Review the saved FH5 research observations and use the underlying screen to validate any permission-bound import.")
         case .fh5CandidateOutcomeReview:
-            return unsavedEditsMessage("Review the saved FH5 candidate outcomes and use the underlying screen to validate any permission-bound import.")
+            return unsavedEditsMessage(
+                "Use the underlying screen to review saved FH5 candidate outcomes, validate a permission-bound outcome import, prepare a canonical Numeric Promotion Review Packet, or transiently inspect a shared packet. Copilot cannot see pasted JSON, accepted evidence counts, permission identifiers, candidate bindings, packet fingerprints, or inspection status, and it cannot validate, clear, import, save, apply, score, rank, promote, register, or activate anything."
+            )
         }
     }
 
@@ -628,7 +630,9 @@ struct CopilotEngine {
         case .fh5ResearchReview:
             return unsavedEditsMessage("The underlying review identifies missing JSON validation, plan matching, direct receipt, or permission confirmation.")
         case .fh5CandidateOutcomeReview:
-            return unsavedEditsMessage("The underlying review identifies missing candidate matching, permission, or outcome validation.")
+            return unsavedEditsMessage(
+                "The underlying review identifies missing exact-candidate matching, permission, outcome integrity, committed evidence, or the fixed controlled-outcome threshold. Shared packet inspection is separate and transient."
+            )
         }
     }
 
@@ -641,6 +645,9 @@ struct CopilotEngine {
         }
         if context.phase == .fh6ValidationReview {
             return "Copilot receives only the FH6 Validation Review phase. It cannot see pasted JSON, accepted evidence counts, permission identifiers, candidate bindings, packet fingerprints, or inspection status. It does not call a model or network service, save a transcript, or offer an action. It cannot validate, clear, import, save, apply, score, rank, or promote a packet or tune. Copilot cannot see unsaved field edits."
+        }
+        if context.phase == .fh5CandidateOutcomeReview {
+            return "Copilot receives only the FH5 Candidate Outcome Review phase. It cannot see pasted JSON, accepted evidence counts, permission identifiers, candidate bindings, packet fingerprints, prepared-input fingerprints, or inspection status. It does not call a model or network service, save a transcript, or offer an action. It cannot validate, clear, import, save, apply, score, rank, promote, register, or activate a packet, candidate, ruleset, or tune. Copilot cannot see unsaved field edits."
         }
         let editBoundary = context.cannotSeeUnsavedEdits
             ? " It cannot see unsaved field edits in the underlying form."

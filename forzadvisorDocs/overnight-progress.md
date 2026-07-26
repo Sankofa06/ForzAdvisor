@@ -1,35 +1,36 @@
 # Overnight Progress
 
-## 2026-07-26 Closeout: FH5 Numeric Promotion
+## 2026-07-26 Closeout: FH5 Promotion Review Workflow
 
 ### Current State
 
-- `main` is synchronized with `origin/main` at `458cc80` (`Reuse verified Upgrade Lab evidence`).
-- The completed slice reuses explicitly verified Upgrade Lab part availability only for the same unedited catalog car and catalog revision; it does not reuse numeric settings, tire or gear constraints, menu observations, or conflicting evidence.
-- Verification for that slice passed: 59 focused tests, 485 full-suite tests, and a warning-free Release build.
-- App version is 1.35.0 (build 60). Build 60 was not uploaded to TestFlight because exact-build upload approval was not provided.
-- The follow-up FH5 numeric-production audit was read-only and made no code changes.
+- The Candidate Outcome Review now prepares and explicitly shares a canonical FH5 Numeric Promotion Review Packet from freshly refetched committed evidence.
+- A separate transient receiver validates shared canonical JSON against the freshly regenerated exact saved candidate without importing, saving, applying, scoring, ranking, promoting, registering, or activating it.
+- Prepared share state clears when its committed evidence fingerprint changes; accepted receiver state clears when pasted JSON or the internal generated-candidate fingerprint changes.
+- Strict storage decoding, packet size enforcement, payload-blind Copilot guidance, and the empty FH5 production numeric registry remain intact.
+- Verification passed: 105 independent focused tests, 495 full non-UI tests, and a zero-warning Release simulator build on the fixed headless iPhone 17 simulator.
+- App version is 1.37.0 (build 62). Build 62 has not been uploaded to TestFlight because exact-build upload approval was not provided.
 
 ### Continue With
 
-1. Define a deterministic FH5 numeric-promotion review artifact around the existing clean-room candidate registration, candidate binding, and controlled-outcome evaluator.
-2. Require real, independently reviewed, deidentified outcome records to pass the existing integrity and threshold checks.
-3. Keep `FH5TrustedNumericRulesetRegistry.production` empty until that evidence passes; only then consider a separate reviewed activation slice.
-4. Rerun focused FH5 tests, the full serial headless suite, and a warning-free Release build before versioning or release.
+1. Collect real, independently reviewed, deidentified FH5 outcome records through the existing permission-bound workflow.
+2. Use the new packet surface to hand qualifying evidence to a maintainer for independent review.
+3. Keep `FH5TrustedNumericRulesetRegistry.production` empty until evidence passes and a separate reviewed activation slice is explicitly approved.
+4. Do not treat packet acceptance as accuracy, ranking, production registration, numeric readiness, or activation.
 
 ### Relevant Files
 
-- `forzadvisor/Models/FH5NumericReadiness.swift`: experimental registration, production registry, readiness gates, and thresholds.
-- `forzadvisor/Models/FH5ControlledOutcomeEvaluator.swift`: candidate-bound integrity and outcome evaluation.
-- `forzadvisor/Services/FH5CleanRoomDirectionalCandidateGenerator.swift`: one-variable experimental front-pressure candidate.
-- `forzadvisor/ContentView.swift`: current experimental report wiring and production-readiness boundary.
-- `forzadvisorTests/FH5ResearchLabTests.swift`: existing FH5 registration, evaluator, threshold, and candidate coverage.
+- `forzadvisor/Models/FH5NumericPromotionReviewPacket.swift`: canonical packet preparation and validation.
+- `forzadvisor/ContentView+Workflow.swift`: committed-state preparation and receiver coordinator.
+- `forzadvisor/Views/FH5CandidateOutcomeReviewView.swift`: explicit prepare/share and transient inspection surfaces.
+- `forzadvisor/Models/CopilotDomain.swift`: packet-blind, action-free review guidance.
+- `forzadvisorTests/FH5ResearchLabTests.swift`: packet, coordinator, receiver, and fail-closed coverage.
 
 ### Risks / Do Not Redo
 
 - Do not fabricate, seed, or infer qualifying user outcomes from synthetic fixtures, Reddit, YouTube, or unreviewed submissions.
-- Do not register or activate FH5 numeric output merely because the experimental evaluator infrastructure exists.
-- Do not copy numeric/menu constraints through the Upgrade Lab evidence-reuse path.
+- Do not register or activate FH5 numeric output merely because a packet validates.
+- Do not persist received packets or expose evidence payloads, permissions, or fingerprints to Copilot.
 - Preserve the protected local `.agent/` and `docs/refs/` paths.
 
 ## 2026-05-20 02:21 PDT

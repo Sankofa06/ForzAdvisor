@@ -175,6 +175,15 @@ struct FH5NumericPromotionReviewPacket: Codable, Equatable, Sendable {
 }
 
 struct FH5NumericPromotionReviewPacketExporter {
+    private let maximumPayloadBytes: Int
+
+    init(
+        maximumPayloadBytes: Int =
+            FH5NumericPromotionReviewPacket.maximumPayloadBytes
+    ) {
+        self.maximumPayloadBytes = maximumPayloadBytes
+    }
+
     private struct NormalizedEvidence: Equatable {
         let packetEvidence: FH5NumericPromotionReviewEvidence
         let submissionID: UUID
@@ -306,6 +315,10 @@ struct FH5NumericPromotionReviewPacketExporter {
             packet,
             with: try Self.artifactFingerprint(for: packet)
         )
+        let canonicalData = try packet.deterministicJSON()
+        guard canonicalData.count <= maximumPayloadBytes else {
+            throw FH5NumericPromotionReviewPacketError.payloadTooLarge
+        }
         return packet
     }
 
@@ -316,8 +329,7 @@ struct FH5NumericPromotionReviewPacketExporter {
         guard !data.isEmpty else {
             throw FH5NumericPromotionReviewPacketError.emptyPayload
         }
-        guard data.count
-                <= FH5NumericPromotionReviewPacket.maximumPayloadBytes else {
+        guard data.count <= maximumPayloadBytes else {
             throw FH5NumericPromotionReviewPacketError.payloadTooLarge
         }
         let object: Any

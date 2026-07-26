@@ -120,6 +120,13 @@ fingerprint. Its validator independently rechecks canonical bytes, every
 included export, ordering, integrity, counts, threshold, and exact candidate
 binding.
 
+Candidate Outcome Review exposes packet handling as two explicit local actions.
+Preparation refetches committed evidence and regenerates the exact candidate
+before making a share action available. Receiver inspection separately
+revalidates pasted canonical JSON against freshly committed candidate state,
+keeps the accepted result transient, and clears stale state when evidence,
+pasted bytes, or the internal candidate binding changes.
+
 Eligibility means only that the evidence can be handed to a maintainer for
 review. The packet fixes accuracy, automatic promotion, production
 registration, and numeric-output permission to `false`, requires independent

@@ -919,6 +919,70 @@ struct ContentView: View {
                 registry: .experimentalCandidateCollection
             )
         }()
+        let numericPromotionReviewPacketState: (
+            canPrepare: Bool,
+            preparedInputStateFingerprint: String?
+        ) = {
+            guard let candidateTrialArtifact,
+                  let resolvedSavedTuneID else {
+                return (false, nil)
+            }
+            let coordinator =
+                FH5NumericPromotionReviewCommittedCoordinator()
+            let fingerprint = try? coordinator
+                .preparedInputStateFingerprint(
+                    displayedTune: tune,
+                    displayedArtifact: candidateTrialArtifact,
+                    savedTuneID: resolvedSavedTuneID,
+                    in: modelContext.container
+                )
+            let canPrepare = (
+                try? coordinator.prepare(
+                    displayedTune: tune,
+                    displayedArtifact: candidateTrialArtifact,
+                    savedTuneID: resolvedSavedTuneID,
+                    in: modelContext.container
+                )
+            ) != nil
+            return (canPrepare, fingerprint)
+        }()
+        let numericPromotionReceiverCandidateFingerprint =
+            candidateTrialArtifact?.candidateBinding
+                .generatedCandidateFingerprint
+        let prepareNumericPromotionReviewPacket:
+            (() throws -> String)? = {
+                guard numericPromotionReviewPacketState.canPrepare,
+                      let candidateTrialArtifact,
+                      let resolvedSavedTuneID else {
+                    return nil
+                }
+                return {
+                    try FH5NumericPromotionReviewCommittedCoordinator()
+                        .prepare(
+                            displayedTune: tune,
+                            displayedArtifact: candidateTrialArtifact,
+                            savedTuneID: resolvedSavedTuneID,
+                            in: modelContext.container
+                        )
+                }
+            }()
+        let validateNumericPromotionReviewPacket:
+            ((Data) throws -> FH5NumericPromotionReviewPacket)? = {
+                guard let candidateTrialArtifact,
+                      let resolvedSavedTuneID else {
+                    return nil
+                }
+                return { data in
+                    try FH5NumericPromotionReviewCommittedCoordinator()
+                        .validate(
+                            data,
+                            displayedTune: tune,
+                            displayedArtifact: candidateTrialArtifact,
+                            savedTuneID: resolvedSavedTuneID,
+                            in: modelContext.container
+                        )
+                }
+            }()
         let controlledOutcomeReport = FH5ControlledExperimentFactory()
             .outcomePolicyReport(
                 records: experimentRecords,
@@ -1087,6 +1151,15 @@ struct ContentView: View {
                     savedTuneID: resolvedSavedTuneID
                 )
             },
+            onPrepareFH5NumericPromotionReviewPacket:
+                prepareNumericPromotionReviewPacket,
+            fh5NumericPromotionPreparedInputStateFingerprint:
+                numericPromotionReviewPacketState
+                    .preparedInputStateFingerprint,
+            onValidateFH5NumericPromotionReviewPacket:
+                validateNumericPromotionReviewPacket,
+            fh5NumericPromotionReceiverCandidateFingerprint:
+                numericPromotionReceiverCandidateFingerprint,
             onOpenFH5ControlledExperiment:
                 experimentEligibility.isSuccess && resolvedSavedTuneID != nil
                 ? {

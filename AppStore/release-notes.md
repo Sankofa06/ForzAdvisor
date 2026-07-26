@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.37.0 (Build 62) - 2026-07-26
+
+- Adds explicit preparation and sharing of canonical FH5 Numeric Promotion Review Packets from Candidate Outcome Review.
+- Lets maintainers transiently inspect a shared packet against the freshly regenerated committed candidate without importing, saving, applying, or activating it.
+- Clears stale prepared and accepted state as evidence or candidate bindings change, while keeping Copilot payload-blind and all FH5 production numeric output disabled.
+
 ## Version 1.36.0 (Build 61) - 2026-07-26
 
 - Adds a canonical FH5 Numeric Promotion Review Packet for independently inspecting exact permission-bound experimental outcomes.
