@@ -9,7 +9,7 @@
 - Reuse creates a new capability-only snapshot containing only canonical part availability and safe build/date attribution; stock settings, tires, gears, constraints, evidence sources, and numeric readiness remain empty.
 - Both FH5 and FH6 regain three exact minimal purchase paths immediately after reuse. FH5 remains plan-only and FH6 remains zero-ready without Tune Lab constraints.
 - Verification passed: 44 focused tests, 497 full non-UI tests, and a zero-warning Release simulator build on the fixed headless iPhone 17 simulator.
-- App version is 1.39.0 (build 64). TestFlight upload requires explicit approval for this exact build.
+- App version 1.39.0 (build 64), source commit `6a10f0f`, was uploaded to TestFlight on 2026-07-26. Transporter accepted one package, App Store Connect reports the build `VALID`, and the unchanged commit passed the 44-test post-upload gate with zero warnings.
 
 ### Continue With
 
