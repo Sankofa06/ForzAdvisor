@@ -36,6 +36,8 @@ Stock Catalog Contribution stores manually entered first-party FH5 or FH6 stock 
 
 The local review collection uses only Received, Matching, Conflicting, or Excluded states. It never verifies, approves, averages, ranks, or automatically changes a catalog, tune, ruleset, provider, or readiness state. The workflow contains no screenshots, OCR, notes, accounts, device identifiers, location, analytics, network request, or background upload. UUIDs and hashes bind bytes but do not authenticate identity. Local deletion cannot recall JSON already shared.
 
+The contribution workspace's toolbar Copilot provides local, deterministic, phase-only guidance. It cannot inspect the selected game, draft fields, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints. It calls no model or network, retains no transcript, executes no action, and cannot approve a contribution, change the catalog, or activate tuning.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.

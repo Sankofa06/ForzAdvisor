@@ -9,6 +9,7 @@ import SwiftUI
 
 enum ModalCopilotDestination: Sendable {
     case settings
+    case stockCatalogContribution
     case betaMissions(savedSetupCount: Int)
     case fh6ValidationReview(
         carDisplayName: String,
@@ -29,6 +30,7 @@ enum ModalCopilotDestination: Sendable {
     var phase: CopilotPhase {
         switch self {
         case .settings: .settings
+        case .stockCatalogContribution: .stockCatalogContribution
         case .betaMissions: .betaValidationMissions
         case .fh6ValidationReview: .fh6ValidationReview
         case .fh6CommunityOutcomeReview: .fh6CommunityOutcomeReview
@@ -39,7 +41,7 @@ enum ModalCopilotDestination: Sendable {
 
     var context: CopilotContext {
         switch self {
-        case .settings:
+        case .settings, .stockCatalogContribution:
             phaseOnlyContext(cannotSeeUnsavedEdits: true)
         case .betaMissions(let savedSetupCount):
             CopilotContext(
@@ -92,6 +94,8 @@ enum ModalCopilotDestination: Sendable {
         switch self {
         case .settings:
             "Shows local guidance for Settings without changing settings."
+        case .stockCatalogContribution:
+            "Shows guidance without reading or changing the contribution."
         case .betaMissions:
             "Shows local guidance for Beta Missions without selecting a mission."
         case .fh6ValidationReview:

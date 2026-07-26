@@ -91,6 +91,13 @@ struct StockCatalogContributionView: View {
         }
         .navigationTitle("Expand the Catalog")
         .forzAdvisorScreenChrome()
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ModalCopilotToolbarLink(
+                    destination: .stockCatalogContribution
+                )
+            }
+        }
         .accessibilityIdentifier("stockCatalogContribution")
         .onChange(of: captureDraftFingerprint) { previous, current in
             captureConfirmations.invalidateIfDraftChanged(

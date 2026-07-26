@@ -14,6 +14,8 @@ Reason: SwiftUI `@AppStorage` stores app-only preferences such as the selected t
 
 Stock Catalog Contribution also uses an app-only UserDefaults-backed workspace for manually entered first-party FH5 and FH6 stock observations and received review entries. It is separate from Saved Tunes and the bundled production catalog. Every field requires exact-build, direct in-game, untouched-stock, and English-units-where-relevant attestation. Local save does not require reuse permission. Canonical manual export requires explicit tester authorship, deidentified reuse, catalog-curation, and future bundled redistribution permission; manual import requires separate confirmation of direct receipt and every right. Permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim.
 
+The contribution workspace's toolbar Copilot is local, deterministic, and phase-only. It cannot read the selected game, draft fields, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints. It uses no model or network, stores no transcript, performs no action, and cannot approve a contribution, change the catalog, or activate tuning.
+
 Declared collected data:
 
 - `NSPrivacyCollectedDataTypeOtherUserContent`

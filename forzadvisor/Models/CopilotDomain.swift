@@ -12,6 +12,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
     case home
     case newTune
     case catalogPicker
+    case stockCatalogContribution
     case catalogReview
     case catalogEdit
     case ocrReview
@@ -39,6 +40,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
         case .home: "Garage"
         case .newTune: "Tune Source"
         case .catalogPicker: "Car Catalog"
+        case .stockCatalogContribution: "Stock Catalog Contribution"
         case .catalogReview: "Car Review"
         case .catalogEdit: "Edit Catalog Values"
         case .ocrReview: "OCR Review"
@@ -461,6 +463,10 @@ struct CopilotEngine {
             return "Choose a reviewed catalog car first. Use screenshot OCR or manual entry when your car is not in the catalog."
         case .catalogPicker:
             return "Select a reviewed car from the loaded catalog. Manual entry remains available when you cannot find your car."
+        case .stockCatalogContribution:
+            return unsavedEditsMessage(
+                "Record the exact untouched-stock car identity, current game build and platform, and every stock fact: class, performance index, drivetrain, weight, front weight, peak horsepower, and peak torque. For every field, select the in-game source screen and attest to the direct observation. Separately confirm that you personally read the facts, used English units where relevant, observed untouched stock, authored the structured facts, permit local storage, and grant all four reuse rights, then save locally. Explicitly share the canonical export only when you choose to send it for human collection review."
+            )
         case .catalogReview:
             return "Confirm the displayed stock facts, then use the car. Edit the values first if they do not match your game."
         case .catalogEdit:
@@ -513,6 +519,10 @@ struct CopilotEngine {
         switch context.phase {
         case .catalogPicker, .catalogReview:
             return "Treat the reviewed catalog as a starting point and confirm its stock facts in your current game build."
+        case .stockCatalogContribution:
+            return unsavedEditsMessage(
+                "Trust only the form's structural validation, canonical byte binding, and later human collection review. Treat your personal direct reading from the exact in-game screen as the source for each fact. Saving or sharing does not approve facts, create or change a catalog entry, or activate a tune."
+            )
         case .catalogEdit, .ocrReview, .manualEntry, .fh6TuneMenuCapture, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .fh5ControlledExperimentCapture, .recordTestDrive, .fh6CommunityReferenceTrialCapture, .editSavedTune:
             return unsavedEditsMessage("Trust only facts you personally confirm in the underlying screen and any validation it shows.")
         case .settings, .betaValidationMissions, .fh6ValidationReview, .fh6CommunityOutcomeReview, .fh5ResearchReview, .fh5CandidateOutcomeReview:
@@ -546,6 +556,10 @@ struct CopilotEngine {
             return "A car source is still missing. Choose the reviewed catalog, screenshot OCR, or manual entry."
         case .catalogPicker:
             return "A catalog car selection is still missing. \(context.catalogCarCount ?? 0) reviewed cars are currently loaded."
+        case .stockCatalogContribution:
+            return unsavedEditsMessage(
+                "The underlying capture may still need the exact car identity, game build and platform, all stock facts, a source-screen attestation for every field, personally-read, English-units-where-relevant, untouched-stock, or authorship confirmations, local-storage permission, or all four export rights. A received contribution may still need exact canonical JSON, direct-receipt confirmation, and the complete structured-facts, reuse, curation, and redistribution rights."
+            )
         case .catalogReview:
             return "Your confirmation is still missing. Check the displayed stock facts against the game before continuing."
         case .catalogEdit, .ocrReview, .manualEntry:
@@ -588,6 +602,12 @@ struct CopilotEngine {
     }
 
     private func privacy(in context: CopilotContext) -> String {
+        if context.phase == .stockCatalogContribution {
+            let exclusions =
+                StockCatalogContributionPolicy.privacyExclusions
+                    .joined(separator: ", ")
+            return "Copilot receives only the Stock Catalog Contribution phase. It has no access to draft values, field or record counts, pasted or canonical JSON, permission state, or contribution payloads. It does not call a model or network service, save a transcript, or offer an action. Contributions stay local until you explicitly share their canonical export. That export excludes: \(exclusions). Sharing does not alter the catalog or tuning. Copilot cannot see unsaved field edits."
+        }
         let editBoundary = context.cannotSeeUnsavedEdits
             ? " It cannot see unsaved field edits in the underlying form."
             : ""

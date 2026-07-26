@@ -52,7 +52,7 @@ final class CopilotTests: XCTestCase {
 
     func testEveryWorkflowPhaseAnswersEverySupportedIntent() {
         let engine = CopilotEngine()
-        XCTAssertEqual(CopilotPhase.allCases.count, 24)
+        XCTAssertEqual(CopilotPhase.allCases.count, 25)
 
         for phase in CopilotPhase.allCases {
             let context = syntheticContext(for: phase)
@@ -71,6 +71,7 @@ final class CopilotTests: XCTestCase {
     func testModalCopilotDestinationsExposeOnlyAllowListedFacts() {
         let destinations: [ModalCopilotDestination] = [
             .settings,
+            .stockCatalogContribution,
             .betaMissions(savedSetupCount: 7),
             .fh6ValidationReview(
                 carDisplayName: "Committed FH6 Car",
@@ -114,14 +115,39 @@ final class CopilotTests: XCTestCase {
         ])
         XCTAssertTrue(settings.cannotSeeUnsavedEdits)
 
-        let beta = destinations[1].context
+        let contribution = destinations[1].context
+        XCTAssertEqual(
+            destinations[1].buttonIdentifier,
+            "copilotButton-stockCatalogContribution"
+        )
+        XCTAssertTrue(
+            destinations[1].accessibilityHint.contains(
+                "guidance without reading or changing the contribution"
+            )
+        )
+        XCTAssertEqual(contribution.facts, [
+            CopilotFact(
+                label: "Unsaved fields",
+                value: "Not visible to Copilot"
+            )
+        ])
+        XCTAssertTrue(contribution.cannotSeeUnsavedEdits)
+        XCTAssertNil(contribution.carDisplayName)
+        XCTAssertNil(contribution.gameTitle)
+        XCTAssertNil(contribution.disciplineTitle)
+        XCTAssertNil(contribution.savedTuneCount)
+        XCTAssertNil(contribution.catalogCarCount)
+        XCTAssertNil(contribution.projection)
+        XCTAssertNil(contribution.fh5CandidateTrialAvailable)
+
+        let beta = destinations[2].context
         XCTAssertEqual(beta.savedTuneCount, 7)
         XCTAssertEqual(beta.facts, [
             CopilotFact(label: "Saved tunes", value: "7")
         ])
         XCTAssertFalse(beta.cannotSeeUnsavedEdits)
 
-        for context in destinations[2...3].map(\.context) {
+        for context in destinations[3...4].map(\.context) {
             XCTAssertEqual(context.carDisplayName, "Committed FH6 Car")
             XCTAssertEqual(context.gameTitle, "FH6")
             XCTAssertEqual(context.disciplineTitle, "Road")
@@ -132,7 +158,7 @@ final class CopilotTests: XCTestCase {
             XCTAssertTrue(context.cannotSeeUnsavedEdits)
         }
 
-        let research = destinations[4].context
+        let research = destinations[5].context
         XCTAssertEqual(research.carDisplayName, "Committed FH5 Car")
         XCTAssertEqual(research.gameTitle, "FH5")
         XCTAssertNil(research.disciplineTitle)
@@ -142,7 +168,7 @@ final class CopilotTests: XCTestCase {
         )
         XCTAssertTrue(research.cannotSeeUnsavedEdits)
 
-        let candidate = destinations[5].context
+        let candidate = destinations[6].context
         XCTAssertEqual(candidate.facts, [
             CopilotFact(
                 label: "Unsaved fields",
@@ -171,6 +197,7 @@ final class CopilotTests: XCTestCase {
         throws {
         let destinations: [ModalCopilotDestination] = [
             .settings,
+            .stockCatalogContribution,
             .betaMissions(savedSetupCount: 4),
             .fh6ValidationReview(
                 carDisplayName: "Committed Car",
@@ -213,6 +240,148 @@ final class CopilotTests: XCTestCase {
                     "\(destination.phase.rawValue) unexpectedly encoded \(key)"
                 )
             }
+        }
+    }
+
+    func testStockCatalogContributionContextIsPhaseOnlyAndPayloadFree()
+        throws {
+        let destination =
+            ModalCopilotDestination.stockCatalogContribution
+        let context = destination.context
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(context)
+            ) as? [String: Any]
+        )
+
+        XCTAssertEqual(
+            context.phase.title,
+            "Stock Catalog Contribution"
+        )
+        XCTAssertEqual(
+            Set(object.keys),
+            ["phase", "cannotSeeUnsavedEdits"]
+        )
+        XCTAssertEqual(
+            object["phase"] as? String,
+            CopilotPhase.stockCatalogContribution.rawValue
+        )
+        XCTAssertEqual(object["cannotSeeUnsavedEdits"] as? Bool, true)
+
+        let encoded = try XCTUnwrap(
+            String(
+                data: JSONEncoder().encode(context),
+                encoding: .utf8
+            )
+        )
+        for forbidden in [
+            "gameVersion", "platform", "performanceIndex",
+            "weightPounds", "fieldAttestations", "recordCount",
+            "pastedJSON", "canonicalJSON", "permission", "payload",
+            "rights", "confirmation"
+        ] {
+            XCTAssertFalse(
+                encoded.localizedCaseInsensitiveContains(forbidden),
+                "Encoded contribution context exposed \(forbidden)"
+            )
+        }
+    }
+
+    func testStockCatalogContributionGuidanceMatchesCollectionBoundary() {
+        let context =
+            ModalCopilotDestination.stockCatalogContribution.context
+        let engine = CopilotEngine()
+        let next = engine.response(to: .nextStep, in: context)
+
+        XCTAssertEqual(engine.defaultResponse(in: context), next)
+        for intent in CopilotIntent.allCases {
+            let response = engine.response(to: intent, in: context)
+            XCTAssertFalse(response.message.isEmpty)
+            XCTAssertNil(response.action)
+            XCTAssertTrue(
+                response.message.contains(
+                    "cannot see unsaved field edits"
+                ),
+                intent.rawValue
+            )
+        }
+
+        for fragment in [
+            "exact untouched-stock car identity",
+            "current game build and platform",
+            "performance index",
+            "source screen",
+            "personally read",
+            "English units where relevant",
+            "all four reuse rights",
+            "save locally",
+            "canonical export",
+            "human collection review"
+        ] {
+            XCTAssertTrue(
+                next.message.localizedCaseInsensitiveContains(fragment),
+                fragment
+            )
+        }
+
+        let trust = engine.response(to: .trust, in: context).message
+        for fragment in [
+            "structural validation",
+            "canonical byte binding",
+            "human collection review",
+            "personal direct reading",
+            "does not approve facts",
+            "create or change a catalog entry",
+            "activate a tune"
+        ] {
+            XCTAssertTrue(
+                trust.localizedCaseInsensitiveContains(fragment),
+                fragment
+            )
+        }
+
+        let missing = engine.response(to: .missing, in: context).message
+        for fragment in [
+            "exact car identity",
+            "game build and platform",
+            "all stock facts",
+            "source-screen attestation",
+            "personally-read",
+            "English-units-where-relevant",
+            "local-storage permission",
+            "canonical JSON",
+            "direct-receipt confirmation",
+            "reuse, curation, and redistribution rights"
+        ] {
+            XCTAssertTrue(
+                missing.localizedCaseInsensitiveContains(fragment),
+                fragment
+            )
+        }
+
+        let privacy = engine.response(to: .privacy, in: context).message
+        for fragment in [
+            "only the Stock Catalog Contribution phase",
+            "no access to draft values",
+            "field or record counts",
+            "pasted or canonical JSON",
+            "permission state",
+            "contribution payloads",
+            "does not call a model or network service",
+            "save a transcript",
+            "offer an action",
+            "stay local",
+            "explicitly share",
+            "does not alter the catalog or tuning"
+        ] {
+            XCTAssertTrue(
+                privacy.localizedCaseInsensitiveContains(fragment),
+                fragment
+            )
+        }
+        for exclusion in
+            StockCatalogContributionPolicy.privacyExclusions {
+            XCTAssertTrue(privacy.contains(exclusion), exclusion)
         }
     }
 

@@ -22,6 +22,8 @@ Start from the searchable FH5/FH6 stock-car catalog, take a photo, import a scre
 
 Stock Catalog Contribution can record exact-build, direct in-game untouched-stock FH5 or FH6 observations with English units where relevant in a separate UserDefaults-backed local workspace without changing the bundled catalog or a tune. Optional canonical JSON handoff requires explicit tester authorship, deidentified reuse, catalog curation, and future bundled redistribution permissions; the permission covers structured facts only and excludes protected third-party material. Received observations remain collection-only matches, conflicts, or exclusions rather than verified or approved catalog entries.
 
+Its toolbar Copilot provides local, deterministic, phase-only guidance for completing the contribution and review workflow. It cannot read draft fields, the selected game, record counts, JSON, permissions, payloads, identifiers, or fingerprints; use a model or network; retain a transcript; perform an action; approve a contribution; change the catalog; or activate tuning.
+
 For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a menu-order setup across the tuning controls supported by the verified build evidence. FH6 formulas remain experimental, and settings that do not pass local capability, range, and provenance checks are withheld.
 
 For FH5 catalog cars, ForzAdvisor creates a provider-independent local build plan without numeric tuning settings. Upgrade Lab records only the tuning-control parts you confirm are offered for the untouched stock car, then produces up to three exact alternative purchase paths. Numeric FH5 tuning stays unavailable until a separate FH5 ruleset is validated.
@@ -78,14 +80,16 @@ For FH6 Community Outcome Review, save an eligible exact-build tune, receive a c
 
 For Stock Catalog Contribution, open the UserDefaults-backed catalog contribution workspace and enter every FH5 or FH6 identity and stock field from one exact game build. Confirm the direct in-game and untouched-stock attestations for every field. Local save works without reuse permission. Canonical JSON export requires explicit authorship, deidentified reuse, catalog-curation, and redistribution permissions; import requires separate direct-receipt and rights confirmation. The workspace is separate from Saved Tunes and the bundled catalog and cannot change tuning or readiness.
 
+The contribution workspace toolbar also opens a dedicated Copilot. Its guidance is local, deterministic, phase-only, and action-free. It cannot inspect the selected game, draft values, local or review counts, pasted or exported JSON, permission choices, payloads, identifiers, or fingerprints. It explains exact untouched-stock identity, build, platform, all required facts and per-field source attestations, personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. It remains collection-only and never approves or changes the catalog or activates tuning.
+
 No account or API key is required. FH5 build planning is local and does not use the provider selected in Settings. For an FH6 numeric result, select an FH6 catalog car or use manual entry. Camera access is optional and only used for on-device OCR; photo import uses the system picker. Optional on-device AI and user-key Anthropic API modes apply to FH6 generation.
 
 ## App Information
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.24.0
-- Current project build: 49
+- Current project version: 1.25.0
+- Current project build: 50
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 

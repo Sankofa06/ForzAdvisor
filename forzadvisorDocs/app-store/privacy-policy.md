@@ -16,6 +16,8 @@ Beta Validation Missions are calculated on device from the eligibility and compl
 
 Stock Catalog Contribution can store manually entered first-party FH5 or FH6 stock observations in a separate UserDefaults-backed local workspace. The workspace is not part of Saved Tunes or the bundled production catalog. Every identity and stock field is bound to the exact game build and requires direct in-game and untouched-stock attestations plus English units where relevant. Local save is available without granting reuse rights. These observations do not automatically change a catalog, tune, ruleset, provider, or readiness state.
 
+The contribution workspace's toolbar Copilot is local, deterministic, and phase-only. It receives no selected game, draft fields, contribution or review counts, pasted or exported JSON, permission choices, payloads, identifiers, or fingerprints. It uses no model or network, keeps no transcript, performs no workflow action, and cannot approve a contribution, change the catalog, or activate tuning.
+
 ## User-Initiated Sharing
 
 On eligible exact-build results, ForzAdvisor can prepare verified build cards and first-party validation JSON locally, then open the iOS system share sheet. Sharing occurs only after you choose a destination, and the app does not record share destinations or history.

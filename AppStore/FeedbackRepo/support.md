@@ -12,6 +12,8 @@ Local save does not require reuse permission. Canonical JSON export requires exp
 
 The workflow stores no screenshots, OCR, notes, accounts, device identifiers, or location and adds no analytics, network request, or background upload. UUIDs and hashes bind bytes but do not authenticate identity. Local deletion cannot recall JSON already shared.
 
+The contribution workspace toolbar includes a dedicated Copilot for local, deterministic guidance about exact untouched-stock identity, build and platform; every required fact and per-field source attestation; personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. It receives only the contribution phase. It cannot inspect draft fields, the selected game, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints; call a model or network; retain a transcript; or execute an action. It never approves a contribution, changes the catalog, or activates tuning.
+
 ### Do I need an account?
 
 No. ForzAdvisor does not require a ForzAdvisor account.

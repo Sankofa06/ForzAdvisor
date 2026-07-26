@@ -30,6 +30,8 @@ You can save a local observation without granting reuse. Canonical JSON export i
 
 Review uses only Received, Matching, Conflicting, or Excluded collection states. It never verifies or approves a catalog entry, averages or ranks observations, or changes the bundled catalog, a tune, ruleset, provider, or readiness state. The workspace contains no screenshots, OCR, notes, accounts, device identifiers, or location, and ForzAdvisor adds no analytics, network request, or background upload. UUIDs and hashes bind structured bytes but do not authenticate identity. You can delete a local observation or reviewed entry, but deletion cannot recall JSON already shared.
 
+Use the toolbar Copilot for local, deterministic guidance about exact untouched-stock identity, build and platform; every required fact and per-field source attestation; personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. Copilot receives only the contribution phase. It cannot read draft fields, the selected game, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints; call a model or network; keep a transcript; or perform an action. It never approves a contribution, changes the catalog, or activates tuning.
+
 ### How do I copy a tune?
 
 Open a generated or saved tune and tap Copy full tune. Individual tune lines can also be copied from their section rows.

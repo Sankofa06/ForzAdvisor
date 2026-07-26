@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.25.0 (Build 50) - 2026-07-25
+
+- Adds dedicated contextual Copilot guidance inside Stock Catalog Contribution.
+- Guides exact-build untouched-stock capture, per-field attestations, rights, local saving, canonical sharing, and received-contribution review.
+- Keeps the context phase-only and action-free: Copilot cannot read drafts, counts, JSON, permissions, payloads, or identifiers; call a model or network; approve catalog facts; or activate tuning.
+
 ## Version 1.24.0 (Build 49) - 2026-07-25
 
 - Makes Copilot's FH5 Upgrade Lab recommendation actionable for eligible saved build plans.
