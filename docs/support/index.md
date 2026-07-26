@@ -8,6 +8,8 @@ If that packet contains one non-conflicting car that is still absent from the ex
 
 Preflight rejects stale same-revision catalogs, existing normalized car identities, incomplete or foreign field evidence, unsafe rights records, tampering, and noncanonical JSON. It does not decide whether a license or permission is legally sufficient, verify the car, create a catalog entry, edit the bundle, or activate tuning. Share it manually only for a separate release review.
 
+Catalog Addition Review opens directly from an exact prepared preflight. After you choose the reviewed identity-source role and a later review date and complete six independent confirmations, it freshly checks the preflight, packet, and current bundled 11-car catalog. It can then prepare a deterministic schema-v2 full-catalog proposal containing URL-backed identity provenance and permission-bounded first-party stock provenance. The review is transient and artifact-only: it cannot establish legal sufficiency, edit the bundle, activate tuning, or add a live car. Sharing and any later resource change are separate manual actions.
+
 ## Common Questions
 
 ### Do I need an account?

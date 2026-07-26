@@ -21,6 +21,7 @@ enum CatalogLoadError: Error, Equatable, LocalizedError {
     case duplicateSourceID(String, String)
     case invalidSource(String, String)
     case uncoveredField(String, CatalogDataField)
+    case invalidLegacyEntryCount
 
     var errorDescription: String? {
         switch self {
@@ -42,12 +43,15 @@ enum CatalogLoadError: Error, Equatable, LocalizedError {
             "Car catalog source \(sourceID) for \(entryID) is invalid."
         case .uncoveredField(let id, let field):
             "Car catalog field \(field.rawValue) is not sourced for \(id)."
+        case .invalidLegacyEntryCount:
+            "A schema-v2 catalog must identify its unchanged schema-v1 entry prefix."
         }
     }
 }
 
 enum BundledCarCatalog {
     static let resourceName = "CarCatalog.v1"
+    static let supportedSchemaVersions: Set<Int> = [1, 2]
     static let supportedSchemaVersion = 1
 
     static func load(
@@ -97,13 +101,29 @@ enum BundledCarCatalog {
     private static func validationError(
         in snapshot: CarCatalogSnapshot
     ) -> CatalogLoadError? {
-        guard snapshot.schemaVersion == supportedSchemaVersion else {
+        guard supportedSchemaVersions.contains(snapshot.schemaVersion) else {
             return .unsupportedSchemaVersion(snapshot.schemaVersion)
         }
         guard !snapshot.entries.isEmpty else { return .emptyCatalog }
+        let legacyEntryCount: Int
+        if snapshot.schemaVersion == 1 {
+            guard snapshot.legacyEntryCount == nil else {
+                return .invalidLegacyEntryCount
+            }
+            legacyEntryCount = snapshot.entries.count
+        } else {
+            guard let count = snapshot.legacyEntryCount,
+                  count >= 0,
+                  count < snapshot.entries.count else {
+                return .invalidLegacyEntryCount
+            }
+            legacyEntryCount = count
+        }
 
         var entryIDs: Set<String> = []
-        for entry in snapshot.entries {
+        for (entryIndex, entry) in snapshot.entries.enumerated() {
+            let usesLegacyProvenance =
+                entryIndex < legacyEntryCount
             guard entryIDs.insert(entry.id).inserted else {
                 return .duplicateEntryID(entry.id)
             }
@@ -121,28 +141,88 @@ enum BundledCarCatalog {
             guard !entry.sources.isEmpty else {
                 return .missingProvenance(entry.id)
             }
-            for role in [CatalogSourceRole.officialRoster, .communityQA]
-            where !entry.sources.contains(where: { $0.role == role }) {
-                return .missingSourceRole(entry.id, role)
-            }
 
             var sourceIDs: Set<String> = []
+            var sourceTitles: Set<String> = []
             for source in entry.sources {
                 guard sourceIDs.insert(source.id).inserted else {
                     return .duplicateSourceID(entry.id, source.id)
                 }
-                guard !source.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                      !source.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                      source.url.scheme?.lowercased() == "https",
-                      source.url.host != nil,
-                      !source.fields.isEmpty else {
+                let safeID = source.id.trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                let safeTitle = source.title.trimmingCharacters(
+                    in: .whitespacesAndNewlines
+                )
+                guard source.id == safeID,
+                      source.title == safeTitle,
+                      !safeID.isEmpty,
+                      !safeTitle.isEmpty,
+                      safeID.unicodeScalars.allSatisfy({
+                          !CharacterSet.controlCharacters
+                              .contains($0)
+                      }),
+                      safeTitle.unicodeScalars.allSatisfy({
+                          !CharacterSet.controlCharacters
+                              .contains($0)
+                      }),
+                      sourceTitles.insert(safeTitle).inserted,
+                      !source.fields.isEmpty,
+                      Set(source.fields).count == source.fields.count else {
                     return .invalidSource(entry.id, source.id)
+                }
+                switch source.role {
+                case .officialRoster, .communityQA:
+                    guard source.url?.scheme?.lowercased() == "https",
+                          source.url?.host != nil else {
+                        return .invalidSource(entry.id, source.id)
+                    }
+                case .firstPartyObservation:
+                    guard snapshot.schemaVersion == 2,
+                          !usesLegacyProvenance,
+                          source.url == nil else {
+                        return .invalidSource(entry.id, source.id)
+                    }
                 }
             }
 
             let coveredFields = Set(entry.sources.flatMap(\.fields))
             for field in CatalogDataField.allCases where !coveredFields.contains(field) {
                 return .uncoveredField(entry.id, field)
+            }
+            if usesLegacyProvenance {
+                for role in [
+                    CatalogSourceRole.officialRoster,
+                    .communityQA
+                ] where !entry.sources.contains(where: {
+                    $0.role == role
+                }) {
+                    return .missingSourceRole(entry.id, role)
+                }
+            } else {
+                guard entry.sources.contains(where: {
+                    ($0.role == .officialRoster
+                        || $0.role == .communityQA)
+                        && $0.url != nil
+                        && $0.fields.contains(.identity)
+                }) else {
+                    return .missingSourceRole(
+                        entry.id,
+                        .officialRoster
+                    )
+                }
+                let firstPartyFields = Set(
+                    entry.sources
+                        .filter {
+                            $0.role == .firstPartyObservation
+                        }
+                        .flatMap(\.fields)
+                )
+                for field in CatalogDataField.allCases
+                where field != .identity
+                    && !firstPartyFields.contains(field) {
+                    return .uncoveredField(entry.id, field)
+                }
             }
         }
 

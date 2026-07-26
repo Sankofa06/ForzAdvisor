@@ -111,11 +111,24 @@ struct CatalogProvenanceView: View {
                 .foregroundStyle(.secondary)
 
             ForEach(reference.sources) { source in
-                Link(destination: source.url) {
-                    Label(source.title, systemImage: "arrow.up.right.square")
+                if let url = source.url {
+                    Link(destination: url) {
+                        Label(
+                            source.title,
+                            systemImage: "arrow.up.right.square"
+                        )
                         .font(.caption)
+                    }
+                    .accessibilityIdentifier(
+                        "catalogSource-\(source.id)"
+                    )
+                } else {
+                    Label(source.title, systemImage: "person.2")
+                        .font(.caption)
+                        .accessibilityIdentifier(
+                            "catalogSource-\(source.id)"
+                        )
                 }
-                .accessibilityIdentifier("catalogSource-\(source.id)")
             }
         }
         .accessibilityIdentifier("catalogProvenance")

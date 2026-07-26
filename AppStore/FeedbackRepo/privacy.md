@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-07-23
+Effective date: 2026-07-25
 
 ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains how the app handles information in the current iPhone release.
 
@@ -39,6 +39,8 @@ The separate FH6 Community Research Partner invite is static public copy shared 
 Stock Catalog Contribution stores manually entered first-party FH5 or FH6 stock observations in a separate UserDefaults-backed local workspace, not in Saved Tunes or the bundled production catalog. Every identity and stock field requires direct in-game and untouched-stock attestation for an exact game build plus English units where relevant. Local save is available without reuse permission. Canonical manual JSON export requires explicit tester authorship, deidentified reuse, catalog-curation, and future bundled redistribution permission; manual import requires the receiver to separately confirm direct receipt and every right. Permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim.
 
 The local review collection uses only Received, Matching, Conflicting, or Excluded states. It never verifies, approves, averages, ranks, or automatically changes a catalog, tune, ruleset, provider, or readiness state. The workflow contains no screenshots, OCR, notes, accounts, device identifiers, location, analytics, network request, or background upload. UUIDs and hashes bind bytes but do not authenticate identity. Local deletion cannot recall JSON already shared.
+
+Catalog Addition Review transiently processes an exact curation preflight, its maintainer-packet binding, and the freshly loaded bundled catalog. Its user-shared proposal may contain the full proposed catalog, URL-backed identity provenance, permission-bounded first-party stock provenance, a limited rights summary, six confirmations, and integrity fingerprints. It excludes raw contributions, administrative and permission-receipt identifiers, local review times, source prose or media, screenshots, device data, provider data, rulesets, and tune values. It performs no background upload and cannot establish legal sufficiency, edit the app bundle, activate tuning, or add a live car.
 
 The contribution workspace's toolbar Copilot provides local, deterministic, phase-only guidance. It cannot inspect the selected game, draft fields, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints. It calls no model or network, retains no transcript, executes no action, and cannot approve a contribution, change the catalog, or activate tuning.
 

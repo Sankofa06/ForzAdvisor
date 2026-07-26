@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.34.0 (Build 59) - 2026-07-25
+
+- Adds Catalog Addition Review, which turns an exact current curation preflight into a deterministic schema-v2 full-catalog proposal after explicit maintainer decisions.
+- Preserves the unchanged 11-car schema-v1 catalog as the proposal prefix and uses URL-backed identity provenance plus privacy-safe first-party stock provenance for the proposed entry.
+- Keeps the workflow transient and artifact-only: it cannot establish legal sufficiency, edit the bundle, activate tuning, or add a live car; sharing and any later resource change remain explicit manual actions.
+
 ## Version 1.33.0 (Build 58) - 2026-07-25
 
 - Makes Copilot's FH5 Research Lab recommendation actionable for eligible saved build plans.

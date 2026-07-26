@@ -25,6 +25,17 @@ final class CarCatalogTests: XCTestCase {
         XCTAssertEqual(snapshot.schemaVersion, 1)
         XCTAssertEqual(snapshot.revision, "2026.07.23.1")
         XCTAssertEqual(snapshot.reviewedAt, try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-07-23T00:00:00Z")))
+        XCTAssertNil(snapshot.legacyEntryCount)
+        let encodedObject = try XCTUnwrap(
+            JSONSerialization.jsonObject(
+                with: encoded(snapshot)
+            ) as? [String: Any]
+        )
+        XCTAssertNil(encodedObject["legacyEntryCount"])
+        XCTAssertTrue(
+            snapshot.entries.flatMap(\.sources)
+                .allSatisfy { $0.url != nil }
+        )
     }
 
     func testCatalogContainsExactElevenGameScopedStockRecords() throws {
@@ -59,7 +70,11 @@ final class CarCatalogTests: XCTestCase {
 
         for entry in snapshot.entries {
             XCTAssertEqual(Set(entry.sources.map(\.id)), ["official", "wiki", "forzalabs"])
-            XCTAssertTrue(entry.sources.allSatisfy { $0.url.scheme == "https" })
+            XCTAssertTrue(
+                entry.sources.allSatisfy {
+                    $0.url?.scheme == "https"
+                }
+            )
             XCTAssertTrue(entry.sources.contains { $0.role == .officialRoster })
             XCTAssertTrue(entry.sources.contains { $0.role == .communityQA })
             XCTAssertEqual(Set(entry.sources.flatMap(\.fields)), allFields)
@@ -70,12 +85,18 @@ final class CarCatalogTests: XCTestCase {
             XCTAssertEqual(wiki.fields, CatalogDataField.allCases)
 
             if entry.game == .fh5 {
-                XCTAssertEqual(official.url.absoluteString, "https://forza.net/fh5cars/")
+                XCTAssertEqual(
+                    official.url?.absoluteString,
+                    "https://forza.net/fh5cars/"
+                )
                 XCTAssertEqual(official.fields, [.identity])
                 XCTAssertFalse(labs.fields.contains(.performanceIndex))
                 XCTAssertFalse(labs.fields.contains(.performanceClass))
             } else {
-                XCTAssertEqual(official.url.absoluteString, "https://forza.net/fh6cars")
+                XCTAssertEqual(
+                    official.url?.absoluteString,
+                    "https://forza.net/fh6cars"
+                )
                 XCTAssertEqual(official.fields, [.identity, .performanceIndex, .performanceClass])
                 XCTAssertTrue(labs.fields.contains(.performanceIndex))
                 XCTAssertTrue(labs.fields.contains(.performanceClass))
@@ -386,14 +407,14 @@ final class CarCatalogTests: XCTestCase {
 
         let valid = try loadedSnapshot()
         let unsupported = CarCatalogSnapshot(
-            schemaVersion: 2,
+            schemaVersion: 3,
             revision: valid.revision,
             reviewedAt: valid.reviewedAt,
             entries: valid.entries
         )
         XCTAssertEqual(
             BundledCarCatalog.load(data: try encoded(unsupported)),
-            .failure(.unsupportedSchemaVersion(2))
+            .failure(.unsupportedSchemaVersion(3))
         )
 
         let first = try XCTUnwrap(valid.entries.first)
@@ -523,6 +544,117 @@ final class CarCatalogTests: XCTestCase {
         XCTAssertEqual(
             BundledCarCatalog.load(data: try encoded(snapshot(entries: [duplicate], basedOn: valid))),
             .failure(.duplicateSourceID(entry.id, official.id))
+        )
+    }
+
+    func testSchemaV2RequiresURLIdentityAndFirstPartyStockProvenance()
+        throws {
+        let base = try loadedSnapshot()
+        let template = try XCTUnwrap(base.entries.first)
+        let stockFields = CatalogDataField.allCases.filter {
+            $0 != .identity
+        }
+        let identity = CatalogSource(
+            id: "identity",
+            title: "Reviewed identity",
+            url: try XCTUnwrap(
+                URL(string: "https://example.com/identity")
+            ),
+            role: .officialRoster,
+            fields: [.identity]
+        )
+        let observations = CatalogSource(
+            id: "first-party",
+            title:
+                "Permission-bound first-party in-game observations",
+            url: nil,
+            role: .firstPartyObservation,
+            fields: stockFields
+        )
+        let entry = replacing(
+            template,
+            sources: [identity, observations]
+        )
+        let validV2 = CarCatalogSnapshot(
+            schemaVersion: 2,
+            revision: "schema-v2-test",
+            reviewedAt: base.reviewedAt.addingTimeInterval(1),
+            legacyEntryCount: 0,
+            entries: [entry]
+        )
+        XCTAssertEqual(
+            try BundledCarCatalog.load(
+                data: encoded(validV2)
+            ).get(),
+            validV2
+        )
+
+        let missingFirstParty = CarCatalogSnapshot(
+            schemaVersion: 2,
+            revision: validV2.revision,
+            reviewedAt: validV2.reviewedAt,
+            legacyEntryCount: 0,
+            entries: [
+                replacing(template, sources: [identity])
+            ]
+        )
+        XCTAssertEqual(
+            BundledCarCatalog.load(
+                data: try encoded(missingFirstParty)
+            ),
+            .failure(
+                .uncoveredField(
+                    template.id,
+                    .performanceIndex
+                )
+            )
+        )
+
+        let linkedFirstParty = CatalogSource(
+            id: observations.id,
+            title: observations.title,
+            url: identity.url,
+            role: observations.role,
+            fields: observations.fields
+        )
+        XCTAssertEqual(
+            BundledCarCatalog.load(
+                data: try encoded(
+                    CarCatalogSnapshot(
+                        schemaVersion: 2,
+                        revision: validV2.revision,
+                        reviewedAt: validV2.reviewedAt,
+                        legacyEntryCount: 0,
+                        entries: [
+                            replacing(
+                                template,
+                                sources: [
+                                    identity,
+                                    linkedFirstParty
+                                ]
+                            )
+                        ]
+                    )
+                )
+            ),
+            .failure(
+                .invalidSource(template.id, observations.id)
+            )
+        )
+
+        let v1WithFirstParty = CarCatalogSnapshot(
+            schemaVersion: 1,
+            revision: base.revision,
+            reviewedAt: base.reviewedAt,
+            entries: [entry]
+        )
+        XCTAssertEqual(
+            BundledCarCatalog.load(
+                data: try encoded(v1WithFirstParty)
+            ),
+            .failure(
+                .invalidSource(template.id, observations.id)
+            )
         )
     }
 

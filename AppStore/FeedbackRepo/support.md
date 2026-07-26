@@ -12,6 +12,8 @@ Local save does not require reuse permission. Canonical JSON export requires exp
 
 The workflow stores no screenshots, OCR, notes, accounts, device identifiers, or location and adds no analytics, network request, or background upload. UUIDs and hashes bind bytes but do not authenticate identity. Local deletion cannot recall JSON already shared.
 
+Catalog Addition Review can turn an exact prepared curation preflight into a deterministic schema-v2 full-catalog proposal after explicit maintainer decisions and fresh validation against the current bundled 11-car catalog. It is transient and artifact-only: it cannot establish legal sufficiency, edit the bundle, activate tuning, or add a live car. Sharing and any later resource change are separate manual actions.
+
 The contribution workspace toolbar includes a dedicated Copilot for local, deterministic guidance about exact untouched-stock identity, build and platform; every required fact and per-field source attestation; personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. It receives only the contribution phase. It cannot inspect draft fields, the selected game, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints; call a model or network; retain a transcript; or execute an action. It never approves a contribution, changes the catalog, or activates tuning.
 
 ### Do I need an account?

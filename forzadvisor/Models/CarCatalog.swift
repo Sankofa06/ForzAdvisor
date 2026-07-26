@@ -32,6 +32,7 @@ enum CatalogVerificationStatus: String, Codable, Sendable {
 enum CatalogSourceRole: String, Codable, Sendable {
     case officialRoster
     case communityQA
+    case firstPartyObservation
 }
 
 enum CatalogDataField: String, CaseIterable, Codable, Sendable {
@@ -48,7 +49,7 @@ enum CatalogDataField: String, CaseIterable, Codable, Sendable {
 struct CatalogSource: Codable, Equatable, Identifiable, Sendable {
     let id: String
     let title: String
-    let url: URL
+    let url: URL?
     let role: CatalogSourceRole
     let fields: [CatalogDataField]
 }
@@ -97,7 +98,22 @@ struct CarCatalogSnapshot: Codable, Equatable, Sendable {
     let schemaVersion: Int
     let revision: String
     let reviewedAt: Date
+    let legacyEntryCount: Int?
     let entries: [CatalogCarEntry]
+
+    init(
+        schemaVersion: Int,
+        revision: String,
+        reviewedAt: Date,
+        legacyEntryCount: Int? = nil,
+        entries: [CatalogCarEntry]
+    ) {
+        self.schemaVersion = schemaVersion
+        self.revision = revision
+        self.reviewedAt = reviewedAt
+        self.legacyEntryCount = legacyEntryCount
+        self.entries = entries
+    }
 
     func selection(for entry: CatalogCarEntry) -> CatalogCarSelection {
         CatalogCarSelection(

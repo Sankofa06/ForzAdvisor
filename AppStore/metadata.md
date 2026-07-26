@@ -95,6 +95,8 @@ For Stock Catalog Contribution, open the UserDefaults-backed catalog contributio
 
 To test the maintainer handoff, import at least one complete permission-bound contribution, confirm independent source review, and prepare the packet. The share action is user initiated. Matching observations stay grouped; conflicting stock variants are quarantined together; administrative replays are excluded. Existing bundle IDs may appear only as read-only comparison references. The packet never proposes source URLs, verification status, a catalog ID or revision, and does not edit the bundle.
 
+After preparing an exact Catalog Curation Preflight, open Catalog Addition Review directly from that preflight. Choose the reviewed identity-source role and a release-review date after the current catalog review, then complete all six independent confirmations. The app freshly validates the exact preflight, maintainer packet, and bundled 11-car catalog before preparing a deterministic schema-v2 full-catalog proposal. Sharing is a separate system action. The proposal cannot establish legal sufficiency, edit the bundle, activate tuning, or add a live car; a maintainer must make any resource change and run the normal release gates.
+
 The contribution workspace toolbar also opens a dedicated Copilot. Its guidance is local, deterministic, phase-only, and action-free. It cannot inspect the selected game, draft values, local or review counts, pasted or exported JSON, permission choices, payloads, identifiers, or fingerprints. It explains exact untouched-stock identity, build, platform, all required facts and per-field source attestations, personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. It remains collection-only and never approves or changes the catalog or activates tuning.
 
 No account or API key is required. FH5 build planning is local and does not use the provider selected in Settings. For an FH6 numeric result, select an FH6 catalog car or use manual entry. Camera access is optional and only used for on-device OCR; photo import uses the system picker. Optional on-device AI and user-key Anthropic API modes apply to FH6 generation.
@@ -103,12 +105,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.33.0
-- Current project build: 58
+- Current project version: 1.34.0
+- Current project build: 59
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
+
+Catalog Addition Review now creates a deterministic, privacy-bounded schema-v2 full-catalog proposal from an exact current curation preflight after explicit maintainer review. The live catalog remains three FH5 and eight FH6 cars, and the artifact cannot edit the bundle, activate tuning, or establish legal sufficiency.
 
 Your first setup saved from an empty garage now gets a clear local confirmation and a one-tap handoff into contextual Copilot for the exact saved result. The prompt is transient, optional, and adds no analytics or background networking.
 

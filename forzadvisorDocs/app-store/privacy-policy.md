@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-07-22
+Effective date: 2026-07-25
 
 Public URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
 
@@ -33,6 +33,8 @@ Stock contribution records and exports contain the exact game build, manually en
 A reviewer can separately prepare a canonical maintainer review packet only after confirming that independent source review is still required. The packet contains exact game build, platform, structured stock facts, field observation screens, permission confirmations, opaque evidence digests, and a read-only comparison with existing bundled entry IDs. It excludes raw contribution JSON, submission and permission-receipt UUIDs, local review identifiers and times, screenshots, source URLs, proposed verification status, proposed catalog identity or revision, tuning, provider data, and user content. Replayed administrative identifiers are excluded globally, conflicting fact variants stay quarantined together, and no value is averaged or selected. The packet is created locally and shared only through an explicit system share action; it cannot edit or promote the bundled catalog.
 
 Catalog Curation Preflight locally processes the exact maintainer packet, a digest of the full current catalog, the explicitly selected candidate and its structured vehicle facts, supporting observation digests, proposed catalog ID, revision and verification status, and a reviewed identity-source record. That record contains a safe title, canonical HTTPS URL, access date, compatible-license or explicit-permission basis, evidence reference, evidence SHA-256 digest, required no-copy confirmations, policy version, and artifact fingerprint. It excludes raw contribution JSON, administrative IDs, permission receipts, local review data, source prose or media, tune settings, provider or ruleset data, and device data. The prepared copy is transient, created locally, and shared only through an explicit system action; there is no background upload. Preflight cannot establish legal sufficiency or verification, edit the catalog or bundle, create a catalog entry, or activate tuning.
+
+Catalog Addition Review transiently processes that exact preflight, its maintainer-packet binding, and the freshly loaded bundled catalog. Its user-shared proposal may contain the full proposed catalog, URL-backed identity provenance, permission-bounded first-party stock provenance, a limited rights summary, six confirmations, and integrity fingerprints. It excludes raw contributions, administrative and permission-receipt identifiers, local review times, source prose or media, screenshots, device data, provider data, rulesets, and tune values. It performs no background upload and cannot establish legal sufficiency, edit the app bundle, activate tuning, or add a live car.
 
 Validation Review can store exact permission-bound FH6 Test Drive JSON locally with a matching eligible saved setup after the reviewer confirms direct receipt and deidentified reuse permission. UUIDs and hashes bind the reviewed bytes but do not authenticate identity. The separate queue reports only verdicts, handling symptoms, and controlled test conditions. It cannot change the tune, contact a provider, or promote the experimental FH6 ruleset.
 

@@ -568,6 +568,27 @@ struct StockCatalogContributionView: View {
                 .accessibilityIdentifier(
                     "shareStockCatalogCurationPreflight"
                 )
+                if let preflightData =
+                        preparedCurationPreflight.data(
+                            using: .utf8
+                        ),
+                   let packetText = preparedMaintainerPacket,
+                   let packetData = packetText.data(
+                       using: .utf8
+                   ) {
+                    NavigationLink(
+                        "Open Catalog Addition Review"
+                    ) {
+                        StockCatalogAdditionReviewView(
+                            preflightCanonicalJSON:
+                                preflightData,
+                            packetCanonicalJSON: packetData
+                        )
+                    }
+                    .accessibilityIdentifier(
+                        "openStockCatalogAdditionReview"
+                    )
+                }
             }
         }
         .forzAdvisorRowBackground()
