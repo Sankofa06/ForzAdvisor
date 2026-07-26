@@ -14,8 +14,36 @@ struct TuneControlUpgradePathItem: Equatable, Identifiable, Sendable {
     var id: TunePartID { part.id }
 }
 
+struct TuneControlUpgradePathProvenance: Equatable, Sendable {
+    let game: ForzaGame
+    let gameBuildVersion: String
+    let snapshotID: UUID
+    let capturedAt: Date
+    let source: String
+
+    var attributionText: String {
+        "Local Upgrade Lab observation · \(game.shortTitle) build \(gameBuildVersion) · observed \(capturedAt.formatted(date: .abbreviated, time: .shortened))"
+    }
+
+    var stableClipboardLines: [String] {
+        [
+            "Source: Local Upgrade Lab observation",
+            "Game build: \(game.shortTitle) \(gameBuildVersion)",
+            "Snapshot captured: \(Self.timestampFormatter.string(from: capturedAt))"
+        ]
+    }
+
+    private static let timestampFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
+}
+
 struct TuneControlUpgradePath: Equatable, Identifiable, Sendable {
     var items: [TuneControlUpgradePathItem]
+    let provenance: TuneControlUpgradePathProvenance
 
     var id: String {
         items.map(\.part.id.rawValue).joined(separator: "+")
@@ -33,9 +61,13 @@ struct TuneControlUpgradePlanner {
               let snapshot = tune.request.buildSnapshot,
               snapshot.isValid,
               snapshot.matches(car: tune.request.car),
+              let provenance = trustedProvenance(for: snapshot),
               let report = tune.projectionReport,
+              report.schemaVersion
+                == TuneProjectionReport.currentSchemaVersion,
               report.snapshotID == snapshot.id,
               report.contextStatus == expectedContext(for: snapshot),
+              reportMatchesFreshProjection(report, tune: tune),
               report.confirmations.isEmpty,
               !report.fields.contains(where: { $0.status == .needsPartConfirmation }) else {
             return []
@@ -103,8 +135,61 @@ struct TuneControlUpgradePlanner {
                     unlocks: orderedUnique(unlocked)
                 )
             }
-            return TuneControlUpgradePath(items: items)
+            return TuneControlUpgradePath(items: items, provenance: provenance)
         }
+    }
+
+    private func trustedProvenance(
+        for snapshot: VehicleBuildSnapshot
+    ) -> TuneControlUpgradePathProvenance? {
+        guard let normalizedBuild = canonicalBuildVersion(
+            snapshot.gameBuild.version ?? ""
+        ),
+              snapshot.gameBuild.capturedAt != nil,
+              snapshot.gameBuild.game == snapshot.car.game,
+              snapshot.capabilityProfile.vehicle.game == snapshot.car.game,
+              snapshot.capabilityProfile.parts.count == TunePartID.allCases.count,
+              Set(snapshot.capabilityProfile.parts.map(\.partID)) == Set(TunePartID.allCases),
+              snapshot.capabilityProfile.parts.allSatisfy({
+                  ($0.availability == .available || $0.availability == .unavailable)
+                      && $0.evidence.source == UpgradePartCapture.provenanceSource
+                      && normalized($0.evidence.version) == normalizedBuild
+                      && ($0.evidence.confidence == .medium
+                          || $0.evidence.confidence == .high)
+                      && $0.evidence.usagePermission == .permitted
+              }) else {
+            return nil
+        }
+
+        return TuneControlUpgradePathProvenance(
+            game: snapshot.car.game,
+            gameBuildVersion: normalizedBuild,
+            snapshotID: snapshot.id,
+            capturedAt: persistedTimestamp(snapshot.capturedAt),
+            source: UpgradePartCapture.provenanceSource
+        )
+    }
+
+    private func persistedTimestamp(_ date: Date) -> Date {
+        Date(timeIntervalSince1970: date.timeIntervalSince1970.rounded(.down))
+    }
+
+    private func reportMatchesFreshProjection(
+        _ report: TuneProjectionReport,
+        tune: TuneResult
+    ) -> Bool {
+        var seed = tune
+        seed.projectionReport = nil
+        guard let fresh = TuneOutputProjector()
+            .project(seed)
+            .projectionReport else {
+            return false
+        }
+        return report.capabilityResolution
+                == fresh.capabilityResolution
+            && report.fields == fresh.fields
+            && report.purchasePlan == fresh.purchasePlan
+            && report.confirmations == fresh.confirmations
     }
 
     private func minimalChoices(
@@ -193,5 +278,31 @@ struct TuneControlUpgradePlanner {
 
     private func expectedContext(for snapshot: VehicleBuildSnapshot) -> TuneProjectionContextStatus {
         snapshot.kind == .exactBuildObservation ? .exactBuild : .capabilityOnly
+    }
+
+    private func normalized(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func canonicalBuildVersion(
+        _ value: String
+    ) -> String? {
+        let trimmed = normalized(value)
+        guard !trimmed.isEmpty, trimmed.count <= 80 else {
+            return nil
+        }
+        let canonical = trimmed.unicodeScalars.map { scalar in
+            let category = scalar.properties.generalCategory
+            let isUnsafe =
+                CharacterSet.controlCharacters.contains(scalar)
+                || category == .format
+                || category == .lineSeparator
+                || category == .paragraphSeparator
+            return isUnsafe ? " " : String(scalar)
+        }
+        .joined()
+        .split(whereSeparator: \.isWhitespace)
+        .joined(separator: " ")
+        return canonical == trimmed ? canonical : nil
     }
 }

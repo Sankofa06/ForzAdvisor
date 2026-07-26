@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.26.0 (Build 51) - 2026-07-25
+
+- Binds every exact Upgrade Lab purchase path to a complete permitted local observation for the same known game build.
+- Rejects stale, mixed, incomplete, wrong-source, unpermitted, or tampered part and projection evidence instead of presenting an exact path.
+- Shows safe source, FH5/FH6 build, and snapshot-time attribution in the result, copied build plan, and Verified Build share card.
+
 ## Version 1.25.0 (Build 50) - 2026-07-25
 
 - Adds dedicated contextual Copilot guidance inside Stock Catalog Contribution.

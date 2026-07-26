@@ -180,6 +180,198 @@ final class UpgradeLabTests: XCTestCase {
         XCTAssertTrue(TuneControlUpgradePlanner().paths(for: noUpgradeFields).isEmpty)
     }
 
+    func testPlannerRequiresKnownSnapshotBuildAndMatchingPartEvidenceVersions() throws {
+        let verified = try offeredCapture().verifiedSnapshot(upgrading: capabilitySnapshot())
+
+        var unknownBuild = verified
+        unknownBuild.gameBuild.version = nil
+        unknownBuild.gameBuild.capturedAt = nil
+        XCTAssertTrue(unknownBuild.isValid, "Unexpected issues: \(unknownBuild.validationIssues)")
+        XCTAssertTrue(TuneControlUpgradePlanner().paths(for: projectedTune(snapshot: unknownBuild)).isEmpty)
+
+        var mismatched = verified
+        mismatched.capabilityProfile.parts = mismatched.capabilityProfile.parts.map {
+            var part = $0
+            part.evidence.version = "different-build"
+            return part
+        }
+        XCTAssertTrue(mismatched.isValid, "Unexpected issues: \(mismatched.validationIssues)")
+        XCTAssertTrue(TuneControlUpgradePlanner().paths(for: projectedTune(snapshot: mismatched)).isEmpty)
+
+        var mixed = verified
+        mixed.capabilityProfile.parts[0].evidence.version = "different-build"
+        XCTAssertTrue(mixed.isValid, "Unexpected issues: \(mixed.validationIssues)")
+        XCTAssertTrue(TuneControlUpgradePlanner().paths(for: projectedTune(snapshot: mixed)).isEmpty)
+    }
+
+    func testPlannerRejectsUntrustedOrNonPermittedPartEvidence() throws {
+        let verified = try offeredCapture().verifiedSnapshot(upgrading: capabilitySnapshot())
+
+        for evidence in [
+            TuneEvidence(
+                confidence: .low,
+                source: UpgradePartCapture.provenanceSource,
+                version: "test-build",
+                usagePermission: .permitted
+            ),
+            TuneEvidence(
+                confidence: .medium,
+                source: UpgradePartCapture.provenanceSource,
+                version: "test-build",
+                usagePermission: .unknown
+            ),
+            TuneEvidence(
+                confidence: .medium,
+                source: UpgradePartCapture.provenanceSource,
+                version: "test-build",
+                usagePermission: .prohibited
+            )
+        ] {
+            var snapshot = verified
+            snapshot.capabilityProfile.parts[0].evidence = evidence
+            XCTAssertFalse(snapshot.isValid)
+            XCTAssertTrue(TuneControlUpgradePlanner().paths(for: projectedTune(snapshot: snapshot)).isEmpty)
+        }
+
+        var wrongSource = verified
+        wrongSource.capabilityProfile.parts[0].evidence.source = "forzadvisor.local.other"
+        XCTAssertTrue(wrongSource.isValid, "Unexpected issues: \(wrongSource.validationIssues)")
+        XCTAssertTrue(TuneControlUpgradePlanner().paths(for: projectedTune(snapshot: wrongSource)).isEmpty)
+
+        var unsafeBuild = verified
+        unsafeBuild.gameBuild.version = "test\nbuild"
+        unsafeBuild.capabilityProfile.parts = unsafeBuild
+            .capabilityProfile.parts.map {
+                var part = $0
+                part.evidence.version = "test\nbuild"
+                return part
+            }
+        XCTAssertTrue(
+            unsafeBuild.isValid,
+            "Unexpected issues: \(unsafeBuild.validationIssues)"
+        )
+        XCTAssertTrue(
+            TuneControlUpgradePlanner()
+                .paths(for: projectedTune(snapshot: unsafeBuild))
+                .isEmpty
+        )
+    }
+
+    func testPlannerRequiresOneCompleteUpgradeLabFactForEveryCanonicalPart() throws {
+        let verified = try offeredCapture().verifiedSnapshot(upgrading: capabilitySnapshot())
+
+        var missing = verified
+        missing.capabilityProfile.parts.removeLast()
+        XCTAssertTrue(missing.isValid, "Unexpected issues: \(missing.validationIssues)")
+        XCTAssertTrue(TuneControlUpgradePlanner().paths(for: projectedTune(snapshot: missing)).isEmpty)
+
+        var duplicate = verified
+        duplicate.capabilityProfile.parts.append(duplicate.capabilityProfile.parts[0])
+        XCTAssertFalse(duplicate.isValid)
+        XCTAssertTrue(TuneControlUpgradePlanner().paths(for: projectedTune(snapshot: duplicate)).isEmpty)
+
+        for availability in [TunePartAvailability.installed, .unknown] {
+            var invalidAvailability = verified
+            invalidAvailability.capabilityProfile.parts[0].availability = availability
+            XCTAssertTrue(
+                TuneControlUpgradePlanner().paths(
+                    for: projectedTune(snapshot: invalidAvailability)
+                ).isEmpty
+            )
+        }
+    }
+
+    func testPlannerRejectsStaleOrDetachedProjectionReport() throws {
+        let verified = try offeredCapture().verifiedSnapshot(
+            upgrading: capabilitySnapshot()
+        )
+        let tune = projectedTune(snapshot: verified)
+
+        var staleSchema = tune
+        staleSchema.projectionReport?.schemaVersion = 0
+        XCTAssertTrue(
+            TuneControlUpgradePlanner().paths(for: staleSchema).isEmpty
+        )
+
+        var alteredFields = tune
+        alteredFields.projectionReport?.fields.removeLast()
+        XCTAssertTrue(
+            TuneControlUpgradePlanner().paths(for: alteredFields).isEmpty
+        )
+
+        var alteredStatus = tune
+        alteredStatus.projectionReport?.fields[0].status = .unavailable
+        XCTAssertTrue(
+            TuneControlUpgradePlanner().paths(for: alteredStatus).isEmpty
+        )
+
+        var detachedCapability = tune
+        detachedCapability.projectionReport?.capabilityResolution = nil
+        XCTAssertTrue(
+            TuneControlUpgradePlanner()
+                .paths(for: detachedCapability)
+                .isEmpty
+        )
+
+        var detachedPurchases = tune
+        detachedPurchases.projectionReport?.purchasePlan = []
+        XCTAssertTrue(
+            TuneControlUpgradePlanner()
+                .paths(for: detachedPurchases)
+                .isEmpty
+        )
+    }
+
+    func testValidPathsCarryExactSnapshotProvenanceForBothGames() throws {
+        for game in ForzaGame.allCases {
+            let verified = try offeredCapture().verifiedSnapshot(
+                upgrading: capabilitySnapshot(game: game),
+                capturedAt: capturedAt,
+                snapshotID: snapshotID
+            )
+            let paths = TuneControlUpgradePlanner().paths(for: projectedTune(snapshot: verified))
+
+            XCTAssertFalse(paths.isEmpty)
+            for path in paths {
+                XCTAssertEqual(
+                    path.provenance,
+                    TuneControlUpgradePathProvenance(
+                        game: game,
+                        gameBuildVersion: "test-build",
+                        snapshotID: snapshotID,
+                        capturedAt: capturedAt,
+                        source: UpgradePartCapture.provenanceSource
+                    )
+                )
+            }
+        }
+    }
+
+    func testPathProvenanceUsesSavedTuneTimestampPrecision() throws {
+        let fractionalCapture = Date(timeIntervalSince1970: 1_784_900_123.837)
+        let verified = try offeredCapture().verifiedSnapshot(
+            upgrading: capabilitySnapshot(),
+            capturedAt: fractionalCapture,
+            snapshotID: snapshotID
+        )
+
+        let provenance = try XCTUnwrap(
+            TuneControlUpgradePlanner()
+                .paths(for: projectedTune(snapshot: verified))
+                .first?
+                .provenance
+        )
+
+        XCTAssertEqual(
+            provenance.capturedAt,
+            Date(timeIntervalSince1970: 1_784_900_123)
+        )
+        XCTAssertEqual(
+            provenance.stableClipboardLines.last,
+            "Snapshot captured: 2026-07-24T13:35:23.000Z"
+        )
+    }
+
     func testUpgradeThenTireAndTireThenUpgradePreserveEvidence() throws {
         let capability = try capabilitySnapshot()
         let upgradedFirst = try offeredCapture().verifiedSnapshot(
@@ -226,6 +418,10 @@ final class UpgradeLabTests: XCTestCase {
         XCTAssertTrue(text.contains("Path 2"))
         XCTAssertTrue(text.contains("Path 3"))
         XCTAssertTrue(text.contains("Drivetrain > Transmission > Sport Transmission"))
+        XCTAssertTrue(text.contains("Source: Local Upgrade Lab observation"))
+        XCTAssertTrue(text.contains("Game build: FH6 test-build"))
+        XCTAssertTrue(text.contains("Snapshot captured:"))
+        XCTAssertFalse(text.contains(UpgradePartCapture.provenanceSource))
         XCTAssertTrue(text.contains(
             "Each path unlocks the same tune controls represented here. Pick one path; the alternatives are not cumulative."
         ))

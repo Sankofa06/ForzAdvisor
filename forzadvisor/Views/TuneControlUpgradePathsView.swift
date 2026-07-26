@@ -15,6 +15,13 @@ struct TuneControlUpgradePathsView: View {
             Text("Each path unlocks the same tune controls represented here. Pick one path; the alternatives are not cumulative.")
                 .font(.subheadline)
 
+            if let provenance = sharedProvenance {
+                Label(provenance.attributionText, systemImage: "checkmark.seal")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("tuningControlUpgradePathsProvenance")
+            }
+
             ForEach(Array(paths.enumerated()), id: \.element.id) { index, path in
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Path \(index + 1)")
@@ -38,5 +45,13 @@ struct TuneControlUpgradePathsView: View {
         }
         .padding(.vertical, 4)
         .accessibilityIdentifier("tuningControlUpgradePaths")
+    }
+
+    private var sharedProvenance: TuneControlUpgradePathProvenance? {
+        guard let first = paths.first?.provenance,
+              paths.dropFirst().allSatisfy({ $0.provenance == first }) else {
+            return nil
+        }
+        return first
     }
 }

@@ -76,6 +76,12 @@ Open the separate review from a saved tune's Community Reference Comparisons are
 
 On a saved current FH5 build plan, Copilot can offer one-tap **Open Upgrade Lab** only after fresh persisted-plan equality, plan-only safety, and Upgrade Lab eligibility checks. It preserves the tune, thumbnail, and notes; higher-priority Candidate Trial, recorded-observation, or Research Lab guidance suppresses the action. It cannot generate numeric settings, transact parts, predict PI, cost, or performance, call a provider or network, or bypass exact in-game availability.
 
+### When does Upgrade Lab show exact alternative buy lists?
+
+Exact alternatives require one complete, permitted local observation with exactly one decision per expected part, a known canonical FH5 or FH6 build, and a freshly derived matching stock projection. Stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence fails closed. Rerun Upgrade Lab against the current untouched-stock car if older evidence is no longer eligible.
+
+The main result, copied build plan, and Verified Build share card show a safe human-readable local source, game build, and stock-snapshot capture time. They expose no raw internal source IDs or private data and make no PI, cost, credits, entitlement, performance, or purchase-order prediction. Existing saves remain readable.
+
 ### How do I delete a tune?
 
 Open the garage, swipe left on a saved tune, and tap Delete.

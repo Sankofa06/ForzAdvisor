@@ -40,6 +40,10 @@ enum TuneClipboardFormatter {
                     ? "Each path unlocks the same represented tuning controls. Pick one path; the alternatives are not cumulative."
                     : "Each path unlocks the same tune controls represented here. Pick one path; the alternatives are not cumulative."
             )
+            if let provenance = paths.first?.provenance,
+               paths.dropFirst().allSatisfy({ $0.provenance == provenance }) {
+                lines.append(contentsOf: provenance.stableClipboardLines)
+            }
             for (index, path) in paths.enumerated() {
                 lines.append("")
                 lines.append("Path \(index + 1)")

@@ -4,15 +4,15 @@ Last updated: 2026-07-25
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.25.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.26.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.25.0`.
-- Current project build is `50`.
+- Current project version is `1.26.0`.
+- Current project build is `51`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -43,6 +43,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - Stock Catalog Contribution stores manually entered first-party FH5/FH6 stock observations in a separate UserDefaults-backed local workspace, not in Saved Tunes or the bundled catalog. Every field requires exact-build, direct in-game, untouched-stock, and English-units-where-relevant attestation. Local save needs no reuse grant; canonical manual export requires explicit tester authorship, deidentified reuse, catalog-curation, and future bundled redistribution permissions, and import requires separate direct-receipt and confirmation of every right. Permission excludes screenshots, artwork, source prose, third-party databases, and tunes and makes no endorsement, ownership, or licensing claim. Collection states are only Received, Matching, Conflicting, or Excluded—never verified, approved, averaged, or ranked. Contributions cannot automatically change a catalog, tune, ruleset, provider, or readiness state; store no screenshots, OCR, notes, accounts, device IDs, or location; and add no analytics, networking, or background upload. UUIDs and hashes do not authenticate identity, and local deletion cannot recall shared JSON.
 - Stock Catalog Contribution exposes a dedicated toolbar Copilot with local deterministic phase-only guidance for exact untouched-stock identity, build, platform, every required fact and field attestation, personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. It cannot read draft fields, the selected game, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints; use a model or network; retain a transcript; execute an action; approve a contribution; change the catalog; or activate tuning.
 - FH5 catalog build planning stays local, does not use numeric formulas or the selected provider, and requires no account or API key.
+- Exact alternative Upgrade Lab buy lists require one complete, permitted, one-decision-per-expected-part local observation matched to a known canonical FH5/FH6 build and a freshly derived stock projection. Stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, and tampered evidence fails closed. The main result, copied build plan, and Verified Build share card display only safe human-readable local source, game-build, and stock-snapshot capture attribution, not raw internal source IDs or private data. They make no PI, cost, credits, entitlement, performance, or purchase-order prediction. Legacy saves remain readable, but stale evidence can require rerunning Upgrade Lab.
 - FH5 Research Review stores exact permission-bound JSON locally, does not authenticate observer identity, and cannot promote evidence into numeric tuning or production constraints.
 - FH5 Outcome Lab stores exact-plan, one-variable A-B-B-A experiment evidence locally, requires stock restoration, and cannot register a ruleset or unlock numeric tuning. Sharing is off by default and only an explicitly permitted allow-listed JSON copy can leave through the user-initiated system share sheet; there is no background experiment uploader or importer.
 - FH6 Validation Review stores exact permission-bound Test Drive JSON in a separate local queue, requires the same eligible exact-build boundary as local Test Drive capture, and reports outcomes without modifying tunes or promoting the experimental ruleset.

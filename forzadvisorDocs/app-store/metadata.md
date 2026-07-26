@@ -20,17 +20,19 @@ ForzAdvisor is an unofficial tuning assistant for racing-game players who want f
 
 Start from the searchable FH5/FH6 stock-car catalog, take a photo, import a screenshot, or enter car details manually. Catalog entries retain their source and revision details, and edited values are clearly labeled.
 
-Stock Catalog Contribution can record exact-build, direct in-game untouched-stock FH5 or FH6 observations with English units where relevant in a separate UserDefaults-backed local workspace without changing the bundled catalog or a tune. Optional canonical JSON handoff requires explicit tester authorship, deidentified reuse, catalog curation, and future bundled redistribution permissions; the permission covers structured facts only and excludes protected third-party material. Received observations remain collection-only matches, conflicts, or exclusions rather than verified or approved catalog entries.
+Stock Catalog Contribution records direct in-game, untouched-stock facts for an exact FH5 or FH6 build in a separate local workspace without changing the catalog or a tune. Optional canonical JSON handoff requires explicit authorship and structured-fact reuse, curation, and redistribution permissions. Received observations remain collection-only matches, conflicts, or exclusions—not verified catalog entries.
 
-Its toolbar Copilot provides local, deterministic, phase-only guidance for completing the contribution and review workflow. It cannot read draft fields, the selected game, record counts, JSON, permissions, payloads, identifiers, or fingerprints; use a model or network; retain a transcript; perform an action; approve a contribution; change the catalog; or activate tuning.
+Its toolbar Copilot provides local, phase-only guidance without reading drafts, JSON, permissions, identifiers, or fingerprints; using a model or network; performing actions; approving contributions; or activating tuning.
 
 For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a menu-order setup across the tuning controls supported by the verified build evidence. FH6 formulas remain experimental, and settings that do not pass local capability, range, and provenance checks are withheld.
 
 For FH5 catalog cars, ForzAdvisor creates a provider-independent local build plan without numeric tuning settings. Upgrade Lab records only the tuning-control parts you confirm are offered for the untouched stock car, then produces up to three exact alternative purchase paths. Numeric FH5 tuning stays unavailable until a separate FH5 ruleset is validated.
 
+Exact alternative buy lists require one complete, permitted, one-decision-per-part local observation matching a known canonical FH5 or FH6 build and a freshly derived stock projection. Stale, mixed, mismatched, missing, duplicate, installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence is withheld. Results, copied plans, and Verified Build cards show safe source, game-build, and snapshot-capture attribution without raw source IDs or private data.
+
 On a saved current FH5 build plan, Copilot can offer one-tap Upgrade Lab only after fresh persisted-plan, plan-only safety, and eligibility checks; Candidate Trial, recorded-observation, and eligible Research Lab guidance take priority.
 
-Save results to a local garage, search by car, filter by discipline, copy eligible settings or build plans, and use the contextual Copilot to understand the safest next step. Copilot is also available as local, guidance-only help inside Settings, Beta Missions, and evidence reviews without reading draft fields. Beta Validation Missions turn eligible saved setups into exact local testing tasks for Research Lab, Outcome Lab, Tire Lab, Upgrade Lab, and Record Test Drive, and can share a separate public-only FH6 Community Research invitation with testers who already have the latest beta. The FH6 invite describes the required Record Test Drive for that exact current saved tune, fixed A-B-B-A comparison, explicit reuse permission, manual permission-bound Community Outcome export, and matching Community Outcome Review handoff without including local progress or evidence payloads; it contains no FH6 TestFlight link. Community outcomes are not an accuracy or quality score and are not a recommendation; ForzAdvisor does not authenticate tester identity. FH5 Outcome Lab records a fixed one-variable A-B-B-A Test Track experiment as calibration evidence and can share an explicitly permitted deidentified JSON copy without unlocking numeric tuning. Eligible exact FH6 builds can also use Guided Refinement, verified build sharing, local Validation Review for permission-bound Test Drive exports, and Community Outcome Review for canonical comparison exports that match the current saved candidate. Community review reports local, reviewed, and combined observations separately without importing reference tune settings or changing a tune.
+Save results to a local garage, search by car, filter by discipline, copy eligible settings or plans, and use contextual Copilot guidance throughout the workflow. Beta Missions route eligible saves to exact local tasks for Tune Menu, Research, Outcome, Tire, Upgrade, and Test Drive labs. FH5 Outcome Lab records controlled A-B-B-A calibration evidence without unlocking numeric tuning. Eligible FH6 builds support Guided Refinement, verified build sharing, local Validation Review, and permission-bound Community Outcome Review. Community outcomes remain collection-only—not an accuracy score, ranking, recommendation, or tuning change.
 
 ForzAdvisor runs offline by default. FH5 build plans always stay local. Optional on-device AI can assist FH6 generation when Apple Foundation Models are available, and optional API mode lets advanced users connect their own Anthropic API key for FH6. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -61,6 +63,8 @@ No login or test account is required.
 
 For FH5 Copilot Upgrade Lab, use a saved current build plan. Copilot refetches and equality-checks the persisted plan, verifies plan-only safety and eligibility, and preserves the tune, thumbnail, and notes. It cannot generate numeric FH5 settings; select, buy, or install parts; claim PI, cost, or performance; call a provider or network; or bypass exact in-game availability. Candidate Trial, recorded-observation, and eligible Research Lab guidance take priority.
 
+Exact Upgrade Lab alternatives require one complete, permitted local observation with one decision for every expected part, a known canonical FH5 or FH6 build, and a freshly derived matching stock projection. The app fails closed for stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence. The result, copied plan, and Verified Build share card show safe local source, game-build, and stock-snapshot capture attribution without raw source IDs or private data. They do not predict PI, cost, credits, entitlement, performance, or purchase order. Existing saves remain readable, but stale evidence can require running Upgrade Lab again.
+
 Suggested FH5 review path:
 
 1. Launch the app.
@@ -88,8 +92,8 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.25.0
-- Current project build: 50
+- Current project version: 1.26.0
+- Current project build: 51
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 

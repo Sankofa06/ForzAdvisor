@@ -18,7 +18,7 @@ final class VerifiedBuildShareCardTests: XCTestCase {
         let tune = try projectedTune(
             make: "  Toy\u{202E}\u{0007}ota\n",
             model: " GR\t Supra ",
-            buildVersion: "  1.2\u{0000}\n 3  ",
+            buildVersion: "1.2.3",
             partAvailability: .available
         )
 
@@ -34,7 +34,7 @@ final class VerifiedBuildShareCardTests: XCTestCase {
             ForzAdvisor Verified Build
             FH6 | 2020 Toy ota GR Supra
             Road | A 650 | RWD
-            Game build observed: 1.2 3
+            Game build observed: 1.2.3
             Verified settings: 2
 
             Tires
@@ -42,6 +42,9 @@ final class VerifiedBuildShareCardTests: XCTestCase {
             Rear tire pressure: 31.0 PSI
 
             Tuning-control path 1 of 3
+            Source: Local Upgrade Lab observation
+            Game build: FH6 1.2.3
+            Snapshot captured: 2023-11-14T22:13:20.000Z
             - Drivetrain > Transmission > Sport Transmission
               Unlocks: Final Drive
             - Platform and Handling > Spring and Dampers > Race Spring and Dampers
@@ -70,6 +73,9 @@ final class VerifiedBuildShareCardTests: XCTestCase {
         XCTAssertFalse(first.text.contains("Path 3"))
         XCTAssertFalse(first.text.contains("Rally Differential"))
         XCTAssertFalse(first.text.contains("Offroad Differential"))
+        XCTAssertFalse(
+            first.text.contains(UpgradePartCapture.provenanceSource)
+        )
         XCTAssertTrue(first.text.contains(
             "Tuning-control paths do not predict PI, credits, entitlement, performance, or installation order. Confirm every item in game before buying."
         ))
@@ -311,8 +317,8 @@ final class VerifiedBuildShareCardTests: XCTestCase {
         )
         let partEvidence = TuneEvidence(
             confidence: .medium,
-            source: "fixture.private-part-source",
-            version: "PRIVATE-PART-VERSION",
+            source: UpgradePartCapture.provenanceSource,
+            version: normalizedBuild,
             usagePermission: .permitted
         )
         let profile = TuneVehicleCapabilityProfile(

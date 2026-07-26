@@ -119,6 +119,7 @@ struct VerifiedBuildShareCardFactory {
     ) -> [String]? {
         guard totalCount > 0, !path.items.isEmpty else { return nil }
         var lines = ["Tuning-control path 1 of \(totalCount)"]
+        lines.append(contentsOf: path.provenance.stableClipboardLines)
         for item in path.items {
             guard let category = oneLine(item.part.category.label, maximumLength: 80),
                   let slot = oneLine(item.part.slot.label, maximumLength: 80),
