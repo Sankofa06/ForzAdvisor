@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.31.0 (Build 56) - 2026-07-25
+
+- Adds transient receiver inspection for canonical FH6 Independent Validation Review Packets on any eligible exact current saved candidate.
+- Freshly refetches persisted candidate state on every validation tap, then shows accepted evidence counts, safe binding prefixes, and fixed review-only invariants without importing or saving the packet.
+- Keeps contextual Copilot phase-only, payload-blind, action-free, and unable to see pasted JSON, evidence counts, permission identifiers, or fingerprints.
+
 ## Version 1.30.0 (Build 55) - 2026-07-25
 
 - Adds a canonical FH6 Independent Validation Review Packet that co-binds accepted Test Drive and Community Outcome evidence to the exact current saved candidate.

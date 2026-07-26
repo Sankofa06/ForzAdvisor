@@ -36,7 +36,7 @@ Exact alternative buy lists require one complete, permitted, one-decision-per-pa
 
 On a saved current FH5 build plan, Copilot can offer one-tap Upgrade Lab only after fresh persisted-plan, plan-only safety, and eligibility checks; Candidate Trial, recorded-observation, and eligible Research Lab guidance take priority.
 
-Save results to a local garage, search by car, filter by discipline, copy eligible settings or plans, and use contextual Copilot guidance throughout the workflow. Beta Missions route eligible saves to exact local tasks for Tune Menu, Research, Outcome, Tire, Upgrade, and Test Drive labs. FH5 Outcome Lab records controlled A-B-B-A calibration evidence without unlocking numeric tuning. Eligible FH6 builds support Guided Refinement, verified build sharing, local Validation Review, permission-bound Community Outcome Review, and a canonical Independent Validation Review Packet for accepted exact-candidate evidence. A valid first-party Test Drive for the exact current candidate is required before any new Community Reference Comparison can be created or saved. Community stages, outcomes, and review packets remain collection-only—not an accuracy score, validation, ranking, recommendation, promotion, or tuning change.
+Save results to a local garage, search by car, filter by discipline, copy eligible settings or plans, and use contextual Copilot guidance throughout the workflow. Beta Missions route eligible saves to exact local tasks for Tune Menu, Research, Outcome, Tire, Upgrade, and Test Drive labs. FH5 Outcome Lab records controlled A-B-B-A calibration evidence without unlocking numeric tuning. Eligible FH6 builds support Guided Refinement, verified build sharing, local Validation Review, permission-bound Community Outcome Review, and preparation or transient receiver inspection of canonical Independent Validation Review Packets for accepted exact-candidate evidence. A valid first-party Test Drive for the exact current candidate is required before any new Community Reference Comparison can be created or saved. Community stages, outcomes, and review packets remain collection-only—not an accuracy score, validation, ranking, recommendation, promotion, or tuning change.
 
 ForzAdvisor runs offline by default. FH5 build plans always stay local. Optional on-device AI can assist FH6 generation when Apple Foundation Models are available, and optional API mode lets advanced users connect their own Anthropic API key for FH6. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -90,6 +90,8 @@ For FH6 Community Outcome Review, save an eligible exact-build tune, receive a c
 
 For an FH6 Independent Validation Review Packet, open Validation Review for an exact current saved candidate that still has at least one valid reuse-permitted Test Drive and one clean local or reviewed Community Outcome. Choose Prepare Review Packet, then explicitly use the system share sheet. The canonical packet includes only accepted public evidence and independently recomputable included counts. It does not attest omitted or quarantined inputs, authenticate a tester, establish accuracy, rank a source, promote a ruleset, or change tuning.
 
+To inspect a packet received from someone else, save the exact current FH6 candidate, open Validation Review, paste the canonical packet under Inspect Shared Review Packet, and choose Validate Shared Review Packet. The app freshly refetches persisted candidate state on every tap. Receiver inspection does not require enough local evidence to prepare a packet, remains transient, imports and saves nothing, and clears when the candidate changes or you choose Clear.
+
 For Stock Catalog Contribution, open the UserDefaults-backed catalog contribution workspace and enter every FH5 or FH6 identity and stock field from one exact game build. Confirm the direct in-game and untouched-stock attestations for every field. Local save works without reuse permission. Canonical JSON export requires explicit authorship, deidentified reuse, catalog-curation, and redistribution permissions; import requires separate direct-receipt and rights confirmation. The workspace is separate from Saved Tunes and the bundled catalog and cannot change tuning or readiness.
 
 To test the maintainer handoff, import at least one complete permission-bound contribution, confirm independent source review, and prepare the packet. The share action is user initiated. Matching observations stay grouped; conflicting stock variants are quarantined together; administrative replays are excluded. Existing bundle IDs may appear only as read-only comparison references. The packet never proposes source URLs, verification status, a catalog ID or revision, and does not edit the bundle.
@@ -102,8 +104,8 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.30.0
-- Current project build: 55
+- Current project version: 1.31.0
+- Current project build: 56
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
@@ -114,6 +116,8 @@ Stock Catalog Contribution can now prepare a privacy-bounded maintainer review p
 Catalog Curation Preflight can now prepare a separately reviewable, exact-catalog-bound prospective-addition artifact from two or more matching permission-bound first-party observations without creating or changing a catalog entry.
 
 FH6 Validation Review can now prepare a canonical, exact-candidate-bound packet from accepted Test Drive and Community Outcome public evidence for independent human inspection without making an accuracy or promotion claim.
+
+FH6 Validation Review can now transiently validate and inspect a received canonical review packet against freshly refetched persisted candidate state without importing or saving it.
 
 ## Export Compliance Notes
 

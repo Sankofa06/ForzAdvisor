@@ -16,6 +16,9 @@ struct FH6ValidationReviewView: View {
     let onDelete: (FH6ValidationReviewEntry) -> Void
     let onPrepareIndependentReviewPacket: (() throws -> String)?
     let preparedInputStateFingerprint: String?
+    let onValidateIndependentReviewPacket:
+        ((Data) throws -> FH6IndependentValidationReviewPacket)?
+    let receiverCandidateRevisionFingerprint: String?
     let communityReferenceRecords: [FH6CommunityReferenceTrialRecord]
     let accuracyEvidenceChain:
         FH6AccuracyEvidenceChainAssessment
@@ -266,6 +269,18 @@ struct FH6ValidationReviewView: View {
                 }
                 .forzAdvisorRowBackground()
 
+                if let onValidateIndependentReviewPacket,
+                   let receiverCandidateRevisionFingerprint {
+                    FH6SharedIndependentReviewPacketInspector(
+                        carDisplayName:
+                            tune.request.car.displayName,
+                        candidateRevisionFingerprint:
+                            receiverCandidateRevisionFingerprint,
+                        onValidate:
+                            onValidateIndependentReviewPacket
+                    )
+                }
+
                 if let onPrepareIndependentReviewPacket {
                     Section("Independent Review Packet") {
                         Text(
@@ -451,5 +466,205 @@ struct FH6ValidationReviewView: View {
 
     private func inputTitle(_ value: String) -> String {
         ValidationInput(rawValue: value)?.title ?? value
+    }
+}
+
+private struct FH6SharedIndependentReviewPacketInspector:
+    View {
+    let carDisplayName: String
+    let candidateRevisionFingerprint: String
+    let onValidate:
+        (Data) throws -> FH6IndependentValidationReviewPacket
+
+    @State private var pastedPacketJSON = ""
+    @State private var validatedPacket:
+        FH6IndependentValidationReviewPacket?
+    @State private var statusMessage: String?
+
+    var body: some View {
+        Section("Inspect Shared Review Packet") {
+            Text(
+                "Paste an exact canonical FH6 Independent Validation Review Packet to inspect it against the freshly loaded current saved candidate."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            TextEditor(text: $pastedPacketJSON)
+                .font(.caption.monospaced())
+                .frame(minHeight: 150)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .onChange(of: pastedPacketJSON) {
+                    validatedPacket = nil
+                    statusMessage = nil
+                }
+                .accessibilityLabel(
+                    "Shared FH6 independent validation review packet JSON"
+                )
+                .accessibilityHint(
+                    "Paste the exact canonical JSON shared for this saved candidate."
+                )
+                .accessibilityIdentifier(
+                    "fh6IndependentValidationReviewPacketJSON"
+                )
+
+            Button("Validate Shared Review Packet") {
+                validatePaste()
+            }
+            .disabled(pastedPacketJSON.isEmpty)
+            .accessibilityIdentifier(
+                "validateFH6IndependentValidationReviewPacketButton"
+            )
+
+            if let validatedPacket {
+                Label(
+                    "Shared review packet accepted",
+                    systemImage: "checkmark.seal"
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(ForzAdvisorTheme.success)
+                .accessibilityIdentifier(
+                    "fh6IndependentValidationReviewPacketAccepted"
+                )
+
+                FH6SharedIndependentReviewPacketSummary(
+                    carDisplayName: carDisplayName,
+                    packet: validatedPacket
+                )
+            }
+
+            if let statusMessage {
+                Label(
+                    statusMessage,
+                    systemImage:
+                        validatedPacket == nil
+                        ? "exclamationmark.triangle"
+                        : "checkmark.circle"
+                )
+                .font(.caption)
+                .foregroundStyle(
+                    validatedPacket == nil
+                        ? ForzAdvisorTheme.warning
+                        : .secondary
+                )
+                .accessibilityIdentifier(
+                    "fh6IndependentValidationReviewPacketStatus"
+                )
+            }
+
+            Text(
+                FH6IndependentValidationReviewPacketPolicy
+                    .reviewBoundary
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Text(
+                "Inspection is transient. Pasted JSON and the validated result are not imported or saved. This summary does not display evidence payloads, permission identifiers, or full fingerprints."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Button("Clear") {
+                clear()
+            }
+            .disabled(
+                pastedPacketJSON.isEmpty
+                    && validatedPacket == nil
+                    && statusMessage == nil
+            )
+            .accessibilityIdentifier(
+                "clearFH6IndependentValidationReviewPacketButton"
+            )
+        }
+        .forzAdvisorRowBackground()
+        .onChange(of: candidateRevisionFingerprint) {
+            clear()
+        }
+    }
+
+    private func validatePaste() {
+        do {
+            validatedPacket = try onValidate(
+                Data(pastedPacketJSON.utf8)
+            )
+            statusMessage =
+                "Validated against the freshly loaded exact current saved FH6 candidate. No data was imported or saved."
+        } catch {
+            validatedPacket = nil
+            statusMessage = error.localizedDescription
+        }
+    }
+
+    private func clear() {
+        pastedPacketJSON = ""
+        validatedPacket = nil
+        statusMessage = nil
+    }
+}
+
+private struct FH6SharedIndependentReviewPacketSummary: View {
+    let carDisplayName: String
+    let packet: FH6IndependentValidationReviewPacket
+
+    var body: some View {
+        LabeledContent("Car", value: carDisplayName)
+        LabeledContent(
+            "Catalog ID",
+            value: packet.candidate.catalogID
+        )
+        LabeledContent(
+            "Test Drives",
+            value:
+                "\(packet.counts.includedFirstPartyTestDriveCount)"
+        )
+        LabeledContent(
+            "Sender-local Community Outcomes",
+            value:
+                "\(packet.counts.includedLocalCommunityOutcomeCount)"
+        )
+        LabeledContent(
+            "Permission-bound Reviewed Community Outcomes",
+            value:
+                "\(packet.counts.includedReviewedCommunityOutcomeCount)"
+        )
+        LabeledContent(
+            "Total Accepted Evidence",
+            value: "\(packet.counts.includedEvidenceCount)"
+        )
+        accessibleFingerprint(
+            title: "Candidate Binding",
+            fingerprint: packet.candidate.bindingFingerprint
+        )
+        accessibleFingerprint(
+            title: "Packet Fingerprint",
+            fingerprint: packet.artifactFingerprint
+        )
+        Label(
+            "Accuracy not established",
+            systemImage: "xmark.shield"
+        )
+        Label(
+            "Automatic promotion not permitted",
+            systemImage: "hand.raised"
+        )
+        Label(
+            "Independent human review required",
+            systemImage: "person.badge.shield.checkmark"
+        )
+    }
+
+    private func accessibleFingerprint(
+        title: String,
+        fingerprint: String
+    ) -> some View {
+        let prefix = String(fingerprint.prefix(12))
+        return LabeledContent(title) {
+            Text(prefix)
+                .font(.caption.monospaced())
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title) fingerprint")
+        .accessibilityValue("Prefix \(prefix)")
     }
 }

@@ -758,6 +758,34 @@ struct ContentView: View {
                 preparedInputStateFingerprint
             )
         }()
+        let independentValidationReceiverCandidateFingerprint:
+            String? = {
+            guard resolvedSavedTuneID != nil else {
+                return nil
+            }
+            return FH6IndependentValidationReviewReceiverEligibility()
+                .candidateRevisionFingerprint(
+                    candidate: tune,
+                    persistedCandidate: persistedTune,
+                    isStreaming: isStreaming
+                )
+        }()
+        let validateIndependentValidationReviewPacket:
+            ((Data) throws ->
+                FH6IndependentValidationReviewPacket)? = {
+            guard independentValidationReceiverCandidateFingerprint
+                    != nil,
+                  let resolvedSavedTuneID else {
+                return nil
+            }
+            return { data in
+                try validateFH6IndependentValidationReviewPacket(
+                    data: data,
+                    displayedTune: tune,
+                    savedTuneID: resolvedSavedTuneID
+                )
+            }
+        }()
         let researchEligibility = FH5ResearchEligibility().snapshot(
             for: tune,
             savedTune: persistedTune,
@@ -1067,6 +1095,10 @@ struct ContentView: View {
             fh6IndependentValidationPreparedInputStateFingerprint:
                 independentValidationReviewPacketState
                     .preparedInputStateFingerprint,
+            onValidateFH6IndependentValidationReviewPacket:
+                validateIndependentValidationReviewPacket,
+            fh6IndependentValidationReceiverCandidateFingerprint:
+                independentValidationReceiverCandidateFingerprint,
             fh6CommunityReferenceTrialRecords:
                 communityTrialState.records,
             fh6AccuracyEvidenceChain:

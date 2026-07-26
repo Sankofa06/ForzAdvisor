@@ -66,6 +66,12 @@ When the exact current saved candidate still has at least one valid reuse-permit
 
 The packet does not attest, enumerate, or validate omitted or quarantined local inputs. Hashes and UUIDs do not authenticate a tester or publisher, and the packet does not prove every externally reviewed comparison historically followed one specific Test Drive. It cannot establish accuracy, validation, ranking, endorsement, or promotion; change a tune; or update a provider or ruleset.
 
+To inspect a packet someone shared with you, first save the exact current FH6 candidate, then open Validation Review and use Inspect Shared Review Packet. Paste the exact canonical JSON and choose Validate Shared Review Packet. The app creates a fresh read context on every tap, ignores pending in-memory changes, and matches the packet to persisted candidate state. You do not need enough local evidence to prepare your own packet.
+
+Accepted inspection shows sender-declared Test Drive, sender-local Community Outcome, permission-bound reviewed Community Outcome, and total accepted-evidence counts; the car and catalog ID; short candidate-binding and packet-fingerprint prefixes; and the fixed no-accuracy, no-promotion, independent-human-review boundary. “Sender-local” describes how the sender built the packet, not evidence stored on your device. Pasted JSON, validation status, and the summary remain transient. Editing the paste, a validation failure, changing the candidate, choosing Clear, or dismissing the screen removes accepted state. Nothing is imported or saved.
+
+Validation Review Copilot receives only the screen phase. It cannot see pasted JSON, accepted counts, permission identifiers, candidate bindings, packet fingerprints, or inspection status; call a model or network; retain a transcript; or validate, clear, import, save, apply, score, rank, or promote anything.
+
 ### What is an FH6 Community Reference Comparison?
 
 On an eligible saved exact FH6 tune, choose Run Community Reference Comparison. Apply the exact ForzAdvisor candidate for A and one reference from a direct YouTube or Reddit permalink for B, then complete the fixed A-B-B-A sequence with the same route, conditions, assists, and input. Restore the ForzAdvisor candidate before saving or leaving.

@@ -661,6 +661,20 @@ extension ContentView {
         return String(decoding: artifact.canonicalJSON, as: UTF8.self)
     }
 
+    func validateFH6IndependentValidationReviewPacket(
+        data: Data,
+        displayedTune: TuneResult,
+        savedTuneID: UUID
+    ) throws -> FH6IndependentValidationReviewPacket {
+        try FH6IndependentValidationReviewPacketReceiver()
+            .validate(
+                data: data,
+                displayedTune: displayedTune,
+                savedTuneID: savedTuneID,
+                in: modelContext.container
+            )
+    }
+
     func recordFH6CommunityReferenceTrial(
         _ capture: FH6CommunityReferenceTrialCapture,
         for tune: TuneResult,
@@ -1130,5 +1144,59 @@ enum ContentWorkflowError: LocalizedError {
         case .missingFirstPartyValidation:
             "Record a valid first-party test drive for this exact current tune before starting a community comparison."
         }
+    }
+}
+
+@MainActor
+struct FH6IndependentValidationReviewPacketReceiver {
+    func validate(
+        data: Data,
+        displayedTune: TuneResult,
+        savedTuneID: UUID,
+        in container: ModelContainer
+    ) throws -> FH6IndependentValidationReviewPacket {
+        let readContext = ModelContext(container)
+        var descriptor = FetchDescriptor<SavedTune>(
+            predicate: #Predicate<SavedTune> { tune in
+                tune.id == savedTuneID
+            }
+        )
+        descriptor.fetchLimit = 1
+        descriptor.includePendingChanges = false
+        guard let savedTune = try readContext.fetch(descriptor).first,
+              let persistedTune = savedTune.tuneResult else {
+            throw ContentWorkflowError.missingSavedTune
+        }
+        return try FH6IndependentValidationReviewPacketExporter()
+            .validate(
+                data,
+                candidate: displayedTune,
+                persistedCandidate: persistedTune,
+                isStreaming: false
+            )
+    }
+}
+
+struct FH6IndependentValidationReviewReceiverEligibility {
+    func candidateRevisionFingerprint(
+        candidate: TuneResult,
+        persistedCandidate: TuneResult?,
+        isStreaming: Bool
+    ) -> String? {
+        guard candidate.request.car.game == .fh6,
+              let persistedCandidate,
+              persistedCandidate.request.car.game == .fh6,
+              candidate.id == persistedCandidate.id,
+              candidate.generatedAt == persistedCandidate.generatedAt,
+              case .success =
+                FirstPartyValidationRecordFactory().eligibility(
+                    for: candidate,
+                    savedTune: persistedCandidate,
+                    isStreaming: isStreaming
+                ) else {
+            return nil
+        }
+        return FirstPartyValidationRecordFactory()
+            .revisionFingerprint(for: candidate)
     }
 }

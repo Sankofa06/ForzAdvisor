@@ -147,16 +147,30 @@ final class CopilotTests: XCTestCase {
         ])
         XCTAssertFalse(beta.cannotSeeUnsavedEdits)
 
-        for context in destinations[3...4].map(\.context) {
-            XCTAssertEqual(context.carDisplayName, "Committed FH6 Car")
-            XCTAssertEqual(context.gameTitle, "FH6")
-            XCTAssertEqual(context.disciplineTitle, "Road")
-            XCTAssertEqual(
-                context.facts.map(\.label),
-                ["Car", "Game", "Discipline", "Unsaved fields"]
-            )
-            XCTAssertTrue(context.cannotSeeUnsavedEdits)
-        }
+        let validationReview = destinations[3].context
+        XCTAssertNil(validationReview.carDisplayName)
+        XCTAssertNil(validationReview.gameTitle)
+        XCTAssertNil(validationReview.disciplineTitle)
+        XCTAssertEqual(
+            validationReview.facts.map(\.label),
+            ["Unsaved fields"]
+        )
+        XCTAssertTrue(
+            validationReview.cannotSeeUnsavedEdits
+        )
+
+        let communityReview = destinations[4].context
+        XCTAssertEqual(
+            communityReview.carDisplayName,
+            "Committed FH6 Car"
+        )
+        XCTAssertEqual(communityReview.gameTitle, "FH6")
+        XCTAssertEqual(communityReview.disciplineTitle, "Road")
+        XCTAssertEqual(
+            communityReview.facts.map(\.label),
+            ["Car", "Game", "Discipline", "Unsaved fields"]
+        )
+        XCTAssertTrue(communityReview.cannotSeeUnsavedEdits)
 
         let research = destinations[5].context
         XCTAssertEqual(research.carDisplayName, "Committed FH5 Car")
@@ -382,6 +396,79 @@ final class CopilotTests: XCTestCase {
         for exclusion in
             StockCatalogContributionPolicy.privacyExclusions {
             XCTAssertTrue(privacy.contains(exclusion), exclusion)
+        }
+    }
+
+    func testFH6ValidationReviewCopilotIsPhaseOnlyPayloadBlindAndActionFree()
+        throws {
+        let context = ModalCopilotDestination
+            .fh6ValidationReview(
+                carDisplayName: "Private Car",
+                gameTitle: "FH6",
+                disciplineTitle: "Road"
+            )
+            .context
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(context)
+            ) as? [String: Any]
+        )
+        XCTAssertEqual(
+            Set(object.keys),
+            ["phase", "cannotSeeUnsavedEdits"]
+        )
+        XCTAssertEqual(
+            context.phase,
+            .fh6ValidationReview
+        )
+
+        let engine = CopilotEngine()
+        for intent in CopilotIntent.allCases {
+            XCTAssertNil(
+                engine.response(to: intent, in: context).action,
+                intent.rawValue
+            )
+        }
+
+        let next = engine.response(
+            to: .nextStep,
+            in: context
+        ).message
+        for fragment in [
+            "transiently inspect",
+            "cannot see the pasted JSON",
+            "accepted evidence counts",
+            "permission identifiers",
+            "fingerprints",
+            "cannot validate, clear, import, save, apply, rank, or promote"
+        ] {
+            XCTAssertTrue(
+                next.localizedCaseInsensitiveContains(fragment),
+                fragment
+            )
+        }
+
+        let privacy = engine.response(
+            to: .privacy,
+            in: context
+        ).message
+        for fragment in [
+            "only the FH6 Validation Review phase",
+            "cannot see pasted JSON",
+            "accepted evidence counts",
+            "permission identifiers",
+            "candidate bindings",
+            "packet fingerprints",
+            "inspection status",
+            "does not call a model or network service",
+            "does not",
+            "offer an action",
+            "cannot validate, clear, import, save, apply, score, rank, or promote"
+        ] {
+            XCTAssertTrue(
+                privacy.localizedCaseInsensitiveContains(fragment),
+                fragment
+            )
         }
     }
 

@@ -4,6 +4,7 @@
 //
 
 import CryptoKit
+import SwiftData
 import XCTest
 @testable import forzadvisor
 
@@ -52,6 +53,162 @@ final class FH6IndependentValidationReviewPacketTests:
         XCTAssertTrue(
             first.packet.independentHumanReviewRequired
         )
+    }
+
+    @MainActor
+    func testReceiverAvailabilityDoesNotRequireLocalEvidence()
+        async throws {
+        let fixture = try await makeFixture()
+        let eligibility =
+            FH6IndependentValidationReviewReceiverEligibility()
+
+        XCTAssertEqual(
+            eligibility.candidateRevisionFingerprint(
+                candidate: fixture.tune,
+                persistedCandidate: fixture.tune,
+                isStreaming: false
+            ),
+            FirstPartyValidationRecordFactory()
+                .revisionFingerprint(for: fixture.tune)
+        )
+        XCTAssertNil(
+            eligibility.candidateRevisionFingerprint(
+                candidate: fixture.tune,
+                persistedCandidate: fixture.tune,
+                isStreaming: true
+            )
+        )
+        var stale = fixture.tune
+        stale.generatedAt =
+            fixture.tune.generatedAt.addingTimeInterval(1)
+        XCTAssertNil(
+            eligibility.candidateRevisionFingerprint(
+                candidate: stale,
+                persistedCandidate: fixture.tune,
+                isStreaming: false
+            )
+        )
+        XCTAssertThrowsError(
+            try FH6IndependentValidationReviewPacketExporter()
+                .makeArtifact(
+                    candidate: fixture.tune,
+                    persistedCandidate: fixture.tune,
+                    isStreaming: false,
+                    firstPartyTestDrives: [],
+                    localCommunityOutcomes: [],
+                    reviewedCommunityOutcomes: []
+                )
+        ) {
+            XCTAssertEqual(
+                $0 as?
+                    FH6IndependentValidationReviewPacketError,
+                .missingFirstPartyTestDrive
+            )
+        }
+    }
+
+    @MainActor
+    func testReceiverRefetchesPersistedCandidateAndNeverMutatesIt()
+        async throws {
+        let fixture = try await makeFixture()
+        let artifact = try packet(
+            fixture: fixture,
+            extraCommunity: []
+        )
+        let container = try ModelContainer(
+            for: SavedTune.self,
+            configurations:
+                ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        let writer = ModelContext(container)
+        writer.autosaveEnabled = false
+        let savedTune = try SavedTune(tune: fixture.tune)
+        writer.insert(savedTune)
+        try savedTune.appendValidationRecord(
+            fixture.validation
+        )
+        try savedTune.appendFH6CommunityReferenceTrialRecord(
+            fixture.community
+        )
+        try writer.save()
+        let before = try persistedContentBytes(savedTune)
+        let receiver =
+            FH6IndependentValidationReviewPacketReceiver()
+
+        var staleDisplayedTune = fixture.tune
+        staleDisplayedTune.generatedAt =
+            fixture.tune.generatedAt.addingTimeInterval(1)
+        XCTAssertThrowsError(
+            try receiver.validate(
+                data: artifact.canonicalJSON,
+                displayedTune: staleDisplayedTune,
+                savedTuneID: savedTune.id,
+                in: container
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as?
+                    FH6IndependentValidationReviewPacketError,
+                .ineligibleCandidate
+            )
+        }
+
+        var changedPersistedTune = fixture.tune
+        changedPersistedTune.generatedAt =
+            fixture.tune.generatedAt.addingTimeInterval(2)
+        try savedTune.update(with: changedPersistedTune)
+        XCTAssertEqual(
+            savedTune.tuneResult,
+            changedPersistedTune
+        )
+        XCTAssertTrue(writer.hasChanges)
+
+        XCTAssertEqual(
+            try receiver.validate(
+                data: artifact.canonicalJSON,
+                displayedTune: fixture.tune,
+                savedTuneID: savedTune.id,
+                in: container
+            ),
+            artifact.packet
+        )
+        XCTAssertEqual(
+            savedTune.tuneResult,
+            changedPersistedTune
+        )
+        XCTAssertTrue(writer.hasChanges)
+
+        let verificationContext = ModelContext(container)
+        let savedTuneID = savedTune.id
+        var descriptor = FetchDescriptor<SavedTune>(
+            predicate: #Predicate<SavedTune> { tune in
+                tune.id == savedTuneID
+            }
+        )
+        descriptor.includePendingChanges = false
+        let verifiedSavedTune = try XCTUnwrap(
+            verificationContext.fetch(descriptor).first
+        )
+        XCTAssertEqual(
+            try persistedContentBytes(verifiedSavedTune),
+            before
+        )
+
+        try writer.save()
+        XCTAssertThrowsError(
+            try receiver.validate(
+                data: artifact.canonicalJSON,
+                displayedTune: fixture.tune,
+                savedTuneID: savedTune.id,
+                in: container
+            )
+        ) {
+            XCTAssertEqual(
+                $0 as?
+                    FH6IndependentValidationReviewPacketError,
+                .ineligibleCandidate
+            )
+        }
     }
 
     func testPermissionBoundReviewedCommunityOutcomeCanQualify()
@@ -1143,6 +1300,31 @@ final class FH6IndependentValidationReviewPacketTests:
             $0.firstPartyTestDrive?.permissionReceiptID
                 ?? $0.communityOutcome?.permissionReceiptID
         })
+    }
+
+    @MainActor
+    private func persistedContentBytes(
+        _ savedTune: SavedTune
+    ) throws -> [Data] {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
+        return [
+            try encoder.encode(
+                XCTUnwrap(savedTune.tuneResult)
+            ),
+            try encoder.encode(
+                savedTune.allFirstPartyValidationRecords()
+            ),
+            try encoder.encode(
+                savedTune
+                    .allFH6CommunityReferenceTrialRecords()
+            ),
+            try encoder.encode(
+                savedTune
+                    .allFH6CommunityOutcomeReviewEntries()
+            )
+        ]
     }
 
     private func canonicalJSON(

@@ -58,6 +58,10 @@ struct TuneResultView: View {
         (() throws -> String)?
     let fh6IndependentValidationPreparedInputStateFingerprint:
         String?
+    let onValidateFH6IndependentValidationReviewPacket:
+        ((Data) throws -> FH6IndependentValidationReviewPacket)?
+    let fh6IndependentValidationReceiverCandidateFingerprint:
+        String?
     let fh6CommunityReferenceTrialRecords:
         [FH6CommunityReferenceTrialRecord]
     let fh6AccuracyEvidenceChain:
@@ -326,6 +330,10 @@ struct TuneResultView: View {
                         onPrepareFH6IndependentValidationReviewPacket,
                     preparedInputStateFingerprint:
                         fh6IndependentValidationPreparedInputStateFingerprint,
+                    onValidateIndependentReviewPacket:
+                        onValidateFH6IndependentValidationReviewPacket,
+                    receiverCandidateRevisionFingerprint:
+                        fh6IndependentValidationReceiverCandidateFingerprint,
                     communityReferenceRecords:
                         fh6CommunityReferenceTrialRecords,
                     accuracyEvidenceChain:

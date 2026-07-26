@@ -505,7 +505,9 @@ struct CopilotEngine {
         case .betaValidationMissions:
             return unsavedEditsMessage("Choose an available mission in the underlying screen when you are ready to collect first-party validation evidence.")
         case .fh6ValidationReview:
-            return unsavedEditsMessage("Review the saved FH6 validation entries and use the underlying screen to validate any permission-bound import.")
+            return unsavedEditsMessage(
+                "Use the underlying screen to review saved FH6 validation entries, validate a permission-bound session import, or transiently inspect a shared Independent Validation Review Packet. Copilot cannot see the pasted JSON, accepted evidence counts, permission identifiers, or fingerprints, and it cannot validate, clear, import, save, apply, rank, or promote anything."
+            )
         case .fh6CommunityOutcomeReview:
             return unsavedEditsMessage("Review the local community comparison outcomes and use the underlying screen to validate any permission-bound import.")
         case .fh5ResearchReview:
@@ -591,7 +593,9 @@ struct CopilotEngine {
         case .betaValidationMissions:
             return unsavedEditsMessage("The underlying mission list shows which validation prerequisites are still missing.")
         case .fh6ValidationReview:
-            return unsavedEditsMessage("The underlying review identifies missing JSON validation, tune matching, direct receipt, or permission confirmation.")
+            return unsavedEditsMessage(
+                "The underlying review identifies missing JSON validation, exact current saved-candidate matching, direct receipt, or permission confirmation. Shared packet inspection is separate and transient."
+            )
         case .fh6CommunityOutcomeReview:
             return unsavedEditsMessage("The underlying review identifies missing source, permission, candidate match, or outcome validation.")
         case .fh5ResearchReview:
@@ -607,6 +611,9 @@ struct CopilotEngine {
                 StockCatalogContributionPolicy.privacyExclusions
                     .joined(separator: ", ")
             return "Copilot receives only the Stock Catalog Contribution phase. It has no access to draft values, field or record counts, pasted or canonical JSON, permission state, or contribution payloads. It does not call a model or network service, save a transcript, or offer an action. Contributions stay local until you explicitly share their canonical export. That export excludes: \(exclusions). Sharing does not alter the catalog or tuning. Copilot cannot see unsaved field edits."
+        }
+        if context.phase == .fh6ValidationReview {
+            return "Copilot receives only the FH6 Validation Review phase. It cannot see pasted JSON, accepted evidence counts, permission identifiers, candidate bindings, packet fingerprints, or inspection status. It does not call a model or network service, save a transcript, or offer an action. It cannot validate, clear, import, save, apply, score, rank, or promote a packet or tune. Copilot cannot see unsaved field edits."
         }
         let editBoundary = context.cannotSeeUnsavedEdits
             ? " It cannot see unsaved field edits in the underlying form."

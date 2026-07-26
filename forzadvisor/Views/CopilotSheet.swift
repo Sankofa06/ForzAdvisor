@@ -41,7 +41,8 @@ enum ModalCopilotDestination: Sendable {
 
     var context: CopilotContext {
         switch self {
-        case .settings, .stockCatalogContribution:
+        case .settings, .stockCatalogContribution,
+                .fh6ValidationReview:
             phaseOnlyContext(cannotSeeUnsavedEdits: true)
         case .betaMissions(let savedSetupCount):
             CopilotContext(
@@ -54,12 +55,7 @@ enum ModalCopilotDestination: Sendable {
                 projection: nil,
                 cannotSeeUnsavedEdits: false
             )
-        case .fh6ValidationReview(
-            let carDisplayName,
-            let gameTitle,
-            let disciplineTitle
-        ),
-        .fh6CommunityOutcomeReview(
+        case .fh6CommunityOutcomeReview(
             let carDisplayName,
             let gameTitle,
             let disciplineTitle
