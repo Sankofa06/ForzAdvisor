@@ -2,6 +2,8 @@
 
 ForzAdvisor helps racing-game players generate, save, copy, and adjust tuning setups from confirmed car details.
 
+Stock Catalog Contribution can prepare a canonical maintainer review packet from complete permission-bound reviewed observations after explicit confirmation. The user-initiated packet preserves exact FH5/FH6 build, platform, facts, and field observation screens; excludes raw contribution JSON and administrative IDs; quarantines replays and conflicts; and compares read-only with the bundled catalog. It never selects sources, verification status, catalog identity, or a winning value and cannot change the catalog or tuning.
+
 ## Common Questions
 
 ### Do I need an account?

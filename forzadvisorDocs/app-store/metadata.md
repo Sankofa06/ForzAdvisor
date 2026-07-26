@@ -22,6 +22,8 @@ Start from the searchable FH5/FH6 stock-car catalog, take a photo, import a scre
 
 Stock Catalog Contribution records direct in-game, untouched-stock facts for an exact FH5 or FH6 build in a separate local workspace without changing the catalog or a tune. Optional canonical JSON handoff requires explicit authorship and structured-fact reuse, curation, and redistribution permissions. Received observations remain collection-only matches, conflicts, or exclusions—not verified catalog entries.
 
+After explicit confirmation, a reviewer can prepare a canonical maintainer packet for separate human curation. It preserves exact build, platform, facts, and field-level observation screens; omits raw contribution JSON and administrative IDs; quarantines replayed or conflicting evidence; and compares facts read-only with the current bundle. The packet does not choose sources, verification status, a catalog ID, or a winning value and cannot modify the catalog or tuning.
+
 Its toolbar Copilot provides local, phase-only guidance without reading drafts, JSON, permissions, identifiers, or fingerprints; using a model or network; performing actions; approving contributions; or activating tuning.
 
 For FH6, choose road, drift, drag, dirt, cross-country, or touge and generate a menu-order setup across the tuning controls supported by the verified build evidence. FH6 formulas remain experimental, and settings that do not pass local capability, range, and provenance checks are withheld.
@@ -84,6 +86,8 @@ For FH6 Community Outcome Review, save an eligible exact-build tune, receive a c
 
 For Stock Catalog Contribution, open the UserDefaults-backed catalog contribution workspace and enter every FH5 or FH6 identity and stock field from one exact game build. Confirm the direct in-game and untouched-stock attestations for every field. Local save works without reuse permission. Canonical JSON export requires explicit authorship, deidentified reuse, catalog-curation, and redistribution permissions; import requires separate direct-receipt and rights confirmation. The workspace is separate from Saved Tunes and the bundled catalog and cannot change tuning or readiness.
 
+To test the maintainer handoff, import at least one complete permission-bound contribution, confirm independent source review, and prepare the packet. The share action is user initiated. Matching observations stay grouped; conflicting stock variants are quarantined together; administrative replays are excluded. Existing bundle IDs may appear only as read-only comparison references. The packet never proposes source URLs, verification status, a catalog ID or revision, and does not edit the bundle.
+
 The contribution workspace toolbar also opens a dedicated Copilot. Its guidance is local, deterministic, phase-only, and action-free. It cannot inspect the selected game, draft values, local or review counts, pasted or exported JSON, permission choices, payloads, identifiers, or fingerprints. It explains exact untouched-stock identity, build, platform, all required facts and per-field source attestations, personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. It remains collection-only and never approves or changes the catalog or activates tuning.
 
 No account or API key is required. FH5 build planning is local and does not use the provider selected in Settings. For an FH6 numeric result, select an FH6 catalog car or use manual entry. Camera access is optional and only used for on-device OCR; photo import uses the system picker. Optional on-device AI and user-key Anthropic API modes apply to FH6 generation.
@@ -92,14 +96,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.26.0
-- Current project build: 51
+- Current project version: 1.27.0
+- Current project build: 52
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Beta Missions now includes a public-only FH6 Community Research invitation that explains the exact Test Drive, A-B-B-A comparison, permission-bound export, and matching review handoff without attaching local evidence.
+Stock Catalog Contribution can now prepare a privacy-bounded maintainer review packet for separate human curation, with deterministic conflict and replay quarantine and no automatic catalog changes.
 
 ## Export Compliance Notes
 

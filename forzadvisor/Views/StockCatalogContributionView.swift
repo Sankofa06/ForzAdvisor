@@ -33,6 +33,8 @@ struct StockCatalogContributionView: View {
     @State private var pastedJSON = ""
     @State private var reviewConfirmations =
         StockCatalogReviewConfirmationState()
+    @State private var maintainerReviewConfirmed = false
+    @State private var preparedMaintainerPacket: String?
     @State private var statusMessage: String?
 
     init(
@@ -63,6 +65,7 @@ struct StockCatalogContributionView: View {
             capturedSection
             importSection
             reviewedSection
+            maintainerReviewSection
 
             Section("Collection-Only Boundary") {
                 Text(
@@ -349,6 +352,48 @@ struct StockCatalogContributionView: View {
         .forzAdvisorRowBackground()
     }
 
+    private var maintainerReviewSection: some View {
+        Section("Maintainer Review Packet") {
+            Text(
+                "Prepare a canonical evidence packet from the reviewed queue for separate human catalog curation. It omits submission and local review identifiers, never chooses sources or verification status, and cannot add or change a car."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            Toggle(
+                "I understand this requires independent source review",
+                isOn: $maintainerReviewConfirmed
+            )
+            .accessibilityIdentifier(
+                "confirmStockCatalogMaintainerReview"
+            )
+
+            Button("Prepare Maintainer Review Packet") {
+                prepareMaintainerReviewPacket()
+            }
+            .disabled(
+                snapshot.reviewed.isEmpty
+                    || !maintainerReviewConfirmed
+            )
+            .accessibilityIdentifier(
+                "prepareStockCatalogMaintainerReview"
+            )
+
+            if let preparedMaintainerPacket {
+                ShareLink(item: preparedMaintainerPacket) {
+                    Label(
+                        "Share Maintainer Review Packet",
+                        systemImage: "square.and.arrow.up"
+                    )
+                }
+                .accessibilityIdentifier(
+                    "shareStockCatalogMaintainerReview"
+                )
+            }
+        }
+        .forzAdvisorRowBackground()
+    }
+
     private func saveContribution() {
         let capturedAt = Date()
         guard let year = Int(year),
@@ -454,6 +499,7 @@ struct StockCatalogContributionView: View {
             snapshot.reviewed.append(entry)
             if persist(success: dispositionMessage(entry.disposition)) {
                 reviewConfirmations.reset()
+                invalidateMaintainerReviewPacket()
             }
         } catch {
             statusMessage = error.localizedDescription
@@ -469,7 +515,43 @@ struct StockCatalogContributionView: View {
         snapshot.reviewed.removeAll { $0.id == id }
         snapshot.reviewed = StockCatalogContributionReviewQueue
             .reclassify(snapshot.reviewed).entries
-        persist(success: "Deleted the reviewed contribution.")
+        if persist(success: "Deleted the reviewed contribution.") {
+            invalidateMaintainerReviewPacket()
+        }
+    }
+
+    private func prepareMaintainerReviewPacket() {
+        guard maintainerReviewConfirmed else {
+            statusMessage =
+                "Confirm independent source review before preparing a packet."
+            return
+        }
+        do {
+            let catalog = try BundledCarCatalog.load().get()
+            let artifact =
+                try StockCatalogMaintainerReviewPacketExporter()
+                .makeArtifact(
+                    reviewedEntries: snapshot.reviewed,
+                    baseCatalog: catalog
+                )
+            guard let packet = String(
+                data: artifact.canonicalJSON,
+                encoding: .utf8
+            ) else {
+                throw StockCatalogMaintainerReviewPacketError.invalidJSON
+            }
+            preparedMaintainerPacket = packet
+            statusMessage =
+                "Prepared \(artifact.packet.candidates.count) candidate group(s) and \(artifact.packet.conflicts.count) conflict group(s); excluded \(artifact.packet.excludedObservationCount) observation(s). No catalog or tune changed."
+        } catch {
+            preparedMaintainerPacket = nil
+            statusMessage = error.localizedDescription
+        }
+    }
+
+    private func invalidateMaintainerReviewPacket() {
+        preparedMaintainerPacket = nil
+        maintainerReviewConfirmed = false
     }
 
     @discardableResult

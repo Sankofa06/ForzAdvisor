@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.27.0 (Build 52) - 2026-07-25
+
+- Adds a canonical, user-initiated maintainer review packet for permission-bound Stock Catalog Contributions.
+- Preserves exact FH5/FH6 build and platform evidence while quarantining conflicts and replayed administrative identifiers.
+- Compares candidates read-only with the current bundled catalog and requires independent human source review; it never creates, approves, or changes a catalog entry or tune.
+
 ## Version 1.26.0 (Build 51) - 2026-07-25
 
 - Binds every exact Upgrade Lab purchase path to a complete permitted local observation for the same known game build.
