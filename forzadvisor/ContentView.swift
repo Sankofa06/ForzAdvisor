@@ -19,6 +19,8 @@ struct ContentView: View {
     @State var errorRecovery: ErrorRecovery?
     @State var rootSheet: RootSheet?
     @State var catalogResult = BundledCarCatalog.load()
+    @State var firstSavedSetupCopilotHandoff =
+        FirstSavedSetupCopilotHandoffState()
     @StateObject var tuneWorkflow = TuneWorkflowController()
 
     let keychainStore = KeychainStore()
@@ -37,7 +39,10 @@ struct ContentView: View {
                             cancelActiveTuneWork()
                             step = .newTune
                         },
-                        onOpenTune: open,
+                        onOpenTune: { savedTune in
+                            firstSavedSetupCopilotHandoff.consume()
+                            open(savedTune)
+                        },
                         onDeleteTune: delete,
                         betaMissionCount:
                             missionBoard.progress.availableMissionCount,
@@ -457,6 +462,8 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        firstSavedSetupCopilotHandoff
+                            .prepareForCopilotPresentation()
                         rootSheet = .copilot
                     } label: {
                         Image(systemName: "sparkles")
@@ -889,16 +896,34 @@ struct ContentView: View {
             thumbnailData: resolvedThumbnailData,
             adjustmentChanges: adjustmentChanges,
             activeFeedback: tuneWorkflow.activeFeedback(for: resolvedSavedTuneID),
+            showsFirstSavedSetupCopilotHandoff:
+                firstSavedSetupCopilotHandoff.isPresented(
+                    for: resolvedSavedTuneID
+                ),
+            onContinueFirstSavedSetupWithCopilot: {
+                firstSavedSetupCopilotHandoff
+                    .prepareForCopilotPresentation()
+                rootSheet = .copilot
+            },
+            onDismissFirstSavedSetupCopilotHandoff: {
+                firstSavedSetupCopilotHandoff.consume()
+            },
             onDone: {
+                firstSavedSetupCopilotHandoff.consume()
                 cancelActiveTuneWork()
                 step = .home
             },
             onSave: {
+                let wasGarageEmpty = savedTunes.isEmpty
                 if let savedTuneID = save(
                     tune,
                     playerNotes: resolvedPlayerNotes,
                     thumbnailData: resolvedThumbnailData
                 ) {
+                    firstSavedSetupCopilotHandoff.recordSaveResult(
+                        savedTuneID: savedTuneID,
+                        wasGarageEmpty: wasGarageEmpty
+                    )
                     step = .result(
                         tune,
                         savedTuneID: savedTuneID,

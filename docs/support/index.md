@@ -26,6 +26,10 @@ No. Camera photos and imported screenshots are processed on device for OCR in th
 
 Tap New Tune, then choose Take Photo, Import Screenshot, or Enter Manually. Confirm the detected or entered car details, choose a discipline, and review the generated tune.
 
+### What happens after I save my first setup?
+
+When a save succeeds from an empty garage, the exact saved result shows a local confirmation with **Continue with Copilot** and **Not Now**. Continue opens the existing contextual Copilot, which evaluates the current saved result and explains its next eligible step. The prompt is transient and one-shot: either choice, Done, opening Copilot another way, or leaving the result dismisses it. It creates no evidence, changes no tune, and adds no analytics or background networking.
+
 ### How do I copy a tune?
 
 Open a generated or saved tune and tap Copy full tune. Individual tune lines can also be copied from their section rows.

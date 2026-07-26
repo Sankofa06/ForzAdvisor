@@ -36,7 +36,7 @@ Exact alternative buy lists require one complete, permitted, one-decision-per-pa
 
 On a saved current FH5 build plan, Copilot can offer one-tap Upgrade Lab only after fresh persisted-plan, plan-only safety, and eligibility checks; Candidate Trial, recorded-observation, and eligible Research Lab guidance take priority.
 
-Save results to a local garage, search by car, filter by discipline, copy eligible settings or plans, and use contextual Copilot guidance throughout the workflow. Beta Missions route eligible saves to exact local tasks for Tune Menu, Research, Outcome, Tire, Upgrade, and Test Drive labs. FH5 Outcome Lab records controlled A-B-B-A calibration evidence without unlocking numeric tuning. Eligible FH6 builds support Guided Refinement, verified build sharing, local Validation Review, permission-bound Community Outcome Review, and preparation or transient receiver inspection of canonical Independent Validation Review Packets for accepted exact-candidate evidence. A valid first-party Test Drive for the exact current candidate is required before any new Community Reference Comparison can be created or saved. Community stages, outcomes, and review packets remain collection-only—not an accuracy score, validation, ranking, recommendation, promotion, or tuning change.
+Save results to a local garage, search by car, filter by discipline, copy eligible settings or plans, and use contextual Copilot guidance throughout the workflow. After the first successful save from an empty garage, a transient local confirmation offers a direct handoff into Copilot for the exact saved result. Beta Missions route eligible saves to exact local tasks for Tune Menu, Research, Outcome, Tire, Upgrade, and Test Drive labs. FH5 Outcome Lab records controlled A-B-B-A calibration evidence without unlocking numeric tuning. Eligible FH6 builds support Guided Refinement, verified build sharing, local Validation Review, permission-bound Community Outcome Review, and preparation or transient receiver inspection of canonical Independent Validation Review Packets for accepted exact-candidate evidence. A valid first-party Test Drive for the exact current candidate is required before any new Community Reference Comparison can be created or saved. Community stages, outcomes, and review packets remain collection-only—not an accuracy score, validation, ranking, recommendation, promotion, or tuning change.
 
 ForzAdvisor runs offline by default. FH5 build plans always stay local. Optional on-device AI can assist FH6 generation when Apple Foundation Models are available, and optional API mode lets advanced users connect their own Anthropic API key for FH6. Screenshots are processed on device for OCR and are not uploaded by ForzAdvisor.
 
@@ -104,12 +104,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.31.0
-- Current project build: 56
+- Current project version: 1.32.0
+- Current project build: 57
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
+
+Your first setup saved from an empty garage now gets a clear local confirmation and a one-tap handoff into contextual Copilot for the exact saved result. The prompt is transient, optional, and adds no analytics or background networking.
 
 Stock Catalog Contribution can now prepare a privacy-bounded maintainer review packet for separate human curation, with deterministic conflict and replay quarantine and no automatic catalog changes.
 

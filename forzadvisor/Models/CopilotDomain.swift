@@ -135,6 +135,31 @@ enum CopilotAction: String, CaseIterable, Codable, Sendable {
     }
 }
 
+struct FirstSavedSetupCopilotHandoffState: Equatable, Sendable {
+    private(set) var savedTuneID: UUID?
+
+    mutating func recordSaveResult(
+        savedTuneID: UUID?,
+        wasGarageEmpty: Bool
+    ) {
+        self.savedTuneID = wasGarageEmpty
+            ? savedTuneID
+            : nil
+    }
+
+    func isPresented(for savedTuneID: UUID?) -> Bool {
+        self.savedTuneID != nil && self.savedTuneID == savedTuneID
+    }
+
+    mutating func consume() {
+        savedTuneID = nil
+    }
+
+    mutating func prepareForCopilotPresentation() {
+        consume()
+    }
+}
+
 struct CopilotCountFact: Codable, Equatable, Sendable {
     let label: String
     let count: Int

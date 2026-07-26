@@ -22,6 +22,10 @@ No. Camera photos and imported screenshots are processed on device for OCR in th
 
 Tap New Tune, then choose Take Photo, Import Screenshot, or Enter Manually. Confirm the detected or entered car details, choose a discipline, and review the generated tune.
 
+### What happens after I save my first setup?
+
+When a save succeeds from an empty garage, the exact saved result shows a local confirmation with **Continue with Copilot** and **Not Now**. Continue opens the existing contextual Copilot, which evaluates the current saved result and explains its next eligible step. The prompt is transient and one-shot: either choice, Done, opening Copilot another way, or leaving the result dismisses it. It creates no evidence, changes no tune, and adds no analytics or background networking.
+
 ### How do Stock Catalog Contributions work?
 
 Stock Catalog Contribution lets you manually record first-party FH5 or FH6 stock facts from an exact game build. It requires a direct in-game, untouched-stock attestation for every identity and stock field, plus English units where relevant. Records stay in a separate local UserDefaults-backed workspace; they are not Saved Tunes, do not edit the bundled catalog, and do not become tuning inputs.

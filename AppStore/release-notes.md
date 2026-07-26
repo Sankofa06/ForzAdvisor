@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.32.0 (Build 57) - 2026-07-25
+
+- Celebrates the first setup saved from an empty garage with a clear local-save confirmation.
+- Adds a one-tap handoff into contextual Copilot so a new tester can discover the current next step for that exact saved result.
+- Keeps the prompt transient and one-shot, with no analytics, networking, evidence creation, tune changes, or hardcoded Lab route.
+
 ## Version 1.31.0 (Build 56) - 2026-07-25
 
 - Adds transient receiver inspection for canonical FH6 Independent Validation Review Packets on any eligible exact current saved candidate.

@@ -17,6 +17,9 @@ struct TuneResultView: View {
     let thumbnailData: Data?
     let adjustmentChanges: [TuneAdjustmentChange]
     let activeFeedback: TuneFeedback?
+    let showsFirstSavedSetupCopilotHandoff: Bool
+    let onContinueFirstSavedSetupWithCopilot: () -> Void
+    let onDismissFirstSavedSetupCopilotHandoff: () -> Void
     let onDone: () -> Void
     let onSave: () -> Void
     let onEdit: () -> Void
@@ -146,6 +149,52 @@ struct TuneResultView: View {
             }
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
+            if showsFirstSavedSetupCopilotHandoff {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label(
+                            "Your first setup is saved locally",
+                            systemImage: "checkmark.circle.fill"
+                        )
+                        .font(.headline)
+                        .foregroundStyle(ForzAdvisorTheme.success)
+
+                        Text(
+                            "Continue with Copilot to see the safest next step for this exact saved result."
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                        Button(
+                            "Continue with Copilot",
+                            action:
+                                onContinueFirstSavedSetupWithCopilot
+                        )
+                        .buttonStyle(.borderedProminent)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier(
+                            "continueFirstSavedSetupWithCopilotButton"
+                        )
+
+                        Button(
+                            "Not Now",
+                            action:
+                                onDismissFirstSavedSetupCopilotHandoff
+                        )
+                        .frame(maxWidth: .infinity)
+                        .accessibilityIdentifier(
+                            "dismissFirstSavedSetupCopilotHandoffButton"
+                        )
+                    }
+                    .padding(.vertical, 4)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(
+                        "firstSavedSetupCopilotHandoffSection"
+                    )
+                }
+                .forzAdvisorRowBackground()
+            }
+
             if let catalogReference = tune.request.car.catalogReference {
                 Section("Catalog Data Origin") {
                     CatalogProvenanceView(
@@ -230,6 +279,11 @@ struct TuneResultView: View {
                 Button(isSaved ? "Saved" : saveButtonTitle, action: onSave)
                     .disabled(isSaved || isAdjusting || isStreaming)
                     .accessibilityIdentifier("saveTuneButton")
+            }
+        }
+        .onDisappear {
+            if showsFirstSavedSetupCopilotHandoff {
+                onDismissFirstSavedSetupCopilotHandoff()
             }
         }
         .alert(

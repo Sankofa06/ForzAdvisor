@@ -9,6 +9,62 @@ import XCTest
 @testable import forzadvisor
 
 final class CopilotTests: XCTestCase {
+    func testFirstSavedSetupHandoffRequiresSuccessfulSaveFromEmptyGarage() {
+        let savedTuneID = UUID()
+        var state = FirstSavedSetupCopilotHandoffState()
+
+        state.recordSaveResult(
+            savedTuneID: nil,
+            wasGarageEmpty: true
+        )
+        XCTAssertFalse(state.isPresented(for: savedTuneID))
+
+        state.recordSaveResult(
+            savedTuneID: savedTuneID,
+            wasGarageEmpty: false
+        )
+        XCTAssertFalse(state.isPresented(for: savedTuneID))
+
+        state.recordSaveResult(
+            savedTuneID: savedTuneID,
+            wasGarageEmpty: true
+        )
+        XCTAssertTrue(state.isPresented(for: savedTuneID))
+    }
+
+    func testFirstSavedSetupHandoffIsExactResultBoundAndConsumable() {
+        let savedTuneID = UUID()
+        var state = FirstSavedSetupCopilotHandoffState()
+        state.recordSaveResult(
+            savedTuneID: savedTuneID,
+            wasGarageEmpty: true
+        )
+
+        XCTAssertTrue(state.isPresented(for: savedTuneID))
+        XCTAssertFalse(state.isPresented(for: UUID()))
+        XCTAssertFalse(state.isPresented(for: nil))
+
+        state.consume()
+        state.consume()
+
+        XCTAssertFalse(state.isPresented(for: savedTuneID))
+        XCTAssertNil(state.savedTuneID)
+    }
+
+    func testPreparingCopilotPresentationConsumesPendingHandoff() {
+        let savedTuneID = UUID()
+        var state = FirstSavedSetupCopilotHandoffState()
+        state.recordSaveResult(
+            savedTuneID: savedTuneID,
+            wasGarageEmpty: true
+        )
+
+        state.prepareForCopilotPresentation()
+
+        XCTAssertFalse(state.isPresented(for: savedTuneID))
+        XCTAssertNil(state.savedTuneID)
+    }
+
     func testParserAcceptsOnlyClosedPhrasesAndExplicitSynonyms() {
         let accepted: [(String, CopilotIntent)] = [
             (" Next step ", .nextStep),
