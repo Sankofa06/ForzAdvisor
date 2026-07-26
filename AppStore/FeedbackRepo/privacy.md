@@ -30,6 +30,10 @@ The separate FH5 Research Partner invite contains only the public TestFlight lin
 
 The separate FH6 Community Research Partner invite is static public copy shared only through a user-initiated system share sheet. It contains no FH6 TestFlight link, local progress or counts, car or tune values, notes, IDs, fingerprints, receipts, JSON, source permalink, publisher, or local state. It adds no recruitment analytics, authentication, background network activity, or share-history recording. Evidence reuse, manual permission-bound Community Outcome export, direct receipt, and Community Outcome Review permissions remain separate explicit decisions. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity.
 
+Stock Catalog Contribution stores manually entered first-party FH5 or FH6 stock observations in a separate UserDefaults-backed local workspace, not in Saved Tunes or the bundled production catalog. Every identity and stock field requires direct in-game and untouched-stock attestation for an exact game build plus English units where relevant. Local save is available without reuse permission. Canonical manual JSON export requires explicit tester authorship, deidentified reuse, catalog-curation, and future bundled redistribution permission; manual import requires the receiver to separately confirm direct receipt and every right. Permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim.
+
+The local review collection uses only Received, Matching, Conflicting, or Excluded states. It never verifies, approves, averages, ranks, or automatically changes a catalog, tune, ruleset, provider, or readiness state. The workflow contains no screenshots, OCR, notes, accounts, device identifiers, location, analytics, network request, or background upload. UUIDs and hashes bind bytes but do not authenticate identity. Local deletion cannot recall JSON already shared.
+
 ## Offline And On-Device Tuning
 
 Offline formula tuning is the default and does not require an account, API key, or network request.
@@ -48,7 +52,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes, local FH6 Community Reference Comparisons, imported FH6 Community Outcome Review entries, and local FH5 Outcome Lab experiments in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, Stock Catalog Contribution observations and reviewed entries, local FH6 Community Reference Comparisons, imported FH6 Community Outcome Review entries, and local FH5 Outcome Lab experiments in the app. Local deletion cannot recall JSON already shared. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

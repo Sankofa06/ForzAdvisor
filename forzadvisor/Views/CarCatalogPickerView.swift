@@ -123,6 +123,24 @@ struct CarCatalogPickerView: View {
             }
             .buttonStyle(.borderedProminent)
             .accessibilityIdentifier("catalogManualEntryButton")
+            NavigationLink {
+                StockCatalogContributionView(
+                    initialGame: selectedGame
+                )
+            } label: {
+                Label(
+                    "Help Expand the Catalog",
+                    systemImage: "car.badge.plus"
+                )
+            }
+            .accessibilityIdentifier(
+                "openStockCatalogContributionFromCatalog"
+            )
+            Text(
+                "This opens a separate first-party research workspace. It does not submit Manual Entry values or create a tune."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .forzAdvisorRowBackground()
     }

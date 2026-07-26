@@ -14,6 +14,8 @@ Camera photos and imported screenshots are processed on device with Apple's Visi
 
 Beta Validation Missions are calculated on device from the eligibility and completion state of saved setups. Mission state is not separately persisted, uploaded, or measured with analytics. Opening a mission only routes you to an existing capture workflow; it does not create an evidence record or tuning claim.
 
+Stock Catalog Contribution can store manually entered first-party FH5 or FH6 stock observations in a separate UserDefaults-backed local workspace. The workspace is not part of Saved Tunes or the bundled production catalog. Every identity and stock field is bound to the exact game build and requires direct in-game and untouched-stock attestations plus English units where relevant. Local save is available without granting reuse rights. These observations do not automatically change a catalog, tune, ruleset, provider, or readiness state.
+
 ## User-Initiated Sharing
 
 On eligible exact-build results, ForzAdvisor can prepare verified build cards and first-party validation JSON locally, then open the iOS system share sheet. Sharing occurs only after you choose a destination, and the app does not record share destinations or history.
@@ -21,6 +23,10 @@ On eligible exact-build results, ForzAdvisor can prepare verified build cards an
 From Beta Validation Missions, ForzAdvisor can prepare an aggregate progress summary containing only counts of saved setups, permission-bound evidence records, setups with exact upgrade paths, and currently available missions. It excludes car names, disciplines, tune values, notes, identifiers, screenshots, JSON, fingerprints, receipts, provider details, and ruleset details. Sharing is user-initiated through the iOS system share sheet.
 
 The separate FH6 Community Research Partner invitation is static public copy shared only after the user opens the system share sheet. It contains no FH6 TestFlight link, local progress or counts, car or tune values, notes, identifiers, fingerprints, receipts, JSON, source permalink, publisher, or local state. ForzAdvisor adds no recruitment analytics, account, authentication, background network activity, or share-history recording. Evidence reuse, manual permission-bound Community Outcome export, direct receipt, and Community Outcome Review permissions remain separate explicit decisions. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity.
+
+Stock Catalog Contribution can manually export canonical structured JSON only after the observer explicitly confirms tester authorship and permits deidentified reuse, catalog curation, and future bundled redistribution of the structured facts. A receiver must separately confirm direct receipt and every right before manually importing the JSON into the local review collection. Permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim. Review states are limited to Received, Matching, Conflicting, and Excluded; they are not verification or approval and are never averaged or ranked. UUIDs and hashes bind structured bytes but do not authenticate identity.
+
+Stock contribution records and exports contain the exact game build, manually entered identity and stock facts, field-level attestations, permission scope, administrative UUIDs, and integrity fingerprints. They contain no screenshots, OCR, notes, accounts, device identifiers, location, tune settings, provider or ruleset data, analytics, or share destination. ForzAdvisor performs no catalog lookup, network request, or background upload for this workflow. Deleting a local contribution or reviewed entry cannot recall JSON already shared.
 
 Validation Review can store exact permission-bound FH6 Test Drive JSON locally with a matching eligible saved setup after the reviewer confirms direct receipt and deidentified reuse permission. UUIDs and hashes bind the reviewed bytes but do not authenticate identity. The separate queue reports only verdicts, handling symptoms, and controlled test conditions. It cannot change the tune, contact a provider, or promote the experimental FH6 ruleset.
 
@@ -56,7 +62,7 @@ ForzAdvisor does not include advertising SDKs, does not include analytics SDKs, 
 
 ## Data Controls
 
-You can delete saved tunes and locally stored validation, FH6 Community Reference Comparison, imported FH6 Community Outcome Review, imported FH6 Validation Review, FH5 Research Lab, imported FH5 Research Review, or FH5 Outcome Lab records in the app. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
+You can delete saved tunes, Stock Catalog Contribution observations and reviewed entries, and locally stored validation, FH6 Community Reference Comparison, imported FH6 Community Outcome Review, imported FH6 Validation Review, FH5 Research Lab, imported FH5 Research Review, or FH5 Outcome Lab records in the app. Deleting local records cannot recall JSON already shared. You can clear the optional Anthropic API key in Settings. You can disable camera access in iOS Settings.
 
 ## Children
 

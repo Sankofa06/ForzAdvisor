@@ -12,6 +12,8 @@ Declared required-reason APIs:
 
 Reason: SwiftUI `@AppStorage` stores app-only preferences such as the selected tune provider mode. The app does not read defaults written by other apps or the system.
 
+Stock Catalog Contribution also uses an app-only UserDefaults-backed workspace for manually entered first-party FH5 and FH6 stock observations and received review entries. It is separate from Saved Tunes and the bundled production catalog. Every field requires exact-build, direct in-game, untouched-stock, and English-units-where-relevant attestation. Local save does not require reuse permission. Canonical manual export requires explicit tester authorship, deidentified reuse, catalog-curation, and future bundled redistribution permission; manual import requires separate confirmation of direct receipt and every right. Permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim.
+
 Declared collected data:
 
 - `NSPrivacyCollectedDataTypeOtherUserContent`
@@ -22,6 +24,8 @@ Declared collected data:
 Reason: optional Anthropic API mode can send reviewed car details, selected discipline, current tune details for adjustments, and player notes to Anthropic to generate or refine a tune. Screenshots and camera photos are processed on device and are not uploaded by the current app code.
 
 The FH6 Community Research Partner invitation is static public copy shared only through a user-initiated system share sheet. It contains no FH6 TestFlight link, local progress or counts, car or tune values, notes, identifiers, fingerprints, receipts, JSON, source permalink, publisher, or local state. It adds no recruitment analytics, account, authentication, background network activity, or share-history recording. Evidence reuse, manual permission-bound Community Outcome export, direct receipt, and Community Outcome Review permissions remain separate explicit decisions. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity.
+
+Every Stock Catalog Contribution field is attested as a direct in-game untouched-stock observation for an exact game build. Review states are limited to Received, Matching, Conflicting, and Excluded; they do not verify or approve a catalog entry and are not averaged or ranked. Contributions cannot automatically change a catalog, tune, ruleset, provider, or readiness state. The workflow stores no screenshots, OCR, notes, accounts, device identifiers, or location and performs no analytics, network request, or background upload. UUIDs and hashes bind bytes but do not authenticate identity. Local deletion cannot recall JSON already shared.
 
 FH5 Research Lab observations are manually entered and stored locally in a separate saved-plan record. The workflow does not contact a tune provider or upload the observation. A complete Upgrade Lab observation locks capture to its exact game build, and only records matching the current saved plan and catalog revision are surfaced or shared. Deidentified structured JSON sharing is off by default and requires explicit per-record permission; its allow-list excludes screenshots, OCR, notes, tune identifiers, generated tune values, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, and share destinations. The public content fingerprint covers only exported semantic fields and does not expose the local integrity fingerprint.
 

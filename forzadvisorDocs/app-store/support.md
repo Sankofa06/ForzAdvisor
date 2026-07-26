@@ -22,6 +22,14 @@ No. Camera photos and imported screenshots are processed on device for OCR in th
 
 Tap New Tune, then choose Take Photo, Import Screenshot, or Enter Manually. Confirm the detected or entered car details, choose a discipline, and review the generated tune.
 
+### How do Stock Catalog Contributions work?
+
+Stock Catalog Contribution lets you manually record first-party FH5 or FH6 stock facts from an exact game build. It requires a direct in-game, untouched-stock attestation for every identity and stock field, plus English units where relevant. Records stay in a separate local UserDefaults-backed workspace; they are not Saved Tunes, do not edit the bundled catalog, and do not become tuning inputs.
+
+You can save a local observation without granting reuse. Canonical JSON export is available only after you explicitly confirm authorship and permit deidentified reuse, catalog curation, and future bundled redistribution of the structured facts. Sharing and importing are manual. A receiver must separately confirm direct receipt and every right before adding the record to the local review collection. The permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim.
+
+Review uses only Received, Matching, Conflicting, or Excluded collection states. It never verifies or approves a catalog entry, averages or ranks observations, or changes the bundled catalog, a tune, ruleset, provider, or readiness state. The workspace contains no screenshots, OCR, notes, accounts, device identifiers, or location, and ForzAdvisor adds no analytics, network request, or background upload. UUIDs and hashes bind structured bytes but do not authenticate identity. You can delete a local observation or reviewed entry, but deletion cannot recall JSON already shared.
+
 ### How do I copy a tune?
 
 Open a generated or saved tune and tap Copy full tune. Individual tune lines can also be copied from their section rows.

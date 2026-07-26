@@ -4,15 +4,15 @@ Last updated: 2026-07-25
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.22.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.23.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.22.0`.
-- Current project build is `47`.
+- Current project version is `1.23.0`.
+- Current project build is `48`.
 - Target device family is iPhone.
 - The reviewed selectable catalog contains three FH5 cars and eight FH6 cars.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
@@ -41,6 +41,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 
 - The app is an unofficial companion tool. Keep the disclaimer in metadata, support, privacy policy, screenshots, and Settings.
 - Do not use official game logos or screenshots without legal clearance.
+- Stock Catalog Contribution stores manually entered first-party FH5/FH6 stock observations in a separate UserDefaults-backed local workspace, not in Saved Tunes or the bundled catalog. Every field requires exact-build, direct in-game, untouched-stock, and English-units-where-relevant attestation. Local save needs no reuse grant; canonical manual export requires explicit tester authorship, deidentified reuse, catalog-curation, and future bundled redistribution permissions, and import requires separate direct-receipt and confirmation of every right. Permission excludes screenshots, artwork, source prose, third-party databases, and tunes and makes no endorsement, ownership, or licensing claim. Collection states are only Received, Matching, Conflicting, or Excluded—never verified, approved, averaged, or ranked. Contributions cannot automatically change a catalog, tune, ruleset, provider, or readiness state; store no screenshots, OCR, notes, accounts, device IDs, or location; and add no analytics, networking, or background upload. UUIDs and hashes do not authenticate identity, and local deletion cannot recall shared JSON.
 - FH5 catalog build planning stays local, does not use numeric formulas or the selected provider, and requires no account or API key.
 - FH5 Research Review stores exact permission-bound JSON locally, does not authenticate observer identity, and cannot promote evidence into numeric tuning or production constraints.
 - FH5 Outcome Lab stores exact-plan, one-variable A-B-B-A experiment evidence locally, requires stock restoration, and cannot register a ruleset or unlock numeric tuning. Generic calibration sharing remains a separate schema-v1 path. Replication-qualified generated candidate trials are explicitly experimental and regenerated against current persisted evidence. A reuse-permitted schema-v2 outcome can leave only after a separate per-share confirmation; import requires an exact locally regenerated candidate and direct-receipt permission, stays in a separate review queue, and cannot affect readiness or numeric output.

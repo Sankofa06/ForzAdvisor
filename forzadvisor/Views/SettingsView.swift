@@ -95,6 +95,26 @@ struct SettingsView: View {
                 }
                 .forzAdvisorRowBackground()
 
+                Section("Catalog Research") {
+                    NavigationLink {
+                        StockCatalogContributionView()
+                    } label: {
+                        Label(
+                            "Help Expand the Catalog",
+                            systemImage: "car.badge.plus"
+                        )
+                    }
+                    .accessibilityIdentifier(
+                        "openStockCatalogContributionFromSettings"
+                    )
+                    Text(
+                        "Collect first-party untouched-stock facts in a separate local review queue. Manual tuning input is never submitted automatically."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .forzAdvisorRowBackground()
+
                 Section("About") {
                     LabeledContent("Version", value: appVersion)
                     Text("ForzAdvisor is an unofficial tuning tool and is not affiliated with or endorsed by Microsoft, Xbox, Turn 10, Playground Games, or the Forza franchise.")

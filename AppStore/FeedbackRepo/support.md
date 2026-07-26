@@ -4,6 +4,14 @@ ForzAdvisor helps racing-game players generate, save, copy, and adjust tuning se
 
 ## Common Questions
 
+### How do Stock Catalog Contributions work?
+
+Stock Catalog Contribution stores manually entered first-party FH5 or FH6 stock observations in a separate local UserDefaults-backed workspace, not in Saved Tunes or the bundled catalog. Every identity and stock field requires direct in-game, untouched-stock confirmation for an exact game build and English units where relevant.
+
+Local save does not require reuse permission. Canonical JSON export requires explicit authorship, deidentified reuse, catalog-curation, and future bundled redistribution permission. Import is manual and requires the receiver to separately confirm direct receipt and every right. Permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim. Review labels records only as Received, Matching, Conflicting, or Excluded; it never verifies, approves, averages, ranks, or automatically changes a catalog, tune, ruleset, provider, or readiness state.
+
+The workflow stores no screenshots, OCR, notes, accounts, device identifiers, or location and adds no analytics, network request, or background upload. UUIDs and hashes bind bytes but do not authenticate identity. Local deletion cannot recall JSON already shared.
+
 ### Do I need an account?
 
 No. ForzAdvisor does not require a ForzAdvisor account.

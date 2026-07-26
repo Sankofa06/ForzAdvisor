@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 1.23.0 (Build 48) - 2026-07-25
+
+- Adds a separate first-party Stock Catalog Contribution workspace for exact-build FH5 and FH6 untouched-stock observations.
+- Requires per-field in-game attestations and explicit authorship, reuse, catalog-curation, and redistribution rights before canonical JSON can be shared or reviewed.
+- Keeps received observations in a local collection-only queue with deterministic duplicate, replay, match, conflict, deletion, and corruption recovery behavior.
+- Never promotes contributed facts into the bundled catalog, changes a tune or ruleset, unlocks readiness, or uploads in the background.
+
 ## Version 1.22.0 (Build 47) - 2026-07-25
 
 - Adds a public-only FH6 Community Research Partners invitation in Beta Missions.
