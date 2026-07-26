@@ -489,7 +489,7 @@ struct ContentView: View {
     }
 
     private var copilotContext: CopilotContext {
-        let sequence = currentFH6CopilotAccuracySequence
+        let sequence = currentCopilotAccuracySequence
         return CopilotContextFactory().make(
             step: step,
             savedTuneCount: savedTunes.count,
@@ -498,7 +498,7 @@ struct ContentView: View {
             fh5ObservationRecorded: currentFH5ObservationRecorded,
             fh5CandidateTrialAvailable:
                 currentFH5CandidateTrialAvailable,
-            fh6ActionsPermitted:
+            workflowActionsPermitted:
                 sequence.hasAuthoritativeSnapshot,
             fh6RecordTestDriveEligible:
                 sequence.action == .openRecordTestDrive,
@@ -508,7 +508,7 @@ struct ContentView: View {
         )
     }
 
-    private var currentFH6CopilotAccuracySequence: (
+    private var currentCopilotAccuracySequence: (
         hasAuthoritativeSnapshot: Bool,
         action: CopilotAction?
     ) {

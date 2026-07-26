@@ -84,6 +84,12 @@ Research Lab appears on an eligible saved FH5 build plan for an untouched stock 
 
 The observation is raw first-party evidence, not a tune, and does not contact a tuning provider or enable numeric FH5 settings. A complete Upgrade Lab observation locks Research Lab to the same exact game build. Observations are shown and shareable only while they match the current saved plan, catalog car, and catalog revision.
 
+### Can Copilot open FH5 Upgrade Lab?
+
+On a saved current FH5 build plan, Copilot can offer one-tap **Open Upgrade Lab** only after it freshly matches the persisted plan, confirms plan-only safety, and rechecks Upgrade Lab eligibility. It preserves the saved tune, thumbnail, and notes. Candidate Trial, recorded-observation, or eligible Research Lab guidance takes priority.
+
+This action does not generate numeric FH5 settings; select, buy, or install parts; predict PI, credits, or performance; call a provider or network; or bypass exact in-game availability.
+
 ### Can I share an FH5 Research Lab observation?
 
 Structured JSON reuse and sharing are off by default for each observation. If you explicitly enable them, the saved plan can open the iOS share sheet for a deidentified allow-listed JSON record. Deleting the local record cannot recall a copy already shared.

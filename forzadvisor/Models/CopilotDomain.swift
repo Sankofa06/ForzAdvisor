@@ -602,8 +602,19 @@ struct CopilotEngine {
               context.phase == .result,
               let projection = context.projection,
               !projection.isStreaming,
-              projection.isSaved == true,
-              projection.resultPurpose == .numericTune,
+              projection.isSaved == true else {
+            return nil
+        }
+        if projection.resultPurpose == .fh5BuildPlan {
+            guard projection.fh5CandidateTrialAvailable != true,
+                  projection.fh5ObservationRecorded != true,
+                  projection.fh5ResearchLabEligible != true,
+                  projection.upgradeLabEligible == true else {
+                return nil
+            }
+            return .openUpgradeLab
+        }
+        guard projection.resultPurpose == .numericTune,
               projection.readyCount > 0 else {
             return nil
         }

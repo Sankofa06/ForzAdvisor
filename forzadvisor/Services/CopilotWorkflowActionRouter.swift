@@ -129,8 +129,19 @@ struct CopilotWorkflowActionRouter {
         savedTuneID: UUID
     ) -> CopilotAction? {
         let tune = snapshot.result.tune
-        guard savedTuneID == tune.id,
-              tune.request.car.game == .fh6,
+        guard savedTuneID == tune.id else {
+            return nil
+        }
+        if tune.request.car.game == .fh5 {
+            guard TuneResultBoundarySanitizer()
+                    .isSafeFH5BuildPlan(tune),
+                  UpgradePartCaptureEligibility()
+                    .snapshot(for: tune) != nil else {
+                return nil
+            }
+            return .openUpgradeLab
+        }
+        guard tune.request.car.game == .fh6,
               tune.purpose == .numericTune,
               let report = tune.projectionReport,
               report.readyCount > 0 else {

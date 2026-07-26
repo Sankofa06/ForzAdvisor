@@ -514,7 +514,7 @@ final class CopilotTests: XCTestCase {
         )
     }
 
-    func testCopilotActionsFailClosedOutsideCompletedEligibleFH6NextStep() {
+    func testCopilotActionsRequireCompletedEligiblePersistedResult() {
         let engine = CopilotEngine()
         let eligible = CopilotProjectionFacts(
             readyCount: 2,
@@ -549,7 +549,7 @@ final class CopilotTests: XCTestCase {
             isSaved: false,
             isStreaming: false
         )
-        let fh5 = CopilotProjectionFacts(
+        let fh5Eligible = CopilotProjectionFacts(
             resultPurpose: .fh5BuildPlan,
             readyCount: 0,
             blockedByStatus: [],
@@ -560,6 +560,42 @@ final class CopilotTests: XCTestCase {
             fh5ResearchLabEligible: false,
             fh5ObservationRecorded: false,
             fh5CandidateTrialAvailable: false,
+            exactUpgradePathCount: 0,
+            isSaved: true,
+            isStreaming: false
+        )
+        let fh5Unsaved = CopilotProjectionFacts(
+            resultPurpose: .fh5BuildPlan,
+            readyCount: 0,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: false,
+            tireLabEligible: false,
+            upgradeLabEligible: true,
+            exactUpgradePathCount: 0,
+            isSaved: false,
+            isStreaming: false
+        )
+        let fh5Streaming = CopilotProjectionFacts(
+            resultPurpose: .fh5BuildPlan,
+            readyCount: 0,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: nil,
+            tireLabEligible: nil,
+            upgradeLabEligible: nil,
+            exactUpgradePathCount: nil,
+            isSaved: nil,
+            isStreaming: true
+        )
+        let fh5Ineligible = CopilotProjectionFacts(
+            resultPurpose: .fh5BuildPlan,
+            readyCount: 0,
+            blockedByStatus: [],
+            blockedByReason: [],
+            tuneMenuLabEligible: false,
+            tireLabEligible: false,
+            upgradeLabEligible: false,
             exactUpgradePathCount: 0,
             isSaved: true,
             isStreaming: false
@@ -576,8 +612,113 @@ final class CopilotTests: XCTestCase {
         XCTAssertNil(
             engine.defaultResponse(in: resultContext(withheld)).action
         )
+        let fh5Context = resultContext(fh5Eligible)
+        XCTAssertEqual(
+            engine.defaultResponse(in: fh5Context).action,
+            .openUpgradeLab
+        )
+        XCTAssertEqual(
+            engine.response(to: .nextStep, in: fh5Context).action,
+            .openUpgradeLab
+        )
+        XCTAssertTrue(
+            engine.defaultResponse(in: fh5Context)
+                .message.contains("Open Upgrade Lab")
+        )
+        let higherPriorityCases: [
+            (
+                facts: CopilotProjectionFacts,
+                expectedCopy: String
+            )
+        ] = [
+            (
+                CopilotProjectionFacts(
+                    resultPurpose: .fh5BuildPlan,
+                    readyCount: 0,
+                    blockedByStatus: [],
+                    blockedByReason: [],
+                    tuneMenuLabEligible: false,
+                    tireLabEligible: false,
+                    upgradeLabEligible: true,
+                    fh5ResearchLabEligible: true,
+                    fh5ObservationRecorded: true,
+                    fh5CandidateTrialAvailable: true,
+                    exactUpgradePathCount: 0,
+                    isSaved: true,
+                    isStreaming: false
+                ),
+                "experimental FH5 Candidate Trial"
+            ),
+            (
+                CopilotProjectionFacts(
+                    resultPurpose: .fh5BuildPlan,
+                    readyCount: 0,
+                    blockedByStatus: [],
+                    blockedByReason: [],
+                    tuneMenuLabEligible: false,
+                    tireLabEligible: false,
+                    upgradeLabEligible: true,
+                    fh5ResearchLabEligible: true,
+                    fh5ObservationRecorded: true,
+                    fh5CandidateTrialAvailable: false,
+                    exactUpgradePathCount: 0,
+                    isSaved: true,
+                    isStreaming: false
+                ),
+                "raw FH5 stock-menu evidence"
+            ),
+            (
+                CopilotProjectionFacts(
+                    resultPurpose: .fh5BuildPlan,
+                    readyCount: 0,
+                    blockedByStatus: [],
+                    blockedByReason: [],
+                    tuneMenuLabEligible: false,
+                    tireLabEligible: false,
+                    upgradeLabEligible: true,
+                    fh5ResearchLabEligible: true,
+                    fh5ObservationRecorded: false,
+                    fh5CandidateTrialAvailable: false,
+                    exactUpgradePathCount: 0,
+                    isSaved: true,
+                    isStreaming: false
+                ),
+                "Open FH5 Research Lab"
+            )
+        ]
+        for item in higherPriorityCases {
+            let response = engine.defaultResponse(
+                in: resultContext(item.facts)
+            )
+            XCTAssertTrue(
+                response.message.contains(item.expectedCopy)
+            )
+            XCTAssertFalse(
+                response.message.contains("Open Upgrade Lab")
+            )
+            XCTAssertNil(response.action)
+        }
+        for intent in [
+            CopilotIntent.trust, .missing, .privacy
+        ] {
+            XCTAssertNil(
+                engine.response(to: intent, in: fh5Context).action
+            )
+        }
         XCTAssertNil(
-            engine.defaultResponse(in: resultContext(fh5)).action
+            engine.defaultResponse(
+                in: resultContext(fh5Unsaved)
+            ).action
+        )
+        XCTAssertNil(
+            engine.defaultResponse(
+                in: resultContext(fh5Streaming)
+            ).action
+        )
+        XCTAssertNil(
+            engine.defaultResponse(
+                in: resultContext(fh5Ineligible)
+            ).action
         )
         let eligibleContext = resultContext(eligible)
         let missingProjection = CopilotContext(

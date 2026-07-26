@@ -70,6 +70,10 @@ On an eligible saved exact FH6 tune, apply the ForzAdvisor candidate as A and on
 
 Open the separate review from a saved tune's Community Reference Comparisons area or FH6 Validation Review. It accepts only canonical permission-bound comparison JSON for the fresh exact saved candidate. Direct receipt and structured-reuse permission require separate confirmations; hashes and UUIDs bind bytes, not identity. Local and reviewed outcome counts remain collection-only. Duplicates are ignored, conflicts and receipt/session replays are quarantined, and reviewed entries can be deleted. Review never imports source settings, parts, share codes, prose, media, or metrics; changes tuning; creates validation, ranking, or promotion; looks up a source; or uploads in the background.
 
+### Can Copilot open FH5 Upgrade Lab?
+
+On a saved current FH5 build plan, Copilot can offer one-tap **Open Upgrade Lab** only after fresh persisted-plan equality, plan-only safety, and Upgrade Lab eligibility checks. It preserves the tune, thumbnail, and notes; higher-priority Candidate Trial, recorded-observation, or Research Lab guidance suppresses the action. It cannot generate numeric settings, transact parts, predict PI, cost, or performance, call a provider or network, or bypass exact in-game availability.
+
 ### How do I delete a tune?
 
 Open the garage, swipe left on a saved tune, and tap Delete.

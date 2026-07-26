@@ -78,6 +78,12 @@ The observation is raw first-party evidence, not a tune, and it does not enable 
 
 A complete Upgrade Lab observation locks Research Lab to the same exact game build. Saved observations appear and can be shared only while they match the current saved plan, catalog car, and catalog revision.
 
+### Can Copilot open FH5 Upgrade Lab?
+
+On a saved current FH5 build plan, Copilot can offer one-tap **Open Upgrade Lab** only after it freshly matches the persisted plan, confirms plan-only safety, and rechecks Upgrade Lab eligibility. It preserves the saved tune, thumbnail, and notes. Candidate Trial, recorded-observation, or eligible Research Lab guidance takes priority.
+
+This action does not generate numeric FH5 settings; select, buy, or install parts; predict PI, credits, or performance; call a provider or network; or bypass exact in-game availability.
+
 ### What is FH5 Research Review?
 
 On a matching saved FH5 catalog plan, paste an exact Research Lab JSON export into Research Review. The app validates the canonical record, requires confirmation of direct receipt and reuse permission, and stores it locally. It can label exact distinct sessions as replicated raw observations or show exact-value conflicts, but it never averages values, creates a ruleset, or enables numeric FH5 tuning.

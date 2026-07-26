@@ -15,7 +15,7 @@ struct CopilotContextFactory {
         fh5ResearchLabEligible: Bool = false,
         fh5ObservationRecorded: Bool = false,
         fh5CandidateTrialAvailable: Bool = false,
-        fh6ActionsPermitted: Bool = true,
+        workflowActionsPermitted: Bool = true,
         fh6RecordTestDriveEligible: Bool = false,
         fh6CommunityReferenceTrialEligible: Bool = false
     ) -> CopilotContext {
@@ -54,8 +54,8 @@ struct CopilotContextFactory {
                 fh5ObservationRecorded: fh5ObservationRecorded,
                 fh5CandidateTrialAvailable:
                     fh5CandidateTrialAvailable,
-                fh6ActionsPermitted:
-                    fh6ActionsPermitted,
+                workflowActionsPermitted:
+                    workflowActionsPermitted,
                 fh6RecordTestDriveEligible:
                     fh6RecordTestDriveEligible,
                 fh6CommunityReferenceTrialEligible:
@@ -102,7 +102,7 @@ struct CopilotContextFactory {
         fh5ResearchLabEligible: Bool = false,
         fh5ObservationRecorded: Bool = false,
         fh5CandidateTrialAvailable: Bool = false,
-        fh6ActionsPermitted: Bool = true,
+        workflowActionsPermitted: Bool = true,
         fh6RecordTestDriveEligible: Bool = false,
         fh6CommunityReferenceTrialEligible: Bool = false,
         cannotSeeUnsavedEdits: Bool = false
@@ -119,8 +119,8 @@ struct CopilotContextFactory {
                 fh5ObservationRecorded: fh5ObservationRecorded,
                 fh5CandidateTrialAvailable:
                     fh5CandidateTrialAvailable,
-                fh6ActionsPermitted:
-                    fh6ActionsPermitted,
+                workflowActionsPermitted:
+                    workflowActionsPermitted,
                 fh6RecordTestDriveEligible:
                     fh6RecordTestDriveEligible,
                 fh6CommunityReferenceTrialEligible:
@@ -161,7 +161,7 @@ struct CopilotContextFactory {
         fh5ResearchLabEligible: Bool = false,
         fh5ObservationRecorded: Bool = false,
         fh5CandidateTrialAvailable: Bool = false,
-        fh6ActionsPermitted: Bool = true,
+        workflowActionsPermitted: Bool = true,
         fh6RecordTestDriveEligible: Bool = false,
         fh6CommunityReferenceTrialEligible: Bool = false
     ) -> CopilotProjectionFacts? {
@@ -170,23 +170,23 @@ struct CopilotContextFactory {
         }
 
         return CopilotProjectionFacts(
-            resultPurpose: tune.request.car.game == .fh5 ? .fh5BuildPlan : .numericTune,
+            resultPurpose: tune.purpose,
             readyCount: report.readyCount,
             blockedByStatus: statusCounts(in: report),
             blockedByReason: reasonCounts(in: report),
-            tuneMenuLabEligible: isStreaming || !fh6ActionsPermitted
+            tuneMenuLabEligible: isStreaming || !workflowActionsPermitted
                 ? nil
                 : FH6TuneMenuCaptureEligibility().snapshot(
                     for: tune,
                     isStreaming: false
                 ) != nil,
             tireLabEligible:
-                isStreaming || !fh6ActionsPermitted
+                isStreaming || !workflowActionsPermitted
                     ? nil
                     : TirePressureCaptureEligibility()
                         .snapshot(for: tune) != nil,
             upgradeLabEligible:
-                isStreaming || !fh6ActionsPermitted
+                isStreaming || !workflowActionsPermitted
                     ? nil
                     : UpgradePartCaptureEligibility()
                         .snapshot(for: tune) != nil,

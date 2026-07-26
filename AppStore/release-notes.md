@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.24.0 (Build 49) - 2026-07-25
+
+- Makes Copilot's FH5 Upgrade Lab recommendation actionable for eligible saved build plans.
+- Freshly refetches and revalidates the exact persisted plan before routing, while preserving the saved thumbnail and notes.
+- Keeps FH5 strictly plan-only: no numeric tuning, automatic purchases, provider calls, pricing, PI, or performance claims.
+
 ## Version 1.23.0 (Build 48) - 2026-07-25
 
 - Adds a separate first-party Stock Catalog Contribution workspace for exact-build FH5 and FH6 untouched-stock observations.

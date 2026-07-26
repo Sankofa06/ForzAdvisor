@@ -136,20 +136,155 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         )
     }
 
-    func testRouterKeepsFH5UpgradeAdviceNonActionable() throws {
+    @MainActor
+    func testPersistedFH5UpgradeRoutePreservesPayloadAndFailsClosed()
+        throws {
         let tune = try eligibleTune(for: .upgrade, game: .fh5)
-        XCTAssertNotNil(
-            UpgradePartCaptureEligibility().snapshot(for: tune),
-            "The existing FH5 message can still recommend Upgrade Lab."
+        let freshThumbnail = Data("fresh-fh5-thumbnail".utf8)
+        let freshNotes = "Fresh persisted FH5 notes"
+        let directory = FileManager.default.temporaryDirectory
+            .appending(
+                path:
+                    "forzadvisor-copilot-fh5-\(UUID().uuidString)",
+                directoryHint: .isDirectory
+            )
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
         )
-
-        XCTAssertNil(
-            router.destination(
-                for: .openUpgradeLab,
-                from: resultStep(tune),
-                authoritativeSnapshot: actionSnapshot(tune)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let container = try ModelContainer(
+            for: SavedTune.self,
+            configurations: ModelConfiguration(
+                url: directory.appending(path: "store.sqlite")
             )
         )
+        let writer = ModelContext(container)
+        writer.insert(try SavedTune(
+            tune: tune,
+            playerNotes: freshNotes,
+            thumbnailData: freshThumbnail
+        ))
+        try writer.save()
+        let reader = ModelContext(container)
+        let persisted = try XCTUnwrap(
+            reader.fetch(FetchDescriptor<SavedTune>()).first
+        )
+        XCTAssertEqual(persisted.id, tune.id)
+        XCTAssertEqual(persisted.tuneResult, tune)
+        let authoritative = try XCTUnwrap(
+            CopilotPersistedActionSnapshotResolver().resolve(
+                displayedTune: tune,
+                savedTuneID: tune.id,
+                in: reader
+            )
+        )
+        XCTAssertNotNil(
+            UpgradePartCaptureEligibility().snapshot(
+                for: authoritative.result.tune
+            )
+        )
+        XCTAssertEqual(tune.purpose, .fh5BuildPlan)
+        XCTAssertEqual(tune.request.car.game, .fh5)
+        XCTAssertEqual(tune.id, savedTuneID)
+        XCTAssertTrue(
+            TuneResultBoundarySanitizer()
+                .isSafeFH5BuildPlan(tune)
+        )
+        XCTAssertEqual(tune.projectionReport?.readyCount, 0)
+        let destination = try XCTUnwrap(router.destination(
+            for: .openUpgradeLab,
+            from: resultStep(tune),
+            authoritativeSnapshot: authoritative
+        ))
+        assertDestination(
+            destination,
+            route: .upgrade,
+            expectedTune: tune,
+            expectedThumbnailData: freshThumbnail,
+            expectedPlayerNotes: freshNotes
+        )
+
+        let unsaved = WorkflowStep.result(
+            tune,
+            savedTuneID: nil,
+            adjustmentChanges: [],
+            thumbnailData: thumbnailData,
+            playerNotes: playerNotes
+        )
+        XCTAssertNil(router.destination(
+            for: .openUpgradeLab,
+            from: unsaved,
+            authoritativeSnapshot: authoritative
+        ))
+
+        var stale = tune
+        stale.generatedAt.addTimeInterval(1)
+        XCTAssertNil(router.destination(
+            for: .openUpgradeLab,
+            from: resultStep(stale),
+            authoritativeSnapshot: authoritative
+        ))
+
+        var ineligible = tune
+        ineligible.projectionReport?.fields = [
+            readyField(.frontCamber)
+        ]
+        XCTAssertNil(router.destination(
+            for: .openUpgradeLab,
+            from: resultStep(ineligible),
+            authoritativeSnapshot: actionSnapshot(ineligible)
+        ))
+        XCTAssertNil(router.destination(
+            for: .openTireLab,
+            from: resultStep(tune),
+            authoritativeSnapshot: authoritative
+        ))
+
+        var readyForgery = tune
+        readyForgery.projectionReport?.fields[0] =
+            readyField(.frontCamber)
+        assertFH5UpgradeRejected(readyForgery)
+
+        var numericSections = tune
+        numericSections.sections = [TuneSection(
+            title: "Forged numeric output",
+            symbolName: "exclamationmark.triangle",
+            lines: [TuneLine(
+                label: "Front camber",
+                value: "-1.5",
+                unit: "degrees",
+                fieldID: .frontCamber
+            )]
+        )]
+        assertFH5UpgradeRejected(numericSections)
+
+        var providerTagged = tune
+        providerTagged.providerInfo = .direct(.anthropicAPI)
+        assertFH5UpgradeRejected(providerTagged)
+
+        var rulesetTagged = tune
+        rulesetTagged.rulesetReference = try XCTUnwrap(
+            TuneRulesetReference(descriptor: TuneRulesetDescriptor(
+                id: "forged.fh5.copilot",
+                game: .fh5,
+                schemaVersion: 1,
+                algorithmVersion: "forged",
+                knowledgeRevision: "forged",
+                validationStatus: .validated,
+                provenanceIDs: ["forged"]
+            ))
+        )
+        assertFH5UpgradeRejected(rulesetTagged)
+
+        var invalidProjection = tune
+        invalidProjection.projectionReport?.schemaVersion =
+            TuneProjectionReport.currentSchemaVersion + 1
+        assertFH5UpgradeRejected(invalidProjection)
+
+        var staleProjection = tune
+        staleProjection.projectionReport?.snapshotID = UUID()
+        assertFH5UpgradeRejected(staleProjection)
     }
 
     func testExactSequenceRequiresValidationBeforeCommunityAndZeroTrials()
@@ -371,7 +506,7 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
             confirmations = [finalDriveConfirmation]
         }
 
-        return TuneResult(
+        let tune = TuneResult(
             id: savedTuneID,
             request: TuneRequest(
                 car: selection.carInput,
@@ -385,6 +520,8 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
                 ifSnapsOnLift: "",
                 retuneTrigger: ""
             ),
+            generatedAt:
+                Date(timeIntervalSinceReferenceDate: 868),
             purpose: game == .fh5 ? .fh5BuildPlan : .numericTune,
             projectionReport: TuneProjectionReport(
                 schemaVersion: TuneProjectionReport.currentSchemaVersion,
@@ -397,6 +534,9 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
                 diagnostics: []
             )
         )
+        return game == .fh5
+            ? TuneResultBoundarySanitizer().sanitize(tune)
+            : tune
     }
 
     private func eligibleCommunityTune() async throws -> TuneResult {
@@ -488,6 +628,28 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
                 validationCount,
             matchingCommunityTrialCount:
                 communityCount
+        )
+    }
+
+    private func assertFH5UpgradeRejected(
+        _ tune: TuneResult,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertFalse(
+            TuneResultBoundarySanitizer()
+                .isSafeFH5BuildPlan(tune),
+            file: file,
+            line: line
+        )
+        XCTAssertNil(
+            router.destination(
+                for: .openUpgradeLab,
+                from: resultStep(tune),
+                authoritativeSnapshot: actionSnapshot(tune)
+            ),
+            file: file,
+            line: line
         )
     }
 
