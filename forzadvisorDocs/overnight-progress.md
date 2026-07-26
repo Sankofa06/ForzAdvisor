@@ -1,5 +1,37 @@
 # Overnight Progress
 
+## 2026-07-26 Closeout: FH5 Numeric Promotion
+
+### Current State
+
+- `main` is synchronized with `origin/main` at `458cc80` (`Reuse verified Upgrade Lab evidence`).
+- The completed slice reuses explicitly verified Upgrade Lab part availability only for the same unedited catalog car and catalog revision; it does not reuse numeric settings, tire or gear constraints, menu observations, or conflicting evidence.
+- Verification for that slice passed: 59 focused tests, 485 full-suite tests, and a warning-free Release build.
+- App version is 1.35.0 (build 60). Build 60 was not uploaded to TestFlight because exact-build upload approval was not provided.
+- The follow-up FH5 numeric-production audit was read-only and made no code changes.
+
+### Continue With
+
+1. Define a deterministic FH5 numeric-promotion review artifact around the existing clean-room candidate registration, candidate binding, and controlled-outcome evaluator.
+2. Require real, independently reviewed, deidentified outcome records to pass the existing integrity and threshold checks.
+3. Keep `FH5TrustedNumericRulesetRegistry.production` empty until that evidence passes; only then consider a separate reviewed activation slice.
+4. Rerun focused FH5 tests, the full serial headless suite, and a warning-free Release build before versioning or release.
+
+### Relevant Files
+
+- `forzadvisor/Models/FH5NumericReadiness.swift`: experimental registration, production registry, readiness gates, and thresholds.
+- `forzadvisor/Models/FH5ControlledOutcomeEvaluator.swift`: candidate-bound integrity and outcome evaluation.
+- `forzadvisor/Services/FH5CleanRoomDirectionalCandidateGenerator.swift`: one-variable experimental front-pressure candidate.
+- `forzadvisor/ContentView.swift`: current experimental report wiring and production-readiness boundary.
+- `forzadvisorTests/FH5ResearchLabTests.swift`: existing FH5 registration, evaluator, threshold, and candidate coverage.
+
+### Risks / Do Not Redo
+
+- Do not fabricate, seed, or infer qualifying user outcomes from synthetic fixtures, Reddit, YouTube, or unreviewed submissions.
+- Do not register or activate FH5 numeric output merely because the experimental evaluator infrastructure exists.
+- Do not copy numeric/menu constraints through the Upgrade Lab evidence-reuse path.
+- Preserve the protected local `.agent/` and `docs/refs/` paths.
+
 ## 2026-05-20 02:21 PDT
 
 - Built the first local MVP slice: garage home, manual entry, discipline picker, deterministic tune generation, and tune display in Forza tune-menu order.
