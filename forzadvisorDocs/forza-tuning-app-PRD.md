@@ -6,6 +6,16 @@
 **Target ship:** end of build week
 **Architecture summary:** Native iOS shell + Vision (on-device OCR) + Anthropic API (reasoning layer that owns the tuning formulas) + Core Data / SwiftData (local garage). Clean Swift (VIP) architecture with easy to read folder structure and file names. No files should be more than 350 lines, as files approach 200 lines use +extensions to split out feature functionality. Comments at the top of each file should be well maintained and explain what the file does and what other files/functions it talks to and/or talks to it. Unit tests should be created and maintained alongside every function that gets created. As UI and UX elements get implemented or modified, UI tests should be maintained. XCode Tools ARE PREFERRED TO USE. XCODE TOOLS ARE AVAILABLE AND PREFERRED TO USE. things like running tests, building, getting errors and using the issue navigator to get warnings/issues is a requirement.
 
+> **Current direction — 2026-07-26:** This document preserves the original
+> FH6-first v1 concept. The approved product goal now includes both FH5 and
+> FH6, versioned source-attributed catalogs, evidence-backed upgrade paths,
+> deterministic local contextual Copilot, and controlled Tune Lab validation.
+> Where the older FH6-only non-goals or cloud-first provider assumptions
+> conflict with implemented local-first safety boundaries, the current product
+> goal and shipped behavior take precedence. FH5 numeric output remains
+> unavailable until genuine qualifying evidence supports a separately reviewed
+> production ruleset.
+
 -----
 
 ## 1. Problem

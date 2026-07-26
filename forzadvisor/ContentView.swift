@@ -39,6 +39,7 @@ struct ContentView: View {
                             cancelActiveTuneWork()
                             step = .newTune
                         },
+                        onOpenCopilot: presentCopilot,
                         onOpenTune: { savedTune in
                             firstSavedSetupCopilotHandoff.consume()
                             open(savedTune)
@@ -498,11 +499,7 @@ struct ContentView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        firstSavedSetupCopilotHandoff
-                            .prepareForCopilotPresentation()
-                        rootSheet = .copilot
-                    } label: {
+                    Button(action: presentCopilot) {
                         Image(systemName: "sparkles")
                             .frame(minWidth: 44, minHeight: 44)
                     }
@@ -1010,11 +1007,7 @@ struct ContentView: View {
                 firstSavedSetupCopilotHandoff.isPresented(
                     for: resolvedSavedTuneID
                 ),
-            onContinueFirstSavedSetupWithCopilot: {
-                firstSavedSetupCopilotHandoff
-                    .prepareForCopilotPresentation()
-                rootSheet = .copilot
-            },
+            onContinueFirstSavedSetupWithCopilot: presentCopilot,
             onDismissFirstSavedSetupCopilotHandoff: {
                 firstSavedSetupCopilotHandoff.consume()
             },
@@ -1316,6 +1309,11 @@ struct ContentView: View {
                 adjust(tune, savedTuneID: resolvedSavedTuneID, feedback: feedback)
             }
         )
+    }
+
+    private func presentCopilot() {
+        firstSavedSetupCopilotHandoff.prepareForCopilotPresentation()
+        rootSheet = .copilot
     }
 }
 

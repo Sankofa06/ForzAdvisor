@@ -11,6 +11,7 @@ import SwiftUI
 struct GarageHomeView: View {
     let savedTunes: [SavedTune]
     let onNewTune: () -> Void
+    let onOpenCopilot: () -> Void
     let onOpenTune: (SavedTune) -> Void
     let onDeleteTune: (SavedTune) -> Void
     let betaMissionCount: Int
@@ -57,6 +58,38 @@ struct GarageHomeView: View {
                 .accessibilityIdentifier("newTuneButton")
                 .buttonStyle(.plain)
                 .listRowBackground(ForzAdvisorTheme.heroRowBackground)
+
+                Button(action: onOpenCopilot) {
+                    HStack(spacing: 14) {
+                        ForzAdvisorIcon(
+                            systemName: "sparkles",
+                            tint: ForzAdvisorTheme.accent,
+                            size: 42
+                        )
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Ask Copilot")
+                                .font(.headline)
+                            Text("Get the safest next step for this screen.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.vertical, 8)
+                }
+                .accessibilityIdentifier("garageCopilotButton")
+                .accessibilityLabel("Ask Copilot")
+                .accessibilityHint(
+                    "Opens local contextual guidance for the current screen."
+                )
+                .buttonStyle(.plain)
+                .forzAdvisorRowBackground()
             }
 
             Section {

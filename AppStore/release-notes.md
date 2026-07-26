@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.38.0 (Build 63) - 2026-07-26
+
+- Adds an always-visible Ask Copilot entry on Garage Home so contextual guidance is discoverable before the first saved setup.
+- Routes the Garage entry, toolbar button, and first-save continuation through one consistent local presentation path.
+- Keeps Copilot deterministic, payload-blind, action-gated, transcript-free, and independent of analytics or background networking.
+
 ## Version 1.37.0 (Build 62) - 2026-07-26
 
 - Adds explicit preparation and sharing of canonical FH5 Numeric Promotion Review Packets from Candidate Outcome Review.

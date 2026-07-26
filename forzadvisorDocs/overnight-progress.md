@@ -1,36 +1,36 @@
 # Overnight Progress
 
-## 2026-07-26 Closeout: FH5 Promotion Review Workflow
+## 2026-07-26 Closeout: Discoverable Contextual Copilot
 
 ### Current State
 
-- The Candidate Outcome Review now prepares and explicitly shares a canonical FH5 Numeric Promotion Review Packet from freshly refetched committed evidence.
-- A separate transient receiver validates shared canonical JSON against the freshly regenerated exact saved candidate without importing, saving, applying, scoring, ranking, promoting, registering, or activating it.
-- Prepared share state clears when its committed evidence fingerprint changes; accepted receiver state clears when pasted JSON or the internal generated-candidate fingerprint changes.
-- Strict storage decoding, packet size enforcement, payload-blind Copilot guidance, and the empty FH5 production numeric registry remain intact.
-- Verification passed: 105 independent focused tests, 495 full non-UI tests, and a zero-warning Release simulator build on the fixed headless iPhone 17 simulator.
-- App version is 1.37.0 (build 62). Build 62 has not been uploaded to TestFlight because exact-build upload approval was not provided.
+- Garage Home now includes an always-visible, text-labeled Ask Copilot row for both empty and populated garages.
+- The Garage row, existing toolbar entry, and first-save continuation share one presentation helper, preserving the exact pending-handoff semantics and current local context.
+- Copilot remains deterministic, transcript-free, payload-blind, action-gated, and independent of analytics or background networking.
+- The prior FH5 Numeric Promotion Review workflow remains intact and FH5 production numeric output remains disabled.
+- Verification passed: 27 focused Copilot tests, 495 full non-UI tests, and a zero-warning Release simulator build on the fixed headless iPhone 17 simulator.
+- App version is 1.38.0 (build 63). TestFlight upload requires explicit approval for this exact build.
 
 ### Continue With
 
-1. Collect real, independently reviewed, deidentified FH5 outcome records through the existing permission-bound workflow.
-2. Use the new packet surface to hand qualifying evidence to a maintainer for independent review.
-3. Keep `FH5TrustedNumericRulesetRegistry.production` empty until evidence passes and a separate reviewed activation slice is explicitly approved.
-4. Do not treat packet acceptance as accuracy, ranking, production registration, numeric readiness, or activation.
+1. Enable explicit reuse of complete permission-bound capability-only Upgrade Lab observations for another discipline on the exact same unedited catalog car and revision.
+2. Preserve the reused snapshot as capability-only and continue withholding numeric settings until independent Tune Lab constraints are present.
+3. Collect genuine permission-complete catalog observations before attempting the first schema-v2 live catalog addition.
+4. Keep `FH5TrustedNumericRulesetRegistry.production` empty until real evidence passes and a separate reviewed activation slice is explicitly approved.
 
 ### Relevant Files
 
-- `forzadvisor/Models/FH5NumericPromotionReviewPacket.swift`: canonical packet preparation and validation.
-- `forzadvisor/ContentView+Workflow.swift`: committed-state preparation and receiver coordinator.
-- `forzadvisor/Views/FH5CandidateOutcomeReviewView.swift`: explicit prepare/share and transient inspection surfaces.
-- `forzadvisor/Models/CopilotDomain.swift`: packet-blind, action-free review guidance.
-- `forzadvisorTests/FH5ResearchLabTests.swift`: packet, coordinator, receiver, and fail-closed coverage.
+- `forzadvisor/Views/GarageHomeView.swift`: labeled Copilot discovery row.
+- `forzadvisor/ContentView.swift`: shared root Copilot presentation path.
+- `forzadvisor/Models/CopilotDomain.swift`: deterministic contextual guidance and privacy boundaries.
+- `forzadvisor/Services/CatalogUpgradeEvidenceReuseResolver.swift`: next capability-reuse seam.
+- `forzadvisorTests/CopilotTests.swift`: phase, privacy, and action-boundary coverage.
 
 ### Risks / Do Not Redo
 
-- Do not fabricate, seed, or infer qualifying user outcomes from synthetic fixtures, Reddit, YouTube, or unreviewed submissions.
-- Do not register or activate FH5 numeric output merely because a packet validates.
-- Do not persist received packets or expose evidence payloads, permissions, or fingerprints to Copilot.
+- Do not add analytics, remote logging, transcripts, or payload access to measure Copilot discovery.
+- Do not fabricate catalog facts, upgrade availability, or qualifying outcomes from fixtures, Reddit, YouTube, or unreviewed submissions.
+- Do not let capability-only upgrade evidence unlock tire, gear, tuning-menu, constraint, or numeric readiness.
 - Preserve the protected local `.agent/` and `docs/refs/` paths.
 
 ## 2026-05-20 02:21 PDT

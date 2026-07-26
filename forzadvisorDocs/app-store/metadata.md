@@ -106,26 +106,18 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.35.0
-- Current project build: 60
+- Current project version: 1.38.0
+- Current project build: 63
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Verified Upgrade Lab part availability can now be explicitly reused for another discipline on the exact same untouched FH5 or FH6 catalog car. ForzAdvisor shows the recorded build/date, rechecks the saved evidence, rejects conflicts, and carries no numeric tuning constraints.
+Ask Copilot is now visible directly on Garage Home, making the safest local next-step guidance discoverable before you save your first setup.
 
-Catalog Addition Review now creates a deterministic, privacy-bounded schema-v2 full-catalog proposal from an exact current curation preflight after explicit maintainer review. The live catalog remains three FH5 and eight FH6 cars, and the artifact cannot edit the bundle, activate tuning, or establish legal sufficiency.
+The new entry shares the same contextual presentation path as the toolbar and first-save handoff. Copilot remains deterministic, transcript-free, action-gated, and unable to inspect private evidence payloads or tune values.
 
-Your first setup saved from an empty garage now gets a clear local confirmation and a one-tap handoff into contextual Copilot for the exact saved result. The prompt is transient, optional, and adds no analytics or background networking.
-
-Stock Catalog Contribution can now prepare a privacy-bounded maintainer review packet for separate human curation, with deterministic conflict and replay quarantine and no automatic catalog changes.
-
-Catalog Curation Preflight can now prepare a separately reviewable, exact-catalog-bound prospective-addition artifact from two or more matching permission-bound first-party observations without creating or changing a catalog entry.
-
-FH6 Validation Review can now prepare a canonical, exact-candidate-bound packet from accepted Test Drive and Community Outcome public evidence for independent human inspection without making an accuracy or promotion claim.
-
-FH6 Validation Review can now transiently validate and inspect a received canonical review packet against freshly refetched persisted candidate state without importing or saving it.
+FH5 Candidate Outcome Review can also explicitly prepare or transiently inspect canonical Numeric Promotion Review Packets without importing, saving, promoting, registering, or activating numeric tuning.
 
 ## Export Compliance Notes
 
