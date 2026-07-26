@@ -1,36 +1,36 @@
 # Overnight Progress
 
-## 2026-07-26 Closeout: Discoverable Contextual Copilot
+## 2026-07-26 Closeout: Immediate Upgrade Lab Evidence Reuse
 
 ### Current State
 
-- Garage Home now includes an always-visible, text-labeled Ask Copilot row for both empty and populated garages.
-- The Garage row, existing toolbar entry, and first-save continuation share one presentation helper, preserving the exact pending-handoff semantics and current local context.
-- Copilot remains deterministic, transcript-free, payload-blind, action-gated, and independent of analytics or background networking.
-- The prior FH5 Numeric Promotion Review workflow remains intact and FH5 production numeric output remains disabled.
-- Verification passed: 27 focused Copilot tests, 495 full non-UI tests, and a zero-warning Release simulator build on the fixed headless iPhone 17 simulator.
-- App version is 1.38.0 (build 63). TestFlight upload requires explicit approval for this exact build.
+- A complete permission-bound capability-only Upgrade Lab observation can now be explicitly reused for another discipline on the exact same untouched FH5 or FH6 catalog car and revision.
+- The resolver accepts both direct post-Upgrade-Lab capability snapshots and later exact-build observations while preserving identity, build, completeness, permission, conflict, and stale-state checks.
+- Reuse creates a new capability-only snapshot containing only canonical part availability and safe build/date attribution; stock settings, tires, gears, constraints, evidence sources, and numeric readiness remain empty.
+- Both FH5 and FH6 regain three exact minimal purchase paths immediately after reuse. FH5 remains plan-only and FH6 remains zero-ready without Tune Lab constraints.
+- Verification passed: 44 focused tests, 497 full non-UI tests, and a zero-warning Release simulator build on the fixed headless iPhone 17 simulator.
+- App version is 1.39.0 (build 64). TestFlight upload requires explicit approval for this exact build.
 
 ### Continue With
 
-1. Enable explicit reuse of complete permission-bound capability-only Upgrade Lab observations for another discipline on the exact same unedited catalog car and revision.
-2. Preserve the reused snapshot as capability-only and continue withholding numeric settings until independent Tune Lab constraints are present.
-3. Collect genuine permission-complete catalog observations before attempting the first schema-v2 live catalog addition.
+1. Collect genuine permission-complete catalog observations before attempting the first schema-v2 live catalog addition.
+2. Use early testers to compare generated candidates through the existing first-party and community controlled protocols.
+3. Keep FH6 numeric fields withheld until exact Tune Lab constraints are present.
 4. Keep `FH5TrustedNumericRulesetRegistry.production` empty until real evidence passes and a separate reviewed activation slice is explicitly approved.
 
 ### Relevant Files
 
-- `forzadvisor/Views/GarageHomeView.swift`: labeled Copilot discovery row.
-- `forzadvisor/ContentView.swift`: shared root Copilot presentation path.
-- `forzadvisor/Models/CopilotDomain.swift`: deterministic contextual guidance and privacy boundaries.
-- `forzadvisor/Services/CatalogUpgradeEvidenceReuseResolver.swift`: next capability-reuse seam.
-- `forzadvisorTests/CopilotTests.swift`: phase, privacy, and action-boundary coverage.
+- `forzadvisor/Services/CatalogUpgradeEvidenceReuseResolver.swift`: fail-closed source selection and stripped reuse snapshot.
+- `forzadvisor/Models/UpgradePartCapture.swift`: permission-bound direct capability observation.
+- `forzadvisor/Services/TuneControlUpgradePlanner.swift`: deterministic minimal alternative paths.
+- `forzadvisorTests/CatalogUpgradeEvidenceReuseTests.swift`: both-game reuse and adversarial coverage.
+- `forzadvisorTests/UpgradeLabTests.swift`: capture and purchase-path contracts.
 
 ### Risks / Do Not Redo
 
-- Do not add analytics, remote logging, transcripts, or payload access to measure Copilot discovery.
+- Do not treat a capability-only build label as Tire Lab, Research Lab, Tune Menu, or numeric evidence.
 - Do not fabricate catalog facts, upgrade availability, or qualifying outcomes from fixtures, Reddit, YouTube, or unreviewed submissions.
-- Do not let capability-only upgrade evidence unlock tire, gear, tuning-menu, constraint, or numeric readiness.
+- Do not relax conflict handling when capability-only and exact-build sources disagree.
 - Preserve the protected local `.agent/` and `docs/refs/` paths.
 
 ## 2026-05-20 02:21 PDT

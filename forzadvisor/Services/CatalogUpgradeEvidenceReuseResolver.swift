@@ -119,10 +119,15 @@ struct CatalogUpgradeEvidenceReuseResolver {
               car.catalogReference == selection.reference,
               !car.catalogValuesModified,
               let snapshot = tune.request.buildSnapshot,
-              snapshot.kind == .exactBuildObservation,
+              snapshot.kind == .exactBuildObservation
+                || snapshot.kind == .capabilityOnly,
               snapshot.isValid,
               snapshot.matches(car: car),
               snapshot.car == car,
+              sourcePayloadIsValid(
+                snapshot,
+                for: selection
+              ),
               snapshot.capturedAt.timeIntervalSinceReferenceDate
                 .isFinite,
               snapshot.gameBuild.capturedAt
@@ -149,6 +154,25 @@ struct CatalogUpgradeEvidenceReuseResolver {
                 availability: parts.map(\.availability)
             )
         )
+    }
+
+    private func sourcePayloadIsValid(
+        _ snapshot: VehicleBuildSnapshot,
+        for selection: CatalogCarSelection
+    ) -> Bool {
+        guard snapshot.kind == .capabilityOnly else {
+            return snapshot.kind == .exactBuildObservation
+        }
+        return snapshot.capabilityProfile.vehicle
+                == selection.entry.capabilityProfile.vehicle
+            && snapshot.capabilityProfile.drivetrain
+                == selection.entry.stock.drivetrain
+            && snapshot.capabilityProfile.stockAdjustableSettings
+                .isEmpty
+            && snapshot.tireCompound == nil
+            && snapshot.gearCount == nil
+            && snapshot.constraints.isEmpty
+            && snapshot.evidenceSources.isEmpty
     }
 
     private func completeParts(

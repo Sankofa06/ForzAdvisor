@@ -106,18 +106,18 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.38.0
-- Current project build: 63
+- Current project version: 1.39.0
+- Current project build: 64
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Ask Copilot is now visible directly on Garage Home, making the safest local next-step guidance discoverable before you save your first setup.
+Complete Upgrade Lab once on an untouched FH5 or FH6 catalog car, then explicitly reuse that permission-bound part availability when starting another discipline for the same car and catalog revision.
 
-The new entry shares the same contextual presentation path as the toolbar and first-save handoff. Copilot remains deterministic, transcript-free, action-gated, and unable to inspect private evidence payloads or tune values.
+ForzAdvisor rechecks the saved evidence before reuse and restores up to three exact alternative tuning-control purchase paths. Conflicting, incomplete, stale, edited, or untrusted observations remain unavailable.
 
-FH5 Candidate Outcome Review can also explicitly prepare or transiently inspect canonical Numeric Promotion Review Packets without importing, saving, promoting, registering, or activating numeric tuning.
+Only part availability and safe game-build/date attribution carry forward. Tire, gear, tuning-menu, constraint, provider, ruleset, discipline, and numeric-tuning evidence remain independently gated.
 
 ## Export Compliance Notes
 

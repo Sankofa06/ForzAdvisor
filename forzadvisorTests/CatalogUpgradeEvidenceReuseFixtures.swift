@@ -78,6 +78,32 @@ extension CatalogUpgradeEvidenceReuseTests {
         )
     }
 
+    func capabilityOnlySourceSnapshot(
+        for selection: CatalogCarSelection,
+        build: String = "current-build",
+        observedAt: Date? = nil
+    ) throws -> VehicleBuildSnapshot {
+        let date = observedAt ?? Date(
+            timeIntervalSinceReferenceDate: 900
+        )
+        return try UpgradePartCapture(
+            gameBuildVersion: build,
+            parts: TunePartID.allCases.map {
+                .init(partID: $0, status: .offered)
+            },
+            exactStockBuildConfirmed: true,
+            localUsePermitted: true
+        ).verifiedSnapshot(
+            upgrading: selection.capabilityOnlyBuildSnapshot(
+                capturedAt: date
+            ),
+            capturedAt: date,
+            snapshotID: fixedUUID(
+                Int(date.timeIntervalSinceReferenceDate) + 10_000
+            )
+        )
+    }
+
     func tune(
         snapshot: VehicleBuildSnapshot
     ) -> TuneResult {

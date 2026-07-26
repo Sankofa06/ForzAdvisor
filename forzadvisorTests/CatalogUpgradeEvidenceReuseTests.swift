@@ -59,6 +59,64 @@ final class CatalogUpgradeEvidenceReuseTests: XCTestCase {
         )
     }
 
+    func testCapabilityOnlyUpgradeLabSourceOffersImmediateReuseForBothGames()
+        throws {
+        for game in ForzaGame.allCases {
+            let selection = try selection(game: game)
+            let source = try capabilityOnlySourceSnapshot(
+                for: selection
+            )
+
+            XCTAssertEqual(source.kind, .capabilityOnly, game.rawValue)
+            XCTAssertTrue(
+                source.capabilityProfile.stockAdjustableSettings.isEmpty,
+                game.rawValue
+            )
+            XCTAssertNil(source.tireCompound, game.rawValue)
+            XCTAssertNil(source.gearCount, game.rawValue)
+            XCTAssertTrue(source.constraints.isEmpty, game.rawValue)
+            XCTAssertTrue(source.evidenceSources.isEmpty, game.rawValue)
+
+            let offer = try XCTUnwrap(
+                resolver.offer(
+                    for: selection,
+                    savedTunes: [tune(snapshot: source)]
+                ),
+                game.rawValue
+            )
+            let derived = try XCTUnwrap(
+                offer.makeSnapshot(
+                    for: selection,
+                    id: fixedUUID(
+                        game == .fh5 ? 51 : 61
+                    )
+                ),
+                game.rawValue
+            )
+
+            XCTAssertEqual(
+                offer.sourceSnapshotID,
+                source.id,
+                game.rawValue
+            )
+            XCTAssertNotEqual(derived.id, source.id, game.rawValue)
+            XCTAssertEqual(derived.kind, .capabilityOnly, game.rawValue)
+            XCTAssertEqual(
+                derived.capabilityProfile.parts,
+                source.capabilityProfile.parts,
+                game.rawValue
+            )
+            XCTAssertTrue(
+                derived.capabilityProfile.stockAdjustableSettings.isEmpty,
+                game.rawValue
+            )
+            XCTAssertNil(derived.tireCompound, game.rawValue)
+            XCTAssertNil(derived.gearCount, game.rawValue)
+            XCTAssertTrue(derived.constraints.isEmpty, game.rawValue)
+            XCTAssertTrue(derived.evidenceSources.isEmpty, game.rawValue)
+        }
+    }
+
     func testIdenticalDuplicatesChooseNewestDeterministically()
         throws {
         let selection = try selection()
@@ -126,19 +184,12 @@ final class CatalogUpgradeEvidenceReuseTests: XCTestCase {
         edited.request.car.weightPounds += 1
         var manual = tune(snapshot: good)
         manual.request.car.catalogReference = nil
-        var capabilityOnly = good
-        capabilityOnly.kind = .capabilityOnly
-        capabilityOnly.tireCompound = nil
-        capabilityOnly.gearCount = nil
-        capabilityOnly.constraints = []
-        capabilityOnly.evidenceSources = []
         var invalid = good
         invalid.schemaVersion += 1
 
         for rejected in [
             edited,
             manual,
-            tune(snapshot: capabilityOnly),
             tune(snapshot: invalid)
         ] {
             XCTAssertNil(
@@ -164,6 +215,90 @@ final class CatalogUpgradeEvidenceReuseTests: XCTestCase {
                 savedTunes: [tune(snapshot: good)]
             )
         )
+    }
+
+    func testCapabilityOnlySourceRejectsAnyNonPartPayload()
+        throws {
+        let selection = try selection()
+        let baseline = try capabilityOnlySourceSnapshot(
+            for: selection
+        )
+        var variants: [VehicleBuildSnapshot] = []
+
+        var stockSetting = baseline
+        stockSetting.capabilityProfile.stockAdjustableSettings = [
+            StockAdjustableSetting(
+                setting: .alignment,
+                evidence: evidence(build: "current-build")
+            )
+        ]
+        variants.append(stockSetting)
+
+        let provenance = TuneDataProvenance(
+            id: "leaked-global-evidence",
+            game: selection.entry.game,
+            gameBuildVersion: "current-build",
+            scope: .gameGlobal,
+            source: "leaked-menu-source",
+            version: "1",
+            capturedAt: observedAt,
+            confidence: .medium,
+            usagePermission: .permitted
+        )
+        var tire = baseline
+        tire.tireCompound = TireCompoundReference(
+            id: "stock",
+            displayName: "Stock",
+            evidenceIDs: [provenance.id]
+        )
+        tire.evidenceSources = [provenance]
+        variants.append(tire)
+
+        var gears = baseline
+        gears.gearCount = 6
+        variants.append(gears)
+
+        var constraint = baseline
+        constraint.constraints = [
+            TuneFieldConstraint(
+                field: .frontTirePressure,
+                minimum: 15,
+                maximum: 40,
+                step: 0.5,
+                defaultValue: 30,
+                currentValue: 30,
+                unit: .psi,
+                scope: .gameGlobal,
+                verification: .productionEligible,
+                evidenceIDs: [provenance.id]
+            )
+        ]
+        constraint.evidenceSources = [provenance]
+        variants.append(constraint)
+
+        var evidenceSource = baseline
+        evidenceSource.evidenceSources = [provenance]
+        variants.append(evidenceSource)
+
+        var wrongVehicle = baseline
+        wrongVehicle.capabilityProfile.vehicle.model = "Wrong model"
+        variants.append(wrongVehicle)
+
+        var wrongDrivetrain = baseline
+        wrongDrivetrain.capabilityProfile.drivetrain =
+            selection.entry.stock.drivetrain == .awd
+                ? .rwd
+                : .awd
+        variants.append(wrongDrivetrain)
+
+        for variant in variants {
+            XCTAssertNil(
+                resolver.offer(
+                    for: selection,
+                    savedTunes: [tune(snapshot: variant)]
+                )
+            )
+        }
     }
 
     func testIncompleteAndUntrustedPartFactsFailClosed()
@@ -275,7 +410,9 @@ final class CatalogUpgradeEvidenceReuseTests: XCTestCase {
         async throws {
         for game in ForzaGame.allCases {
             let selection = try selection(game: game)
-            let source = try sourceSnapshot(for: selection)
+            let source = try capabilityOnlySourceSnapshot(
+                for: selection
+            )
             let offer = try XCTUnwrap(
                 resolver.offer(
                     for: selection,
@@ -299,12 +436,22 @@ final class CatalogUpgradeEvidenceReuseTests: XCTestCase {
             )
 
             XCTAssertEqual(paths.count, 3, game.rawValue)
+            XCTAssertTrue(generated.sections.isEmpty, game.rawValue)
+            XCTAssertEqual(
+                generated.projectionReport?.readyCount,
+                0,
+                game.rawValue
+            )
             if game == .fh5 {
                 XCTAssertEqual(
                     generated.purpose,
                     .fh5BuildPlan
                 )
-                XCTAssertTrue(generated.sections.isEmpty)
+            } else {
+                XCTAssertEqual(
+                    generated.purpose,
+                    .numericTune
+                )
             }
         }
     }

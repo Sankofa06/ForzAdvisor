@@ -4,15 +4,15 @@ Last updated: 2026-07-26
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.38.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.39.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.38.0`.
-- Current project build is `63`.
+- Current project version is `1.39.0`.
+- Current project build is `64`.
 - Target device family is iPhone.
 - The reviewed selectable catalog contains three FH5 cars and eight FH6 cars.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.

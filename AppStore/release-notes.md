@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.39.0 (Build 64) - 2026-07-26
+
+- Lets players explicitly reuse a complete permission-bound Upgrade Lab observation for another discipline immediately after inspecting the same untouched FH5 or FH6 catalog car.
+- Rechecks the exact catalog identity, revision, game build, every canonical part decision, and local-use evidence before offering reuse.
+- Carries only part availability into a new capability-only snapshot, restoring exact alternative purchase paths without unlocking tuning-menu facts or numeric settings.
+
 ## Version 1.38.0 (Build 63) - 2026-07-26
 
 - Adds an always-visible Ask Copilot entry on Garage Home so contextual guidance is discoverable before the first saved setup.
