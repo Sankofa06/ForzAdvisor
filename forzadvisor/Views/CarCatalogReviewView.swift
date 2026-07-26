@@ -11,8 +11,10 @@ struct CarCatalogReviewView: View {
     static let fh5PlanOnlyMessage = "FH5 uses a provider-independent local build planner. It creates upgrade paths only and does not generate numeric tuning settings."
 
     let selection: CatalogCarSelection
+    let upgradeReuseOffer: CatalogUpgradeEvidenceReuseOffer?
     let onBack: () -> Void
     let onUseCar: () -> Void
+    let onReuseVerifiedParts: (() -> Void)?
     let onEditValues: () -> Void
 
     var body: some View {
@@ -71,10 +73,50 @@ struct CarCatalogReviewView: View {
             }
             .forzAdvisorRowBackground()
 
-            Section {
-                Button("Use This Car", action: onUseCar)
+            if let upgradeReuseOffer,
+               let onReuseVerifiedParts {
+                Section("Previously Verified Upgrade Parts") {
+                    LabeledContent(
+                        "Recorded build",
+                        value: upgradeReuseOffer.buildVersion
+                    )
+                    LabeledContent(
+                        "Observed",
+                        value: upgradeReuseOffer.observedAt.formatted(
+                            date: .abbreviated,
+                            time: .shortened
+                        )
+                    )
+                    Text(
+                        "Reuse only if your game still shows this exact build. This carries forward verified part availability only—not tires, gears, tuning-menu ranges, or numeric constraints."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    Button(
+                        "Reuse Verified Parts",
+                        action: onReuseVerifiedParts
+                    )
                     .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("catalogUseCarButton")
+                    .accessibilityIdentifier(
+                        "catalogReuseVerifiedPartsButton"
+                    )
+                }
+                .forzAdvisorRowBackground()
+            }
+
+            Section {
+                Button(
+                    upgradeReuseOffer == nil
+                        ? "Use This Car"
+                        : "Continue Without Reuse",
+                    action: onUseCar
+                )
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier(
+                    upgradeReuseOffer == nil
+                        ? "catalogUseCarButton"
+                        : "catalogContinueWithoutReuseButton"
+                )
                 Button("Edit Values", action: onEditValues)
                     .accessibilityIdentifier("catalogEditValuesButton")
             }

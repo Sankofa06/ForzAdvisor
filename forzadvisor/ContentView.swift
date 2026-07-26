@@ -78,18 +78,55 @@ struct ContentView: View {
                         }
                     )
                 case .catalogReview(let selection):
+                    let reuseOffer =
+                        catalogUpgradeEvidenceReuseOffer(
+                            for: selection
+                        )
                     CarCatalogReviewView(
                         selection: selection,
+                        upgradeReuseOffer: reuseOffer,
                         onBack: {
                             step = .catalogPicker(initialGame: selection.entry.game)
                         },
                         onUseCar: {
                             step = .discipline(
                                 selection.carInput,
-                                origin: .catalog(selection),
+                                origin: .catalog(
+                                    selection,
+                                    reusedUpgradeSnapshot: nil
+                                ),
                                 thumbnailData: nil
                             )
                         },
+                        onReuseVerifiedParts:
+                            reuseOffer.map { displayedOffer in
+                                {
+                                    guard let currentOffer =
+                                            catalogUpgradeEvidenceReuseOffer(
+                                                for: selection
+                                            ),
+                                          currentOffer
+                                            == displayedOffer,
+                                          let snapshot =
+                                            currentOffer.makeSnapshot(
+                                                for: selection
+                                            ) else {
+                                        errorRecovery = nil
+                                        errorMessage =
+                                            "Previously verified upgrade evidence changed or is no longer eligible. Review the car again or continue without reuse."
+                                        return
+                                    }
+                                    step = .discipline(
+                                        selection.carInput,
+                                        origin: .catalog(
+                                            selection,
+                                            reusedUpgradeSnapshot:
+                                                snapshot
+                                        ),
+                                        thumbnailData: nil
+                                    )
+                                }
+                            },
                         onEditValues: {
                             step = .catalogEdit(selection)
                         }
@@ -512,6 +549,15 @@ struct ContentView: View {
             fh6CommunityReferenceTrialEligible:
                 sequence.action
                     == .openFH6CommunityReferenceTrial
+        )
+    }
+
+    private func catalogUpgradeEvidenceReuseOffer(
+        for selection: CatalogCarSelection
+    ) -> CatalogUpgradeEvidenceReuseOffer? {
+        CatalogUpgradeEvidenceReuseResolver().offer(
+            for: selection,
+            savedTunes: savedTunes.compactMap(\.tuneResult)
         )
     }
 

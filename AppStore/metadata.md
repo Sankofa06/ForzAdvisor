@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata
 
-Last updated: 2026-07-25
+Last updated: 2026-07-26
 
 ## App Name
 
@@ -67,6 +67,8 @@ For FH5 Copilot evidence work, use a saved current build plan. Copilot can offer
 
 Exact Upgrade Lab alternatives require one complete, permitted local observation with one decision for every expected part, a known canonical FH5 or FH6 build, and a freshly derived matching stock projection. The app fails closed for stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence. The result, copied plan, and Verified Build share card show safe local source, game-build, and stock-snapshot capture attribution without raw source IDs or private data. They do not predict PI, cost, credits, entitlement, performance, or purchase order. Existing saves remain readable, but stale evidence can require running Upgrade Lab again.
 
+When the exact same unedited catalog car and catalog revision has one unambiguous complete saved Upgrade Lab observation, Catalog Review can offer explicit reuse for another discipline. The reviewer sees the recorded build and observation date and must confirm that the game still shows that build. The app rechecks saved evidence on tap and copies only part availability; conflicting builds or facts suppress the offer, and no tire, gear, tuning-menu, numeric constraint, provider, ruleset, or discipline data is reused.
+
 Suggested FH5 review path:
 
 1. Launch the app.
@@ -105,12 +107,14 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.34.0
-- Current project build: 59
+- Current project version: 1.35.0
+- Current project build: 60
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
+
+Verified Upgrade Lab part availability can now be explicitly reused for another discipline on the exact same untouched FH5 or FH6 catalog car. ForzAdvisor shows the recorded build/date, rechecks the saved evidence, rejects conflicts, and carries no numeric tuning constraints.
 
 Catalog Addition Review now creates a deterministic, privacy-bounded schema-v2 full-catalog proposal from an exact current curation preflight after explicit maintainer review. The live catalog remains three FH5 and eight FH6 cars, and the artifact cannot edit the bundle, activate tuning, or establish legal sufficiency.
 

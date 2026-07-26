@@ -86,6 +86,8 @@ On a saved current FH5 build plan, Copilot can offer one-tap **Open FH5 Research
 
 Exact alternatives require one complete, permitted local observation with exactly one decision per expected part, a known canonical FH5 or FH6 build, and a freshly derived matching stock projection. Stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence fails closed. Rerun Upgrade Lab against the current untouched-stock car if older evidence is no longer eligible.
 
+For the exact same unedited catalog car, Catalog Review can offer explicit reuse only when eligible saved observations agree on one recorded build and complete part facts. Confirm that build is still current before tapping **Reuse Verified Parts**. The app rechecks the saved evidence and carries only part availability, never tire, gear, tuning-menu, numeric constraint, provider, ruleset, or discipline data.
+
 The main result, copied build plan, and Verified Build share card show a safe human-readable local source, game build, and stock-snapshot capture time. They expose no raw internal source IDs or private data and make no PI, cost, credits, entitlement, performance, or purchase-order prediction. Existing saves remain readable.
 
 ### How do I delete a tune?

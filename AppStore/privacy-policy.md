@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-07-25
+Effective date: 2026-07-26
 
 Public URL: https://Sankofa06.github.io/ForzAdvisor/privacy/
 
@@ -61,6 +61,8 @@ Independent Validation Review Packet preparation and receiver inspection are tra
 On a saved current FH5 build plan, contextual Copilot can open Research Lab only after fresh persisted-plan equality, plan-only Research eligibility, and confirmation that no matching observation exists. Candidate Trial and recorded-observation states stay action-free. When Research is ineligible, Upgrade Lab remains a lower-priority fallback after fresh eligibility checks. Both local routes preserve the tune, thumbnail, and notes without sharing them and fail closed for stale, unsafe, or corrupt evidence. They do not generate numeric settings; select, buy, or install parts; claim PI, cost, or performance; call a provider or network; or bypass exact in-game availability.
 
 Exact Upgrade Lab alternatives are derived locally only from one complete, permitted observation with exactly one decision for every expected part, a known canonical FH5 or FH6 game build, and a freshly derived matching stock projection. Stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence is withheld. The main result and copied plan show the same safe source, build, and snapshot capture attribution as the Verified Build card without revealing raw source IDs or private data. No PI, cost, credits, entitlement, performance, or purchase-order prediction is created. Legacy saves remain readable, but stale evidence can require rerunning Upgrade Lab.
+
+For an exact matching unedited catalog car and catalog revision, Catalog Review can locally inspect current saved tunes for one unambiguous complete Upgrade Lab observation and offer explicit reuse. If selected, the app copies only permitted part availability and its recorded game-build/date attribution into the new setup. It excludes tires, gears, tuning-menu measurements, numeric constraints, provider or ruleset data, discipline, notes, thumbnails, validation records, and other evidence. Nothing is uploaded, and conflicting or changed saved evidence suppresses reuse.
 
 For an eligible saved FH5 untouched-stock catalog plan, Research Lab can store a complete first-party tuning-menu observation in a separate local record. It includes the selected platform, exact game version, reviewed stock-car facts, complete matching Upgrade Lab availability when present, tire-compound display name, forward gear count, each expected control's adjustable, locked, or not-shown state, and allowed manually entered slider values. This workflow does not call a tuning provider, create a numeric tune, or upload anything.
 

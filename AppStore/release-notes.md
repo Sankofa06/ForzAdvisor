@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.35.0 (Build 60) - 2026-07-26
+
+- Lets players explicitly reuse complete verified Upgrade Lab part availability when starting another discipline for the same untouched FH5 or FH6 catalog car and catalog revision.
+- Shows the recorded game build and observation date, revalidates saved evidence on tap, and withholds reuse when builds or part observations conflict.
+- Carries forward part availability only: tire, gear, tuning-menu, numeric constraint, provider, ruleset, and discipline evidence remain independently gated.
+
 ## Version 1.34.0 (Build 59) - 2026-07-25
 
 - Adds Catalog Addition Review, which turns an exact current curation preflight into a deterministic schema-v2 full-catalog proposal after explicit maintainer decisions.

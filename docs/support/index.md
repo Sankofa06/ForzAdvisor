@@ -2,6 +2,8 @@
 
 ForzAdvisor helps racing-game players generate, save, copy, and adjust tuning setups from confirmed car details.
 
+When an exact unedited FH5 or FH6 catalog car has one unambiguous complete saved Upgrade Lab observation, Catalog Review can explicitly reuse its part availability for another discipline. Confirm that the displayed recorded build still matches your game before choosing **Reuse Verified Parts**. The app rechecks saved evidence, suppresses conflicting observations, and never carries tire, gear, tuning-menu, numeric constraint, provider, ruleset, or discipline data into the new setup.
+
 Stock Catalog Contribution can prepare a canonical maintainer review packet from complete permission-bound reviewed observations after explicit confirmation. The user-initiated packet preserves exact FH5/FH6 build, platform, facts, and field observation screens; excludes raw contribution JSON and administrative IDs; quarantines replays and conflicts; and compares read-only with the bundled catalog. It never selects sources, verification status, catalog identity, or a winning value and cannot change the catalog or tuning.
 
 If that packet contains one non-conflicting car that is still absent from the exact current catalog and is supported by at least two distinct permission-complete observations, Catalog Curation Preflight can prepare the next review artifact. You must explicitly choose the candidate, proposed ID, new revision, proposed status, and an identity source whose compatible license or explicit permission you independently reviewed. Every stock field is bound to all supporting first-party observation digests. Changing the packet, candidate, catalog, proposal, rights evidence, or confirmations invalidates the prepared copy.

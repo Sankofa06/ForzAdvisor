@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Review Notes
 
-Last updated: 2026-07-25
+Last updated: 2026-07-26
 
 ## Privacy Manifest
 
@@ -40,6 +40,8 @@ FH5 Research Lab observations are manually entered and stored locally in a separ
 On a saved current FH5 build plan, contextual Copilot can open Research Lab only after fresh persisted-plan equality, plan-only Research eligibility, and confirmation that no matching observation exists. Candidate Trial and recorded-observation states stay action-free. When Research is ineligible, Upgrade Lab remains a lower-priority fallback after fresh eligibility checks. Both local routes preserve the tune, thumbnail, and notes without sharing them and fail closed for stale, unsafe, or corrupt evidence. They do not generate numeric settings, transact parts, claim PI, cost, or performance, call a provider or network, or bypass exact in-game availability.
 
 Exact alternative buy lists require one complete, permitted local Upgrade Lab observation with exactly one decision for every expected part, a known canonical FH5 or FH6 build, and a freshly derived matching stock projection. Stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence fails closed. The result, copied plan, and Verified Build share card display safe human-readable local source, game-build, and snapshot capture attribution without exposing raw internal source IDs or private data or predicting PI, cost, credits, entitlement, performance, or purchase order. Legacy saves remain readable, but stale evidence can require rerunning Upgrade Lab.
+
+For an exact matching unedited catalog car and catalog revision, Catalog Review can locally inspect current saved tunes for one unambiguous complete Upgrade Lab observation and offer explicit reuse. If selected, the app copies only permitted part availability and its recorded game-build/date attribution into the new setup. It excludes tires, gears, tuning-menu measurements, numeric constraints, provider or ruleset data, discipline, notes, thumbnails, validation records, and other evidence. Nothing is uploaded, and conflicting or changed saved evidence suppresses reuse.
 
 FH5 Outcome Lab stores paired experiments locally in a separate saved-plan record only after matching Research Lab and complete Upgrade Lab evidence exist. Each record binds to the exact plan and menu fingerprints and includes one legal slider-step change, capture time, fixed A-B-B-A Horizon Test Track protocol, surface, input type, target symptom, comparative outcome, confirmations, and integrity identifiers.
 

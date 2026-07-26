@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-07-25
+Effective date: 2026-07-26
 
 ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains how the app handles information in the current iPhone release.
 
@@ -19,6 +19,8 @@ On an eligible exact-build result, you can ask ForzAdvisor to prepare a verified
 The shared card excludes garage notes, photos, screenshots, OCR content, API keys, provider details, internal identifiers, timestamps, and evidence or source records. ForzAdvisor does not send the card until you choose a destination in the system share sheet, and the app does not operate that destination or record share history, destinations, or analytics.
 
 From Beta Validation Missions, you can also open the iOS system share sheet with a progress summary containing only the number of saved setups, permission-bound evidence records, setups with exact upgrade paths, and currently available missions. It excludes car names, disciplines, tune values, notes, identifiers, screenshots, JSON, fingerprints, receipts, provider details, and ruleset details. Sharing is user-initiated, and ForzAdvisor does not record the destination or history.
+
+For an exact matching unedited catalog car and catalog revision, Catalog Review can locally inspect current saved tunes for one unambiguous complete Upgrade Lab observation and offer explicit reuse. If selected, the app copies only permitted part availability and its recorded game-build/date attribution into the new setup. It excludes tires, gears, tuning-menu measurements, numeric constraints, provider or ruleset data, discipline, notes, thumbnails, validation records, and other evidence. Nothing is uploaded, and conflicting or changed saved evidence suppresses reuse.
 
 Beta Validation Missions also provides a separate public-only FH5 Research Partner invitation and a fixed public TestFlight link. The invite contains prerequisites and feedback instructions but no local progress counts, car values, identifiers, fingerprints, receipts, or Candidate Outcome JSON. Opening the link or share sheet is user-initiated; ForzAdvisor adds no recruitment analytics, account, authentication, background upload, or share-history recording. Candidate Outcome reuse still requires its separate explicit permission and direct-receipt checks.
 

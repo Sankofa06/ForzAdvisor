@@ -1,18 +1,18 @@
 # ForzAdvisor Release Checklist
 
-Last updated: 2026-07-25
+Last updated: 2026-07-26
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.34.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.35.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.34.0`.
-- Current project build is `59`.
+- Current project version is `1.35.0`.
+- Current project build is `60`.
 - Target device family is iPhone.
 - The reviewed selectable catalog contains three FH5 cars and eight FH6 cars.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
@@ -48,6 +48,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - Stock Catalog Contribution exposes a dedicated toolbar Copilot with local deterministic phase-only guidance for exact untouched-stock identity, build, platform, every required fact and field attestation, personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. It cannot read draft fields, the selected game, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints; use a model or network; retain a transcript; execute an action; approve a contribution; change the catalog; or activate tuning.
 - FH5 catalog build planning stays local, does not use numeric formulas or the selected provider, and requires no account or API key.
 - Exact alternative Upgrade Lab buy lists require one complete, permitted, one-decision-per-expected-part local observation matched to a known canonical FH5/FH6 build and a freshly derived stock projection. Stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, and tampered evidence fails closed. The main result, copied build plan, and Verified Build share card display only safe human-readable local source, game-build, and stock-snapshot capture attribution, not raw internal source IDs or private data. They make no PI, cost, credits, entitlement, performance, or purchase-order prediction. Legacy saves remain readable, but stale evidence can require rerunning Upgrade Lab.
+- Catalog Review can explicitly reuse one unambiguous complete saved Upgrade Lab observation for the exact same unedited catalog car and revision after showing its recorded build/date. Saved evidence is recomputed on tap; conflicts suppress reuse. Only part availability is carried forward—never tire, gear, tuning-menu, numeric constraint, provider, ruleset, or discipline data.
 - FH5 Research Review stores exact permission-bound JSON locally, does not authenticate observer identity, and cannot promote evidence into numeric tuning or production constraints.
 - FH5 Outcome Lab stores exact-plan, one-variable A-B-B-A experiment evidence locally, requires stock restoration, and cannot register a ruleset or unlock numeric tuning. Generic calibration sharing remains a separate schema-v1 path. Replication-qualified generated candidate trials are explicitly experimental and regenerated against current persisted evidence. A reuse-permitted schema-v2 outcome can leave only after a separate per-share confirmation; import requires an exact locally regenerated candidate and direct-receipt permission, stays in a separate review queue, and cannot affect readiness or numeric output.
 - FH6 Validation Review stores exact permission-bound Test Drive JSON in a separate local queue, requires the same eligible exact-build boundary as local Test Drive capture, and reports outcomes without modifying tunes or promoting the experimental ruleset.

@@ -1078,7 +1078,10 @@ enum WorkflowStep {
 enum InputOrigin {
     case manual(CarInput)
     case ocr(OCRConfirmationDraft)
-    case catalog(CatalogCarSelection)
+    case catalog(
+        CatalogCarSelection,
+        reusedUpgradeSnapshot: VehicleBuildSnapshot? = nil
+    )
 
     func previousStep(thumbnailData: Data?) -> WorkflowStep {
         switch self {
@@ -1086,15 +1089,26 @@ enum InputOrigin {
             .manualEntry(ManualEntryDraft(car: input), thumbnailData: thumbnailData)
         case .ocr(let draft):
             .ocrReview(draft)
-        case .catalog(let selection):
+        case .catalog(let selection, _):
             .catalogReview(selection)
         }
     }
 
     func buildSnapshot(matching input: CarInput, capturedAt: Date = .now) -> VehicleBuildSnapshot? {
-        guard case .catalog(let selection) = self,
+        guard case .catalog(
+            let selection,
+            let reusedUpgradeSnapshot
+        ) = self,
               input == selection.carInput else {
             return nil
+        }
+        if let reusedUpgradeSnapshot,
+           CatalogUpgradeEvidenceReuseResolver()
+            .isValidReuseSnapshot(
+                reusedUpgradeSnapshot,
+                for: selection
+            ) {
+            return reusedUpgradeSnapshot
         }
         return selection.capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
     }

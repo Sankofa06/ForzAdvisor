@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-07-25
+Effective date: 2026-07-26
 
 ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains how the app handles information in the current iPhone release.
 
@@ -15,6 +15,8 @@ Beta Validation Missions are calculated on device from the eligibility and compl
 On a saved current FH5 build plan, contextual Copilot can open Research Lab only after fresh persisted-plan equality, plan-only Research eligibility, and confirmation that no matching observation exists. Candidate Trial and recorded-observation states stay action-free. When Research is ineligible, Upgrade Lab remains a lower-priority fallback after fresh eligibility checks. Both local routes preserve the tune, thumbnail, and notes without sharing them and fail closed for stale, unsafe, or corrupt evidence. They cannot generate numeric settings, transact parts, claim PI, cost, or performance, call a provider or network, or bypass exact in-game availability.
 
 Exact Upgrade Lab alternatives are derived locally only from one complete, permitted observation with exactly one decision for every expected part, a known canonical FH5 or FH6 game build, and a freshly derived matching stock projection. Stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence is withheld. The main result and copied plan show safe human-readable local source, game-build, and stock-snapshot capture attribution. Legacy saves remain readable, but stale evidence can require rerunning Upgrade Lab.
+
+For an exact matching unedited catalog car and catalog revision, Catalog Review can locally inspect current saved tunes for one unambiguous complete Upgrade Lab observation and offer explicit reuse. If selected, the app copies only permitted part availability and its recorded game-build/date attribution into the new setup. It excludes tires, gears, tuning-menu measurements, numeric constraints, provider or ruleset data, discipline, notes, thumbnails, validation records, and other evidence. Nothing is uploaded, and conflicting or changed saved evidence suppresses reuse.
 
 FH5 Outcome Lab can store a local paired-experiment record after matching Research Lab and Upgrade Lab evidence exists. The record binds to the exact saved plan and observed menu, changes one adjustable control by one observed step in a fixed A-B-B-A Horizon Test Track protocol, and stores capture time, a target handling symptom, comparative outcome, surface, input type, required attestations, and integrity identifiers.
 

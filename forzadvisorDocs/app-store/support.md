@@ -114,6 +114,8 @@ This action does not generate numeric FH5 settings; select, buy, or install part
 
 Upgrade Lab shows exact alternatives only when one complete, permitted local observation contains exactly one decision for every expected part, matches a known canonical FH5 or FH6 game build, and matches a freshly derived stock projection. It fails closed if evidence is stale, mixed across captures, mismatched, missing, duplicated, already installed, unknown, from the wrong source, low confidence, unpermitted, or tampered. Rerun Upgrade Lab against the current untouched-stock car when older evidence is no longer eligible.
 
+When you select that exact same unedited catalog car again, Catalog Review can offer **Reuse Verified Parts** if all eligible saved observations agree on one build and the complete part facts. Check that your game still shows the displayed recorded build, then choose reuse explicitly. ForzAdvisor rechecks the saved evidence on tap and carries only part availability into the new discipline; it does not reuse tire, gear, tuning-menu, numeric constraint, provider, ruleset, or discipline data. Choose **Continue Without Reuse** or rerun Upgrade Lab whenever the recorded build may be stale.
+
 The main result, copied build plan, and Verified Build share card show a safe human-readable local source, FH5 or FH6 build, and stock-snapshot capture time. They do not expose raw internal source IDs or private data and do not predict PI, cost, credits, entitlement, performance, or purchase order. Existing saves remain readable even when their stale evidence can no longer produce exact alternatives.
 
 ### What is FH5 Research Review?
