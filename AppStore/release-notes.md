@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.30.0 (Build 55) - 2026-07-25
+
+- Adds a canonical FH6 Independent Validation Review Packet that co-binds accepted Test Drive and Community Outcome evidence to the exact current saved candidate.
+- Revalidates permissions, candidate fingerprints, administrative conflicts, receipt replay, session replay, and semantic duplicates before including public evidence.
+- Keeps the artifact strictly review-only: it does not attest omitted inputs, authenticate identity, establish accuracy or ranking, promote a ruleset, or change a tune.
+
 ## Version 1.29.0 (Build 54) - 2026-07-25
 
 - Adds a canonical Catalog Curation Preflight for prospective cars backed by at least two matching, permission-bound first-party observations.

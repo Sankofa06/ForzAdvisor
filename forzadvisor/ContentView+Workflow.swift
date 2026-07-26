@@ -634,6 +634,33 @@ extension ContentView {
         }
     }
 
+    func prepareFH6IndependentValidationReviewPacket(
+        displayedTune: TuneResult,
+        savedTuneID: UUID
+    ) throws -> String {
+        guard let savedTune = try savedTune(for: savedTuneID),
+              let persistedTune = savedTune.tuneResult else {
+            throw ContentWorkflowError.missingSavedTune
+        }
+        let artifact =
+            try FH6IndependentValidationReviewPacketExporter()
+                .makeArtifact(
+                    candidate: displayedTune,
+                    persistedCandidate: persistedTune,
+                    isStreaming: false,
+                    firstPartyTestDrives:
+                        try savedTune
+                            .allFirstPartyValidationRecords(),
+                    localCommunityOutcomes:
+                        try savedTune
+                            .allFH6CommunityReferenceTrialRecords(),
+                    reviewedCommunityOutcomes:
+                        try savedTune
+                            .allFH6CommunityOutcomeReviewEntries()
+                )
+        return String(decoding: artifact.canonicalJSON, as: UTF8.self)
+    }
+
     func recordFH6CommunityReferenceTrial(
         _ capture: FH6CommunityReferenceTrialCapture,
         for tune: TuneResult,

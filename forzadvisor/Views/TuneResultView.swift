@@ -54,6 +54,10 @@ struct TuneResultView: View {
     let onImportFH6ValidationReviewEntry:
         ((FH6ValidationReviewEntry) -> String?)?
     let onDeleteFH6ValidationReviewEntry: (FH6ValidationReviewEntry) -> Void
+    let onPrepareFH6IndependentValidationReviewPacket:
+        (() throws -> String)?
+    let fh6IndependentValidationPreparedInputStateFingerprint:
+        String?
     let fh6CommunityReferenceTrialRecords:
         [FH6CommunityReferenceTrialRecord]
     let fh6AccuracyEvidenceChain:
@@ -318,6 +322,10 @@ struct TuneResultView: View {
                     storageError: fh6ValidationReviewLoadError,
                     onImport: onImportFH6ValidationReviewEntry,
                     onDelete: onDeleteFH6ValidationReviewEntry,
+                    onPrepareIndependentReviewPacket:
+                        onPrepareFH6IndependentValidationReviewPacket,
+                    preparedInputStateFingerprint:
+                        fh6IndependentValidationPreparedInputStateFingerprint,
                     communityReferenceRecords:
                         fh6CommunityReferenceTrialRecords,
                     accuracyEvidenceChain:

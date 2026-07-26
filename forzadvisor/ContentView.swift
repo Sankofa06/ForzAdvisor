@@ -710,6 +710,54 @@ struct ContentView: View {
                 return ([], .empty, error.localizedDescription)
             }
         }()
+        let independentValidationReviewPacketState: (
+            canPrepare: Bool,
+            preparedInputStateFingerprint: String?
+        ) = {
+            guard let resolvedSavedTune,
+                  let persistedTune,
+                  validationEligibility.isSuccess,
+                  let firstPartyTestDrives =
+                    try? resolvedSavedTune
+                        .allFirstPartyValidationRecords(),
+                  let localCommunityOutcomes =
+                    try? resolvedSavedTune
+                        .allFH6CommunityReferenceTrialRecords(),
+                  let reviewedCommunityOutcomes =
+                    try? resolvedSavedTune
+                        .allFH6CommunityOutcomeReviewEntries() else {
+                return (false, nil)
+            }
+            let exporter =
+                FH6IndependentValidationReviewPacketExporter()
+            let preparedInputStateFingerprint =
+                try? exporter.preparedInputStateFingerprint(
+                    candidate: tune,
+                    persistedCandidate: persistedTune,
+                    isStreaming: isStreaming,
+                    firstPartyTestDrives: firstPartyTestDrives,
+                    localCommunityOutcomes:
+                        localCommunityOutcomes,
+                    reviewedCommunityOutcomes:
+                        reviewedCommunityOutcomes
+                )
+            let canPrepare = (
+                try? exporter.makeArtifact(
+                    candidate: tune,
+                    persistedCandidate: persistedTune,
+                    isStreaming: isStreaming,
+                    firstPartyTestDrives: firstPartyTestDrives,
+                    localCommunityOutcomes:
+                        localCommunityOutcomes,
+                    reviewedCommunityOutcomes:
+                        reviewedCommunityOutcomes
+                )
+            ) != nil
+            return (
+                canPrepare,
+                preparedInputStateFingerprint
+            )
+        }()
         let researchEligibility = FH5ResearchEligibility().snapshot(
             for: tune,
             savedTune: persistedTune,
@@ -1003,6 +1051,22 @@ struct ContentView: View {
                     savedTuneID: resolvedSavedTuneID
                 )
             },
+            onPrepareFH6IndependentValidationReviewPacket:
+                independentValidationReviewPacketState.canPrepare
+                    && resolvedSavedTuneID != nil
+                ? {
+                    guard let resolvedSavedTuneID else {
+                        throw ContentWorkflowError.missingSavedTune
+                    }
+                    return try prepareFH6IndependentValidationReviewPacket(
+                        displayedTune: tune,
+                        savedTuneID: resolvedSavedTuneID
+                    )
+                }
+                : nil,
+            fh6IndependentValidationPreparedInputStateFingerprint:
+                independentValidationReviewPacketState
+                    .preparedInputStateFingerprint,
             fh6CommunityReferenceTrialRecords:
                 communityTrialState.records,
             fh6AccuracyEvidenceChain:

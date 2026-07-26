@@ -4,15 +4,15 @@ Last updated: 2026-07-25
 
 Readiness: TestFlight candidate
 
-Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.29.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
+Metadata, privacy/support pages, release notes, screenshot specifications, and marketing screenshots are maintained for the current `1.30.0` app state. The warning-free headless build and non-UI unit suite are the automated release gates. App Review submission and TestFlight upload remain gated on App Store Connect record checks and explicit approval for the exact build.
 
 ## Completed In Repository
 
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.29.0`.
-- Current project build is `54`.
+- Current project version is `1.30.0`.
+- Current project build is `55`.
 - Target device family is iPhone.
 - App icon asset catalog contains default, dark, and tinted 1024px iOS icons with no alpha channel.
 - Camera usage description is present.
@@ -53,6 +53,7 @@ Metadata, privacy/support pages, release notes, screenshot specifications, and m
 - Every direct UI, workflow, domain-factory, and persistence route requires at least one valid first-party Test Drive for the exact current FH6 candidate before a new Community Reference Comparison can be created or saved. Removing the last matching Test Drive blocks new comparisons without deleting existing comparison history. Evidence-chain stages and counts describe collection sequence only and never establish accuracy.
 - This gate changes no persisted schema, comparison export, imported Community Outcome Review policy, tune values, ruleset, or catalog data. YouTube and Reddit remain metadata-only reference sources; no community tune values are copied into the app.
 - FH6 Community Outcome Review accepts only canonical, permission-bound comparison exports that freshly match the exact persisted candidate. Imports stay in a separate local queue with deterministic duplicate handling, replay/conflict quarantine, individual deletion, and separate local/reviewed/combined collection-only reporting; they cannot change tuning or promote a ruleset.
+- FH6 Independent Validation Review Packet requires the exact current saved non-streaming candidate, at least one valid reuse-permitted Test Drive, and at least one clean local or permission-bound reviewed Community Outcome. It revalidates complete persisted evidence arrays, globally excludes administrative conflicts, permission-receipt replay, session replay, and semantic duplicates, then serializes only accepted public exports with exact candidate bindings and independently recomputable included counts. Prepared state clears whenever the candidate or evidence changes, and sharing is a separate user action. The packet does not attest omitted or quarantined inputs, authenticate identity, establish accuracy or ranking, promote a ruleset, change tuning, or persist/upload itself.
 - Contextual Copilot sequences eligible FH6 accuracy work through unfinished first-party labs, an exact Record Test Drive, and only then a Community Reference Comparison. Every action refetches and revalidates the persisted setup and carries no tune payload of its own.
 - FH5 contextual Copilot offers **Open Upgrade Lab** only for the exact current saved build plan after persisted equality, plan-only safety, and eligibility checks. It preserves the tune, thumbnail, and notes; yields to Candidate Trial, recorded-observation, and eligible Research Lab guidance; and cannot generate numeric settings, transact parts, claim PI, cost, or performance, call a provider or network, or bypass exact in-game availability. FH6 sequencing is unchanged.
 - Settings, Beta Missions, and the four evidence-review modals expose guidance-only Copilot through their existing navigation stacks. Modal contexts use strict committed-fact allow-lists, cannot execute workflow actions, and exclude credentials, draft evidence, tune values, notes, images, identifiers, and fingerprints.

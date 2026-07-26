@@ -148,6 +148,28 @@ final class SavedTune {
     }
 
     @MainActor
+    func allFirstPartyValidationRecords()
+        throws -> [FirstPartyValidationRecord] {
+        guard let firstPartyValidationRecordsData else {
+            return []
+        }
+        do {
+            return try Self.decoder.decode(
+                [FirstPartyValidationRecord].self,
+                from: firstPartyValidationRecordsData
+            ).sorted {
+                if $0.createdAt != $1.createdAt {
+                    return $0.createdAt < $1.createdAt
+                }
+                return $0.recordID.uuidString
+                    < $1.recordID.uuidString
+            }
+        } catch {
+            throw SavedTuneValidationRecordError.corruptStorage
+        }
+    }
+
+    @MainActor
     func validationRecords(matching tune: TuneResult) -> [FirstPartyValidationRecord] {
         guard let fingerprint = FirstPartyValidationRecordFactory().revisionFingerprint(for: tune) else {
             return []

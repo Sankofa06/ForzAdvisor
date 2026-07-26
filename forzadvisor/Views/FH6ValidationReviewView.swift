@@ -14,6 +14,8 @@ struct FH6ValidationReviewView: View {
     let storageError: String?
     let onImport: (FH6ValidationReviewEntry) -> String?
     let onDelete: (FH6ValidationReviewEntry) -> Void
+    let onPrepareIndependentReviewPacket: (() throws -> String)?
+    let preparedInputStateFingerprint: String?
     let communityReferenceRecords: [FH6CommunityReferenceTrialRecord]
     let accuracyEvidenceChain:
         FH6AccuracyEvidenceChainAssessment
@@ -25,6 +27,8 @@ struct FH6ValidationReviewView: View {
     @State private var validatedJSON: Data?
     @State private var directReceiptAndPermissionConfirmed = false
     @State private var statusMessage: String?
+    @State private var preparedIndependentReviewPacket: String?
+    @State private var packetStatusMessage: String?
 
     private var report: FH6ValidationReviewReport {
         FH6ValidationReviewEvaluator().evaluate(entries)
@@ -262,6 +266,54 @@ struct FH6ValidationReviewView: View {
                 }
                 .forzAdvisorRowBackground()
 
+                if let onPrepareIndependentReviewPacket {
+                    Section("Independent Review Packet") {
+                        Text(
+                            FH6IndependentValidationReviewPacketPolicy
+                                .reviewBoundary
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                        Button("Prepare Review Packet") {
+                            do {
+                                preparedIndependentReviewPacket =
+                                    try onPrepareIndependentReviewPacket()
+                                packetStatusMessage =
+                                    "Canonical review-only packet prepared from the current saved evidence."
+                            } catch {
+                                preparedIndependentReviewPacket = nil
+                                packetStatusMessage =
+                                    error.localizedDescription
+                            }
+                        }
+                        .accessibilityIdentifier(
+                            "prepareFH6IndependentValidationReviewPacketButton"
+                        )
+
+                        if let preparedIndependentReviewPacket {
+                            ShareLink(
+                                item: preparedIndependentReviewPacket
+                            ) {
+                                Label(
+                                    "Share Review Packet",
+                                    systemImage: "square.and.arrow.up"
+                                )
+                            }
+                            .accessibilityIdentifier(
+                                "shareFH6IndependentValidationReviewPacketButton"
+                            )
+                        }
+
+                        if let packetStatusMessage {
+                            Text(packetStatusMessage)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .forzAdvisorRowBackground()
+                }
+
                 if !entries.isEmpty {
                     Section("Local Review Queue") {
                         ForEach(entries) { entry in
@@ -275,6 +327,8 @@ struct FH6ValidationReviewView: View {
                                 }
                                 Spacer()
                                 Button("Delete", role: .destructive) {
+                                    preparedIndependentReviewPacket = nil
+                                    packetStatusMessage = nil
                                     onDelete(entry)
                                 }
                                 .accessibilityIdentifier(
@@ -288,6 +342,10 @@ struct FH6ValidationReviewView: View {
             }
             .navigationTitle("FH6 Validation Review")
             .forzAdvisorScreenChrome()
+            .onChange(of: preparedInputStateFingerprint) {
+                preparedIndependentReviewPacket = nil
+                packetStatusMessage = nil
+            }
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     ModalCopilotToolbarLink(
@@ -353,6 +411,8 @@ struct FH6ValidationReviewView: View {
             pastedJSON = ""
             self.validatedJSON = nil
             directReceiptAndPermissionConfirmed = false
+            preparedIndependentReviewPacket = nil
+            packetStatusMessage = nil
             statusMessage = "Permission-bound test-drive session imported locally."
         } catch {
             statusMessage = error.localizedDescription

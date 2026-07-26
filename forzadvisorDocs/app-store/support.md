@@ -66,6 +66,10 @@ Open an eligible saved exact-build FH6 tune and choose Open Validation Review un
 
 Import requires confirmation of direct receipt and permission for deidentified structured reuse. UUIDs and hashes bind that local decision to the exact export but do not authenticate identity. Reviewed sessions stay in a separate local queue and report only Keep, Adjust, Reject, handling symptoms, course, surface, and input counts. They cannot change the tune or promote the experimental FH6 ruleset.
 
+When the exact current saved candidate still has at least one valid reuse-permitted Test Drive and one clean local or permission-bound reviewed Community Outcome, Validation Review can prepare a canonical Independent Review Packet. The packet includes only accepted public Test Drive and Community Outcome exports, exact candidate bindings, independently recomputable included counts, fixed privacy exclusions, and an integrity fingerprint. Preparation is local, sharing requires a separate system-share-sheet action, and any candidate or persisted evidence change invalidates the prepared copy.
+
+The packet does not attest, enumerate, or validate omitted or quarantined local inputs. Hashes and UUIDs do not authenticate a tester or publisher, and the packet does not prove every externally reviewed comparison historically followed one specific Test Drive. It cannot establish accuracy, validation, ranking, endorsement, or promotion; change a tune; or update a provider or ruleset.
+
 ### What is an FH6 Community Reference Comparison?
 
 On an eligible saved exact FH6 tune, choose Run Community Reference Comparison. Apply the exact ForzAdvisor candidate for A and one reference from a direct YouTube or Reddit permalink for B, then complete the fixed A-B-B-A sequence under the same route, conditions, assists, and input. Restore the ForzAdvisor candidate before saving or leaving.
