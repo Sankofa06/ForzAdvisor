@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.36.0 (Build 61) - 2026-07-26
+
+- Adds a canonical FH5 Numeric Promotion Review Packet for independently inspecting exact permission-bound experimental outcomes.
+- Revalidates every supplied candidate record and reviewed export, rejecting malformed evidence, duplicates, conflicts, receipt reuse, session replay, stale candidates, and incomplete thresholds.
+- Keeps the packet strictly review-only: it cannot establish accuracy, register a production ruleset, unlock FH5 numbers, or alter a saved plan.
+
 ## Version 1.35.0 (Build 60) - 2026-07-26
 
 - Lets players explicitly reuse complete verified Upgrade Lab part availability when starting another discipline for the same untouched FH5 or FH6 catalog car and catalog revision.

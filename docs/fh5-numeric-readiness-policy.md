@@ -102,6 +102,30 @@ uses fixed Gregorian UTC dates. A passing report authorizes only its exact
 registration and candidate binding; it cannot be replayed for another
 candidate.
 
+## Promotion review packet
+
+When the exact experimental candidate has enough permission-bound local and
+reviewed outcomes to satisfy the fixed threshold, ForzAdvisor can prepare a
+canonical Numeric Promotion Review Packet for independent maintainer
+inspection. Preparation revalidates every supplied candidate-shaped local
+record and every reviewed export before association filtering. Invalid input,
+duplicate bytes, conflicting submissions, permission-receipt reuse, session
+replay, stale candidate binding, or an incomplete threshold blocks the packet
+instead of being silently omitted.
+
+The packet binds the exact experimental registration, source-manifest
+fingerprint, candidate association, outcome policy, canonical public evidence,
+deterministic counts, UTC-day count, prepared-input fingerprint, and artifact
+fingerprint. Its validator independently rechecks canonical bytes, every
+included export, ordering, integrity, counts, threshold, and exact candidate
+binding.
+
+Eligibility means only that the evidence can be handed to a maintainer for
+review. The packet fixes accuracy, automatic promotion, production
+registration, and numeric-output permission to `false`, requires independent
+maintainer review, and is not consumed by readiness, providers, projectors,
+persistence, or clipboard output.
+
 The production registry remains empty and no activation route exists. A fully
 qualifying test-injected registration can exercise the candidate generator and
 readiness contract, but the production provider and output projector continue

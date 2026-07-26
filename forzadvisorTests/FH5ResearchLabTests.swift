@@ -4364,6 +4364,549 @@ final class FH5ResearchLabTests: XCTestCase {
         XCTAssertEqual(foreignSaved.updatedAt, foreignUpdatedAt)
     }
 
+    func testNumericPromotionReviewPacketRoundTripsAtExactSyntheticThreshold()
+        async throws {
+        // Synthetic-only evidence: these records do not represent real players
+        // and cannot establish accuracy or authorize production behavior.
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let records = try makePromotionReviewRecords(
+            fixture: fixture,
+            outcomes: Array(
+                repeating: .variantPreferred,
+                count: 8
+            ) + [
+                .noClearDifference,
+                .inconclusive
+            ]
+        )
+        let exchange = FH5CandidateOutcomeExchange()
+        let reviewedData = try exchange.makeExport(
+            from: records.last!,
+            explicitShareConfirmed: true
+        ).deterministicJSON()
+        let reviewed = try FH5CandidateOutcomeReviewEntry
+            .locallyReviewed(
+                canonicalExportJSON: reviewedData,
+                expectedArtifact: fixture.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true,
+                now: capturedAt
+            )
+        let exporter = FH5NumericPromotionReviewPacketExporter()
+        let packet = try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: Array(records.dropLast()),
+            reviewedEntries: [reviewed]
+        )
+        let data = try packet.deterministicJSON()
+        let reordered = try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: Array(records.dropLast().reversed()),
+            reviewedEntries: [reviewed]
+        )
+
+        XCTAssertEqual(try reordered.deterministicJSON(), data)
+        XCTAssertEqual(
+            try exporter.validate(
+                data,
+                candidateArtifact: fixture.artifact
+            ),
+            packet
+        )
+        XCTAssertEqual(packet.status, .eligibleForMaintainerReview)
+        XCTAssertEqual(packet.counts.uniqueSessionCount, 10)
+        XCTAssertEqual(packet.counts.variantPreferredCount, 8)
+        XCTAssertEqual(packet.counts.nonDecisiveCount, 2)
+        XCTAssertEqual(packet.counts.baselinePreferredCount, 0)
+        XCTAssertEqual(packet.counts.distinctUTCDayCount, 2)
+        XCTAssertEqual(packet.counts.localCount, 9)
+        XCTAssertEqual(packet.counts.reviewedCount, 1)
+        XCTAssertEqual(
+            packet.outcomeThreshold,
+            .currentExperimental
+        )
+        XCTAssertFalse(packet.accuracyClaimEstablished)
+        XCTAssertFalse(packet.automaticPromotionPermitted)
+        XCTAssertFalse(packet.productionRegistrationPermitted)
+        XCTAssertFalse(packet.numericOutputPermitted)
+        XCTAssertTrue(packet.independentMaintainerReviewRequired)
+        XCTAssertTrue(
+            FH5TrustedNumericRulesetRegistry.production.isEmpty
+        )
+        XCTAssertEqual(fixture.plan.purpose, .fh5BuildPlan)
+        XCTAssertTrue(fixture.plan.sections.isEmpty)
+        XCTAssertNil(fixture.plan.providerInfo)
+        XCTAssertNil(fixture.plan.rulesetReference)
+    }
+
+    func testNumericPromotionReviewPacketFailsClosedForThresholdAndBadInput()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let exporter = FH5NumericPromotionReviewPacketExporter()
+        let records = try makePromotionReviewRecords(
+            fixture: fixture,
+            outcomes: Array(
+                repeating: .variantPreferred,
+                count: 10
+            )
+        )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: Array(
+                repeating: records[0],
+                count:
+                    FH5NumericPromotionReviewPacket
+                        .maximumInputCount + 1
+            ),
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .tooManyLocalRecords
+            )
+        }
+
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: Array(records.dropLast()),
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .insufficientEvidence
+            )
+        }
+        let invalid = copyExperiment(
+            records[0],
+            schemaVersion: records[0].schemaVersion,
+            consentVersion: records[0].consentVersion,
+            candidateBinding: records[0].candidateBinding,
+            contentFingerprint: String(repeating: "b", count: 64)
+        )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records + [invalid],
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .invalidLocalEvidence
+            )
+        }
+
+        let data = try FH5CandidateOutcomeExchange().makeExport(
+            from: records[0],
+            explicitShareConfirmed: true
+        ).deterministicJSON()
+        let entry = try FH5CandidateOutcomeReviewEntry
+            .locallyReviewed(
+                canonicalExportJSON: data,
+                expectedArtifact: fixture.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true,
+                now: capturedAt
+            )
+        let invalidEntry = FH5CandidateOutcomeReviewEntry(
+            id: entry.id,
+            importedAt:
+                entry.importedAt.addingTimeInterval(1),
+            canonicalExportJSON: entry.canonicalExportJSON,
+            permission: entry.permission
+        )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records,
+            reviewedEntries: [invalidEntry]
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .invalidReviewedEvidence
+            )
+        }
+    }
+
+    func testNumericPromotionReviewPacketRejectsDuplicateConflictAndReplay()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let exporter = FH5NumericPromotionReviewPacketExporter()
+        let records = try makePromotionReviewRecords(
+            fixture: fixture,
+            outcomes: Array(
+                repeating: .variantPreferred,
+                count: 10
+            )
+        )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records + [records[0]],
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .duplicateAmbiguity
+            )
+        }
+        let duplicateData = try FH5CandidateOutcomeExchange()
+            .makeExport(
+                from: records[0],
+                explicitShareConfirmed: true
+            ).deterministicJSON()
+        let duplicateReview = try FH5CandidateOutcomeReviewEntry
+            .locallyReviewed(
+                canonicalExportJSON: duplicateData,
+                expectedArtifact: fixture.artifact,
+                reviewerConfirmedDirectReceiptAndReusePermission:
+                    true
+            )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records,
+            reviewedEntries: [duplicateReview]
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .duplicateAmbiguity
+            )
+        }
+
+        let conflict = try makePromotionReviewRecord(
+            fixture: fixture,
+            outcome: .baselinePreferred,
+            submissionID: records[0].submissionID,
+            permissionReceiptID: UUID(),
+            createdAt:
+                records[0].createdAt.addingTimeInterval(30)
+        )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records + [conflict],
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .submissionConflict
+            )
+        }
+
+        let receiptReplay = try makePromotionReviewRecord(
+            fixture: fixture,
+            outcome: .variantPreferred,
+            submissionID: UUID(),
+            permissionReceiptID:
+                records[0].permissionReceiptID,
+            createdAt:
+                records[0].createdAt.addingTimeInterval(30)
+        )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records + [receiptReplay],
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .permissionReceiptReplay
+            )
+        }
+
+        let sessionReplay = try makePromotionReviewRecord(
+            fixture: fixture,
+            outcome: records[0].outcome,
+            submissionID: UUID(),
+            permissionReceiptID: UUID(),
+            createdAt: records[0].createdAt
+        )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records + [sessionReplay],
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .sessionSemanticReplay
+            )
+        }
+    }
+
+    func testNumericPromotionReviewPacketRejectsStaleUnknownNoncanonicalAndTamper()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let records = try makePromotionReviewRecords(
+            fixture: fixture,
+            outcomes: Array(
+                repeating: .variantPreferred,
+                count: 10
+            )
+        )
+        let exporter = FH5NumericPromotionReviewPacketExporter()
+        let packet = try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records,
+            reviewedEntries: []
+        )
+        let data = try packet.deterministicJSON()
+
+        XCTAssertThrowsError(try exporter.validate(
+            Data(),
+            candidateArtifact: fixture.artifact
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .emptyPayload
+            )
+        }
+        XCTAssertThrowsError(try exporter.validate(
+            Data(
+                repeating: 0x20,
+                count:
+                    FH5NumericPromotionReviewPacket
+                        .maximumPayloadBytes + 1
+            ),
+            candidateArtifact: fixture.artifact
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .payloadTooLarge
+            )
+        }
+        let foreign = try await makeCandidateOutcomeFixture(
+            reusePermitted: true,
+            fh5EntryOffset: 1
+        )
+        XCTAssertThrowsError(try exporter.validate(
+            data,
+            candidateArtifact: foreign.artifact
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .staleOrForeignCandidate
+            )
+        }
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: foreign.artifact,
+            localRecords: records,
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .staleOrForeignCandidate
+            )
+        }
+        let untrustedRegistration = try makeExperimentalRegistration()
+        let untrustedRegistry = try FH5TrustedNumericRulesetRegistry(
+            validating: [untrustedRegistration]
+        )
+        let untrustedArtifact = try FH5ControlledExperimentFactory()
+            .makeCandidateArtifactForTesting(
+                tune: fixture.plan,
+                savedTune: fixture.plan,
+                isStreaming: false,
+                researchRecords: [fixture.research],
+                capture: experimentCapture(
+                    field: .frontTirePressure,
+                    candidate:
+                        fixture.artifact.change.candidateValue,
+                    reusePermitted: true
+                ),
+                candidateAlgorithmID:
+                    untrustedRegistration.algorithmID,
+                registry: untrustedRegistry
+            )
+        XCTAssertThrowsError(try exporter.prepare(
+            candidateArtifact: untrustedArtifact,
+            localRecords: records,
+            reviewedEntries: []
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .unregisteredCandidate
+            )
+        }
+
+        var noncanonical = data
+        noncanonical.append(0x20)
+        XCTAssertThrowsError(try exporter.validate(
+            noncanonical,
+            candidateArtifact: fixture.artifact
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .nonCanonicalJSON
+            )
+        }
+        let json = try XCTUnwrap(
+            String(data: data, encoding: .utf8)
+        )
+        let unknown = json.replacingOccurrences(
+            of: "{\n",
+            with: "{\n  \"unknown\": true,\n",
+            options: [],
+            range: json.startIndex..<json.index(
+                json.startIndex,
+                offsetBy: 2
+            )
+        )
+        XCTAssertThrowsError(try exporter.validate(
+            Data(unknown.utf8),
+            candidateArtifact: fixture.artifact
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .unknownRootField
+            )
+        }
+        let tampered = json.replacingOccurrences(
+            of: packet.artifactFingerprint,
+            with: String(repeating: "b", count: 64)
+        )
+        XCTAssertThrowsError(try exporter.validate(
+            Data(tampered.utf8),
+            candidateArtifact: fixture.artifact
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .invalidArtifactFingerprint
+            )
+        }
+        let unsafeBoundary = json.replacingOccurrences(
+            of: "\"numericOutputPermitted\" : false",
+            with: "\"numericOutputPermitted\" : true"
+        )
+        XCTAssertNotEqual(unsafeBoundary, json)
+        XCTAssertThrowsError(try exporter.validate(
+            Data(unsafeBoundary.utf8),
+            candidateArtifact: fixture.artifact
+        )) {
+            XCTAssertEqual(
+                $0 as? FH5NumericPromotionReviewPacketError,
+                .invalidStructure
+            )
+        }
+    }
+
+    func testNumericPromotionPreparedStateTracksForeignCandidateShapedInput()
+        async throws {
+        let fixture = try await makeCandidateOutcomeFixture(
+            reusePermitted: true
+        )
+        let records = try makePromotionReviewRecords(
+            fixture: fixture,
+            outcomes: Array(
+                repeating: .variantPreferred,
+                count: 10
+            )
+        )
+        let foreign = try await makeCandidateOutcomeFixture(
+            reusePermitted: true,
+            fh5EntryOffset: 1
+        )
+        let exporter = FH5NumericPromotionReviewPacketExporter()
+        let baseline = try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records,
+            reviewedEntries: []
+        )
+        let withHistory = try exporter.prepare(
+            candidateArtifact: fixture.artifact,
+            localRecords: records + [foreign.record],
+            reviewedEntries: []
+        )
+
+        XCTAssertEqual(baseline.evidence, withHistory.evidence)
+        XCTAssertEqual(baseline.counts, withHistory.counts)
+        XCTAssertNotEqual(
+            baseline.preparedInputStateFingerprint,
+            withHistory.preparedInputStateFingerprint
+        )
+        XCTAssertNotEqual(
+            try baseline.deterministicJSON(),
+            try withHistory.deterministicJSON()
+        )
+        let invalid = copyExperiment(
+            records[0],
+            schemaVersion: records[0].schemaVersion,
+            consentVersion: records[0].consentVersion,
+            candidateBinding: records[0].candidateBinding,
+            contentFingerprint: String(repeating: "b", count: 64)
+        )
+        XCTAssertNotEqual(
+            baseline.preparedInputStateFingerprint,
+            try exporter.preparedInputStateFingerprint(
+                candidateArtifact: fixture.artifact,
+                localRecords: records + [invalid],
+                reviewedEntries: []
+            )
+        )
+    }
+
+    private func makePromotionReviewRecords(
+        fixture: (
+            plan: TuneResult,
+            research: FH5ResearchObservationRecord,
+            reviewInputs: [FH5ResearchReviewInput],
+            artifact: FH5GeneratedCandidateArtifact,
+            record: FH5ControlledExperimentRecord
+        ),
+        outcomes: [FH5ExperimentOutcome]
+    ) throws -> [FH5ControlledExperimentRecord] {
+        try outcomes.enumerated().map { index, outcome in
+            try makePromotionReviewRecord(
+                fixture: fixture,
+                outcome: outcome,
+                submissionID: UUID(),
+                permissionReceiptID: UUID(),
+                createdAt: capturedAt.addingTimeInterval(
+                    Double(
+                        (index < outcomes.count / 2 ? 0 : 86_400)
+                            + index * 60
+                    )
+                )
+            )
+        }
+    }
+
+    private func makePromotionReviewRecord(
+        fixture: (
+            plan: TuneResult,
+            research: FH5ResearchObservationRecord,
+            reviewInputs: [FH5ResearchReviewInput],
+            artifact: FH5GeneratedCandidateArtifact,
+            record: FH5ControlledExperimentRecord
+        ),
+        outcome: FH5ExperimentOutcome,
+        submissionID: UUID,
+        permissionReceiptID: UUID,
+        createdAt: Date
+    ) throws -> FH5ControlledExperimentRecord {
+        try FH5CandidateTrialCoordinator().makeRecord(
+            tune: fixture.plan,
+            savedTune: fixture.plan,
+            isStreaming: false,
+            researchRecords: [fixture.research],
+            reviewInputs: fixture.reviewInputs,
+            submission: FH5CandidateTrialSubmission(
+                capture: experimentCapture(
+                    field: .frontTirePressure,
+                    candidate:
+                        fixture.artifact.change.candidateValue,
+                    reusePermitted: true,
+                    outcome: outcome
+                ),
+                lockedArtifact: fixture.artifact
+            ),
+            submissionID: submissionID,
+            permissionReceiptID: permissionReceiptID,
+            createdAt: createdAt
+        )
+    }
+
     private func makeCandidateOutcomeFixture(
         reusePermitted: Bool,
         submissionID: UUID = UUID(),
