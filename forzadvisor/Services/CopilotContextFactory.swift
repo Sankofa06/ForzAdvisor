@@ -26,6 +26,8 @@ struct CopilotContextFactory {
             return context(.newTune, catalogCarCount: catalogCarCount)
         case .catalogPicker:
             return context(.catalogPicker, catalogCarCount: catalogCarCount)
+        case .catalogIdentityEntry:
+            return context(.manualEntry, cannotSeeUnsavedEdits: true)
         case .catalogReview(let selection):
             return context(.catalogReview, car: selection.carInput)
         case .catalogEdit:

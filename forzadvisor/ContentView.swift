@@ -19,6 +19,7 @@ struct ContentView: View {
     @State var errorRecovery: ErrorRecovery?
     @State var rootSheet: RootSheet?
     @State var catalogResult = BundledCarCatalog.load()
+    @State var fh6RosterResult = BundledFH6OfficialRoster.load()
     @State var firstSavedSetupCopilotHandoff =
         FirstSavedSetupCopilotHandoffState()
     @StateObject var tuneWorkflow = TuneWorkflowController()
@@ -66,6 +67,7 @@ struct ContentView: View {
                 case .catalogPicker(let initialGame):
                     CarCatalogPickerView(
                         catalogResult: catalogResult,
+                        fh6RosterResult: fh6RosterResult,
                         initialGame: initialGame,
                         onBack: { step = .newTune },
                         onManualEntry: { game in
@@ -76,6 +78,27 @@ struct ContentView: View {
                         },
                         onSelect: { selection in
                             step = .catalogReview(selection)
+                        },
+                        onIdentityOnly: { entry in
+                            step = .catalogIdentityEntry(entry)
+                        }
+                    )
+                case .catalogIdentityEntry(let entry):
+                    ManualEntryView(
+                        draft: ManualEntryDraft(
+                            fh6RosterEntry: entry
+                        ),
+                        onCancel: {
+                            step = .catalogPicker(
+                                initialGame: .fh6
+                            )
+                        },
+                        onContinue: { input in
+                            step = .discipline(
+                                input,
+                                origin: .manual(input),
+                                thumbnailData: nil
+                            )
                         }
                     )
                 case .catalogReview(let selection):
@@ -636,7 +659,10 @@ struct ContentView: View {
 
     private var catalogCarCount: Int {
         guard case .success(let snapshot) = catalogResult else { return 0 }
-        return snapshot.entries.count
+        return CarCatalogBrowseOverlay.resolve(
+            catalog: snapshot,
+            rosterResult: fh6RosterResult
+        ).entries.count
     }
 
     private var betaValidationMissionBoard: BetaValidationMissionBoard {

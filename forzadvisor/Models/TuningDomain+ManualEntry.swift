@@ -87,6 +87,17 @@ struct ManualEntryDraft: Equatable, Sendable {
         )
     }
 
+    init(fh6RosterEntry entry: FH6OfficialRosterEntry) {
+        self.init(
+            game: .fh6,
+            year: entry.year,
+            make: entry.make,
+            model: entry.model,
+            performanceIndex: entry.performanceIndex,
+            performanceClass: entry.performanceClass
+        )
+    }
+
     var validationIssues: [ManualEntryValidationIssue] {
         var issues: [ManualEntryValidationIssue] = []
         if make.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,

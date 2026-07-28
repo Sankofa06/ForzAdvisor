@@ -1058,6 +1058,7 @@ enum WorkflowStep {
     case home
     case newTune
     case catalogPicker(initialGame: ForzaGame = .fh6)
+    case catalogIdentityEntry(FH6OfficialRosterEntry)
     case catalogReview(CatalogCarSelection)
     case catalogEdit(CatalogCarSelection)
     case ocrReview(OCRConfirmationDraft)

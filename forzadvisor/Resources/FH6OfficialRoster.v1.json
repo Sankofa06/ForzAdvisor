@@ -1,0 +1,5652 @@
+{
+  "schemaVersion": 1,
+  "revision": "2026.07.14.official",
+  "sourceURL": "https://forza.net/fh6cars",
+  "sourceUpdatedAt": "2026-07-14T00:00:00Z",
+  "sourceSHA256": "6d36d510e83d5649b3fd68008ec7f0c19ba98cbf824578dab329e4946f432317",
+  "entries": [
+    {
+      "id": "fh6-1968-abarth-595-esseesse",
+      "year": 1968,
+      "make": "Abarth",
+      "model": "595 esseesse",
+      "officialDesignation": "1968 Abarth 595 esseesse",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1980-abarth-fiat-131",
+      "year": 1980,
+      "make": "Abarth",
+      "model": "Fiat 131",
+      "officialDesignation": "1980 Abarth Fiat 131",
+      "performanceIndex": 399,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2016-abarth-695-biposto",
+      "year": 2016,
+      "make": "Abarth",
+      "model": "695 Biposto",
+      "officialDesignation": "2016 Abarth 695 Biposto",
+      "performanceIndex": 540,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2017-abarth-124-spider",
+      "year": 2017,
+      "make": "Abarth",
+      "model": "124 Spider",
+      "officialDesignation": "2017 Abarth 124 Spider",
+      "performanceIndex": 450,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2001-acura-integra-type-r",
+      "year": 2001,
+      "make": "Acura",
+      "model": "Integra Type R",
+      "officialDesignation": "2001 Acura Integra Type R",
+      "performanceIndex": 471,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2002-acura-rsx-type-s",
+      "year": 2002,
+      "make": "Acura",
+      "model": "RSX Type S",
+      "officialDesignation": "2002 Acura RSX Type S",
+      "performanceIndex": 462,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2022-acura-nsx-type-s",
+      "year": 2022,
+      "make": "Acura",
+      "model": "NSX Type S",
+      "officialDesignation": "2022 Acura NSX Type S",
+      "performanceIndex": 734,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2023-acura-integra-a-spec",
+      "year": 2023,
+      "make": "Acura",
+      "model": "Integra A-Spec",
+      "officialDesignation": "2023 Acura Integra A-Spec",
+      "performanceIndex": 484,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1965-alfa-romeo-giulia-sprint-gta-stradale",
+      "year": 1965,
+      "make": "Alfa Romeo",
+      "model": "Giulia Sprint GTA Stradale",
+      "officialDesignation": "1965 Alfa Romeo Giulia Sprint GTA Stradale",
+      "performanceIndex": 379,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1965-alfa-romeo-giulia-tz2",
+      "year": 1965,
+      "make": "Alfa Romeo",
+      "model": "Giulia TZ2",
+      "officialDesignation": "1965 Alfa Romeo Giulia TZ2",
+      "performanceIndex": 532,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1968-alfa-romeo-33-stradale",
+      "year": 1968,
+      "make": "Alfa Romeo",
+      "model": "33 Stradale",
+      "officialDesignation": "1968 Alfa Romeo 33 Stradale",
+      "performanceIndex": 593,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1990-alfa-romeo-se-048sp",
+      "year": 1990,
+      "make": "Alfa Romeo",
+      "model": "SE 048SP",
+      "officialDesignation": "1990 Alfa Romeo SE 048SP",
+      "performanceIndex": 978,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1992-alfa-romeo-155-q4",
+      "year": 1992,
+      "make": "Alfa Romeo",
+      "model": "155 Q4",
+      "officialDesignation": "1992 Alfa Romeo 155 Q4",
+      "performanceIndex": 439,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2007-alfa-romeo-8c-competizione",
+      "year": 2007,
+      "make": "Alfa Romeo",
+      "model": "8C Competizione",
+      "officialDesignation": "2007 Alfa Romeo 8C Competizione",
+      "performanceIndex": 635,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2014-alfa-romeo-4c",
+      "year": 2014,
+      "make": "Alfa Romeo",
+      "model": "4C",
+      "officialDesignation": "2014 Alfa Romeo 4C",
+      "performanceIndex": 644,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2017-alfa-romeo-giulia-quadrifoglio",
+      "year": 2017,
+      "make": "Alfa Romeo",
+      "model": "Giulia Quadrifoglio",
+      "officialDesignation": "2017 Alfa Romeo Giulia Quadrifoglio",
+      "performanceIndex": 667,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-alfa-romeo-giulia-gtam",
+      "year": 2021,
+      "make": "Alfa Romeo",
+      "model": "Giulia GTAm",
+      "officialDesignation": "2021 Alfa Romeo Giulia GTAm",
+      "performanceIndex": 711,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-alumicraft-class-10-race-car",
+      "year": 2015,
+      "make": "Alumicraft",
+      "model": "Class 10 Race Car",
+      "officialDesignation": "2015 Alumicraft Class 10 Race Car",
+      "performanceIndex": 532,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2021-alumicraft-122-class-1-buggy",
+      "year": 2021,
+      "make": "Alumicraft",
+      "model": "#122 Class 1 Buggy",
+      "officialDesignation": "2021 Alumicraft #122 Class 1 Buggy",
+      "performanceIndex": 571,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-alumicraft-6165-trick-truck",
+      "year": 2022,
+      "make": "Alumicraft",
+      "model": "#6165 Trick Truck",
+      "officialDesignation": "2022 Alumicraft #6165 Trick Truck",
+      "performanceIndex": 485,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2554-amg-transport-dynamics-m12s-warthog-cst",
+      "year": 2554,
+      "make": "AMG Transport Dynamics",
+      "model": "M12S Warthog CST",
+      "officialDesignation": "2554 AMG Transport Dynamics M12S Warthog CST",
+      "performanceIndex": 663,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2019-apollo-intensa-emozione",
+      "year": 2019,
+      "make": "Apollo",
+      "model": "Intensa Emozione",
+      "officialDesignation": "2019 Apollo Intensa Emozione",
+      "performanceIndex": 916,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2013-ariel-atom-500-v8",
+      "year": 2013,
+      "make": "Ariel",
+      "model": "Atom 500 V8",
+      "officialDesignation": "2013 Ariel Atom 500 V8",
+      "performanceIndex": 825,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2016-ariel-nomad",
+      "year": 2016,
+      "make": "Ariel",
+      "model": "Nomad",
+      "officialDesignation": "2016 Ariel Nomad",
+      "performanceIndex": 601,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1964-aston-martin-db5",
+      "year": 1964,
+      "make": "Aston Martin",
+      "model": "DB5",
+      "officialDesignation": "1964 Aston Martin DB5",
+      "performanceIndex": 416,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2003-aston-martin-db7-gt",
+      "year": 2003,
+      "make": "Aston Martin",
+      "model": "DB7 GT",
+      "officialDesignation": "2003 Aston Martin DB7 GT",
+      "performanceIndex": 566,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2016-aston-martin-vulcan",
+      "year": 2016,
+      "make": "Aston Martin",
+      "model": "Vulcan",
+      "officialDesignation": "2016 Aston Martin Vulcan",
+      "performanceIndex": 884,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2017-aston-martin-db11",
+      "year": 2017,
+      "make": "Aston Martin",
+      "model": "DB11",
+      "officialDesignation": "2017 Aston Martin DB11",
+      "performanceIndex": 679,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2017-aston-martin-vulcan-amr-pro",
+      "year": 2017,
+      "make": "Aston Martin",
+      "model": "Vulcan AMR Pro",
+      "officialDesignation": "2017 Aston Martin Vulcan AMR Pro",
+      "performanceIndex": 898,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2019-aston-martin-dbs-superleggera",
+      "year": 2019,
+      "make": "Aston Martin",
+      "model": "DBS Superleggera",
+      "officialDesignation": "2019 Aston Martin DBS Superleggera",
+      "performanceIndex": 736,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-aston-martin-valhalla-concept-car",
+      "year": 2019,
+      "make": "Aston Martin",
+      "model": "Valhalla Concept Car",
+      "officialDesignation": "2019 Aston Martin Valhalla Concept Car",
+      "performanceIndex": 960,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2019-aston-martin-vantage",
+      "year": 2019,
+      "make": "Aston Martin",
+      "model": "Vantage",
+      "officialDesignation": "2019 Aston Martin Vantage",
+      "performanceIndex": 696,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-aston-martin-dbx",
+      "year": 2021,
+      "make": "Aston Martin",
+      "model": "DBX",
+      "officialDesignation": "2021 Aston Martin DBX",
+      "performanceIndex": 618,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2022-aston-martin-valkyrie-amr-pro",
+      "year": 2022,
+      "make": "Aston Martin",
+      "model": "Valkyrie AMR Pro",
+      "officialDesignation": "2022 Aston Martin Valkyrie AMR Pro",
+      "performanceIndex": 989,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2023-aston-martin-valkyrie",
+      "year": 2023,
+      "make": "Aston Martin",
+      "model": "Valkyrie",
+      "officialDesignation": "2023 Aston Martin Valkyrie",
+      "performanceIndex": 924,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1984-audi-sport-quattro",
+      "year": 1984,
+      "make": "Audi",
+      "model": "Sport quattro",
+      "officialDesignation": "1984 Audi Sport quattro",
+      "performanceIndex": 526,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1986-audi-2-audi-sport-quattro-s1",
+      "year": 1986,
+      "make": "Audi",
+      "model": "#2 Audi Sport quattro S1",
+      "officialDesignation": "1986 Audi #2 Audi Sport quattro S1",
+      "performanceIndex": 726,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2001-audi-rs-4-avant",
+      "year": 2001,
+      "make": "Audi",
+      "model": "RS 4 Avant",
+      "officialDesignation": "2001 Audi RS 4 Avant",
+      "performanceIndex": 544,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2003-audi-rs-6",
+      "year": 2003,
+      "make": "Audi",
+      "model": "RS 6",
+      "officialDesignation": "2003 Audi RS 6",
+      "performanceIndex": 556,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2006-audi-rs-4",
+      "year": 2006,
+      "make": "Audi",
+      "model": "RS 4",
+      "officialDesignation": "2006 Audi RS 4",
+      "performanceIndex": 593,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2009-audi-r8-lms",
+      "year": 2009,
+      "make": "Audi",
+      "model": "R8 LMS",
+      "officialDesignation": "2009 Audi R8 LMS",
+      "performanceIndex": 810,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2009-audi-rs-6",
+      "year": 2009,
+      "make": "Audi",
+      "model": "RS 6",
+      "officialDesignation": "2009 Audi RS 6",
+      "performanceIndex": 598,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2010-audi-tt-rs-coupe",
+      "year": 2010,
+      "make": "Audi",
+      "model": "TT RS Coupé",
+      "officialDesignation": "2010 Audi TT RS Coupé",
+      "performanceIndex": 593,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2011-audi-rs-3-sportback",
+      "year": 2011,
+      "make": "Audi",
+      "model": "RS 3 Sportback",
+      "officialDesignation": "2011 Audi RS 3 Sportback",
+      "performanceIndex": 565,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2011-audi-rs-5-coupe",
+      "year": 2011,
+      "make": "Audi",
+      "model": "RS 5 Coupé",
+      "officialDesignation": "2011 Audi RS 5 Coupé",
+      "performanceIndex": 613,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2013-audi-r8-coupe-v10-plus-5-2-fsi-quattro",
+      "year": 2013,
+      "make": "Audi",
+      "model": "R8 Coupé V10 plus 5.2 FSI quattro",
+      "officialDesignation": "2013 Audi R8 Coupé V10 plus 5.2 FSI quattro",
+      "performanceIndex": 694,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2013-audi-rs-4-avant",
+      "year": 2013,
+      "make": "Audi",
+      "model": "RS 4 Avant",
+      "officialDesignation": "2013 Audi RS 4 Avant",
+      "performanceIndex": 607,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2013-audi-rs-7-sportback",
+      "year": 2013,
+      "make": "Audi",
+      "model": "RS 7 Sportback",
+      "officialDesignation": "2013 Audi RS 7 Sportback",
+      "performanceIndex": 619,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2015-audi-rs-6-avant",
+      "year": 2015,
+      "make": "Audi",
+      "model": "RS 6 Avant",
+      "officialDesignation": "2015 Audi RS 6 Avant",
+      "performanceIndex": 640,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2015-audi-s1",
+      "year": 2015,
+      "make": "Audi",
+      "model": "S1",
+      "officialDesignation": "2015 Audi S1",
+      "performanceIndex": 527,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2016-audi-r8-v10-plus",
+      "year": 2016,
+      "make": "Audi",
+      "model": "R8 V10 plus",
+      "officialDesignation": "2016 Audi R8 V10 plus",
+      "performanceIndex": 731,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-audi-rs-4-avant",
+      "year": 2018,
+      "make": "Audi",
+      "model": "RS 4 Avant",
+      "officialDesignation": "2018 Audi RS 4 Avant",
+      "performanceIndex": 637,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-audi-r8-v10-performance",
+      "year": 2020,
+      "make": "Audi",
+      "model": "R8 V10 performance",
+      "officialDesignation": "2020 Audi R8 V10 performance",
+      "performanceIndex": 738,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-audi-rs-3-sedan",
+      "year": 2020,
+      "make": "Audi",
+      "model": "RS 3 Sedan",
+      "officialDesignation": "2020 Audi RS 3 Sedan",
+      "performanceIndex": 617,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-audi-rs-6-avant",
+      "year": 2021,
+      "make": "Audi",
+      "model": "RS 6 Avant",
+      "officialDesignation": "2021 Audi RS 6 Avant",
+      "performanceIndex": 650,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-audi-rs-7-sportback",
+      "year": 2021,
+      "make": "Audi",
+      "model": "RS 7 Sportback",
+      "officialDesignation": "2021 Audi RS 7 Sportback",
+      "performanceIndex": 655,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-audi-rs-e-tron-gt",
+      "year": 2021,
+      "make": "Audi",
+      "model": "RS e-tron GT",
+      "officialDesignation": "2021 Audi RS e-tron GT",
+      "performanceIndex": 677,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2023-audi-r8-coupe-v10-gt-rwd",
+      "year": 2023,
+      "make": "Audi",
+      "model": "R8 Coupé V10 GT RWD",
+      "officialDesignation": "2023 Audi R8 Coupé V10 GT RWD",
+      "performanceIndex": 769,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1965-austin-healey-3000-mkiii",
+      "year": 1965,
+      "make": "Austin-Healey",
+      "model": "3000 MkIII",
+      "officialDesignation": "1965 Austin-Healey 3000 MkIII",
+      "performanceIndex": 352,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1993-autozam-az-1",
+      "year": 1993,
+      "make": "Autozam",
+      "model": "AZ-1",
+      "officialDesignation": "1993 Autozam AZ-1",
+      "performanceIndex": 342,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2014-bac-mono",
+      "year": 2014,
+      "make": "BAC",
+      "model": "Mono",
+      "officialDesignation": "2014 BAC Mono",
+      "performanceIndex": 766,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2016-bentley-bentayga",
+      "year": 2016,
+      "make": "Bentley",
+      "model": "Bentayga",
+      "officialDesignation": "2016 Bentley Bentayga",
+      "performanceIndex": 612,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-bentley-continental-gt-convertible",
+      "year": 2021,
+      "make": "Bentley",
+      "model": "Continental GT Convertible",
+      "officialDesignation": "2021 Bentley Continental GT Convertible",
+      "performanceIndex": 649,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1957-bmw-isetta-300-export",
+      "year": 1957,
+      "make": "BMW",
+      "model": "Isetta 300 Export",
+      "officialDesignation": "1957 BMW Isetta 300 Export",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1973-bmw-2002-turbo",
+      "year": 1973,
+      "make": "BMW",
+      "model": "2002 Turbo",
+      "officialDesignation": "1973 BMW 2002 Turbo",
+      "performanceIndex": 424,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1981-bmw-m1",
+      "year": 1981,
+      "make": "BMW",
+      "model": "M1",
+      "officialDesignation": "1981 BMW M1",
+      "performanceIndex": 510,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1988-bmw-m3",
+      "year": 1988,
+      "make": "BMW",
+      "model": "M3",
+      "officialDesignation": "1988 BMW M3",
+      "performanceIndex": 474,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1988-bmw-m5",
+      "year": 1988,
+      "make": "BMW",
+      "model": "M5",
+      "officialDesignation": "1988 BMW M5",
+      "performanceIndex": 470,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1995-bmw-850csi",
+      "year": 1995,
+      "make": "BMW",
+      "model": "850CSi",
+      "officialDesignation": "1995 BMW 850CSi",
+      "performanceIndex": 493,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1995-bmw-m5",
+      "year": 1995,
+      "make": "BMW",
+      "model": "M5",
+      "officialDesignation": "1995 BMW M5",
+      "performanceIndex": 516,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1997-bmw-m3",
+      "year": 1997,
+      "make": "BMW",
+      "model": "M3",
+      "officialDesignation": "1997 BMW M3",
+      "performanceIndex": 549,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2003-bmw-m5",
+      "year": 2003,
+      "make": "BMW",
+      "model": "M5",
+      "officialDesignation": "2003 BMW M5",
+      "performanceIndex": 580,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2005-bmw-m3",
+      "year": 2005,
+      "make": "BMW",
+      "model": "M3",
+      "officialDesignation": "2005 BMW M3",
+      "performanceIndex": 554,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2008-bmw-m3",
+      "year": 2008,
+      "make": "BMW",
+      "model": "M3",
+      "officialDesignation": "2008 BMW M3",
+      "performanceIndex": 608,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2008-bmw-z4-m-coupe",
+      "year": 2008,
+      "make": "BMW",
+      "model": "Z4 M Coupé",
+      "officialDesignation": "2008 BMW Z4 M Coupé",
+      "performanceIndex": 579,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2009-bmw-m5",
+      "year": 2009,
+      "make": "BMW",
+      "model": "M5",
+      "officialDesignation": "2009 BMW M5",
+      "performanceIndex": 595,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2010-bmw-m3-gts",
+      "year": 2010,
+      "make": "BMW",
+      "model": "M3 GTS",
+      "officialDesignation": "2010 BMW M3 GTS",
+      "performanceIndex": 678,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2011-bmw-x5-m",
+      "year": 2011,
+      "make": "BMW",
+      "model": "X5 M",
+      "officialDesignation": "2011 BMW X5 M",
+      "performanceIndex": 546,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2012-bmw-m5",
+      "year": 2012,
+      "make": "BMW",
+      "model": "M5",
+      "officialDesignation": "2012 BMW M5",
+      "performanceIndex": 652,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2014-bmw-m4-coupe",
+      "year": 2014,
+      "make": "BMW",
+      "model": "M4 Coupé",
+      "officialDesignation": "2014 BMW M4 Coupé",
+      "performanceIndex": 679,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2015-bmw-i8",
+      "year": 2015,
+      "make": "BMW",
+      "model": "i8",
+      "officialDesignation": "2015 BMW i8",
+      "performanceIndex": 665,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2016-bmw-m4-gts",
+      "year": 2016,
+      "make": "BMW",
+      "model": "M4 GTS",
+      "officialDesignation": "2016 BMW M4 GTS",
+      "performanceIndex": 711,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-bmw-z4-roadster",
+      "year": 2019,
+      "make": "BMW",
+      "model": "Z4 Roadster",
+      "officialDesignation": "2019 BMW Z4 Roadster",
+      "performanceIndex": 634,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-bmw-m2-competition-coupe",
+      "year": 2020,
+      "make": "BMW",
+      "model": "M2 Competition Coupé",
+      "officialDesignation": "2020 BMW M2 Competition Coupé",
+      "performanceIndex": 656,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-bmw-m8-competition-coupe",
+      "year": 2020,
+      "make": "BMW",
+      "model": "M8 Competition Coupé",
+      "officialDesignation": "2020 BMW M8 Competition Coupé",
+      "performanceIndex": 684,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-bmw-m4-competition-coupe",
+      "year": 2021,
+      "make": "BMW",
+      "model": "M4 Competition Coupé",
+      "officialDesignation": "2021 BMW M4 Competition Coupé",
+      "performanceIndex": 666,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-bmw-m4-competition-coupe-welcome-pack",
+      "year": 2021,
+      "make": "BMW",
+      "model": "M4 Competition Coupé Welcome Pack",
+      "officialDesignation": "2021 BMW M4 Competition Coupé Welcome Pack",
+      "performanceIndex": 800,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2022-bmw-ix-xdrive50",
+      "year": 2022,
+      "make": "BMW",
+      "model": "iX xDrive50",
+      "officialDesignation": "2022 BMW iX xDrive50",
+      "performanceIndex": 595,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-bmw-m5-cs",
+      "year": 2022,
+      "make": "BMW",
+      "model": "M5 CS",
+      "officialDesignation": "2022 BMW M5 CS",
+      "performanceIndex": 731,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2023-bmw-m2",
+      "year": 2023,
+      "make": "BMW",
+      "model": "M2",
+      "officialDesignation": "2023 BMW M2",
+      "performanceIndex": 647,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2023-bmw-m2-forza-edition",
+      "year": 2023,
+      "make": "BMW",
+      "model": "M2 Forza Edition",
+      "officialDesignation": "2023 BMW M2 Forza Edition",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2024-bmw-x6-m-competition",
+      "year": 2024,
+      "make": "BMW",
+      "model": "X6 M Competition",
+      "officialDesignation": "2024 BMW X6 M Competition",
+      "performanceIndex": 672,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1987-buick-regal-gnx",
+      "year": 1987,
+      "make": "Buick",
+      "model": "Regal GNX",
+      "officialDesignation": "1987 Buick Regal GNX",
+      "performanceIndex": 454,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2013-cadillac-xts-limousine",
+      "year": 2013,
+      "make": "Cadillac",
+      "model": "XTS Limousine",
+      "officialDesignation": "2013 Cadillac XTS Limousine",
+      "performanceIndex": 381,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2016-cadillac-ats-v",
+      "year": 2016,
+      "make": "Cadillac",
+      "model": "ATS-V",
+      "officialDesignation": "2016 Cadillac ATS-V",
+      "performanceIndex": 601,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2016-cadillac-cts-v-sedan",
+      "year": 2016,
+      "make": "Cadillac",
+      "model": "CTS-V Sedan",
+      "officialDesignation": "2016 Cadillac CTS-V Sedan",
+      "performanceIndex": 648,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2022-cadillac-ct4-v-blackwing",
+      "year": 2022,
+      "make": "Cadillac",
+      "model": "CT4-V Blackwing",
+      "officialDesignation": "2022 Cadillac CT4-V Blackwing",
+      "performanceIndex": 650,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2022-cadillac-ct5-v-blackwing",
+      "year": 2022,
+      "make": "Cadillac",
+      "model": "CT5-V Blackwing",
+      "officialDesignation": "2022 Cadillac CT5-V Blackwing",
+      "performanceIndex": 701,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-can-am-maverick-x-rs-turbo-r",
+      "year": 2018,
+      "make": "Can-Am",
+      "model": "Maverick X RS Turbo R",
+      "officialDesignation": "2018 Can-Am Maverick X RS Turbo R",
+      "performanceIndex": 568,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2019-casey-currie-motorsports-4402-ultra-4-trophy-jeep",
+      "year": 2019,
+      "make": "Casey Currie Motorsports",
+      "model": "#4402 Ultra 4 'Trophy Jeep'",
+      "officialDesignation": "2019 Casey Currie Motorsports #4402 Ultra 4 'Trophy Jeep'",
+      "performanceIndex": 641,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1953-chevrolet-corvette",
+      "year": 1953,
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "officialDesignation": "1953 Chevrolet Corvette",
+      "performanceIndex": 270,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1955-chevrolet-150-utility-sedan",
+      "year": 1955,
+      "make": "Chevrolet",
+      "model": "150 Utility Sedan",
+      "officialDesignation": "1955 Chevrolet 150 Utility Sedan",
+      "performanceIndex": 221,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1957-chevrolet-bel-air",
+      "year": 1957,
+      "make": "Chevrolet",
+      "model": "Bel Air",
+      "officialDesignation": "1957 Chevrolet Bel Air",
+      "performanceIndex": 320,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1960-chevrolet-corvette",
+      "year": 1960,
+      "make": "Chevrolet",
+      "model": "Corvette",
+      "officialDesignation": "1960 Chevrolet Corvette",
+      "performanceIndex": 428,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1964-chevrolet-impala-super-sport-409",
+      "year": 1964,
+      "make": "Chevrolet",
+      "model": "Impala Super Sport 409",
+      "officialDesignation": "1964 Chevrolet Impala Super Sport 409",
+      "performanceIndex": 427,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1967-chevrolet-corvette-stingray-427",
+      "year": 1967,
+      "make": "Chevrolet",
+      "model": "Corvette Stingray 427",
+      "officialDesignation": "1967 Chevrolet Corvette Stingray 427",
+      "performanceIndex": 510,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1969-chevrolet-camaro-super-sport-coupe",
+      "year": 1969,
+      "make": "Chevrolet",
+      "model": "Camaro Super Sport Coupe",
+      "officialDesignation": "1969 Chevrolet Camaro Super Sport Coupe",
+      "performanceIndex": 471,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1969-chevrolet-nova-super-sport-396",
+      "year": 1969,
+      "make": "Chevrolet",
+      "model": "Nova Super Sport 396",
+      "officialDesignation": "1969 Chevrolet Nova Super Sport 396",
+      "performanceIndex": 431,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1970-chevrolet-camaro-z28",
+      "year": 1970,
+      "make": "Chevrolet",
+      "model": "Camaro Z28",
+      "officialDesignation": "1970 Chevrolet Camaro Z28",
+      "performanceIndex": 430,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1970-chevrolet-chevelle-super-sport-454",
+      "year": 1970,
+      "make": "Chevrolet",
+      "model": "Chevelle Super Sport 454",
+      "officialDesignation": "1970 Chevrolet Chevelle Super Sport 454",
+      "performanceIndex": 424,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1970-chevrolet-corvette-zr-1",
+      "year": 1970,
+      "make": "Chevrolet",
+      "model": "Corvette ZR-1",
+      "officialDesignation": "1970 Chevrolet Corvette ZR-1",
+      "performanceIndex": 497,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1970-chevrolet-el-camino-super-sport-454",
+      "year": 1970,
+      "make": "Chevrolet",
+      "model": "El Camino Super Sport 454",
+      "officialDesignation": "1970 Chevrolet El Camino Super Sport 454",
+      "performanceIndex": 430,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1972-chevrolet-k-10-custom",
+      "year": 1972,
+      "make": "Chevrolet",
+      "model": "K-10 Custom",
+      "officialDesignation": "1972 Chevrolet K-10 Custom",
+      "performanceIndex": 268,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1979-chevrolet-camaro-z28",
+      "year": 1979,
+      "make": "Chevrolet",
+      "model": "Camaro Z28",
+      "officialDesignation": "1979 Chevrolet Camaro Z28",
+      "performanceIndex": 364,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1988-chevrolet-monte-carlo-super-sport",
+      "year": 1988,
+      "make": "Chevrolet",
+      "model": "Monte Carlo Super Sport",
+      "officialDesignation": "1988 Chevrolet Monte Carlo Super Sport",
+      "performanceIndex": 282,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1995-chevrolet-corvette-zr-1",
+      "year": 1995,
+      "make": "Chevrolet",
+      "model": "Corvette ZR-1",
+      "officialDesignation": "1995 Chevrolet Corvette ZR-1",
+      "performanceIndex": 576,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1996-chevrolet-impala-super-sport",
+      "year": 1996,
+      "make": "Chevrolet",
+      "model": "Impala Super Sport",
+      "officialDesignation": "1996 Chevrolet Impala Super Sport",
+      "performanceIndex": 407,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2002-chevrolet-corvette-z06",
+      "year": 2002,
+      "make": "Chevrolet",
+      "model": "Corvette Z06",
+      "officialDesignation": "2002 Chevrolet Corvette Z06",
+      "performanceIndex": 602,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2009-chevrolet-corvette-zr1",
+      "year": 2009,
+      "make": "Chevrolet",
+      "model": "Corvette ZR1",
+      "officialDesignation": "2009 Chevrolet Corvette ZR1",
+      "performanceIndex": 712,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-chevrolet-camaro-z-28",
+      "year": 2015,
+      "make": "Chevrolet",
+      "model": "Camaro Z/28",
+      "officialDesignation": "2015 Chevrolet Camaro Z/28",
+      "performanceIndex": 695,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2015-chevrolet-corvette-z06",
+      "year": 2015,
+      "make": "Chevrolet",
+      "model": "Corvette Z06",
+      "officialDesignation": "2015 Chevrolet Corvette Z06",
+      "performanceIndex": 755,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2017-chevrolet-camaro-zl1",
+      "year": 2017,
+      "make": "Chevrolet",
+      "model": "Camaro ZL1",
+      "officialDesignation": "2017 Chevrolet Camaro ZL1",
+      "performanceIndex": 727,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-chevrolet-camaro-zl1-1le",
+      "year": 2018,
+      "make": "Chevrolet",
+      "model": "Camaro ZL1 1LE",
+      "officialDesignation": "2018 Chevrolet Camaro ZL1 1LE",
+      "performanceIndex": 728,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-chevrolet-corvette-zr1",
+      "year": 2019,
+      "make": "Chevrolet",
+      "model": "Corvette ZR1",
+      "officialDesignation": "2019 Chevrolet Corvette ZR1",
+      "performanceIndex": 778,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-chevrolet-corvette-stingray-coupe",
+      "year": 2020,
+      "make": "Chevrolet",
+      "model": "Corvette Stingray Coupe",
+      "officialDesignation": "2020 Chevrolet Corvette Stingray Coupe",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-chevrolet-silverado-lt-trail-boss",
+      "year": 2020,
+      "make": "Chevrolet",
+      "model": "Silverado LT Trail Boss",
+      "officialDesignation": "2020 Chevrolet Silverado LT Trail Boss",
+      "performanceIndex": 449,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2023-chevrolet-corvette-z06",
+      "year": 2023,
+      "make": "Chevrolet",
+      "model": "Corvette Z06",
+      "officialDesignation": "2023 Chevrolet Corvette Z06",
+      "performanceIndex": 763,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2024-chevrolet-corvette-e-ray",
+      "year": 2024,
+      "make": "Chevrolet",
+      "model": "Corvette E-Ray",
+      "officialDesignation": "2024 Chevrolet Corvette E-Ray",
+      "performanceIndex": 737,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1969-datsun-2000-roadster",
+      "year": 1969,
+      "make": "Datsun",
+      "model": "2000 Roadster",
+      "officialDesignation": "1969 Datsun 2000 Roadster",
+      "performanceIndex": 323,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1970-datsun-510",
+      "year": 1970,
+      "make": "Datsun",
+      "model": "510",
+      "officialDesignation": "1970 Datsun 510",
+      "performanceIndex": 143,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1972-datsun-269-attacking-the-clock-racing-240z-all-carbon-hill-climb-beast",
+      "year": 1972,
+      "make": "Datsun",
+      "model": "#269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast'",
+      "officialDesignation": "1972 Datsun #269 Attacking the Clock Racing 240Z 'All Carbon Hill Climb Beast'",
+      "performanceIndex": 951,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1984-de-tomaso-pantera-gt5",
+      "year": 1984,
+      "make": "De Tomaso",
+      "model": "Pantera GT5",
+      "officialDesignation": "1984 De Tomaso Pantera GT5",
+      "performanceIndex": 562,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2013-deberti-jeep-wrangler-unlimited",
+      "year": 2013,
+      "make": "DeBerti",
+      "model": "Jeep Wrangler Unlimited",
+      "officialDesignation": "2013 DeBerti Jeep Wrangler Unlimited",
+      "performanceIndex": 645,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2018-deberti-chevrolet-silverado-1500-drift-truck",
+      "year": 2018,
+      "make": "DeBerti",
+      "model": "Chevrolet Silverado 1500 Drift Truck",
+      "officialDesignation": "2018 DeBerti Chevrolet Silverado 1500 Drift Truck",
+      "performanceIndex": 707,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-deberti-ford-super-duty-f-250-lariat-transformer",
+      "year": 2019,
+      "make": "DeBerti",
+      "model": "Ford Super Duty F-250 Lariat 'Transformer'",
+      "officialDesignation": "2019 DeBerti Ford Super Duty F-250 Lariat 'Transformer'",
+      "performanceIndex": 548,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2019-deberti-toyota-tacoma-trd-the-performance-truck",
+      "year": 2019,
+      "make": "DeBerti",
+      "model": "Toyota Tacoma TRD ‘The Performance Truck’",
+      "officialDesignation": "2019 DeBerti Toyota Tacoma TRD ‘The Performance Truck’",
+      "performanceIndex": 717,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1982-delorean-dmc-12",
+      "year": 1982,
+      "make": "DeLorean",
+      "model": "DMC-12",
+      "officialDesignation": "1982 DeLorean DMC-12",
+      "performanceIndex": 357,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1968-dodge-dart-hemi-super-stock",
+      "year": 1968,
+      "make": "Dodge",
+      "model": "Dart HEMI Super Stock",
+      "officialDesignation": "1968 Dodge Dart HEMI Super Stock",
+      "performanceIndex": 540,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1969-dodge-charger-daytona-hemi",
+      "year": 1969,
+      "make": "Dodge",
+      "model": "Charger Daytona HEMI",
+      "officialDesignation": "1969 Dodge Charger Daytona HEMI",
+      "performanceIndex": 479,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1969-dodge-charger-r-t",
+      "year": 1969,
+      "make": "Dodge",
+      "model": "Charger R/T",
+      "officialDesignation": "1969 Dodge Charger R/T",
+      "performanceIndex": 417,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1970-dodge-challenger-r-t",
+      "year": 1970,
+      "make": "Dodge",
+      "model": "Challenger R/T",
+      "officialDesignation": "1970 Dodge Challenger R/T",
+      "performanceIndex": 443,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1970-dodge-coronet-super-bee",
+      "year": 1970,
+      "make": "Dodge",
+      "model": "Coronet Super Bee",
+      "officialDesignation": "1970 Dodge Coronet Super Bee",
+      "performanceIndex": 455,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1999-dodge-viper-gts-acr",
+      "year": 1999,
+      "make": "Dodge",
+      "model": "Viper GTS ACR",
+      "officialDesignation": "1999 Dodge Viper GTS ACR",
+      "performanceIndex": 598,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1999-dodge-viper-gts-acr-forza-edition",
+      "year": 1999,
+      "make": "Dodge",
+      "model": "Viper GTS ACR Forza Edition",
+      "officialDesignation": "1999 Dodge Viper GTS ACR Forza Edition",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2006-dodge-ram-srt-10",
+      "year": 2006,
+      "make": "Dodge",
+      "model": "Ram SRT-10",
+      "officialDesignation": "2006 Dodge Ram SRT-10",
+      "performanceIndex": 547,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2008-dodge-viper-srt-10-acr",
+      "year": 2008,
+      "make": "Dodge",
+      "model": "Viper SRT-10 ACR",
+      "officialDesignation": "2008 Dodge Viper SRT-10 ACR",
+      "performanceIndex": 735,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-dodge-challenger-srt-hellcat",
+      "year": 2015,
+      "make": "Dodge",
+      "model": "Challenger SRT Hellcat",
+      "officialDesignation": "2015 Dodge Challenger SRT Hellcat",
+      "performanceIndex": 631,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2015-dodge-charger-srt-hellcat",
+      "year": 2015,
+      "make": "Dodge",
+      "model": "Charger SRT Hellcat",
+      "officialDesignation": "2015 Dodge Charger SRT Hellcat",
+      "performanceIndex": 637,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2016-dodge-viper-acr",
+      "year": 2016,
+      "make": "Dodge",
+      "model": "Viper ACR",
+      "officialDesignation": "2016 Dodge Viper ACR",
+      "performanceIndex": 786,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-dodge-challenger-srt-demon",
+      "year": 2018,
+      "make": "Dodge",
+      "model": "Challenger SRT Demon",
+      "officialDesignation": "2018 Dodge Challenger SRT Demon",
+      "performanceIndex": 678,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-dodge-durango-srt-hellcat",
+      "year": 2021,
+      "make": "Dodge",
+      "model": "Durango SRT Hellcat",
+      "officialDesignation": "2021 Dodge Durango SRT Hellcat",
+      "performanceIndex": 628,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2022-dodge-challenger-srt-super-stock",
+      "year": 2022,
+      "make": "Dodge",
+      "model": "Challenger SRT Super Stock",
+      "officialDesignation": "2022 Dodge Challenger SRT Super Stock",
+      "performanceIndex": 695,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1962-ferrari-250-gt-berlinetta-lusso",
+      "year": 1962,
+      "make": "Ferrari",
+      "model": "250 GT Berlinetta Lusso",
+      "officialDesignation": "1962 Ferrari 250 GT Berlinetta Lusso",
+      "performanceIndex": 475,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1962-ferrari-250-gto",
+      "year": 1962,
+      "make": "Ferrari",
+      "model": "250 GTO",
+      "officialDesignation": "1962 Ferrari 250 GTO",
+      "performanceIndex": 494,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1967-ferrari-24-ferrari-spa-330-p4",
+      "year": 1967,
+      "make": "Ferrari",
+      "model": "#24 Ferrari Spa 330 P4",
+      "officialDesignation": "1967 Ferrari #24 Ferrari Spa 330 P4",
+      "performanceIndex": 684,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1967-ferrari-275-gtb4-spider",
+      "year": 1967,
+      "make": "Ferrari",
+      "model": "275 GTB4 Spider",
+      "officialDesignation": "1967 Ferrari 275 GTB4 Spider",
+      "performanceIndex": 579,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1969-ferrari-dino-246-gt",
+      "year": 1969,
+      "make": "Ferrari",
+      "model": "Dino 246 GT",
+      "officialDesignation": "1969 Ferrari Dino 246 GT",
+      "performanceIndex": 428,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1970-ferrari-512-s",
+      "year": 1970,
+      "make": "Ferrari",
+      "model": "512 S",
+      "officialDesignation": "1970 Ferrari 512 S",
+      "performanceIndex": 774,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1984-ferrari-288-gto",
+      "year": 1984,
+      "make": "Ferrari",
+      "model": "288 GTO",
+      "officialDesignation": "1984 Ferrari 288 GTO",
+      "performanceIndex": 643,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1987-ferrari-f40",
+      "year": 1987,
+      "make": "Ferrari",
+      "model": "F40",
+      "officialDesignation": "1987 Ferrari F40",
+      "performanceIndex": 678,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1989-ferrari-f40-competizione",
+      "year": 1989,
+      "make": "Ferrari",
+      "model": "F40 Competizione",
+      "officialDesignation": "1989 Ferrari F40 Competizione",
+      "performanceIndex": 948,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1992-ferrari-512-tr",
+      "year": 1992,
+      "make": "Ferrari",
+      "model": "512 TR",
+      "officialDesignation": "1992 Ferrari 512 TR",
+      "performanceIndex": 615,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1994-ferrari-f355-berlinetta",
+      "year": 1994,
+      "make": "Ferrari",
+      "model": "F355 Berlinetta",
+      "officialDesignation": "1994 Ferrari F355 Berlinetta",
+      "performanceIndex": 588,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1995-ferrari-f50",
+      "year": 1995,
+      "make": "Ferrari",
+      "model": "F50",
+      "officialDesignation": "1995 Ferrari F50",
+      "performanceIndex": 678,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1996-ferrari-f50-gt",
+      "year": 1996,
+      "make": "Ferrari",
+      "model": "F50 GT",
+      "officialDesignation": "1996 Ferrari F50 GT",
+      "performanceIndex": 949,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2002-ferrari-enzo-ferrari",
+      "year": 2002,
+      "make": "Ferrari",
+      "model": "Enzo Ferrari",
+      "officialDesignation": "2002 Ferrari Enzo Ferrari",
+      "performanceIndex": 755,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2005-ferrari-fxx",
+      "year": 2005,
+      "make": "Ferrari",
+      "model": "FXX",
+      "officialDesignation": "2005 Ferrari FXX",
+      "performanceIndex": 900,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2007-ferrari-430-scuderia",
+      "year": 2007,
+      "make": "Ferrari",
+      "model": "430 Scuderia",
+      "officialDesignation": "2007 Ferrari 430 Scuderia",
+      "performanceIndex": 702,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2009-ferrari-458-italia",
+      "year": 2009,
+      "make": "Ferrari",
+      "model": "458 Italia",
+      "officialDesignation": "2009 Ferrari 458 Italia",
+      "performanceIndex": 721,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2010-ferrari-599xx",
+      "year": 2010,
+      "make": "Ferrari",
+      "model": "599XX",
+      "officialDesignation": "2010 Ferrari 599XX",
+      "performanceIndex": 840,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2012-ferrari-599xx-evolution",
+      "year": 2012,
+      "make": "Ferrari",
+      "model": "599XX Evolution",
+      "officialDesignation": "2012 Ferrari 599XX Evolution",
+      "performanceIndex": 894,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2013-ferrari-458-speciale",
+      "year": 2013,
+      "make": "Ferrari",
+      "model": "458 Speciale",
+      "officialDesignation": "2013 Ferrari 458 Speciale",
+      "performanceIndex": 768,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2013-ferrari-laferrari",
+      "year": 2013,
+      "make": "Ferrari",
+      "model": "LaFerrari",
+      "officialDesignation": "2013 Ferrari LaFerrari",
+      "performanceIndex": 857,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2014-ferrari-fxx-k",
+      "year": 2014,
+      "make": "Ferrari",
+      "model": "FXX K",
+      "officialDesignation": "2014 Ferrari FXX K",
+      "performanceIndex": 936,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2015-ferrari-488-gtb",
+      "year": 2015,
+      "make": "Ferrari",
+      "model": "488 GTB",
+      "officialDesignation": "2015 Ferrari 488 GTB",
+      "performanceIndex": 770,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-ferrari-f12tdf",
+      "year": 2015,
+      "make": "Ferrari",
+      "model": "F12tdf",
+      "officialDesignation": "2015 Ferrari F12tdf",
+      "performanceIndex": 788,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2017-ferrari-812-superfast",
+      "year": 2017,
+      "make": "Ferrari",
+      "model": "812 Superfast",
+      "officialDesignation": "2017 Ferrari 812 Superfast",
+      "performanceIndex": 780,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2017-ferrari-j50",
+      "year": 2017,
+      "make": "Ferrari",
+      "model": "J50",
+      "officialDesignation": "2017 Ferrari J50",
+      "performanceIndex": 772,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2017-ferrari-j50-preorder-car",
+      "year": 2017,
+      "make": "Ferrari",
+      "model": "J50 Preorder Car",
+      "officialDesignation": "2017 Ferrari J50 Preorder Car",
+      "performanceIndex": 800,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-ferrari-fxx-k-evo",
+      "year": 2018,
+      "make": "Ferrari",
+      "model": "FXX-K Evo",
+      "officialDesignation": "2018 Ferrari FXX-K Evo",
+      "performanceIndex": 957,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2018-ferrari-fxx-k-evo-welcome-pack",
+      "year": 2018,
+      "make": "Ferrari",
+      "model": "FXX-K Evo Welcome Pack",
+      "officialDesignation": "2018 Ferrari FXX-K Evo Welcome Pack",
+      "performanceIndex": 998,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2018-ferrari-portofino",
+      "year": 2018,
+      "make": "Ferrari",
+      "model": "Portofino",
+      "officialDesignation": "2018 Ferrari Portofino",
+      "performanceIndex": 714,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-ferrari-488-pista",
+      "year": 2019,
+      "make": "Ferrari",
+      "model": "488 Pista",
+      "officialDesignation": "2019 Ferrari 488 Pista",
+      "performanceIndex": 803,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2019-ferrari-f8-tributo",
+      "year": 2019,
+      "make": "Ferrari",
+      "model": "F8 Tributo",
+      "officialDesignation": "2019 Ferrari F8 Tributo",
+      "performanceIndex": 802,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2019-ferrari-monza-sp2",
+      "year": 2019,
+      "make": "Ferrari",
+      "model": "Monza SP2",
+      "officialDesignation": "2019 Ferrari Monza SP2",
+      "performanceIndex": 773,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-ferrari-roma",
+      "year": 2020,
+      "make": "Ferrari",
+      "model": "Roma",
+      "officialDesignation": "2020 Ferrari Roma",
+      "performanceIndex": 735,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-ferrari-sf90-stradale",
+      "year": 2020,
+      "make": "Ferrari",
+      "model": "SF90 Stradale",
+      "officialDesignation": "2020 Ferrari SF90 Stradale",
+      "performanceIndex": 851,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2022-ferrari-296-gtb",
+      "year": 2022,
+      "make": "Ferrari",
+      "model": "296 GTB",
+      "officialDesignation": "2022 Ferrari 296 GTB",
+      "performanceIndex": 811,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2025-ferrari-f80",
+      "year": 2025,
+      "make": "Ferrari",
+      "model": "F80",
+      "officialDesignation": "2025 Ferrari F80",
+      "performanceIndex": 916,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1932-ford-de-luxe-five-window-coupe",
+      "year": 1932,
+      "make": "Ford",
+      "model": "De Luxe Five-Window Coupe",
+      "officialDesignation": "1932 Ford De Luxe Five-Window Coupe",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1965-ford-mustang-gt-coupe",
+      "year": 1965,
+      "make": "Ford",
+      "model": "Mustang GT Coupe",
+      "officialDesignation": "1965 Ford Mustang GT Coupe",
+      "performanceIndex": 388,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1966-ford-2-gt40-mk-ii",
+      "year": 1966,
+      "make": "Ford",
+      "model": "#2 GT40 Mk II",
+      "officialDesignation": "1966 Ford #2 GT40 Mk II",
+      "performanceIndex": 666,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1968-ford-mustang-gt-2-2-fastback",
+      "year": 1968,
+      "make": "Ford",
+      "model": "Mustang GT 2+2 Fastback",
+      "officialDesignation": "1968 Ford Mustang GT 2+2 Fastback",
+      "performanceIndex": 394,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1968-ford-mustang-gt-2-2-fastback-forza-edition",
+      "year": 1968,
+      "make": "Ford",
+      "model": "Mustang GT 2+2 Fastback Forza Edition",
+      "officialDesignation": "1968 Ford Mustang GT 2+2 Fastback Forza Edition",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1969-ford-mustang-boss-302",
+      "year": 1969,
+      "make": "Ford",
+      "model": "Mustang Boss 302",
+      "officialDesignation": "1969 Ford Mustang Boss 302",
+      "performanceIndex": 468,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1973-ford-capri-rs3100",
+      "year": 1973,
+      "make": "Ford",
+      "model": "Capri RS3100",
+      "officialDesignation": "1973 Ford Capri RS3100",
+      "performanceIndex": 394,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1973-ford-xb-falcon-gt",
+      "year": 1973,
+      "make": "Ford",
+      "model": "XB Falcon GT",
+      "officialDesignation": "1973 Ford XB Falcon GT",
+      "performanceIndex": 422,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1977-ford-5-escort-rs1800-mkii",
+      "year": 1977,
+      "make": "Ford",
+      "model": "#5 Escort RS1800 MkII",
+      "officialDesignation": "1977 Ford #5 Escort RS1800 MkII",
+      "performanceIndex": 544,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1985-ford-rs200-evolution",
+      "year": 1985,
+      "make": "Ford",
+      "model": "RS200 Evolution",
+      "officialDesignation": "1985 Ford RS200 Evolution",
+      "performanceIndex": 710,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1986-ford-f-150-xlt-lariat",
+      "year": 1986,
+      "make": "Ford",
+      "model": "F-150 XLT Lariat",
+      "officialDesignation": "1986 Ford F-150 XLT Lariat",
+      "performanceIndex": 263,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1986-ford-f-150-xlt-lariat-forza-edition",
+      "year": 1986,
+      "make": "Ford",
+      "model": "F-150 XLT Lariat Forza Edition",
+      "officialDesignation": "1986 Ford F-150 XLT Lariat Forza Edition",
+      "performanceIndex": 850,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1987-ford-sierra-cosworth-rs500",
+      "year": 1987,
+      "make": "Ford",
+      "model": "Sierra Cosworth RS500",
+      "officialDesignation": "1987 Ford Sierra Cosworth RS500",
+      "performanceIndex": 484,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1992-ford-escort-rs-cosworth",
+      "year": 1992,
+      "make": "Ford",
+      "model": "Escort RS Cosworth",
+      "officialDesignation": "1992 Ford Escort RS Cosworth",
+      "performanceIndex": 456,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1993-ford-mustang-svt-cobra-r",
+      "year": 1993,
+      "make": "Ford",
+      "model": "Mustang SVT Cobra R",
+      "officialDesignation": "1993 Ford Mustang SVT Cobra R",
+      "performanceIndex": 432,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1994-ford-supervan-3",
+      "year": 1994,
+      "make": "Ford",
+      "model": "Supervan 3",
+      "officialDesignation": "1994 Ford Supervan 3",
+      "performanceIndex": 740,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1999-ford-racing-puma",
+      "year": 1999,
+      "make": "Ford",
+      "model": "Racing Puma",
+      "officialDesignation": "1999 Ford Racing Puma",
+      "performanceIndex": 401,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2000-ford-mustang-svt-cobra-r",
+      "year": 2000,
+      "make": "Ford",
+      "model": "Mustang SVT Cobra R",
+      "officialDesignation": "2000 Ford Mustang SVT Cobra R",
+      "performanceIndex": 528,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2001-ford-4-ford-focus-rs",
+      "year": 2001,
+      "make": "Ford",
+      "model": "#4 Ford Focus RS",
+      "officialDesignation": "2001 Ford #4 Ford Focus RS",
+      "performanceIndex": 639,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2003-ford-f-150-svt-lightning",
+      "year": 2003,
+      "make": "Ford",
+      "model": "F-150 SVT Lightning",
+      "officialDesignation": "2003 Ford F-150 SVT Lightning",
+      "performanceIndex": 474,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2003-ford-focus-rs",
+      "year": 2003,
+      "make": "Ford",
+      "model": "Focus RS",
+      "officialDesignation": "2003 Ford Focus RS",
+      "performanceIndex": 484,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2005-ford-gt",
+      "year": 2005,
+      "make": "Ford",
+      "model": "GT",
+      "officialDesignation": "2005 Ford GT",
+      "performanceIndex": 676,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2009-ford-focus-rs",
+      "year": 2009,
+      "make": "Ford",
+      "model": "Focus RS",
+      "officialDesignation": "2009 Ford Focus RS",
+      "performanceIndex": 551,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2010-ford-crown-victoria-police-interceptor",
+      "year": 2010,
+      "make": "Ford",
+      "model": "Crown Victoria Police Interceptor",
+      "officialDesignation": "2010 Ford Crown Victoria Police Interceptor",
+      "performanceIndex": 354,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2011-ford-transit-supersportvan",
+      "year": 2011,
+      "make": "Ford",
+      "model": "Transit SuperSportVan",
+      "officialDesignation": "2011 Ford Transit SuperSportVan",
+      "performanceIndex": 235,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2013-ford-mustang-shelby-gt500",
+      "year": 2013,
+      "make": "Ford",
+      "model": "Mustang Shelby GT500",
+      "officialDesignation": "2013 Ford Mustang Shelby GT500",
+      "performanceIndex": 647,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2014-ford-11-rockstar-f-150-trophy-truck",
+      "year": 2014,
+      "make": "Ford",
+      "model": "#11 Rockstar F-150 Trophy Truck",
+      "officialDesignation": "2014 Ford #11 Rockstar F-150 Trophy Truck",
+      "performanceIndex": 613,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2014-ford-fpv-limited-edition-pursuit-ute",
+      "year": 2014,
+      "make": "Ford",
+      "model": "FPV Limited Edition Pursuit Ute",
+      "officialDesignation": "2014 Ford FPV Limited Edition Pursuit Ute",
+      "performanceIndex": 563,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2014-ford-ranger-t6-rally-raid",
+      "year": 2014,
+      "make": "Ford",
+      "model": "Ranger T6 Rally Raid",
+      "officialDesignation": "2014 Ford Ranger T6 Rally Raid",
+      "performanceIndex": 530,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2016-ford-mustang-shelby-gt350r",
+      "year": 2016,
+      "make": "Ford",
+      "model": "Mustang Shelby GT350R",
+      "officialDesignation": "2016 Ford Mustang Shelby GT350R",
+      "performanceIndex": 721,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2017-ford-14-rahal-letterman-lanigan-racing-fiesta",
+      "year": 2017,
+      "make": "Ford",
+      "model": "#14 Rahal Letterman Lanigan Racing Fiesta",
+      "officialDesignation": "2017 Ford #14 Rahal Letterman Lanigan Racing Fiesta",
+      "performanceIndex": 772,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2017-ford-25-brocky-ultra4-bronco-rtr",
+      "year": 2017,
+      "make": "Ford",
+      "model": "#25 'Brocky' Ultra4 Bronco RTR",
+      "officialDesignation": "2017 Ford #25 'Brocky' Ultra4 Bronco RTR",
+      "performanceIndex": 644,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2017-ford-focus-rs",
+      "year": 2017,
+      "make": "Ford",
+      "model": "Focus RS",
+      "officialDesignation": "2017 Ford Focus RS",
+      "performanceIndex": 588,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2017-ford-gt",
+      "year": 2017,
+      "make": "Ford",
+      "model": "GT",
+      "officialDesignation": "2017 Ford GT",
+      "performanceIndex": 757,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2017-ford-m-sport-fiesta-rs",
+      "year": 2017,
+      "make": "Ford",
+      "model": "M-Sport Fiesta RS",
+      "officialDesignation": "2017 Ford M-Sport Fiesta RS",
+      "performanceIndex": 707,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-ford-mustang-rtr-spec-5",
+      "year": 2018,
+      "make": "Ford",
+      "model": "Mustang RTR Spec 5",
+      "officialDesignation": "2018 Ford Mustang RTR Spec 5",
+      "performanceIndex": 648,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-ford-2069-ford-performance-bronco-r",
+      "year": 2020,
+      "make": "Ford",
+      "model": "#2069 Ford Performance Bronco R",
+      "officialDesignation": "2020 Ford #2069 Ford Performance Bronco R",
+      "performanceIndex": 441,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2020-ford-mustang-shelby-gt500",
+      "year": 2020,
+      "make": "Ford",
+      "model": "Mustang Shelby GT500",
+      "officialDesignation": "2020 Ford Mustang Shelby GT500",
+      "performanceIndex": 734,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-ford-super-duty-f-450-drw-platinum",
+      "year": 2020,
+      "make": "Ford",
+      "model": "Super Duty F-450 DRW PLATINUM",
+      "officialDesignation": "2020 Ford Super Duty F-450 DRW PLATINUM",
+      "performanceIndex": 379,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2020-ford-super-duty-f-450-drw-platinum-forza-edition",
+      "year": 2020,
+      "make": "Ford",
+      "model": "Super Duty F-450 DRW PLATINUM Forza Edition",
+      "officialDesignation": "2020 Ford Super Duty F-450 DRW PLATINUM Forza Edition",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2022-ford-bronco-raptor",
+      "year": 2022,
+      "make": "Ford",
+      "model": "Bronco Raptor",
+      "officialDesignation": "2022 Ford Bronco Raptor",
+      "performanceIndex": 473,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2022-ford-f-150-lightning",
+      "year": 2022,
+      "make": "Ford",
+      "model": "F-150 Lightning",
+      "officialDesignation": "2022 Ford F-150 Lightning",
+      "performanceIndex": 500,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2022-ford-focus-st",
+      "year": 2022,
+      "make": "Ford",
+      "model": "Focus ST",
+      "officialDesignation": "2022 Ford Focus ST",
+      "performanceIndex": 594,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-ford-supervan-4",
+      "year": 2022,
+      "make": "Ford",
+      "model": "Supervan 4",
+      "officialDesignation": "2022 Ford Supervan 4",
+      "performanceIndex": 919,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2023-ford-f-150-raptor-r",
+      "year": 2023,
+      "make": "Ford",
+      "model": "F-150 Raptor R",
+      "officialDesignation": "2023 Ford F-150 Raptor R",
+      "performanceIndex": 536,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2023-ford-f-150-raptor-r-welcome-pack",
+      "year": 2023,
+      "make": "Ford",
+      "model": "F-150 Raptor R Welcome Pack",
+      "officialDesignation": "2023 Ford F-150 Raptor R Welcome Pack",
+      "performanceIndex": 600,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2023-ford-fiesta-st",
+      "year": 2023,
+      "make": "Ford",
+      "model": "Fiesta ST",
+      "officialDesignation": "2023 Ford Fiesta ST",
+      "performanceIndex": 500,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2024-ford-mustang-dark-horse",
+      "year": 2024,
+      "make": "Ford",
+      "model": "Mustang Dark Horse",
+      "officialDesignation": "2024 Ford Mustang Dark Horse",
+      "performanceIndex": 669,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2024-ford-mustang-gt",
+      "year": 2024,
+      "make": "Ford",
+      "model": "Mustang GT",
+      "officialDesignation": "2024 Ford Mustang GT",
+      "performanceIndex": 628,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1989-formula-drift-98-bmw-325i",
+      "year": 1989,
+      "make": "Formula Drift",
+      "model": "#98 BMW 325i",
+      "officialDesignation": "1989 Formula Drift #98 BMW 325i",
+      "performanceIndex": 726,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1995-formula-drift-34-toyota-supra-mkiv",
+      "year": 1995,
+      "make": "Formula Drift",
+      "model": "#34 Toyota Supra MkIV",
+      "officialDesignation": "1995 Formula Drift #34 Toyota Supra MkIV",
+      "performanceIndex": 759,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1997-formula-drift-777-nissan-240sx",
+      "year": 1997,
+      "make": "Formula Drift",
+      "model": "#777 Nissan 240SX",
+      "officialDesignation": "1997 Formula Drift #777 Nissan 240SX",
+      "performanceIndex": 748,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2006-formula-drift-43-dodge-viper-srt-10-acr",
+      "year": 2006,
+      "make": "Formula Drift",
+      "model": "#43 Dodge Viper SRT-10 ACR",
+      "officialDesignation": "2006 Formula Drift #43 Dodge Viper SRT-10 ACR",
+      "performanceIndex": 748,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2007-formula-drift-117-599-gtb-fiorano",
+      "year": 2007,
+      "make": "Formula Drift",
+      "model": "#117 599 GTB Fiorano",
+      "officialDesignation": "2007 Formula Drift #117 599 GTB Fiorano",
+      "performanceIndex": 767,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2009-formula-drift-99-mazda-rx-8",
+      "year": 2009,
+      "make": "Formula Drift",
+      "model": "#99 Mazda RX-8",
+      "officialDesignation": "2009 Formula Drift #99 Mazda RX-8",
+      "performanceIndex": 737,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2013-formula-drift-777-chevrolet-corvette",
+      "year": 2013,
+      "make": "Formula Drift",
+      "model": "#777 Chevrolet Corvette",
+      "officialDesignation": "2013 Formula Drift #777 Chevrolet Corvette",
+      "performanceIndex": 760,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-formula-drift-13-ford-mustang",
+      "year": 2015,
+      "make": "Formula Drift",
+      "model": "#13 Ford Mustang",
+      "officialDesignation": "2015 Formula Drift #13 Ford Mustang",
+      "performanceIndex": 739,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2016-formula-drift-530-hsv-maloo-gen-f",
+      "year": 2016,
+      "make": "Formula Drift",
+      "model": "#530 HSV Maloo GEN-F",
+      "officialDesignation": "2016 Formula Drift #530 HSV Maloo GEN-F",
+      "performanceIndex": 710,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-formula-drift-411-toyota-corolla-hatchback",
+      "year": 2019,
+      "make": "Formula Drift",
+      "model": "#411 Toyota Corolla Hatchback",
+      "officialDesignation": "2019 Formula Drift #411 Toyota Corolla Hatchback",
+      "performanceIndex": 754,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-formula-drift-151-toyota-gr-supra",
+      "year": 2020,
+      "make": "Formula Drift",
+      "model": "#151 Toyota GR Supra",
+      "officialDesignation": "2020 Formula Drift #151 Toyota GR Supra",
+      "performanceIndex": 779,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-formula-drift-91-bmw-m2",
+      "year": 2020,
+      "make": "Formula Drift",
+      "model": "#91 BMW M2",
+      "officialDesignation": "2020 Formula Drift #91 BMW M2",
+      "performanceIndex": 748,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2023-formula-drift-64-forsberg-racing-nissan-z",
+      "year": 2023,
+      "make": "Formula Drift",
+      "model": "#64 Forsberg Racing Nissan Z",
+      "officialDesignation": "2023 Formula Drift #64 Forsberg Racing Nissan Z",
+      "performanceIndex": 783,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-funco-motorsports-f9",
+      "year": 2018,
+      "make": "Funco Motorsports",
+      "model": "F9",
+      "officialDesignation": "2018 Funco Motorsports F9",
+      "performanceIndex": 752,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1970-gmc-jimmy",
+      "year": 1970,
+      "make": "GMC",
+      "model": "Jimmy",
+      "officialDesignation": "1970 GMC Jimmy",
+      "performanceIndex": 416,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1991-gmc-syclone",
+      "year": 1991,
+      "make": "GMC",
+      "model": "Syclone",
+      "officialDesignation": "1991 GMC Syclone",
+      "performanceIndex": 446,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1992-gmc-typhoon",
+      "year": 1992,
+      "make": "GMC",
+      "model": "Typhoon",
+      "officialDesignation": "1992 GMC Typhoon",
+      "performanceIndex": 435,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2022-gmc-hummer-ev-pickup",
+      "year": 2022,
+      "make": "GMC",
+      "model": "HUMMER EV Pickup",
+      "officialDesignation": "2022 GMC HUMMER EV Pickup",
+      "performanceIndex": 610,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-gordon-murray-automotive-t-50",
+      "year": 2020,
+      "make": "Gordon Murray Automotive",
+      "model": "T.50",
+      "officialDesignation": "2020 Gordon Murray Automotive T.50",
+      "performanceIndex": 871,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2025-gr-gt-prototype",
+      "year": 2025,
+      "make": "GR",
+      "model": "GT Prototype",
+      "officialDesignation": "2025 GR GT Prototype",
+      "performanceIndex": 771,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2012-hennessey-venom-gt",
+      "year": 2012,
+      "make": "Hennessey",
+      "model": "Venom GT",
+      "officialDesignation": "2012 Hennessey Venom GT",
+      "performanceIndex": 845,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2019-hennessey-ford-f-150-velociraptor-6x6",
+      "year": 2019,
+      "make": "Hennessey",
+      "model": "Ford F-150 VelociRaptor 6X6",
+      "officialDesignation": "2019 Hennessey Ford F-150 VelociRaptor 6X6",
+      "performanceIndex": 520,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2021-hennessey-venom-f5",
+      "year": 2021,
+      "make": "Hennessey",
+      "model": "Venom F5",
+      "officialDesignation": "2021 Hennessey Venom F5",
+      "performanceIndex": 870,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1977-holden-torana-a9x",
+      "year": 1977,
+      "make": "Holden",
+      "model": "Torana A9X",
+      "officialDesignation": "1977 Holden Torana A9X",
+      "performanceIndex": 413,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1970-honda-s800",
+      "year": 1970,
+      "make": "Honda",
+      "model": "S800",
+      "officialDesignation": "1970 Honda S800",
+      "performanceIndex": 134,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1972-honda-z-gt",
+      "year": 1972,
+      "make": "Honda",
+      "model": "Z GT",
+      "officialDesignation": "1972 Honda Z GT",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1974-honda-civic-rs",
+      "year": 1974,
+      "make": "Honda",
+      "model": "Civic RS",
+      "officialDesignation": "1974 Honda Civic RS",
+      "performanceIndex": 254,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1984-honda-city-e-ii",
+      "year": 1984,
+      "make": "Honda",
+      "model": "City E II",
+      "officialDesignation": "1984 Honda City E II",
+      "performanceIndex": 203,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1984-honda-civic-crx-mugen",
+      "year": 1984,
+      "make": "Honda",
+      "model": "Civic CRX Mugen",
+      "officialDesignation": "1984 Honda Civic CRX Mugen",
+      "performanceIndex": 390,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1986-honda-civic-si",
+      "year": 1986,
+      "make": "Honda",
+      "model": "Civic Si",
+      "officialDesignation": "1986 Honda Civic Si",
+      "performanceIndex": 253,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1990-honda-19-101-motorsport-crx-wtac",
+      "year": 1990,
+      "make": "Honda",
+      "model": "#19 101 Motorsport CRX WTAC",
+      "officialDesignation": "1990 Honda #19 101 Motorsport CRX WTAC",
+      "performanceIndex": 877,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1991-honda-beat",
+      "year": 1991,
+      "make": "Honda",
+      "model": "Beat",
+      "officialDesignation": "1991 Honda Beat",
+      "performanceIndex": 283,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1991-honda-cr-x-sir",
+      "year": 1991,
+      "make": "Honda",
+      "model": "CR-X SiR",
+      "officialDesignation": "1991 Honda CR-X SiR",
+      "performanceIndex": 465,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1992-honda-21-hardrace-jdmyard-civic-wtac",
+      "year": 1992,
+      "make": "Honda",
+      "model": "#21 Hardrace/JDMYard Civic WTAC",
+      "officialDesignation": "1992 Honda #21 Hardrace/JDMYard Civic WTAC",
+      "performanceIndex": 913,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1992-honda-nsx-r",
+      "year": 1992,
+      "make": "Honda",
+      "model": "NSX-R",
+      "officialDesignation": "1992 Honda NSX-R",
+      "performanceIndex": 572,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1994-honda-acty",
+      "year": 1994,
+      "make": "Honda",
+      "model": "Acty",
+      "officialDesignation": "1994 Honda Acty",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1994-honda-prelude-si",
+      "year": 1994,
+      "make": "Honda",
+      "model": "Prelude Si",
+      "officialDesignation": "1994 Honda Prelude Si",
+      "performanceIndex": 410,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1997-honda-civic-type-r",
+      "year": 1997,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "officialDesignation": "1997 Honda Civic Type R",
+      "performanceIndex": 430,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2001-honda-33-integra-wtac",
+      "year": 2001,
+      "make": "Honda",
+      "model": "#33 Integra WTAC",
+      "officialDesignation": "2001 Honda #33 Integra WTAC",
+      "performanceIndex": 860,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2003-honda-s2000",
+      "year": 2003,
+      "make": "Honda",
+      "model": "S2000",
+      "officialDesignation": "2003 Honda S2000",
+      "performanceIndex": 503,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2004-honda-52-evasive-motorsports-s2000-wtac",
+      "year": 2004,
+      "make": "Honda",
+      "model": "#52 Evasive Motorsports S2000 WTAC",
+      "officialDesignation": "2004 Honda #52 Evasive Motorsports S2000 WTAC",
+      "performanceIndex": 888,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2004-honda-civic-type-r",
+      "year": 2004,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "officialDesignation": "2004 Honda Civic Type R",
+      "performanceIndex": 480,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2005-honda-nsx-r",
+      "year": 2005,
+      "make": "Honda",
+      "model": "NSX-R",
+      "officialDesignation": "2005 Honda NSX-R",
+      "performanceIndex": 570,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2005-honda-nsx-r-gt",
+      "year": 2005,
+      "make": "Honda",
+      "model": "NSX-R GT",
+      "officialDesignation": "2005 Honda NSX-R GT",
+      "performanceIndex": 608,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2007-honda-civic-type-r",
+      "year": 2007,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "officialDesignation": "2007 Honda Civic Type R",
+      "performanceIndex": 454,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2008-honda-civic-type-r-fd2",
+      "year": 2008,
+      "make": "Honda",
+      "model": "Civic Type R (FD2)",
+      "officialDesignation": "2008 Honda Civic Type R (FD2)",
+      "performanceIndex": 514,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2015-honda-civic-type-r",
+      "year": 2015,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "officialDesignation": "2015 Honda Civic Type R",
+      "performanceIndex": 585,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2015-honda-ridgeline-baja-trophy-truck",
+      "year": 2015,
+      "make": "Honda",
+      "model": "Ridgeline Baja Trophy Truck",
+      "officialDesignation": "2015 Honda Ridgeline Baja Trophy Truck",
+      "performanceIndex": 580,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2018-honda-civic-type-r",
+      "year": 2018,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "officialDesignation": "2018 Honda Civic Type R",
+      "performanceIndex": 608,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2022-honda-e",
+      "year": 2022,
+      "make": "Honda",
+      "model": "e",
+      "officialDesignation": "2022 Honda e",
+      "performanceIndex": 398,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2023-honda-civic-type-r",
+      "year": 2023,
+      "make": "Honda",
+      "model": "Civic Type R",
+      "officialDesignation": "2023 Honda Civic Type R",
+      "performanceIndex": 620,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2014-hsv-gen-f-gts",
+      "year": 2014,
+      "make": "HSV",
+      "model": "GEN-F GTS",
+      "officialDesignation": "2014 HSV GEN-F GTS",
+      "performanceIndex": 601,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2014-hsv-limited-edition-gen-f-gts-maloo",
+      "year": 2014,
+      "make": "HSV",
+      "model": "Limited Edition GEN-F GTS Maloo",
+      "officialDesignation": "2014 HSV Limited Edition GEN-F GTS Maloo",
+      "performanceIndex": 629,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2019-hyundai-veloster-n",
+      "year": 2019,
+      "make": "Hyundai",
+      "model": "Veloster N",
+      "officialDesignation": "2019 Hyundai Veloster N",
+      "performanceIndex": 532,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2020-hyundai-i30-n",
+      "year": 2020,
+      "make": "Hyundai",
+      "model": "i30 N",
+      "officialDesignation": "2020 Hyundai i30 N",
+      "performanceIndex": 553,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2021-hyundai-i20-n",
+      "year": 2021,
+      "make": "Hyundai",
+      "model": "i20 N",
+      "officialDesignation": "2021 Hyundai i20 N",
+      "performanceIndex": 564,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-hyundai-n-vision-74",
+      "year": 2022,
+      "make": "Hyundai",
+      "model": "N Vision 74",
+      "officialDesignation": "2022 Hyundai N Vision 74",
+      "performanceIndex": 692,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2023-hyundai-ioniq-5-n",
+      "year": 2023,
+      "make": "Hyundai",
+      "model": "IONIQ 5 N",
+      "officialDesignation": "2023 Hyundai IONIQ 5 N",
+      "performanceIndex": 657,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1956-jaguar-d-type",
+      "year": 1956,
+      "make": "Jaguar",
+      "model": "D-Type",
+      "officialDesignation": "1956 Jaguar D-Type",
+      "performanceIndex": 506,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1961-jaguar-e-type",
+      "year": 1961,
+      "make": "Jaguar",
+      "model": "E-type",
+      "officialDesignation": "1961 Jaguar E-type",
+      "performanceIndex": 414,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1964-jaguar-lightweight-e-type",
+      "year": 1964,
+      "make": "Jaguar",
+      "model": "Lightweight E-Type",
+      "officialDesignation": "1964 Jaguar Lightweight E-Type",
+      "performanceIndex": 568,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1991-jaguar-sport-xjr-15",
+      "year": 1991,
+      "make": "Jaguar",
+      "model": "Sport XJR-15",
+      "officialDesignation": "1991 Jaguar Sport XJR-15",
+      "performanceIndex": 716,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1993-jaguar-xj220",
+      "year": 1993,
+      "make": "Jaguar",
+      "model": "XJ220",
+      "officialDesignation": "1993 Jaguar XJ220",
+      "performanceIndex": 676,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1993-jaguar-xj220s-twr",
+      "year": 1993,
+      "make": "Jaguar",
+      "model": "XJ220S TWR",
+      "officialDesignation": "1993 Jaguar XJ220S TWR",
+      "performanceIndex": 750,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2010-jaguar-c-x75",
+      "year": 2010,
+      "make": "Jaguar",
+      "model": "C-X75",
+      "officialDesignation": "2010 Jaguar C-X75",
+      "performanceIndex": 810,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2012-jeep-wrangler-rubicon",
+      "year": 2012,
+      "make": "Jeep",
+      "model": "Wrangler Rubicon",
+      "officialDesignation": "2012 Jeep Wrangler Rubicon",
+      "performanceIndex": 350,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2016-jeep-trailcat",
+      "year": 2016,
+      "make": "Jeep",
+      "model": "Trailcat",
+      "officialDesignation": "2016 Jeep Trailcat",
+      "performanceIndex": 635,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2018-jeep-grand-cherokee-trackhawk",
+      "year": 2018,
+      "make": "Jeep",
+      "model": "Grand Cherokee Trackhawk",
+      "officialDesignation": "2018 Jeep Grand Cherokee Trackhawk",
+      "performanceIndex": 631,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-jeep-jt",
+      "year": 2020,
+      "make": "Jeep",
+      "model": "JT",
+      "officialDesignation": "2020 Jeep JT",
+      "performanceIndex": 336,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2019-jimco-240-fastball-racing-class-6100-spec-trophy-truck",
+      "year": 2019,
+      "make": "Jimco",
+      "model": "#240 Fastball Racing Class 6100 Spec Trophy Truck",
+      "officialDesignation": "2019 Jimco #240 Fastball Racing Class 6100 Spec Trophy Truck",
+      "performanceIndex": 511,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2020-jimco-179-hammerhead-class-1",
+      "year": 2020,
+      "make": "Jimco",
+      "model": "#179 Hammerhead Class 1",
+      "officialDesignation": "2020 Jimco #179 Hammerhead Class 1",
+      "performanceIndex": 652,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2008-koenigsegg-ccgt",
+      "year": 2008,
+      "make": "Koenigsegg",
+      "model": "CCGT",
+      "officialDesignation": "2008 Koenigsegg CCGT",
+      "performanceIndex": 900,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2011-koenigsegg-agera",
+      "year": 2011,
+      "make": "Koenigsegg",
+      "model": "Agera",
+      "officialDesignation": "2011 Koenigsegg Agera",
+      "performanceIndex": 810,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2015-koenigsegg-one-1",
+      "year": 2015,
+      "make": "Koenigsegg",
+      "model": "One:1",
+      "officialDesignation": "2015 Koenigsegg One:1",
+      "performanceIndex": 890,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2016-koenigsegg-regera",
+      "year": 2016,
+      "make": "Koenigsegg",
+      "model": "Regera",
+      "officialDesignation": "2016 Koenigsegg Regera",
+      "performanceIndex": 886,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2017-koenigsegg-agera-rs",
+      "year": 2017,
+      "make": "Koenigsegg",
+      "model": "Agera RS",
+      "officialDesignation": "2017 Koenigsegg Agera RS",
+      "performanceIndex": 890,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2020-koenigsegg-jesko",
+      "year": 2020,
+      "make": "Koenigsegg",
+      "model": "Jesko",
+      "officialDesignation": "2020 Koenigsegg Jesko",
+      "performanceIndex": 899,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2024-koenigsegg-gemera",
+      "year": 2024,
+      "make": "Koenigsegg",
+      "model": "Gemera",
+      "officialDesignation": "2024 Koenigsegg Gemera",
+      "performanceIndex": 900,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2018-ktm-x-bow-gt4",
+      "year": 2018,
+      "make": "KTM",
+      "model": "X-Bow GT4",
+      "officialDesignation": "2018 KTM X-Bow GT4",
+      "performanceIndex": 749,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1967-lamborghini-miura-p400",
+      "year": 1967,
+      "make": "Lamborghini",
+      "model": "Miura P400",
+      "officialDesignation": "1967 Lamborghini Miura P400",
+      "performanceIndex": 505,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1988-lamborghini-countach-lp5000-qv",
+      "year": 1988,
+      "make": "Lamborghini",
+      "model": "Countach LP5000 QV",
+      "officialDesignation": "1988 Lamborghini Countach LP5000 QV",
+      "performanceIndex": 622,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1997-lamborghini-diablo-sv",
+      "year": 1997,
+      "make": "Lamborghini",
+      "model": "Diablo SV",
+      "officialDesignation": "1997 Lamborghini Diablo SV",
+      "performanceIndex": 649,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1999-lamborghini-diablo-gtr",
+      "year": 1999,
+      "make": "Lamborghini",
+      "model": "Diablo GTR",
+      "officialDesignation": "1999 Lamborghini Diablo GTR",
+      "performanceIndex": 823,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2010-lamborghini-murcielago-lp-670-4-sv",
+      "year": 2010,
+      "make": "Lamborghini",
+      "model": "Murciélago LP 670-4 SV",
+      "officialDesignation": "2010 Lamborghini Murciélago LP 670-4 SV",
+      "performanceIndex": 707,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2011-lamborghini-sesto-elemento",
+      "year": 2011,
+      "make": "Lamborghini",
+      "model": "Sesto Elemento",
+      "officialDesignation": "2011 Lamborghini Sesto Elemento",
+      "performanceIndex": 871,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2012-lamborghini-aventador-lp700-4",
+      "year": 2012,
+      "make": "Lamborghini",
+      "model": "Aventador LP700-4",
+      "officialDesignation": "2012 Lamborghini Aventador LP700-4",
+      "performanceIndex": 753,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2012-lamborghini-gallardo-lp570-4-spyder-performante",
+      "year": 2012,
+      "make": "Lamborghini",
+      "model": "Gallardo LP570-4 Spyder Performante",
+      "officialDesignation": "2012 Lamborghini Gallardo LP570-4 Spyder Performante",
+      "performanceIndex": 685,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2013-lamborghini-veneno",
+      "year": 2013,
+      "make": "Lamborghini",
+      "model": "Veneno",
+      "officialDesignation": "2013 Lamborghini Veneno",
+      "performanceIndex": 834,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2014-lamborghini-huracan-lp-610-4",
+      "year": 2014,
+      "make": "Lamborghini",
+      "model": "Huracán LP 610-4",
+      "officialDesignation": "2014 Lamborghini Huracán LP 610-4",
+      "performanceIndex": 738,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2016-lamborghini-centenario-lp-770-4",
+      "year": 2016,
+      "make": "Lamborghini",
+      "model": "Centenario LP 770-4",
+      "officialDesignation": "2016 Lamborghini Centenario LP 770-4",
+      "performanceIndex": 792,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-lamborghini-aventador-svj",
+      "year": 2018,
+      "make": "Lamborghini",
+      "model": "Aventador SVJ",
+      "officialDesignation": "2018 Lamborghini Aventador SVJ",
+      "performanceIndex": 794,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-lamborghini-urus",
+      "year": 2019,
+      "make": "Lamborghini",
+      "model": "Urus",
+      "officialDesignation": "2019 Lamborghini Urus",
+      "performanceIndex": 659,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-lamborghini-essenza-scv12",
+      "year": 2020,
+      "make": "Lamborghini",
+      "model": "Essenza SCV12",
+      "officialDesignation": "2020 Lamborghini Essenza SCV12",
+      "performanceIndex": 911,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2020-lamborghini-huracan-evo",
+      "year": 2020,
+      "make": "Lamborghini",
+      "model": "Huracán EVO",
+      "officialDesignation": "2020 Lamborghini Huracán EVO",
+      "performanceIndex": 761,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-lamborghini-huracan-sto",
+      "year": 2020,
+      "make": "Lamborghini",
+      "model": "Huracán STO",
+      "officialDesignation": "2020 Lamborghini Huracán STO",
+      "performanceIndex": 783,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-lamborghini-sian-roadster",
+      "year": 2020,
+      "make": "Lamborghini",
+      "model": "Sián Roadster",
+      "officialDesignation": "2020 Lamborghini Sián Roadster",
+      "performanceIndex": 797,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2021-lamborghini-countach-lpi-800-4",
+      "year": 2021,
+      "make": "Lamborghini",
+      "model": "Countach LPI 800-4",
+      "officialDesignation": "2021 Lamborghini Countach LPI 800-4",
+      "performanceIndex": 773,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2022-lamborghini-aventador-lp-780-4-ultimae",
+      "year": 2022,
+      "make": "Lamborghini",
+      "model": "Aventador LP 780-4 Ultimae",
+      "officialDesignation": "2022 Lamborghini Aventador LP 780-4 Ultimae",
+      "performanceIndex": 794,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2022-lamborghini-huracan-evo-spyder",
+      "year": 2022,
+      "make": "Lamborghini",
+      "model": "Huracán EVO Spyder",
+      "officialDesignation": "2022 Lamborghini Huracán EVO Spyder",
+      "performanceIndex": 757,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2022-lamborghini-huracan-sterrato",
+      "year": 2022,
+      "make": "Lamborghini",
+      "model": "Huracán Sterrato",
+      "officialDesignation": "2022 Lamborghini Huracán Sterrato",
+      "performanceIndex": 738,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2022-lamborghini-huracan-tecnica",
+      "year": 2022,
+      "make": "Lamborghini",
+      "model": "Huracán Tecnica",
+      "officialDesignation": "2022 Lamborghini Huracán Tecnica",
+      "performanceIndex": 747,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2024-lamborghini-temerario",
+      "year": 2024,
+      "make": "Lamborghini",
+      "model": "Temerario",
+      "officialDesignation": "2024 Lamborghini Temerario",
+      "performanceIndex": 801,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2024-lamborghini-revuelto",
+      "year": 2024,
+      "make": "Lamborghini",
+      "model": "Revuelto",
+      "officialDesignation": "2024 Lamborghini Revuelto",
+      "performanceIndex": 829,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1974-lancia-stratos-hf-stradale",
+      "year": 1974,
+      "make": "Lancia",
+      "model": "Stratos HF Stradale",
+      "officialDesignation": "1974 Lancia Stratos HF Stradale",
+      "performanceIndex": 483,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1982-lancia-037-stradale",
+      "year": 1982,
+      "make": "Lancia",
+      "model": "037 Stradale",
+      "officialDesignation": "1982 Lancia 037 Stradale",
+      "performanceIndex": 555,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1986-lancia-delta-s4",
+      "year": 1986,
+      "make": "Lancia",
+      "model": "Delta S4",
+      "officialDesignation": "1986 Lancia Delta S4",
+      "performanceIndex": 564,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1992-lancia-delta-hf-integrale-evo",
+      "year": 1992,
+      "make": "Lancia",
+      "model": "Delta HF Integrale EVO",
+      "officialDesignation": "1992 Lancia Delta HF Integrale EVO",
+      "performanceIndex": 489,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2015-land-rover-range-rover-sport-svr",
+      "year": 2015,
+      "make": "Land Rover",
+      "model": "Range Rover Sport SVR",
+      "officialDesignation": "2015 Land Rover Range Rover Sport SVR",
+      "performanceIndex": 604,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-land-rover-defender-110-x",
+      "year": 2020,
+      "make": "Land Rover",
+      "model": "Defender 110 X",
+      "officialDesignation": "2020 Land Rover Defender 110 X",
+      "performanceIndex": 427,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2010-lexus-lfa",
+      "year": 2010,
+      "make": "Lexus",
+      "model": "LFA",
+      "officialDesignation": "2010 Lexus LFA",
+      "performanceIndex": 699,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2010-lexus-lfa-forza-edition",
+      "year": 2010,
+      "make": "Lexus",
+      "model": "LFA Forza Edition",
+      "officialDesignation": "2010 Lexus LFA Forza Edition",
+      "performanceIndex": 900,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2015-lexus-rc-f",
+      "year": 2015,
+      "make": "Lexus",
+      "model": "RC F",
+      "officialDesignation": "2015 Lexus RC F",
+      "performanceIndex": 623,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-lexus-lc-500",
+      "year": 2021,
+      "make": "Lexus",
+      "model": "LC 500",
+      "officialDesignation": "2021 Lexus LC 500",
+      "performanceIndex": 592,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1962-lincoln-continental",
+      "year": 1962,
+      "make": "Lincoln",
+      "model": "Continental",
+      "officialDesignation": "1962 Lincoln Continental",
+      "performanceIndex": 267,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1997-lotus-elise-gt1",
+      "year": 1997,
+      "make": "Lotus",
+      "model": "Elise GT1",
+      "officialDesignation": "1997 Lotus Elise GT1",
+      "performanceIndex": 709,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1999-lotus-elise-series-1-sport-190",
+      "year": 1999,
+      "make": "Lotus",
+      "model": "Elise Series 1 Sport 190",
+      "officialDesignation": "1999 Lotus Elise Series 1 Sport 190",
+      "performanceIndex": 589,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2018-lotus-exige-cup-430",
+      "year": 2018,
+      "make": "Lotus",
+      "model": "Exige Cup 430",
+      "officialDesignation": "2018 Lotus Exige Cup 430",
+      "performanceIndex": 732,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-lotus-scura-motorsports-exige-wtac",
+      "year": 2018,
+      "make": "Lotus",
+      "model": "Scura Motorsports Exige WTAC",
+      "officialDesignation": "2018 Lotus Scura Motorsports Exige WTAC",
+      "performanceIndex": 998,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2020-lotus-evija",
+      "year": 2020,
+      "make": "Lotus",
+      "model": "Evija",
+      "officialDesignation": "2020 Lotus Evija",
+      "performanceIndex": 937,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2020-lotus-evija-forza-edition",
+      "year": 2020,
+      "make": "Lotus",
+      "model": "Evija Forza Edition",
+      "officialDesignation": "2020 Lotus Evija Forza Edition",
+      "performanceIndex": 900,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2023-lotus-emira",
+      "year": 2023,
+      "make": "Lotus",
+      "model": "Emira",
+      "officialDesignation": "2023 Lotus Emira",
+      "performanceIndex": 656,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2024-lucid-air-sapphire",
+      "year": 2024,
+      "make": "Lucid",
+      "model": "Air Sapphire",
+      "officialDesignation": "2024 Lucid Air Sapphire",
+      "performanceIndex": 820,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1997-maserati-ghibli-cup",
+      "year": 1997,
+      "make": "Maserati",
+      "model": "Ghibli Cup",
+      "officialDesignation": "1997 Maserati Ghibli Cup",
+      "performanceIndex": 591,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2004-maserati-mc12",
+      "year": 2004,
+      "make": "Maserati",
+      "model": "MC12",
+      "officialDesignation": "2004 Maserati MC12",
+      "performanceIndex": 751,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2008-maserati-mc12-versione-corsa",
+      "year": 2008,
+      "make": "Maserati",
+      "model": "MC12 Versione Corsa",
+      "officialDesignation": "2008 Maserati MC12 Versione Corsa",
+      "performanceIndex": 912,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2022-maserati-mc20",
+      "year": 2022,
+      "make": "Maserati",
+      "model": "MC20",
+      "officialDesignation": "2022 Maserati MC20",
+      "performanceIndex": 753,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1972-mazda-cosmo-110s-series-ii",
+      "year": 1972,
+      "make": "Mazda",
+      "model": "Cosmo 110S Series II",
+      "officialDesignation": "1972 Mazda Cosmo 110S Series II",
+      "performanceIndex": 394,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1973-mazda-rx-3",
+      "year": 1973,
+      "make": "Mazda",
+      "model": "RX-3",
+      "officialDesignation": "1973 Mazda RX-3",
+      "performanceIndex": 328,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1973-mazda-rx-3-forza-edition",
+      "year": 1973,
+      "make": "Mazda",
+      "model": "RX-3 Forza Edition",
+      "officialDesignation": "1973 Mazda RX-3 Forza Edition",
+      "performanceIndex": 600,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1974-mazda-123-mad-mike-808-wagon-fursty",
+      "year": 1974,
+      "make": "Mazda",
+      "model": "#123 Mad Mike 808 Wagon 'FURSTY'",
+      "officialDesignation": "1974 Mazda #123 Mad Mike 808 Wagon 'FURSTY'",
+      "performanceIndex": 702,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1985-mazda-rx-7-gsl-se",
+      "year": 1985,
+      "make": "Mazda",
+      "model": "RX-7 GSL-SE",
+      "officialDesignation": "1985 Mazda RX-7 GSL-SE",
+      "performanceIndex": 357,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1990-mazda-savanna-rx-7",
+      "year": 1990,
+      "make": "Mazda",
+      "model": "Savanna RX-7",
+      "officialDesignation": "1990 Mazda Savanna RX-7",
+      "performanceIndex": 451,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1991-mazda-55-mazda-787b",
+      "year": 1991,
+      "make": "Mazda",
+      "model": "#55 Mazda 787B",
+      "officialDesignation": "1991 Mazda #55 Mazda 787B",
+      "performanceIndex": 988,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1992-mazda-rx-7-type-r",
+      "year": 1992,
+      "make": "Mazda",
+      "model": "RX-7 Type R",
+      "officialDesignation": "1992 Mazda RX-7 Type R",
+      "performanceIndex": 548,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1994-mazda-mx-5-miata",
+      "year": 1994,
+      "make": "Mazda",
+      "model": "MX-5 Miata",
+      "officialDesignation": "1994 Mazda MX-5 Miata",
+      "performanceIndex": 329,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1994-mazda-mx-5-miata-forza-edition",
+      "year": 1994,
+      "make": "Mazda",
+      "model": "MX-5 Miata Forza Edition",
+      "officialDesignation": "1994 Mazda MX-5 Miata Forza Edition",
+      "performanceIndex": 850,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2005-mazda-mazdaspeed-mx-5",
+      "year": 2005,
+      "make": "Mazda",
+      "model": "Mazdaspeed MX-5",
+      "officialDesignation": "2005 Mazda Mazdaspeed MX-5",
+      "performanceIndex": 469,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2008-mazda-furai",
+      "year": 2008,
+      "make": "Mazda",
+      "model": "Furai",
+      "officialDesignation": "2008 Mazda Furai",
+      "performanceIndex": 926,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2010-mazda-mazdaspeed-3",
+      "year": 2010,
+      "make": "Mazda",
+      "model": "Mazdaspeed 3",
+      "officialDesignation": "2010 Mazda Mazdaspeed 3",
+      "performanceIndex": 536,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2011-mazda-rx-8-r3",
+      "year": 2011,
+      "make": "Mazda",
+      "model": "RX-8 R3",
+      "officialDesignation": "2011 Mazda RX-8 R3",
+      "performanceIndex": 508,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2013-mazda-mx-5",
+      "year": 2013,
+      "make": "Mazda",
+      "model": "MX-5",
+      "officialDesignation": "2013 Mazda MX-5",
+      "performanceIndex": 432,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2016-mazda-mx-5",
+      "year": 2016,
+      "make": "Mazda",
+      "model": "MX-5",
+      "officialDesignation": "2016 Mazda MX-5",
+      "performanceIndex": 499,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2017-mazda-mx-5-cup",
+      "year": 2017,
+      "make": "Mazda",
+      "model": "MX-5 Cup",
+      "officialDesignation": "2017 Mazda MX-5 Cup",
+      "performanceIndex": 586,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-mazda-mx-5-miata-rf",
+      "year": 2022,
+      "make": "Mazda",
+      "model": "MX-5 Miata RF",
+      "officialDesignation": "2022 Mazda MX-5 Miata RF",
+      "performanceIndex": 509,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1993-mclaren-f1",
+      "year": 1993,
+      "make": "McLaren",
+      "model": "F1",
+      "officialDesignation": "1993 McLaren F1",
+      "performanceIndex": 713,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1997-mclaren-f1-gt",
+      "year": 1997,
+      "make": "McLaren",
+      "model": "F1 GT",
+      "officialDesignation": "1997 McLaren F1 GT",
+      "performanceIndex": 769,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2011-mclaren-12c-coupe",
+      "year": 2011,
+      "make": "McLaren",
+      "model": "12C Coupé",
+      "officialDesignation": "2011 McLaren 12C Coupé",
+      "performanceIndex": 727,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2013-mclaren-p1",
+      "year": 2013,
+      "make": "McLaren",
+      "model": "P1",
+      "officialDesignation": "2013 McLaren P1",
+      "performanceIndex": 848,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2014-mclaren-650s-spider",
+      "year": 2014,
+      "make": "McLaren",
+      "model": "650S Spider",
+      "officialDesignation": "2014 McLaren 650S Spider",
+      "performanceIndex": 765,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-mclaren-570s-coupe",
+      "year": 2015,
+      "make": "McLaren",
+      "model": "570S Coupé",
+      "officialDesignation": "2015 McLaren 570S Coupé",
+      "performanceIndex": 721,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-mclaren-600lt-coupe",
+      "year": 2018,
+      "make": "McLaren",
+      "model": "600LT Coupé",
+      "officialDesignation": "2018 McLaren 600LT Coupé",
+      "performanceIndex": 780,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-mclaren-speedtail",
+      "year": 2019,
+      "make": "McLaren",
+      "model": "Speedtail",
+      "officialDesignation": "2019 McLaren Speedtail",
+      "performanceIndex": 835,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2021-mclaren-620r",
+      "year": 2021,
+      "make": "McLaren",
+      "model": "620R",
+      "officialDesignation": "2021 McLaren 620R",
+      "performanceIndex": 773,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2021-mclaren-765lt-coupe",
+      "year": 2021,
+      "make": "McLaren",
+      "model": "765LT Coupé",
+      "officialDesignation": "2021 McLaren 765LT Coupé",
+      "performanceIndex": 829,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2021-mclaren-sabre",
+      "year": 2021,
+      "make": "McLaren",
+      "model": "Sabre",
+      "officialDesignation": "2021 McLaren Sabre",
+      "performanceIndex": 787,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2023-mclaren-artura",
+      "year": 2023,
+      "make": "McLaren",
+      "model": "Artura",
+      "officialDesignation": "2023 McLaren Artura",
+      "performanceIndex": 766,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-mercedes-amg-gt-s",
+      "year": 2015,
+      "make": "Mercedes-AMG",
+      "model": "GT S",
+      "officialDesignation": "2015 Mercedes-AMG GT S",
+      "performanceIndex": 691,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2016-mercedes-amg-c-63-s-coupe",
+      "year": 2016,
+      "make": "Mercedes-AMG",
+      "model": "C 63 S Coupé",
+      "officialDesignation": "2016 Mercedes-AMG C 63 S Coupé",
+      "performanceIndex": 645,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2017-mercedes-amg-gt-r",
+      "year": 2017,
+      "make": "Mercedes-AMG",
+      "model": "GT R",
+      "officialDesignation": "2017 Mercedes-AMG GT R",
+      "performanceIndex": 764,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2018-mercedes-amg-e-63-s",
+      "year": 2018,
+      "make": "Mercedes-AMG",
+      "model": "E 63 S",
+      "officialDesignation": "2018 Mercedes-AMG E 63 S",
+      "performanceIndex": 674,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2018-mercedes-amg-gt-4-door-coupe",
+      "year": 2018,
+      "make": "Mercedes-AMG",
+      "model": "GT 4-Door Coupé",
+      "officialDesignation": "2018 Mercedes-AMG GT 4-Door Coupé",
+      "performanceIndex": 664,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-mercedes-amg-gt-black-series",
+      "year": 2020,
+      "make": "Mercedes-AMG",
+      "model": "GT Black Series",
+      "officialDesignation": "2020 Mercedes-AMG GT Black Series",
+      "performanceIndex": 782,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-mercedes-amg-gt-black-series-welcome-pack",
+      "year": 2020,
+      "make": "Mercedes-AMG",
+      "model": "GT Black Series Welcome Pack",
+      "officialDesignation": "2020 Mercedes-AMG GT Black Series Welcome Pack",
+      "performanceIndex": 900,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2020-mercedes-amg-slc-43-final-edition",
+      "year": 2020,
+      "make": "Mercedes-AMG",
+      "model": "SLC 43 Final Edition",
+      "officialDesignation": "2020 Mercedes-AMG SLC 43 Final Edition",
+      "performanceIndex": 620,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-mercedes-amg-mercedes-amg-one",
+      "year": 2021,
+      "make": "Mercedes-AMG",
+      "model": "Mercedes-AMG ONE",
+      "officialDesignation": "2021 Mercedes-AMG Mercedes-AMG ONE",
+      "performanceIndex": 900,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2021-mercedes-amg-sl-63",
+      "year": 2021,
+      "make": "Mercedes-AMG",
+      "model": "SL 63",
+      "officialDesignation": "2021 Mercedes-AMG SL 63",
+      "performanceIndex": 690,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1954-mercedes-benz-300-sl-coupe",
+      "year": 1954,
+      "make": "Mercedes-Benz",
+      "model": "300 SL Coupé",
+      "officialDesignation": "1954 Mercedes-Benz 300 SL Coupé",
+      "performanceIndex": 388,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1955-mercedes-benz-300-slr",
+      "year": 1955,
+      "make": "Mercedes-Benz",
+      "model": "300 SLR",
+      "officialDesignation": "1955 Mercedes-Benz 300 SLR",
+      "performanceIndex": 599,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1987-mercedes-benz-amg-hammer-coupe",
+      "year": 1987,
+      "make": "Mercedes-Benz",
+      "model": "AMG Hammer Coupe",
+      "officialDesignation": "1987 Mercedes-Benz AMG Hammer Coupe",
+      "performanceIndex": 565,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1990-mercedes-benz-190-e-2-5-16-evolution-ii",
+      "year": 1990,
+      "make": "Mercedes-Benz",
+      "model": "190 E 2.5-16 Evolution II",
+      "officialDesignation": "1990 Mercedes-Benz 190 E 2.5-16 Evolution II",
+      "performanceIndex": 460,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1990-mercedes-benz-190-e-2-5-16-evolution-ii-forza-edition",
+      "year": 1990,
+      "make": "Mercedes-Benz",
+      "model": "190 E 2.5-16 Evolution II Forza Edition",
+      "officialDesignation": "1990 Mercedes-Benz 190 E 2.5-16 Evolution II Forza Edition",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1998-mercedes-benz-amg-clk-gtr",
+      "year": 1998,
+      "make": "Mercedes-Benz",
+      "model": "AMG CLK GTR",
+      "officialDesignation": "1998 Mercedes-Benz AMG CLK GTR",
+      "performanceIndex": 713,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2009-mercedes-benz-sl-65-amg-black-series",
+      "year": 2009,
+      "make": "Mercedes-Benz",
+      "model": "SL 65 AMG Black Series",
+      "officialDesignation": "2009 Mercedes-Benz SL 65 AMG Black Series",
+      "performanceIndex": 699,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2012-mercedes-benz-c-63-amg-coupe-black-series",
+      "year": 2012,
+      "make": "Mercedes-Benz",
+      "model": "C 63 AMG Coupé Black Series",
+      "officialDesignation": "2012 Mercedes-Benz C 63 AMG Coupé Black Series",
+      "performanceIndex": 654,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2013-mercedes-benz-a-45-amg",
+      "year": 2013,
+      "make": "Mercedes-Benz",
+      "model": "A 45 AMG",
+      "officialDesignation": "2013 Mercedes-Benz A 45 AMG",
+      "performanceIndex": 582,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2013-mercedes-benz-g-65-amg",
+      "year": 2013,
+      "make": "Mercedes-Benz",
+      "model": "G 65 AMG",
+      "officialDesignation": "2013 Mercedes-Benz G 65 AMG",
+      "performanceIndex": 530,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2014-mercedes-benz-g-63-amg-6x6",
+      "year": 2014,
+      "make": "Mercedes-Benz",
+      "model": "G 63 AMG 6x6",
+      "officialDesignation": "2014 Mercedes-Benz G 63 AMG 6x6",
+      "performanceIndex": 489,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2014-mercedes-benz-unimog-u5023",
+      "year": 2014,
+      "make": "Mercedes-Benz",
+      "model": "Unimog U5023",
+      "officialDesignation": "2014 Mercedes-Benz Unimog U5023",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2018-mercedes-benz-x-class",
+      "year": 2018,
+      "make": "Mercedes-Benz",
+      "model": "X-Class",
+      "officialDesignation": "2018 Mercedes-Benz X-Class",
+      "performanceIndex": 258,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1971-meyers-manx",
+      "year": 1971,
+      "make": "Meyers",
+      "model": "Manx",
+      "officialDesignation": "1971 Meyers Manx",
+      "performanceIndex": 201,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2023-meyers-manx-2-0",
+      "year": 2023,
+      "make": "Meyers",
+      "model": "Manx 2.0",
+      "officialDesignation": "2023 Meyers Manx 2.0",
+      "performanceIndex": 540,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1986-mg-metro-6r4",
+      "year": 1986,
+      "make": "MG",
+      "model": "Metro 6R4",
+      "officialDesignation": "1986 MG Metro 6R4",
+      "performanceIndex": 627,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1965-mini-cooper-s",
+      "year": 1965,
+      "make": "MINI",
+      "model": "Cooper S",
+      "officialDesignation": "1965 MINI Cooper S",
+      "performanceIndex": 158,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2012-mini-john-cooper-works-gp",
+      "year": 2012,
+      "make": "MINI",
+      "model": "John Cooper Works GP",
+      "officialDesignation": "2012 MINI John Cooper Works GP",
+      "performanceIndex": 509,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2013-mini-x-raid-all4-racing-countryman",
+      "year": 2013,
+      "make": "MINI",
+      "model": "X-Raid All4 Racing Countryman",
+      "officialDesignation": "2013 MINI X-Raid All4 Racing Countryman",
+      "performanceIndex": 523,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2018-mini-x-raid-john-cooper-works-buggy",
+      "year": 2018,
+      "make": "MINI",
+      "model": "X-raid John Cooper Works Buggy",
+      "officialDesignation": "2018 MINI X-raid John Cooper Works Buggy",
+      "performanceIndex": 514,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2021-mini-john-cooper-works-gp",
+      "year": 2021,
+      "make": "MINI",
+      "model": "John Cooper Works GP",
+      "officialDesignation": "2021 MINI John Cooper Works GP",
+      "performanceIndex": 599,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1990-mitsubishi-269-attacking-the-clock-racing-minicab-time-attack",
+      "year": 1990,
+      "make": "Mitsubishi",
+      "model": "#269 Attacking the Clock Racing Minicab Time Attack",
+      "officialDesignation": "1990 Mitsubishi #269 Attacking the Clock Racing Minicab Time Attack",
+      "performanceIndex": 166,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1992-mitsubishi-galant-vr-4",
+      "year": 1992,
+      "make": "Mitsubishi",
+      "model": "Galant VR-4",
+      "officialDesignation": "1992 Mitsubishi Galant VR-4",
+      "performanceIndex": 431,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1995-mitsubishi-eclipse-gsx",
+      "year": 1995,
+      "make": "Mitsubishi",
+      "model": "Eclipse GSX",
+      "officialDesignation": "1995 Mitsubishi Eclipse GSX",
+      "performanceIndex": 436,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1995-mitsubishi-lancer-evolution-iii-gsr",
+      "year": 1995,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution III GSR",
+      "officialDesignation": "1995 Mitsubishi Lancer Evolution III GSR",
+      "performanceIndex": 518,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1995-mitsubishi-montero-exceed-2800-td",
+      "year": 1995,
+      "make": "Mitsubishi",
+      "model": "Montero Exceed 2800 TD",
+      "officialDesignation": "1995 Mitsubishi Montero Exceed 2800 TD",
+      "performanceIndex": 190,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1997-mitsubishi-gto",
+      "year": 1997,
+      "make": "Mitsubishi",
+      "model": "GTO",
+      "officialDesignation": "1997 Mitsubishi GTO",
+      "performanceIndex": 495,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1997-mitsubishi-montero-evolution",
+      "year": 1997,
+      "make": "Mitsubishi",
+      "model": "Montero Evolution",
+      "officialDesignation": "1997 Mitsubishi Montero Evolution",
+      "performanceIndex": 346,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2001-mitsubishi-lancer-evolution-vi-gsr-tm-edition",
+      "year": 2001,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution VI GSR TM Edition",
+      "officialDesignation": "2001 Mitsubishi Lancer Evolution VI GSR TM Edition",
+      "performanceIndex": 574,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2004-mitsubishi-lancer-evolution-viii-mr",
+      "year": 2004,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution VIII MR",
+      "officialDesignation": "2004 Mitsubishi Lancer Evolution VIII MR",
+      "performanceIndex": 555,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2004-mitsubishi-lancer-evolution-viii-mr-welcome-pack",
+      "year": 2004,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution VIII MR Welcome Pack",
+      "officialDesignation": "2004 Mitsubishi Lancer Evolution VIII MR Welcome Pack",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2005-mitsubishi-1-sierra-sierra-enterprises-lancer-evolution-time-attack",
+      "year": 2005,
+      "make": "Mitsubishi",
+      "model": "#1 Sierra Sierra Enterprises Lancer Evolution Time Attack",
+      "officialDesignation": "2005 Mitsubishi #1 Sierra Sierra Enterprises Lancer Evolution Time Attack",
+      "performanceIndex": 962,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2006-mitsubishi-lancer-evolution-ix-mr",
+      "year": 2006,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution IX MR",
+      "officialDesignation": "2006 Mitsubishi Lancer Evolution IX MR",
+      "performanceIndex": 521,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2008-mitsubishi-lancer-evolution-x-gsr",
+      "year": 2008,
+      "make": "Mitsubishi",
+      "model": "Lancer Evolution X GSR",
+      "officialDesignation": "2008 Mitsubishi Lancer Evolution X GSR",
+      "performanceIndex": 534,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1969-nissan-fairlady-z-432",
+      "year": 1969,
+      "make": "Nissan",
+      "model": "Fairlady Z 432",
+      "officialDesignation": "1969 Nissan Fairlady Z 432",
+      "performanceIndex": 369,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1971-nissan-skyline-2000gt-r",
+      "year": 1971,
+      "make": "Nissan",
+      "model": "Skyline 2000GT-R",
+      "officialDesignation": "1971 Nissan Skyline 2000GT-R",
+      "performanceIndex": 380,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1972-nissan-patrol",
+      "year": 1972,
+      "make": "Nissan",
+      "model": "Patrol",
+      "officialDesignation": "1972 Nissan Patrol",
+      "performanceIndex": 157,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1973-nissan-skyline-h-t-2000gt-r",
+      "year": 1973,
+      "make": "Nissan",
+      "model": "Skyline H/T 2000GT-R",
+      "officialDesignation": "1973 Nissan Skyline H/T 2000GT-R",
+      "performanceIndex": 407,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1983-nissan-11-tomica-skyline-turbo-super-silhouette",
+      "year": 1983,
+      "make": "Nissan",
+      "model": "#11 Tomica Skyline Turbo Super Silhouette",
+      "officialDesignation": "1983 Nissan #11 Tomica Skyline Turbo Super Silhouette",
+      "performanceIndex": 847,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1985-nissan-safari-turbo",
+      "year": 1985,
+      "make": "Nissan",
+      "model": "Safari Turbo",
+      "officialDesignation": "1985 Nissan Safari Turbo",
+      "performanceIndex": 123,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1987-nissan-be-1",
+      "year": 1987,
+      "make": "Nissan",
+      "model": "Be-1",
+      "officialDesignation": "1987 Nissan Be-1",
+      "performanceIndex": 175,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1987-nissan-skyline-gts-r",
+      "year": 1987,
+      "make": "Nissan",
+      "model": "Skyline GTS-R",
+      "officialDesignation": "1987 Nissan Skyline GTS-R",
+      "performanceIndex": 432,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1989-nissan-pao",
+      "year": 1989,
+      "make": "Nissan",
+      "model": "PAO",
+      "officialDesignation": "1989 Nissan PAO",
+      "performanceIndex": 145,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1989-nissan-s-cargo",
+      "year": 1989,
+      "make": "Nissan",
+      "model": "S-Cargo",
+      "officialDesignation": "1989 Nissan S-Cargo",
+      "performanceIndex": 131,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1989-nissan-s-cargo-forza-edition",
+      "year": 1989,
+      "make": "Nissan",
+      "model": "S-Cargo Forza Edition",
+      "officialDesignation": "1989 Nissan S-Cargo Forza Edition",
+      "performanceIndex": 800,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1989-nissan-silvia-k-s",
+      "year": 1989,
+      "make": "Nissan",
+      "model": "Silvia K's",
+      "officialDesignation": "1989 Nissan Silvia K's",
+      "performanceIndex": 455,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1990-nissan-12-skyline-gt-r-bnr32-gr-a-jtc",
+      "year": 1990,
+      "make": "Nissan",
+      "model": "#12 Skyline GT-R (BNR32 Gr.A) JTC",
+      "officialDesignation": "1990 Nissan #12 Skyline GT-R (BNR32 Gr.A) JTC",
+      "performanceIndex": 858,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1990-nissan-pulsar-gti-r",
+      "year": 1990,
+      "make": "Nissan",
+      "model": "Pulsar GTI-R",
+      "officialDesignation": "1990 Nissan Pulsar GTI-R",
+      "performanceIndex": 486,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1991-nissan-figaro",
+      "year": 1991,
+      "make": "Nissan",
+      "model": "Figaro",
+      "officialDesignation": "1991 Nissan Figaro",
+      "performanceIndex": 234,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1992-nissan-skyline-gt-r",
+      "year": 1992,
+      "make": "Nissan",
+      "model": "Skyline GT-R",
+      "officialDesignation": "1992 Nissan Skyline GT-R",
+      "performanceIndex": 541,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1993-nissan-32-skyline-wtac-xtreme-gtr",
+      "year": 1993,
+      "make": "Nissan",
+      "model": "#32 Skyline WTAC 'Xtreme GTR'",
+      "officialDesignation": "1993 Nissan #32 Skyline WTAC 'Xtreme GTR'",
+      "performanceIndex": 923,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1993-nissan-240sx",
+      "year": 1993,
+      "make": "Nissan",
+      "model": "240SX",
+      "officialDesignation": "1993 Nissan 240SX",
+      "performanceIndex": 339,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1994-nissan-fairlady-z-version-s-twin-turbo",
+      "year": 1994,
+      "make": "Nissan",
+      "model": "Fairlady Z Version S Twin Turbo",
+      "officialDesignation": "1994 Nissan Fairlady Z Version S Twin Turbo",
+      "performanceIndex": 497,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1994-nissan-silvia-k-s",
+      "year": 1994,
+      "make": "Nissan",
+      "model": "Silvia K's",
+      "officialDesignation": "1994 Nissan Silvia K's",
+      "performanceIndex": 499,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1995-nissan-gloria-gran-turismo",
+      "year": 1995,
+      "make": "Nissan",
+      "model": "Gloria Gran Turismo",
+      "officialDesignation": "1995 Nissan Gloria Gran Turismo",
+      "performanceIndex": 498,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1995-nissan-nismo-gt-r-lm",
+      "year": 1995,
+      "make": "Nissan",
+      "model": "NISMO GT-R LM",
+      "officialDesignation": "1995 Nissan NISMO GT-R LM",
+      "performanceIndex": 545,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1997-nissan-skyline-gt-r-v-spec",
+      "year": 1997,
+      "make": "Nissan",
+      "model": "Skyline GT-R V-Spec",
+      "officialDesignation": "1997 Nissan Skyline GT-R V-Spec",
+      "performanceIndex": 555,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1997-nissan-stagea-rs-four-v",
+      "year": 1997,
+      "make": "Nissan",
+      "model": "Stagea RS Four V",
+      "officialDesignation": "1997 Nissan Stagea RS Four V",
+      "performanceIndex": 439,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1998-nissan-23-pennzoil-nismo-skyline-gt-r",
+      "year": 1998,
+      "make": "Nissan",
+      "model": "#23 Pennzoil NISMO Skyline GT-R",
+      "officialDesignation": "1998 Nissan #23 Pennzoil NISMO Skyline GT-R",
+      "performanceIndex": 848,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1998-nissan-r390-gt1",
+      "year": 1998,
+      "make": "Nissan",
+      "model": "R390 (GT1)",
+      "officialDesignation": "1998 Nissan R390 (GT1)",
+      "performanceIndex": 774,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1998-nissan-silvia-k-s-aero",
+      "year": 1998,
+      "make": "Nissan",
+      "model": "Silvia K's Aero",
+      "officialDesignation": "1998 Nissan Silvia K's Aero",
+      "performanceIndex": 494,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1998-nissan-skyline-gt-r-40th-anniversary",
+      "year": 1998,
+      "make": "Nissan",
+      "model": "Skyline GT-R 40th Anniversary",
+      "officialDesignation": "1998 Nissan Skyline GT-R 40th Anniversary",
+      "performanceIndex": 547,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2000-nissan-36-dream-project-s15-silvia-wtac",
+      "year": 2000,
+      "make": "Nissan",
+      "model": "#36 Dream Project S15 Silvia WTAC",
+      "officialDesignation": "2000 Nissan #36 Dream Project S15 Silvia WTAC",
+      "performanceIndex": 996,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2000-nissan-skyline-gt-r-v-spec-ii",
+      "year": 2000,
+      "make": "Nissan",
+      "model": "Skyline GT-R V Spec II",
+      "officialDesignation": "2000 Nissan Skyline GT-R V Spec II",
+      "performanceIndex": 590,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2002-nissan-silvia-spec-r",
+      "year": 2002,
+      "make": "Nissan",
+      "model": "Silvia Spec-R",
+      "officialDesignation": "2002 Nissan Silvia Spec-R",
+      "performanceIndex": 551,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2003-nissan-fairlady-z",
+      "year": 2003,
+      "make": "Nissan",
+      "model": "Fairlady Z",
+      "officialDesignation": "2003 Nissan Fairlady Z",
+      "performanceIndex": 534,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2010-nissan-370z",
+      "year": 2010,
+      "make": "Nissan",
+      "model": "370Z",
+      "officialDesignation": "2010 Nissan 370Z",
+      "performanceIndex": 568,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2012-nissan-gt-r-black-edition-r35",
+      "year": 2012,
+      "make": "Nissan",
+      "model": "GT-R Black Edition (R35)",
+      "officialDesignation": "2012 Nissan GT-R Black Edition (R35)",
+      "performanceIndex": 703,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2012-nissan-gt-r-black-edition-r35-forza-edition",
+      "year": 2012,
+      "make": "Nissan",
+      "model": "GT-R Black Edition (R35) Forza Edition",
+      "officialDesignation": "2012 Nissan GT-R Black Edition (R35) Forza Edition",
+      "performanceIndex": 850,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2017-nissan-gt-r-r35",
+      "year": 2017,
+      "make": "Nissan",
+      "model": "GT-R (R35)",
+      "officialDesignation": "2017 Nissan GT-R (R35)",
+      "performanceIndex": 709,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-nissan-370z-nismo",
+      "year": 2019,
+      "make": "Nissan",
+      "model": "370Z Nismo",
+      "officialDesignation": "2019 Nissan 370Z Nismo",
+      "performanceIndex": 603,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2020-nissan-gt-r-nismo-r35",
+      "year": 2020,
+      "make": "Nissan",
+      "model": "GT-R NISMO (R35)",
+      "officialDesignation": "2020 Nissan GT-R NISMO (R35)",
+      "performanceIndex": 736,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2024-nissan-gt-r-nismo",
+      "year": 2024,
+      "make": "Nissan",
+      "model": "GT-R Nismo",
+      "officialDesignation": "2024 Nissan GT-R Nismo",
+      "performanceIndex": 741,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2024-nissan-z-nismo",
+      "year": 2024,
+      "make": "Nissan",
+      "model": "Z NISMO",
+      "officialDesignation": "2024 Nissan Z NISMO",
+      "performanceIndex": 652,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2010-noble-m600",
+      "year": 2010,
+      "make": "Noble",
+      "model": "M600",
+      "officialDesignation": "2010 Noble M600",
+      "performanceIndex": 793,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1984-opel-manta-400",
+      "year": 1984,
+      "make": "Opel",
+      "model": "Manta 400",
+      "officialDesignation": "1984 Opel Manta 400",
+      "performanceIndex": 576,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2009-pagani-zonda-r",
+      "year": 2009,
+      "make": "Pagani",
+      "model": "Zonda R",
+      "officialDesignation": "2009 Pagani Zonda R",
+      "performanceIndex": 918,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2010-pagani-zonda-cinque-roadster",
+      "year": 2010,
+      "make": "Pagani",
+      "model": "Zonda Cinque Roadster",
+      "officialDesignation": "2010 Pagani Zonda Cinque Roadster",
+      "performanceIndex": 812,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2016-pagani-huayra-bc-coupe",
+      "year": 2016,
+      "make": "Pagani",
+      "model": "Huayra BC Coupe",
+      "officialDesignation": "2016 Pagani Huayra BC Coupe",
+      "performanceIndex": 851,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2021-pagani-huayra-r",
+      "year": 2021,
+      "make": "Pagani",
+      "model": "Huayra R",
+      "officialDesignation": "2021 Pagani Huayra R",
+      "performanceIndex": 954,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1962-peel-p50",
+      "year": 1962,
+      "make": "Peel",
+      "model": "P50",
+      "officialDesignation": "1962 Peel P50",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1962-peel-p50-trolli-edition",
+      "year": 1962,
+      "make": "Peel",
+      "model": "P50 Trolli Edition",
+      "officialDesignation": "1962 Peel P50 Trolli Edition",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2011-penhall-the-cholla",
+      "year": 2011,
+      "make": "Penhall",
+      "model": "The Cholla",
+      "officialDesignation": "2011 Penhall The Cholla",
+      "performanceIndex": 541,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1984-peugeot-205-turbo-16",
+      "year": 1984,
+      "make": "Peugeot",
+      "model": "205 Turbo 16",
+      "officialDesignation": "1984 Peugeot 205 Turbo 16",
+      "performanceIndex": 500,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1991-peugeot-205-rallye",
+      "year": 1991,
+      "make": "Peugeot",
+      "model": "205 Rallye",
+      "officialDesignation": "1991 Peugeot 205 Rallye",
+      "performanceIndex": 350,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2007-peugeot-207-super-2000",
+      "year": 2007,
+      "make": "Peugeot",
+      "model": "207 Super 2000",
+      "officialDesignation": "2007 Peugeot 207 Super 2000",
+      "performanceIndex": 632,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1958-plymouth-fury",
+      "year": 1958,
+      "make": "Plymouth",
+      "model": "Fury",
+      "officialDesignation": "1958 Plymouth Fury",
+      "performanceIndex": 361,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1968-plymouth-barracuda-formula-s",
+      "year": 1968,
+      "make": "Plymouth",
+      "model": "Barracuda Formula S",
+      "officialDesignation": "1968 Plymouth Barracuda Formula S",
+      "performanceIndex": 445,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1971-plymouth-cuda-426-hemi",
+      "year": 1971,
+      "make": "Plymouth",
+      "model": "Cuda 426 HEMI",
+      "officialDesignation": "1971 Plymouth Cuda 426 HEMI",
+      "performanceIndex": 441,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2021-polaris-rzr-pro-xp-factory-racing-limited-edition",
+      "year": 2021,
+      "make": "Polaris",
+      "model": "RZR Pro XP Factory Racing Limited Edition",
+      "officialDesignation": "2021 Polaris RZR Pro XP Factory Racing Limited Edition",
+      "performanceIndex": 439,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2021-polaris-rzr-pro-xp-ultimate",
+      "year": 2021,
+      "make": "Polaris",
+      "model": "RZR Pro XP Ultimate",
+      "officialDesignation": "2021 Polaris RZR Pro XP Ultimate",
+      "performanceIndex": 496,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1977-pontiac-firebird-trans-am",
+      "year": 1977,
+      "make": "Pontiac",
+      "model": "Firebird Trans Am",
+      "officialDesignation": "1977 Pontiac Firebird Trans Am",
+      "performanceIndex": 312,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1987-pontiac-firebird-trans-am-gta",
+      "year": 1987,
+      "make": "Pontiac",
+      "model": "Firebird Trans Am GTA",
+      "officialDesignation": "1987 Pontiac Firebird Trans Am GTA",
+      "performanceIndex": 382,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1970-porsche-3-917-lh",
+      "year": 1970,
+      "make": "Porsche",
+      "model": "#3 917 LH",
+      "officialDesignation": "1970 Porsche #3 917 LH",
+      "performanceIndex": 777,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1970-porsche-3-917-lh-forza-edition",
+      "year": 1970,
+      "make": "Porsche",
+      "model": "#3 917 LH Forza Edition",
+      "officialDesignation": "1970 Porsche #3 917 LH Forza Edition",
+      "performanceIndex": 998,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1973-porsche-911-carrera-rs",
+      "year": 1973,
+      "make": "Porsche",
+      "model": "911 Carrera RS",
+      "officialDesignation": "1973 Porsche 911 Carrera RS",
+      "performanceIndex": 490,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1982-porsche-911-turbo-3-3",
+      "year": 1982,
+      "make": "Porsche",
+      "model": "911 Turbo 3.3",
+      "officialDesignation": "1982 Porsche 911 Turbo 3.3",
+      "performanceIndex": 550,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1985-porsche-185-959-prodrive-rally-raid",
+      "year": 1985,
+      "make": "Porsche",
+      "model": "#185 959 Prodrive Rally Raid",
+      "officialDesignation": "1985 Porsche #185 959 Prodrive Rally Raid",
+      "performanceIndex": 623,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1987-porsche-959",
+      "year": 1987,
+      "make": "Porsche",
+      "model": "959",
+      "officialDesignation": "1987 Porsche 959",
+      "performanceIndex": 661,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1989-porsche-944-turbo",
+      "year": 1989,
+      "make": "Porsche",
+      "model": "944 Turbo",
+      "officialDesignation": "1989 Porsche 944 Turbo",
+      "performanceIndex": 539,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1993-porsche-911-turbo-s-leichtbau",
+      "year": 1993,
+      "make": "Porsche",
+      "model": "911 Turbo S Leichtbau",
+      "officialDesignation": "1993 Porsche 911 Turbo S Leichtbau",
+      "performanceIndex": 652,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1993-porsche-928-gts",
+      "year": 1993,
+      "make": "Porsche",
+      "model": "928 GTS",
+      "officialDesignation": "1993 Porsche 928 GTS",
+      "performanceIndex": 563,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1993-porsche-968-turbo-s",
+      "year": 1993,
+      "make": "Porsche",
+      "model": "968 Turbo S",
+      "officialDesignation": "1993 Porsche 968 Turbo S",
+      "performanceIndex": 594,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1995-porsche-911-gt2",
+      "year": 1995,
+      "make": "Porsche",
+      "model": "911 GT2",
+      "officialDesignation": "1995 Porsche 911 GT2",
+      "performanceIndex": 644,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-1997-porsche-911-gt1-strassenversion",
+      "year": 1997,
+      "make": "Porsche",
+      "model": "911 GT1 Strassenversion",
+      "officialDesignation": "1997 Porsche 911 GT1 Strassenversion",
+      "performanceIndex": 746,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2003-porsche-carrera-gt",
+      "year": 2003,
+      "make": "Porsche",
+      "model": "Carrera GT",
+      "officialDesignation": "2003 Porsche Carrera GT",
+      "performanceIndex": 758,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2004-porsche-911-gt3",
+      "year": 2004,
+      "make": "Porsche",
+      "model": "911 GT3",
+      "officialDesignation": "2004 Porsche 911 GT3",
+      "performanceIndex": 674,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2005-porsche-cayman-gt3-wtac",
+      "year": 2005,
+      "make": "Porsche",
+      "model": "Cayman GT3 WTAC",
+      "officialDesignation": "2005 Porsche Cayman GT3 WTAC",
+      "performanceIndex": 856,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2012-porsche-911-gt3-rs-4-0",
+      "year": 2012,
+      "make": "Porsche",
+      "model": "911 GT3 RS 4.0",
+      "officialDesignation": "2012 Porsche 911 GT3 RS 4.0",
+      "performanceIndex": 726,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2014-porsche-918-spyder",
+      "year": 2014,
+      "make": "Porsche",
+      "model": "918 Spyder",
+      "officialDesignation": "2014 Porsche 918 Spyder",
+      "performanceIndex": 858,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2018-porsche-718-cayman-gts",
+      "year": 2018,
+      "make": "Porsche",
+      "model": "718 Cayman GTS",
+      "officialDesignation": "2018 Porsche 718 Cayman GTS",
+      "performanceIndex": 675,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2018-porsche-911-gt2-rs",
+      "year": 2018,
+      "make": "Porsche",
+      "model": "911 GT2 RS",
+      "officialDesignation": "2018 Porsche 911 GT2 RS",
+      "performanceIndex": 803,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2018-porsche-cayenne-turbo",
+      "year": 2018,
+      "make": "Porsche",
+      "model": "Cayenne Turbo",
+      "officialDesignation": "2018 Porsche Cayenne Turbo",
+      "performanceIndex": 638,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2018-porsche-macan-lpr-rally-raid",
+      "year": 2018,
+      "make": "Porsche",
+      "model": "Macan LPR Rally Raid",
+      "officialDesignation": "2018 Porsche Macan LPR Rally Raid",
+      "performanceIndex": 528,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2019-porsche-70-porsche-motorsport-935",
+      "year": 2019,
+      "make": "Porsche",
+      "model": "#70 Porsche Motorsport 935",
+      "officialDesignation": "2019 Porsche #70 Porsche Motorsport 935",
+      "performanceIndex": 853,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2019-porsche-911-carrera-s",
+      "year": 2019,
+      "make": "Porsche",
+      "model": "911 Carrera S",
+      "officialDesignation": "2019 Porsche 911 Carrera S",
+      "performanceIndex": 714,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-porsche-911-gt3-rs",
+      "year": 2019,
+      "make": "Porsche",
+      "model": "911 GT3 RS",
+      "officialDesignation": "2019 Porsche 911 GT3 RS",
+      "performanceIndex": 760,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2020-porsche-taycan-turbo-s",
+      "year": 2020,
+      "make": "Porsche",
+      "model": "Taycan Turbo S",
+      "officialDesignation": "2020 Porsche Taycan Turbo S",
+      "performanceIndex": 725,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2021-porsche-911-gt3",
+      "year": 2021,
+      "make": "Porsche",
+      "model": "911 GT3",
+      "officialDesignation": "2021 Porsche 911 GT3",
+      "performanceIndex": 752,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2021-porsche-mission-r",
+      "year": 2021,
+      "make": "Porsche",
+      "model": "Mission R",
+      "officialDesignation": "2021 Porsche Mission R",
+      "performanceIndex": 865,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2022-porsche-718-cayman-gt4-rs",
+      "year": 2022,
+      "make": "Porsche",
+      "model": "718 Cayman GT4 RS",
+      "officialDesignation": "2022 Porsche 718 Cayman GT4 RS",
+      "performanceIndex": 737,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2023-porsche-911-gt3-rs",
+      "year": 2023,
+      "make": "Porsche",
+      "model": "911 GT3 RS",
+      "officialDesignation": "2023 Porsche 911 GT3 RS",
+      "performanceIndex": 758,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2023-porsche-911-rallye",
+      "year": 2023,
+      "make": "Porsche",
+      "model": "911 Rallye",
+      "officialDesignation": "2023 Porsche 911 Rallye",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2023-porsche-911-turbo-s",
+      "year": 2023,
+      "make": "Porsche",
+      "model": "911 Turbo S",
+      "officialDesignation": "2023 Porsche 911 Turbo S",
+      "performanceIndex": 774,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-radical-rxc-turbo",
+      "year": 2015,
+      "make": "Radical",
+      "model": "RXC Turbo",
+      "officialDesignation": "2015 Radical RXC Turbo",
+      "performanceIndex": 842,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-2024-ram-1500-trx",
+      "year": 2024,
+      "make": "Ram",
+      "model": "1500 TRX",
+      "officialDesignation": "2024 Ram 1500 TRX",
+      "performanceIndex": 514,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1972-reliant-supervan-iii",
+      "year": 1972,
+      "make": "Reliant",
+      "model": "Supervan III",
+      "officialDesignation": "1972 Reliant Supervan III",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1967-renault-8-gordini",
+      "year": 1967,
+      "make": "Renault",
+      "model": "8 Gordini",
+      "officialDesignation": "1967 Renault 8 Gordini",
+      "performanceIndex": 322,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1980-renault-5-turbo",
+      "year": 1980,
+      "make": "Renault",
+      "model": "5 Turbo",
+      "officialDesignation": "1980 Renault 5 Turbo",
+      "performanceIndex": 417,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1993-renault-clio-williams",
+      "year": 1993,
+      "make": "Renault",
+      "model": "Clio Williams",
+      "officialDesignation": "1993 Renault Clio Williams",
+      "performanceIndex": 400,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2008-renault-megane-r26-r",
+      "year": 2008,
+      "make": "Renault",
+      "model": "Mégane R26.R",
+      "officialDesignation": "2008 Renault Mégane R26.R",
+      "performanceIndex": 561,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2010-renault-megane-rs-250",
+      "year": 2010,
+      "make": "Renault",
+      "model": "Megane RS 250",
+      "officialDesignation": "2010 Renault Megane RS 250",
+      "performanceIndex": 538,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2018-renault-megane-r-s",
+      "year": 2018,
+      "make": "Renault",
+      "model": "Megane R.S.",
+      "officialDesignation": "2018 Renault Megane R.S.",
+      "performanceIndex": 547,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2021-rimac-nevera",
+      "year": 2021,
+      "make": "Rimac",
+      "model": "Nevera",
+      "officialDesignation": "2021 Rimac Nevera",
+      "performanceIndex": 913,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2022-rivian-r1t",
+      "year": 2022,
+      "make": "Rivian",
+      "model": "R1T",
+      "officialDesignation": "2022 Rivian R1T",
+      "performanceIndex": 607,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2016-rj-anderson-37-polaris-rzr-pro-2-truck",
+      "year": 2016,
+      "make": "RJ Anderson",
+      "model": "#37 Polaris RZR Pro 2 Truck",
+      "officialDesignation": "2016 RJ Anderson #37 Polaris RZR Pro 2 Truck",
+      "performanceIndex": 674,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-rj-anderson-37-polaris-rzr-pro-4-truck",
+      "year": 2021,
+      "make": "RJ Anderson",
+      "model": "#37 Polaris RZR Pro 4 Truck",
+      "officialDesignation": "2021 RJ Anderson #37 Polaris RZR Pro 4 Truck",
+      "performanceIndex": 677,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2017-saleen-s7-lm",
+      "year": 2017,
+      "make": "Saleen",
+      "model": "S7 LM",
+      "officialDesignation": "2017 Saleen S7 LM",
+      "performanceIndex": 835,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1993-schuppan-962cr",
+      "year": 1993,
+      "make": "Schuppan",
+      "model": "962CR",
+      "officialDesignation": "1993 Schuppan 962CR",
+      "performanceIndex": 764,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1965-shelby-cobra-427-s-c",
+      "year": 1965,
+      "make": "Shelby",
+      "model": "Cobra 427 S/C",
+      "officialDesignation": "1965 Shelby Cobra 427 S/C",
+      "performanceIndex": 582,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1965-shelby-cobra-daytona-coupe",
+      "year": 1965,
+      "make": "Shelby",
+      "model": "Cobra Daytona Coupe",
+      "officialDesignation": "1965 Shelby Cobra Daytona Coupe",
+      "performanceIndex": 515,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2020-sierra-cars-23-yokohama-alpha",
+      "year": 2020,
+      "make": "SIERRA Cars",
+      "model": "#23 Yokohama ALPHA",
+      "officialDesignation": "2020 SIERRA Cars #23 Yokohama ALPHA",
+      "performanceIndex": 926,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2021-sierra-cars-700r",
+      "year": 2021,
+      "make": "SIERRA Cars",
+      "model": "700R",
+      "officialDesignation": "2021 SIERRA Cars 700R",
+      "performanceIndex": 346,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2021-sierra-cars-rx3",
+      "year": 2021,
+      "make": "SIERRA Cars",
+      "model": "RX3",
+      "officialDesignation": "2021 SIERRA Cars RX3",
+      "performanceIndex": 635,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2013-srt-viper-gts",
+      "year": 2013,
+      "make": "SRT",
+      "model": "Viper GTS",
+      "officialDesignation": "2013 SRT Viper GTS",
+      "performanceIndex": 707,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-1980-subaru-brat-gl",
+      "year": 1980,
+      "make": "Subaru",
+      "model": "BRAT GL",
+      "officialDesignation": "1980 Subaru BRAT GL",
+      "performanceIndex": 159,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1990-subaru-legacy-rs",
+      "year": 1990,
+      "make": "Subaru",
+      "model": "LEGACY RS",
+      "officialDesignation": "1990 Subaru LEGACY RS",
+      "performanceIndex": 406,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1994-subaru-vivio-rx-r",
+      "year": 1994,
+      "make": "Subaru",
+      "model": "Vivio RX-R",
+      "officialDesignation": "1994 Subaru Vivio RX-R",
+      "performanceIndex": 281,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1994-subaru-vivio-rx-r-forza-edition",
+      "year": 1994,
+      "make": "Subaru",
+      "model": "Vivio RX-R Forza Edition",
+      "officialDesignation": "1994 Subaru Vivio RX-R Forza Edition",
+      "performanceIndex": 900,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1996-subaru-svx",
+      "year": 1996,
+      "make": "Subaru",
+      "model": "SVX",
+      "officialDesignation": "1996 Subaru SVX",
+      "performanceIndex": 466,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1998-subaru-impreza-22b-sti-version",
+      "year": 1998,
+      "make": "Subaru",
+      "model": "Impreza 22B-STi Version",
+      "officialDesignation": "1998 Subaru Impreza 22B-STi Version",
+      "performanceIndex": 600,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2004-subaru-impreza-wrx-sti",
+      "year": 2004,
+      "make": "Subaru",
+      "model": "IMPREZA WRX STI",
+      "officialDesignation": "2004 Subaru IMPREZA WRX STI",
+      "performanceIndex": 552,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2005-subaru-impreza-wrx-sti",
+      "year": 2005,
+      "make": "Subaru",
+      "model": "IMPREZA WRX STI",
+      "officialDesignation": "2005 Subaru IMPREZA WRX STI",
+      "performanceIndex": 570,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2005-subaru-legacy-b4-2-0-gt",
+      "year": 2005,
+      "make": "Subaru",
+      "model": "LEGACY B4 2.0 GT",
+      "officialDesignation": "2005 Subaru LEGACY B4 2.0 GT",
+      "performanceIndex": 549,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2008-subaru-impreza-wrx-sti",
+      "year": 2008,
+      "make": "Subaru",
+      "model": "IMPREZA WRX STI",
+      "officialDesignation": "2008 Subaru IMPREZA WRX STI",
+      "performanceIndex": 539,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2011-subaru-wrx-sti",
+      "year": 2011,
+      "make": "Subaru",
+      "model": "WRX STI",
+      "officialDesignation": "2011 Subaru WRX STI",
+      "performanceIndex": 547,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2013-subaru-brz",
+      "year": 2013,
+      "make": "Subaru",
+      "model": "BRZ",
+      "officialDesignation": "2013 Subaru BRZ",
+      "performanceIndex": 463,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2015-subaru-wrx-sti",
+      "year": 2015,
+      "make": "Subaru",
+      "model": "WRX STI",
+      "officialDesignation": "2015 Subaru WRX STI",
+      "performanceIndex": 555,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2018-subaru-wrx-sti-arx-supercar",
+      "year": 2018,
+      "make": "Subaru",
+      "model": "WRX STI ARX Supercar",
+      "officialDesignation": "2018 Subaru WRX STI ARX Supercar",
+      "performanceIndex": 757,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2019-subaru-sti-s209",
+      "year": 2019,
+      "make": "Subaru",
+      "model": "STI S209",
+      "officialDesignation": "2019 Subaru STI S209",
+      "performanceIndex": 574,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-subaru-brz",
+      "year": 2022,
+      "make": "Subaru",
+      "model": "BRZ",
+      "officialDesignation": "2022 Subaru BRZ",
+      "performanceIndex": 551,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-subaru-brz-forza-edition",
+      "year": 2022,
+      "make": "Subaru",
+      "model": "BRZ Forza Edition",
+      "officialDesignation": "2022 Subaru BRZ Forza Edition",
+      "performanceIndex": 700,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2022-subaru-wrx",
+      "year": 2022,
+      "make": "Subaru",
+      "model": "WRX",
+      "officialDesignation": "2022 Subaru WRX",
+      "performanceIndex": 538,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1965-toyota-sports-800",
+      "year": 1965,
+      "make": "Toyota",
+      "model": "Sports 800",
+      "officialDesignation": "1965 Toyota Sports 800",
+      "performanceIndex": 141,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1965-toyota-sports-800-fanta-edition",
+      "year": 1965,
+      "make": "Toyota",
+      "model": "Sports 800 Fanta Edition",
+      "officialDesignation": "1965 Toyota Sports 800 Fanta Edition",
+      "performanceIndex": 141,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1969-toyota-2000gt",
+      "year": 1969,
+      "make": "Toyota",
+      "model": "2000GT",
+      "officialDesignation": "1969 Toyota 2000GT",
+      "performanceIndex": 377,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1974-toyota-corolla-sr5",
+      "year": 1974,
+      "make": "Toyota",
+      "model": "Corolla SR5",
+      "officialDesignation": "1974 Toyota Corolla SR5",
+      "performanceIndex": 197,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1979-toyota-fj40",
+      "year": 1979,
+      "make": "Toyota",
+      "model": "FJ40",
+      "officialDesignation": "1979 Toyota FJ40",
+      "performanceIndex": 157,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1985-toyota-sprinter-trueno-gt-apex",
+      "year": 1985,
+      "make": "Toyota",
+      "model": "Sprinter Trueno GT Apex",
+      "officialDesignation": "1985 Toyota Sprinter Trueno GT Apex",
+      "performanceIndex": 376,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1985-toyota-sprinter-trueno-gt-apex-forza-edition",
+      "year": 1985,
+      "make": "Toyota",
+      "model": "Sprinter Trueno GT Apex Forza Edition",
+      "officialDesignation": "1985 Toyota Sprinter Trueno GT Apex Forza Edition",
+      "performanceIndex": 600,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1989-toyota-mr2-sc",
+      "year": 1989,
+      "make": "Toyota",
+      "model": "MR2 SC",
+      "officialDesignation": "1989 Toyota MR2 SC",
+      "performanceIndex": 397,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1991-toyota-chaser-gt-twin-turbo",
+      "year": 1991,
+      "make": "Toyota",
+      "model": "Chaser GT Twin Turbo",
+      "officialDesignation": "1991 Toyota Chaser GT Twin Turbo",
+      "performanceIndex": 484,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1991-toyota-sera",
+      "year": 1991,
+      "make": "Toyota",
+      "model": "Sera",
+      "officialDesignation": "1991 Toyota Sera",
+      "performanceIndex": 344,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1992-toyota-celica-gt-four-rc-st185",
+      "year": 1992,
+      "make": "Toyota",
+      "model": "Celica GT-Four RC ST185",
+      "officialDesignation": "1992 Toyota Celica GT-Four RC ST185",
+      "performanceIndex": 438,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1992-toyota-supra-2-0-gt",
+      "year": 1992,
+      "make": "Toyota",
+      "model": "Supra 2.0 GT",
+      "officialDesignation": "1992 Toyota Supra 2.0 GT",
+      "performanceIndex": 453,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1993-toyota-1-t100-baja-truck",
+      "year": 1993,
+      "make": "Toyota",
+      "model": "#1 T100 Baja Truck",
+      "officialDesignation": "1993 Toyota #1 T100 Baja Truck",
+      "performanceIndex": 584,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1994-toyota-celica-gt-four-st205",
+      "year": 1994,
+      "make": "Toyota",
+      "model": "Celica GT-Four ST205",
+      "officialDesignation": "1994 Toyota Celica GT-Four ST205",
+      "performanceIndex": 479,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1995-toyota-j-j-motorsport-supra-wtac",
+      "year": 1995,
+      "make": "Toyota",
+      "model": "J&J Motorsport Supra WTAC",
+      "officialDesignation": "1995 Toyota J&J Motorsport Supra WTAC",
+      "performanceIndex": 828,
+      "performanceClass": "S2"
+    },
+    {
+      "id": "fh6-1995-toyota-mr2-gt",
+      "year": 1995,
+      "make": "Toyota",
+      "model": "MR2 GT",
+      "officialDesignation": "1995 Toyota MR2 GT",
+      "performanceIndex": 522,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1996-toyota-starlet-glanza-v",
+      "year": 1996,
+      "make": "Toyota",
+      "model": "Starlet Glanza V",
+      "officialDesignation": "1996 Toyota Starlet Glanza V",
+      "performanceIndex": 435,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1997-toyota-chaser-2-5-tourer-v",
+      "year": 1997,
+      "make": "Toyota",
+      "model": "Chaser 2.5 Tourer V",
+      "officialDesignation": "1997 Toyota Chaser 2.5 Tourer V",
+      "performanceIndex": 504,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1997-toyota-soarer-2-5-gt-t",
+      "year": 1997,
+      "make": "Toyota",
+      "model": "Soarer 2.5 GT-T",
+      "officialDesignation": "1997 Toyota Soarer 2.5 GT-T",
+      "performanceIndex": 491,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1998-toyota-supra-rz",
+      "year": 1998,
+      "make": "Toyota",
+      "model": "Supra RZ",
+      "officialDesignation": "1998 Toyota Supra RZ",
+      "performanceIndex": 529,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1999-toyota-altezza-rs200-z-edition",
+      "year": 1999,
+      "make": "Toyota",
+      "model": "Altezza RS200 Z EDITION",
+      "officialDesignation": "1999 Toyota Altezza RS200 Z EDITION",
+      "performanceIndex": 461,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2003-toyota-celica-sport-specialty-ii",
+      "year": 2003,
+      "make": "Toyota",
+      "model": "Celica Sport Specialty II",
+      "officialDesignation": "2003 Toyota Celica Sport Specialty II",
+      "performanceIndex": 433,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2005-toyota-crown-super-deluxe-taxi",
+      "year": 2005,
+      "make": "Toyota",
+      "model": "Crown Super Deluxe Taxi",
+      "officialDesignation": "2005 Toyota Crown Super Deluxe Taxi",
+      "performanceIndex": 181,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2013-toyota-86",
+      "year": 2013,
+      "make": "Toyota",
+      "model": "86",
+      "officialDesignation": "2013 Toyota 86",
+      "performanceIndex": 460,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2013-toyota-86-stories",
+      "year": 2013,
+      "make": "Toyota",
+      "model": "86 Stories",
+      "officialDesignation": "2013 Toyota 86 Stories",
+      "performanceIndex": 685,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2016-toyota-land-cruiser-arctic-trucks-at37",
+      "year": 2016,
+      "make": "Toyota",
+      "model": "Land Cruiser Arctic Trucks AT37",
+      "officialDesignation": "2016 Toyota Land Cruiser Arctic Trucks AT37",
+      "performanceIndex": 332,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2017-toyota-jpn-taxi",
+      "year": 2017,
+      "make": "Toyota",
+      "model": "JPN Taxi",
+      "officialDesignation": "2017 Toyota JPN Taxi",
+      "performanceIndex": 248,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2019-toyota-4runner-trd-pro",
+      "year": 2019,
+      "make": "Toyota",
+      "model": "4Runner TRD Pro",
+      "officialDesignation": "2019 Toyota 4Runner TRD Pro",
+      "performanceIndex": 421,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2019-toyota-tacoma-trd-pro",
+      "year": 2019,
+      "make": "Toyota",
+      "model": "Tacoma TRD Pro",
+      "officialDesignation": "2019 Toyota Tacoma TRD Pro",
+      "performanceIndex": 409,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2019-toyota-tacoma-trd-pro-forza-edition",
+      "year": 2019,
+      "make": "Toyota",
+      "model": "Tacoma TRD Pro Forza Edition",
+      "officialDesignation": "2019 Toyota Tacoma TRD Pro Forza Edition",
+      "performanceIndex": 998,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-2020-toyota-gr-supra",
+      "year": 2020,
+      "make": "Toyota",
+      "model": "GR Supra",
+      "officialDesignation": "2020 Toyota GR Supra",
+      "performanceIndex": 616,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2021-toyota-gr-yaris",
+      "year": 2021,
+      "make": "Toyota",
+      "model": "GR Yaris",
+      "officialDesignation": "2021 Toyota GR Yaris",
+      "performanceIndex": 558,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-toyota-gr86",
+      "year": 2022,
+      "make": "Toyota",
+      "model": "GR86",
+      "officialDesignation": "2022 Toyota GR86",
+      "performanceIndex": 556,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2023-toyota-camry-trd",
+      "year": 2023,
+      "make": "Toyota",
+      "model": "Camry TRD",
+      "officialDesignation": "2023 Toyota Camry TRD",
+      "performanceIndex": 525,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2023-toyota-gr-corolla",
+      "year": 2023,
+      "make": "Toyota",
+      "model": "GR Corolla",
+      "officialDesignation": "2023 Toyota GR Corolla",
+      "performanceIndex": 596,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2024-toyota-prius-prime-xse-premium",
+      "year": 2024,
+      "make": "Toyota",
+      "model": "Prius Prime XSE Premium",
+      "officialDesignation": "2024 Toyota Prius Prime XSE Premium",
+      "performanceIndex": 472,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2025-toyota-land-cruiser",
+      "year": 2025,
+      "make": "Toyota",
+      "model": "Land Cruiser",
+      "officialDesignation": "2025 Toyota Land Cruiser",
+      "performanceIndex": 456,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1998-tvr-cerbera-speed-12",
+      "year": 1998,
+      "make": "TVR",
+      "model": "Cerbera Speed 12",
+      "officialDesignation": "1998 TVR Cerbera Speed 12",
+      "performanceIndex": 770,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2005-tvr-sagaris",
+      "year": 2005,
+      "make": "TVR",
+      "model": "Sagaris",
+      "officialDesignation": "2005 TVR Sagaris",
+      "performanceIndex": 672,
+      "performanceClass": "A"
+    },
+    {
+      "id": "fh6-2018-tvr-griffith",
+      "year": 2018,
+      "make": "TVR",
+      "model": "Griffith",
+      "officialDesignation": "2018 TVR Griffith",
+      "performanceIndex": 729,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2015-ultima-evolution-coupe-1020",
+      "year": 2015,
+      "make": "Ultima",
+      "model": "Evolution Coupe 1020",
+      "officialDesignation": "2015 Ultima Evolution Coupe 1020",
+      "performanceIndex": 925,
+      "performanceClass": "R"
+    },
+    {
+      "id": "fh6-1963-volkswagen-beetle",
+      "year": 1963,
+      "make": "Volkswagen",
+      "model": "Beetle",
+      "officialDesignation": "1963 Volkswagen Beetle",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1963-volkswagen-type-2-de-luxe",
+      "year": 1963,
+      "make": "Volkswagen",
+      "model": "Type 2 De Luxe",
+      "officialDesignation": "1963 Volkswagen Type 2 De Luxe",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1969-volkswagen-class-5-1600-baja-bug",
+      "year": 1969,
+      "make": "Volkswagen",
+      "model": "Class 5/1600 Baja Bug",
+      "officialDesignation": "1969 Volkswagen Class 5/1600 Baja Bug",
+      "performanceIndex": 260,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1982-volkswagen-pickup-lx",
+      "year": 1982,
+      "make": "Volkswagen",
+      "model": "Pickup LX",
+      "officialDesignation": "1982 Volkswagen Pickup LX",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1983-volkswagen-golf-gti",
+      "year": 1983,
+      "make": "Volkswagen",
+      "model": "Golf GTI",
+      "officialDesignation": "1983 Volkswagen Golf GTI",
+      "performanceIndex": 314,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1989-volkswagen-rallye-golf",
+      "year": 1989,
+      "make": "Volkswagen",
+      "model": "Rallye Golf",
+      "officialDesignation": "1989 Volkswagen Rallye Golf",
+      "performanceIndex": 440,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-1992-volkswagen-golf-gti-16v-mk2",
+      "year": 1992,
+      "make": "Volkswagen",
+      "model": "Golf Gti 16v Mk2",
+      "officialDesignation": "1992 Volkswagen Golf Gti 16v Mk2",
+      "performanceIndex": 308,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-1995-volkswagen-corrado-vr6",
+      "year": 1995,
+      "make": "Volkswagen",
+      "model": "Corrado VR6",
+      "officialDesignation": "1995 Volkswagen Corrado VR6",
+      "performanceIndex": 426,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2010-volkswagen-golf-r",
+      "year": 2010,
+      "make": "Volkswagen",
+      "model": "Golf R",
+      "officialDesignation": "2010 Volkswagen Golf R",
+      "performanceIndex": 526,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2011-volkswagen-scirocco-r",
+      "year": 2011,
+      "make": "Volkswagen",
+      "model": "Scirocco R",
+      "officialDesignation": "2011 Volkswagen Scirocco R",
+      "performanceIndex": 548,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2014-volkswagen-golf-r",
+      "year": 2014,
+      "make": "Volkswagen",
+      "model": "Golf R",
+      "officialDesignation": "2014 Volkswagen Golf R",
+      "performanceIndex": 536,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2017-volkswagen-34-andretti-rally-cross-beetle",
+      "year": 2017,
+      "make": "Volkswagen",
+      "model": "#34 Andretti Rally Cross Beetle",
+      "officialDesignation": "2017 Volkswagen #34 Andretti Rally Cross Beetle",
+      "performanceIndex": 764,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2021-volkswagen-golf-r",
+      "year": 2021,
+      "make": "Volkswagen",
+      "model": "Golf R",
+      "officialDesignation": "2021 Volkswagen Golf R",
+      "performanceIndex": 546,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-2022-volkswagen-golf-r",
+      "year": 2022,
+      "make": "Volkswagen",
+      "model": "Golf R",
+      "officialDesignation": "2022 Volkswagen Golf R",
+      "performanceIndex": 548,
+      "performanceClass": "B"
+    },
+    {
+      "id": "fh6-1983-volvo-242-turbo-evolution",
+      "year": 1983,
+      "make": "Volvo",
+      "model": "242 Turbo Evolution",
+      "officialDesignation": "1983 Volvo 242 Turbo Evolution",
+      "performanceIndex": 435,
+      "performanceClass": "C"
+    },
+    {
+      "id": "fh6-2013-wuling-sunshine-s",
+      "year": 2013,
+      "make": "Wuling",
+      "model": "Sunshine S",
+      "officialDesignation": "2013 Wuling Sunshine S",
+      "performanceIndex": 107,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2013-wuling-sunshine-s-forza-edition",
+      "year": 2013,
+      "make": "Wuling",
+      "model": "Sunshine S Forza Edition",
+      "officialDesignation": "2013 Wuling Sunshine S Forza Edition",
+      "performanceIndex": 800,
+      "performanceClass": "S1"
+    },
+    {
+      "id": "fh6-2022-wuling-hongguang-mini-ev",
+      "year": 2022,
+      "make": "Wuling",
+      "model": "Hongguang Mini EV",
+      "officialDesignation": "2022 Wuling Hongguang Mini EV",
+      "performanceIndex": 100,
+      "performanceClass": "D"
+    },
+    {
+      "id": "fh6-2019-zenvo-tsr-s",
+      "year": 2019,
+      "make": "Zenvo",
+      "model": "TSR-S",
+      "officialDesignation": "2019 Zenvo TSR-S",
+      "performanceIndex": 906,
+      "performanceClass": "R"
+    }
+  ]
+}

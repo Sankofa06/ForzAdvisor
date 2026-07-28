@@ -9,24 +9,38 @@ import SwiftUI
 
 struct CarCatalogPickerView: View {
     let catalogResult: Result<CarCatalogSnapshot, CatalogLoadError>
+    let fh6RosterResult: Result<
+        FH6OfficialRosterSnapshot,
+        FH6OfficialRosterLoadError
+    >
     let onBack: () -> Void
     let onManualEntry: (ForzaGame) -> Void
     let onSelect: (CatalogCarSelection) -> Void
+    let onIdentityOnly: (FH6OfficialRosterEntry) -> Void
 
     @State private var selectedGame: ForzaGame
     @State private var searchText = ""
 
     init(
         catalogResult: Result<CarCatalogSnapshot, CatalogLoadError>,
+        fh6RosterResult: Result<
+            FH6OfficialRosterSnapshot,
+            FH6OfficialRosterLoadError
+        > = BundledFH6OfficialRoster.load(),
         initialGame: ForzaGame = .fh6,
         onBack: @escaping () -> Void,
         onManualEntry: @escaping (ForzaGame) -> Void,
-        onSelect: @escaping (CatalogCarSelection) -> Void
+        onSelect: @escaping (CatalogCarSelection) -> Void,
+        onIdentityOnly: @escaping (
+            FH6OfficialRosterEntry
+        ) -> Void = { _ in }
     ) {
         self.catalogResult = catalogResult
+        self.fh6RosterResult = fh6RosterResult
         self.onBack = onBack
         self.onManualEntry = onManualEntry
         self.onSelect = onSelect
+        self.onIdentityOnly = onIdentityOnly
         self._selectedGame = State(initialValue: initialGame)
     }
 
@@ -35,7 +49,8 @@ struct CarCatalogPickerView: View {
             Section {
                 ForzAdvisorScreenHeader(
                     title: "Choose a Car",
-                    subtitle: "Start with reviewed stock values, then confirm them before tuning.",
+                    subtitle:
+                        "Choose from the official FH6 roster or reviewed FH5 stock cars. Unreviewed cars ask for the missing stock values.",
                     systemImage: "car.2",
                     tint: ForzAdvisorTheme.warmAccent
                 )
@@ -44,8 +59,17 @@ struct CarCatalogPickerView: View {
 
             switch catalogResult {
             case .success(let snapshot):
-                catalogControls(snapshot: snapshot)
-                catalogResults(snapshot: snapshot)
+                let browseSnapshot = CarCatalogBrowseOverlay.resolve(
+                    catalog: snapshot,
+                    rosterResult: fh6RosterResult
+                )
+                catalogControls
+                if selectedGame == .fh6,
+                   let issue = browseSnapshot
+                    .rosterIssueDescription {
+                    rosterIssueSection(issue)
+                }
+                catalogResults(snapshot: browseSnapshot)
                 manualEntrySection
             case .failure(let error):
                 Section {
@@ -74,7 +98,7 @@ struct CarCatalogPickerView: View {
     }
 
     @ViewBuilder
-    private func catalogControls(snapshot: CarCatalogSnapshot) -> some View {
+    private var catalogControls: some View {
         Section("Game") {
             Picker("Game", selection: $selectedGame) {
                 ForEach(ForzaGame.allCases) { game in
@@ -93,8 +117,14 @@ struct CarCatalogPickerView: View {
     }
 
     @ViewBuilder
-    private func catalogResults(snapshot: CarCatalogSnapshot) -> some View {
-        let entries = BundledCarCatalog.search(snapshot, game: selectedGame, query: searchText)
+    private func catalogResults(
+        snapshot: CarCatalogBrowseSnapshot
+    ) -> some View {
+        let entries = CarCatalogBrowseOverlay.search(
+            snapshot,
+            game: selectedGame,
+            query: searchText
+        )
 
         Section("Cars") {
             if entries.isEmpty {
@@ -102,7 +132,25 @@ struct CarCatalogPickerView: View {
             } else {
                 ForEach(entries) { entry in
                     Button {
-                        onSelect(snapshot.selection(for: entry))
+                        if let selection =
+                            entry.reviewedSelection {
+                            onSelect(selection)
+                        } else {
+                            onIdentityOnly(
+                                FH6OfficialRosterEntry(
+                                    id: entry.id,
+                                    year: entry.year,
+                                    make: entry.make,
+                                    model: entry.model,
+                                    officialDesignation:
+                                        entry.officialDesignation,
+                                    performanceIndex:
+                                        entry.officialPerformanceIndex,
+                                    performanceClass:
+                                        entry.officialPerformanceClass
+                                )
+                            )
+                        }
                     } label: {
                         CatalogCarRow(entry: entry)
                     }
@@ -110,6 +158,22 @@ struct CarCatalogPickerView: View {
                     .accessibilityIdentifier("catalogCarRow-\(entry.id)")
                 }
             }
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private func rosterIssueSection(
+        _ issue: String
+    ) -> some View {
+        Section {
+            Label(
+                "The full FH6 roster is unavailable. Showing reviewed cars only.",
+                systemImage: "exclamationmark.triangle"
+            )
+            .font(.subheadline.weight(.semibold))
+            Text(issue)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .forzAdvisorRowBackground()
     }
@@ -147,7 +211,7 @@ struct CarCatalogPickerView: View {
 }
 
 private struct CatalogCarRow: View {
-    let entry: CatalogCarEntry
+    let entry: CatalogBrowseEntry
 
     var body: some View {
         HStack(spacing: 12) {
@@ -156,12 +220,26 @@ private struct CatalogCarRow: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(entry.displayName)
                     .font(.headline)
-                Text("\(entry.game.shortTitle) · \(entry.stock.performanceClass.rawValue) \(entry.stock.performanceIndex) · \(entry.stock.drivetrain.rawValue) · \(entry.stock.weightPounds) lb")
+                if let selection = entry.reviewedSelection {
+                    let stock = selection.entry.stock
+                    Text(
+                        "\(entry.game.shortTitle) · \(stock.performanceClass.rawValue) \(stock.performanceIndex) · \(stock.drivetrain.rawValue) · \(stock.weightPounds) lb"
+                    )
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(entry.verificationStatus.label)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(ForzAdvisorTheme.accent)
+                    Text(selection.entry.verificationStatus.label)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(ForzAdvisorTheme.accent)
+                } else {
+                    Text(
+                        "\(entry.game.shortTitle) · Official \(entry.officialPerformanceClass.rawValue) \(entry.officialPerformanceIndex)"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    Text("Stock specs needed")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(ForzAdvisorTheme.warning)
+                }
             }
 
             Spacer()
