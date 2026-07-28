@@ -15,6 +15,8 @@ struct StockCatalogOfficialRosterPickerView: View {
 
     @State private var selectedGame: ForzaGame
     @State private var query = ""
+    @State private var coverageFilter:
+        StockCatalogOfficialRosterCoverageFilter = .all
     @State private var rejectionMessage: String?
 
     init(
@@ -27,11 +29,13 @@ struct StockCatalogOfficialRosterPickerView: View {
             FH6OfficialRosterSnapshot,
             FH6OfficialRosterLoadError
         > = BundledFH6OfficialRoster.load(),
+        capturedRecords: [StockCatalogContributionRecord],
         onSelect: @escaping (OfficialRosterCarIdentity) -> Bool
     ) {
         snapshot = StockCatalogOfficialRosterPickerSnapshot(
             fh5Result: fh5Result,
-            fh6Result: fh6Result
+            fh6Result: fh6Result,
+            capturedRecords: capturedRecords
         )
         self.onSelect = onSelect
         _selectedGame = State(initialValue: initialGame)
@@ -57,9 +61,20 @@ struct StockCatalogOfficialRosterPickerView: View {
                     .accessibilityIdentifier(
                         "stockCatalogOfficialRosterSearch"
                     )
+
+                Picker("Capture Coverage", selection: $coverageFilter) {
+                    ForEach(
+                        StockCatalogOfficialRosterCoverageFilter.allCases
+                    ) {
+                        Text($0.title).tag($0)
+                    }
+                }
+                .accessibilityIdentifier(
+                    "stockCatalogOfficialRosterNeedsCaptureFilter"
+                )
             } footer: {
                 Text(
-                    "Only official game, year, make, and model identity is copied. Verify every stock specification directly in-game."
+                    "Local capture counts are collection-only. They do not establish verification, approval, permission completeness, or catalog readiness. Selection copies only official game, year, make, and model identity; check every stock specification directly in-game."
                 )
             }
 
@@ -73,11 +88,25 @@ struct StockCatalogOfficialRosterPickerView: View {
                 }
             } else if visibleEntries.isEmpty {
                 Section {
-                    ContentUnavailableView.search(text: query)
-                        .accessibilityIdentifier(
-                            "stockCatalogOfficialRosterNoResults"
+                    if coverageFilter == .needsLocalCapture {
+                        ContentUnavailableView(
+                            "No Cars Need Local Capture",
+                            systemImage: "tray.full",
+                            description: Text(
+                                query.isEmpty
+                                    ? "Every official car shown for this game has one or more counted local capture records."
+                                    : "No official cars with zero local captures match this search."
+                            )
                         )
+                    } else {
+                        ContentUnavailableView.search(text: query)
+                    }
                 }
+                .accessibilityIdentifier(
+                    coverageFilter == .needsLocalCapture
+                        ? "stockCatalogOfficialRosterNoCaptureNeeds"
+                        : "stockCatalogOfficialRosterNoResults"
+                )
             } else {
                 Section("\(visibleEntries.count) Official Cars") {
                     ForEach(visibleEntries) { entry in
@@ -92,10 +121,16 @@ struct StockCatalogOfficialRosterPickerView: View {
                                 )
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                                Text(entry.localCaptureStatus)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .accessibilityLabel(
+                                        "\(entry.displayName): \(entry.localCaptureStatus), collection-only"
+                                    )
                             }
                         }
                         .accessibilityLabel(
-                            "\(entry.displayName), official identity only. Verify stock specifications directly in-game."
+                            "\(entry.displayName), \(entry.localCaptureStatus), collection-only; does not establish verification, approval, permission completeness, or catalog readiness. Official identity only; check stock specifications directly in-game."
                         )
                         .accessibilityIdentifier(
                             "stockCatalogOfficialRosterRow-\(entry.id)"
@@ -139,7 +174,11 @@ struct StockCatalogOfficialRosterPickerView: View {
 
     private var visibleEntries:
         [StockCatalogOfficialRosterPickerEntry] {
-        snapshot.entries(for: selectedGame, matching: query)
+        snapshot.entries(
+            for: selectedGame,
+            matching: query,
+            coverageFilter: coverageFilter
+        )
     }
 
     private func select(_ identity: OfficialRosterCarIdentity) {

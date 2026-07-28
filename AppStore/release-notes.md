@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.40.6 (Build 72) - 2026-07-28
+
+- Shows read-only local capture counts for every official FH5 and FH6 car in the contribution picker.
+- Adds a Needs Local Capture filter so contributors can focus on official cars with no counted local observation.
+- Keeps counts collection-only: they do not establish verification, approval, permission completeness, catalog readiness, or tuning eligibility.
+
 ## Version 1.40.5 (Build 71) - 2026-07-28
 
 - Lets players copy one freshly reverified FH5 or FH6 tuning-control path as an isolated upgrade-shop checklist.

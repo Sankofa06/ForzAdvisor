@@ -109,7 +109,8 @@ struct StockCatalogContributionView: View {
         .sheet(isPresented: $showingOfficialRosterPicker) {
             NavigationStack {
                 StockCatalogOfficialRosterPickerView(
-                    initialGame: draft.game
+                    initialGame: draft.game,
+                    capturedRecords: snapshot.captured
                 ) { identity in
                     let applied =
                         draft.applyOfficialRosterIdentityIfPristine(

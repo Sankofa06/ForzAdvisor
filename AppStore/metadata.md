@@ -107,18 +107,18 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.40.5
-- Current project build: 71
+- Current project version: 1.40.6
+- Current project build: 72
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Each evidence-backed FH5 or FH6 tuning-control path now has its own Copy This Path action for an isolated upgrade-shop checklist.
+The official FH5 and FH6 contribution picker now shows how many valid local capture records exist for every roster car.
 
-The copied checklist includes only the selected path's exact parts, unlocked controls, and safe local Upgrade Lab attribution. Alternatives remain separate and are never combined or ranked.
+Use Needs Local Capture to focus on official cars with no counted local observation, while normal search and game selection continue to work together.
 
-ForzAdvisor freshly rechecks the path before copying and refuses when its trusted evidence no longer matches. It does not predict PI, price, credits, entitlement, performance, or installation order.
+Counts are read-only and collection-only. They do not establish verification, approval, permission completeness, catalog readiness, or tuning eligibility, and selecting a car still copies identity only.
 
 ## Export Compliance Notes
 

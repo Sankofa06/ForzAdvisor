@@ -32,6 +32,15 @@ struct StockCatalogOfficialRosterPickerEntry:
     Sendable
 {
     let identity: OfficialRosterCarIdentity
+    let localCaptureCount: Int
+
+    init(
+        identity: OfficialRosterCarIdentity,
+        localCaptureCount: Int
+    ) {
+        self.identity = identity
+        self.localCaptureCount = max(0, localCaptureCount)
+    }
 
     var id: String {
         identity.id
@@ -43,6 +52,17 @@ struct StockCatalogOfficialRosterPickerEntry:
 
     var displayName: String {
         identity.officialDesignation
+    }
+
+    var localCaptureStatus: String {
+        switch localCaptureCount {
+        case 0:
+            "No local captures"
+        case 1:
+            "1 local capture"
+        default:
+            "\(localCaptureCount) local captures"
+        }
     }
 }
 
@@ -70,14 +90,21 @@ struct StockCatalogOfficialRosterPickerSnapshot:
         fh6Result: Result<
             FH6OfficialRosterSnapshot,
             FH6OfficialRosterLoadError
-        >
+        >,
+        capturedRecords: [StockCatalogContributionRecord] = []
     ) {
+        let coverage = StockCatalogOfficialRosterCoverage(
+            capturedRecords: capturedRecords
+        )
         switch fh5Result {
         case .success(let snapshot):
             fh5 = GameRoster(
                 entries: snapshot.entries.map {
                     StockCatalogOfficialRosterPickerEntry(
-                        identity: $0.identity
+                        identity: $0.identity,
+                        localCaptureCount: coverage.localCaptureCount(
+                            for: $0.identity
+                        )
                     )
                 },
                 localizedIssue: nil
@@ -94,7 +121,10 @@ struct StockCatalogOfficialRosterPickerSnapshot:
             fh6 = GameRoster(
                 entries: snapshot.entries.map {
                     StockCatalogOfficialRosterPickerEntry(
-                        identity: $0.identity
+                        identity: $0.identity,
+                        localCaptureCount: coverage.localCaptureCount(
+                            for: $0.identity
+                        )
                     )
                 },
                 localizedIssue: nil
@@ -118,29 +148,29 @@ struct StockCatalogOfficialRosterPickerSnapshot:
 
     func entries(
         for game: ForzaGame,
-        matching query: String
+        matching query: String,
+        coverageFilter: StockCatalogOfficialRosterCoverageFilter = .all
     ) -> [StockCatalogOfficialRosterPickerEntry] {
         let roster = roster(for: game)
         guard roster.isAvailable else {
             return []
         }
-        let normalizedQuery = Self.normalized(query)
-        guard !normalizedQuery.isEmpty else {
-            return roster.entries
-        }
-        return roster.entries.filter {
-            Self.normalized($0.displayName)
+        let normalizedQuery =
+            StockCatalogOfficialRosterCoverage.normalized(query)
+        return roster.entries.filter { entry in
+            let includesQuery = normalizedQuery.isEmpty
+                || StockCatalogOfficialRosterCoverage.normalized(
+                    entry.displayName
+                )
                 .contains(normalizedQuery)
+            let includesCoverage: Bool
+            switch coverageFilter {
+            case .all:
+                includesCoverage = true
+            case .needsLocalCapture:
+                includesCoverage = entry.localCaptureCount == 0
+            }
+            return includesQuery && includesCoverage
         }
-    }
-
-    private static func normalized(_ value: String) -> String {
-        value.folding(
-            options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
-            locale: Locale(identifier: "en_US_POSIX")
-        )
-        .split(whereSeparator: \.isWhitespace)
-        .joined(separator: " ")
-        .lowercased()
     }
 }
