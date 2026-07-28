@@ -12,13 +12,13 @@ Photo-to-tune racing setups
 
 ## Promotional Text
 
-Choose a reviewed FH5 or FH6 stock car, build trustworthy tuning-control plans, and follow local beta missions to improve the evidence.
+Browse every official FH5 and FH6 car, use reviewed stock data where available, and follow local beta missions to improve the evidence.
 
 ## Description
 
 ForzAdvisor is an unofficial tuning companion for players who want faster setup decisions without losing control of the numbers.
 
-Start with a searchable, versioned stock-car catalog containing three FH5 and eight FH6 choices, take a photo, import a screenshot, or enter details manually. Catalog cars retain source and revision information, and edited values are clearly labeled.
+Start with searchable, versioned official rosters containing 902 FH5 and 627 FH6 cars, take a photo, import a screenshot, or enter details manually. Three FH5 and eight FH6 cars include reviewed stock specifications. Roster-only cars prefill official identity; FH6 also prefills its published PI and class, while FH5 asks you to confirm missing stock details rather than guessing values its official roster does not publish. Catalog cars retain source and revision information, and edited values are clearly labeled.
 
 Stock Catalog Contribution records direct in-game, untouched-stock facts for one exact FH5 or FH6 build in a separate local workspace. It never changes the bundled catalog or a tune. Optional canonical sharing requires explicit authorship plus structured-fact reuse, curation, and redistribution permission. Received observations remain collection-only matches, conflicts, or exclusions—not verified entries.
 

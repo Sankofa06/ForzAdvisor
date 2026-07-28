@@ -9,6 +9,10 @@ import SwiftUI
 
 struct CarCatalogPickerView: View {
     let catalogResult: Result<CarCatalogSnapshot, CatalogLoadError>
+    let fh5RosterResult: Result<
+        FH5OfficialRosterSnapshot,
+        FH5OfficialRosterLoadError
+    >
     let fh6RosterResult: Result<
         FH6OfficialRosterSnapshot,
         FH6OfficialRosterLoadError
@@ -16,13 +20,17 @@ struct CarCatalogPickerView: View {
     let onBack: () -> Void
     let onManualEntry: (ForzaGame) -> Void
     let onSelect: (CatalogCarSelection) -> Void
-    let onIdentityOnly: (FH6OfficialRosterEntry) -> Void
+    let onIdentityOnly: (OfficialRosterCarIdentity) -> Void
 
     @State private var selectedGame: ForzaGame
     @State private var searchText = ""
 
     init(
         catalogResult: Result<CarCatalogSnapshot, CatalogLoadError>,
+        fh5RosterResult: Result<
+            FH5OfficialRosterSnapshot,
+            FH5OfficialRosterLoadError
+        > = BundledFH5OfficialRoster.load(),
         fh6RosterResult: Result<
             FH6OfficialRosterSnapshot,
             FH6OfficialRosterLoadError
@@ -32,10 +40,11 @@ struct CarCatalogPickerView: View {
         onManualEntry: @escaping (ForzaGame) -> Void,
         onSelect: @escaping (CatalogCarSelection) -> Void,
         onIdentityOnly: @escaping (
-            FH6OfficialRosterEntry
+            OfficialRosterCarIdentity
         ) -> Void = { _ in }
     ) {
         self.catalogResult = catalogResult
+        self.fh5RosterResult = fh5RosterResult
         self.fh6RosterResult = fh6RosterResult
         self.onBack = onBack
         self.onManualEntry = onManualEntry
@@ -50,7 +59,7 @@ struct CarCatalogPickerView: View {
                 ForzAdvisorScreenHeader(
                     title: "Choose a Car",
                     subtitle:
-                        "Choose from the official FH6 roster or reviewed FH5 stock cars. Unreviewed cars ask for the missing stock values.",
+                        "Choose from the official FH5 and FH6 rosters. Only reviewed stock cars include complete values.",
                     systemImage: "car.2",
                     tint: ForzAdvisorTheme.warmAccent
                 )
@@ -61,13 +70,16 @@ struct CarCatalogPickerView: View {
             case .success(let snapshot):
                 let browseSnapshot = CarCatalogBrowseOverlay.resolve(
                     catalog: snapshot,
-                    rosterResult: fh6RosterResult
+                    fh5RosterResult: fh5RosterResult,
+                    fh6RosterResult: fh6RosterResult
                 )
                 catalogControls
-                if selectedGame == .fh6,
-                   let issue = browseSnapshot
-                    .rosterIssueDescription {
-                    rosterIssueSection(issue)
+                if let issue = browseSnapshot
+                    .rosterIssueDescription(for: selectedGame) {
+                    rosterIssueSection(
+                        issue,
+                        game: selectedGame
+                    )
                 }
                 catalogResults(snapshot: browseSnapshot)
                 manualEntrySection
@@ -136,20 +148,7 @@ struct CarCatalogPickerView: View {
                             entry.reviewedSelection {
                             onSelect(selection)
                         } else {
-                            onIdentityOnly(
-                                FH6OfficialRosterEntry(
-                                    id: entry.id,
-                                    year: entry.year,
-                                    make: entry.make,
-                                    model: entry.model,
-                                    officialDesignation:
-                                        entry.officialDesignation,
-                                    performanceIndex:
-                                        entry.officialPerformanceIndex,
-                                    performanceClass:
-                                        entry.officialPerformanceClass
-                                )
-                            )
+                            onIdentityOnly(entry.identity)
                         }
                     } label: {
                         CatalogCarRow(entry: entry)
@@ -163,11 +162,12 @@ struct CarCatalogPickerView: View {
     }
 
     private func rosterIssueSection(
-        _ issue: String
+        _ issue: String,
+        game: ForzaGame
     ) -> some View {
         Section {
             Label(
-                "The full FH6 roster is unavailable. Showing reviewed cars only.",
+                "The full \(game.shortTitle) roster is unavailable. Showing reviewed cars only.",
                 systemImage: "exclamationmark.triangle"
             )
             .font(.subheadline.weight(.semibold))
@@ -231,11 +231,22 @@ private struct CatalogCarRow: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(ForzAdvisorTheme.accent)
                 } else {
-                    Text(
-                        "\(entry.game.shortTitle) · Official \(entry.officialPerformanceClass.rawValue) \(entry.officialPerformanceIndex)"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    if let performanceClass =
+                        entry.officialPerformanceClass,
+                       let performanceIndex =
+                        entry.officialPerformanceIndex {
+                        Text(
+                            "\(entry.game.shortTitle) · Official \(performanceClass.rawValue) \(performanceIndex)"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    } else {
+                        Text(
+                            "\(entry.game.shortTitle) · Official roster identity"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
                     Text("Stock specs needed")
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(ForzAdvisorTheme.warning)

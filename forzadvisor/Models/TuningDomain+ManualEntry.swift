@@ -87,14 +87,14 @@ struct ManualEntryDraft: Equatable, Sendable {
         )
     }
 
-    init(fh6RosterEntry entry: FH6OfficialRosterEntry) {
+    init(officialRosterIdentity identity: OfficialRosterCarIdentity) {
         self.init(
-            game: .fh6,
-            year: entry.year,
-            make: entry.make,
-            model: entry.model,
-            performanceIndex: entry.performanceIndex,
-            performanceClass: entry.performanceClass
+            game: identity.game,
+            year: identity.year,
+            make: identity.make,
+            model: identity.model,
+            performanceIndex: identity.performanceIndex,
+            performanceClass: identity.performanceClass
         )
     }
 

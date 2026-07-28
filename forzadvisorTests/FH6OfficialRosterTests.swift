@@ -48,13 +48,14 @@ final class FH6OfficialRosterTests: XCTestCase {
         let roster = try loadedRoster()
         let overlay = try CarCatalogBrowseOverlay.make(
             catalog: catalog,
-            roster: roster
+            fh5Roster: loadedFH5Roster(),
+            fh6Roster: roster
         ).get()
 
         let fh6 = overlay.entries.filter { $0.game == .fh6 }
         let fh5 = overlay.entries.filter { $0.game == .fh5 }
         XCTAssertEqual(fh6.count, 627)
-        XCTAssertEqual(fh5.count, 3)
+        XCTAssertEqual(fh5.count, 902)
         XCTAssertEqual(
             fh6.filter(\.isReviewedStock).count,
             8
@@ -64,8 +65,10 @@ final class FH6OfficialRosterTests: XCTestCase {
             619
         )
         XCTAssertEqual(Set(fh6.map(\.id)).count, 627)
-        XCTAssertTrue(fh5.allSatisfy(\.isReviewedStock))
-        XCTAssertNil(overlay.rosterIssueDescription)
+        XCTAssertEqual(fh5.filter(\.isReviewedStock).count, 3)
+        XCTAssertNil(
+            overlay.rosterIssueDescription(for: .fh6)
+        )
 
         let reviewedIDs = Set(
             catalog.entries
@@ -105,9 +108,9 @@ final class FH6OfficialRosterTests: XCTestCase {
         XCTAssertTrue(
             CarCatalogBrowseOverlay.search(
                 overlay,
-                game: .fh5,
+                game: .fh6,
                 query: "Warthog"
-            ).isEmpty
+            ).allSatisfy { $0.game == .fh6 }
         )
     }
 
@@ -138,20 +141,8 @@ final class FH6OfficialRosterTests: XCTestCase {
         )
         XCTAssertNil(identityOnly.reviewedSelection)
 
-        let rosterEntry = FH6OfficialRosterEntry(
-            id: identityOnly.id,
-            year: identityOnly.year,
-            make: identityOnly.make,
-            model: identityOnly.model,
-            officialDesignation:
-                identityOnly.officialDesignation,
-            performanceIndex:
-                identityOnly.officialPerformanceIndex,
-            performanceClass:
-                identityOnly.officialPerformanceClass
-        )
         let draft = ManualEntryDraft(
-            fh6RosterEntry: rosterEntry
+            officialRosterIdentity: identityOnly.identity
         )
 
         XCTAssertEqual(draft.game, .fh6)
@@ -175,22 +166,29 @@ final class FH6OfficialRosterTests: XCTestCase {
         let catalog = try loadedCatalog()
         let fallback = CarCatalogBrowseOverlay.resolve(
             catalog: catalog,
-            rosterResult: .failure(.decodingFailed)
+            fh5RosterResult: .success(try loadedFH5Roster()),
+            fh6RosterResult: .failure(.decodingFailed)
         )
 
-        XCTAssertEqual(fallback.entries.count, 11)
+        XCTAssertEqual(fallback.entries.count, 910)
         XCTAssertEqual(
             fallback.entries.filter { $0.game == .fh6 }.count,
             8
         )
         XCTAssertEqual(
             fallback.entries.filter { $0.game == .fh5 }.count,
-            3
+            902
         )
-        XCTAssertTrue(
-            fallback.entries.allSatisfy(\.isReviewedStock)
+        XCTAssertEqual(
+            fallback.entries.filter(\.isReviewedStock).count,
+            11
         )
-        XCTAssertNotNil(fallback.rosterIssueDescription)
+        XCTAssertNotNil(
+            fallback.rosterIssueDescription(for: .fh6)
+        )
+        XCTAssertNil(
+            fallback.rosterIssueDescription(for: .fh5)
+        )
     }
 
     func testOverlayRejectsReviewedIdentityMismatch()
@@ -222,18 +220,22 @@ final class FH6OfficialRosterTests: XCTestCase {
         XCTAssertEqual(
             CarCatalogBrowseOverlay.make(
                 catalog: changedCatalog,
-                roster: try loadedRoster()
+                fh5Roster: try loadedFH5Roster(),
+                fh6Roster: try loadedRoster()
             ),
             .failure(
-                .reviewedIdentityMismatch(target.id)
+                .reviewedIdentityMismatch(.fh6, target.id)
             )
         )
         let fallback = CarCatalogBrowseOverlay.resolve(
             catalog: changedCatalog,
-            rosterResult: .success(try loadedRoster())
+            fh5RosterResult: .success(try loadedFH5Roster()),
+            fh6RosterResult: .success(try loadedRoster())
         )
-        XCTAssertEqual(fallback.entries.count, 11)
-        XCTAssertNotNil(fallback.rosterIssueDescription)
+        XCTAssertEqual(fallback.entries.count, 910)
+        XCTAssertNotNil(
+            fallback.rosterIssueDescription(for: .fh6)
+        )
     }
 
     func testLoaderRejectsMalformedDuplicateAndChangedIdentity()
@@ -316,11 +318,17 @@ final class FH6OfficialRosterTests: XCTestCase {
         try BundledCarCatalog.load().get()
     }
 
+    private func loadedFH5Roster() throws
+        -> FH5OfficialRosterSnapshot {
+        try BundledFH5OfficialRoster.load().get()
+    }
+
     private func overlay() throws
         -> CarCatalogBrowseSnapshot {
         try CarCatalogBrowseOverlay.make(
             catalog: loadedCatalog(),
-            roster: loadedRoster()
+            fh5Roster: loadedFH5Roster(),
+            fh6Roster: loadedRoster()
         ).get()
     }
 

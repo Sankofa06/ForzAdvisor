@@ -206,15 +206,15 @@ enum CarCatalogBrowseOverlayError:
     Equatable,
     LocalizedError
 {
-    case reviewedIdentityMissing(String)
-    case reviewedIdentityMismatch(String)
+    case reviewedIdentityMissing(ForzaGame, String)
+    case reviewedIdentityMismatch(ForzaGame, String)
 
     var errorDescription: String? {
         switch self {
-        case .reviewedIdentityMissing(let id):
-            "Reviewed FH6 car \(id) is missing from the official roster."
-        case .reviewedIdentityMismatch(let id):
-            "Reviewed FH6 car \(id) does not match the official roster identity."
+        case .reviewedIdentityMissing(let game, let id):
+            "Reviewed \(game.shortTitle) car \(id) is missing from the official roster."
+        case .reviewedIdentityMismatch(let game, let id):
+            "Reviewed \(game.shortTitle) car \(id) does not match the official roster identity."
         }
     }
 }
@@ -222,76 +222,164 @@ enum CarCatalogBrowseOverlayError:
 enum CarCatalogBrowseOverlay {
     static func make(
         catalog: CarCatalogSnapshot,
-        roster: FH6OfficialRosterSnapshot
+        fh5Roster: FH5OfficialRosterSnapshot,
+        fh6Roster: FH6OfficialRosterSnapshot
     ) -> Result<CarCatalogBrowseSnapshot, CarCatalogBrowseOverlayError> {
-        let rosterByID = Dictionary(
-            uniqueKeysWithValues: roster.entries.map { ($0.id, $0) }
-        )
-        let reviewedFH6 = catalog.entries.filter { $0.game == .fh6 }
-        var selectionByID: [String: CatalogCarSelection] = [:]
-
-        for entry in reviewedFH6 {
-            guard let identity = rosterByID[entry.id] else {
-                return .failure(.reviewedIdentityMissing(entry.id))
-            }
-            guard entry.year == identity.year,
-                  entry.make == identity.make,
-                  entry.model == identity.model else {
-                return .failure(.reviewedIdentityMismatch(entry.id))
-            }
-            selectionByID[entry.id] = catalog.selection(for: entry)
-        }
-
-        let fh5Entries = catalog.entries
-            .filter { $0.game == .fh5 }
-            .map {
-                CatalogBrowseEntry(
-                    selection: catalog.selection(for: $0)
+        switch makeFH5Entries(
+            catalog: catalog,
+            roster: fh5Roster
+        ) {
+        case .failure(let error):
+            return .failure(error)
+        case .success(let fh5Entries):
+            switch makeFH6Entries(
+                catalog: catalog,
+                roster: fh6Roster
+            ) {
+            case .failure(let error):
+                return .failure(error)
+            case .success(let fh6Entries):
+                return .success(
+                    CarCatalogBrowseSnapshot(
+                        entries: fh5Entries + fh6Entries,
+                        rosterIssueDescriptions: [:]
+                    )
                 )
             }
-        let fh6Entries = roster.entries.map { rosterEntry in
-            let browseEntry = CatalogBrowseEntry(
-                rosterEntry: rosterEntry
-            )
-            guard let selection = selectionByID[rosterEntry.id] else {
-                return browseEntry
-            }
-            return browseEntry.attaching(
-                reviewedSelection: selection
-            )
         }
-        return .success(
-            CarCatalogBrowseSnapshot(
-                entries: fh5Entries + fh6Entries,
-                rosterIssueDescription: nil
-            )
-        )
     }
 
     static func resolve(
         catalog: CarCatalogSnapshot,
-        rosterResult: Result<
+        fh5RosterResult: Result<
+            FH5OfficialRosterSnapshot,
+            FH5OfficialRosterLoadError
+        >,
+        fh6RosterResult: Result<
             FH6OfficialRosterSnapshot,
             FH6OfficialRosterLoadError
         >
     ) -> CarCatalogBrowseSnapshot {
-        switch rosterResult {
+        var entries: [CatalogBrowseEntry] = []
+        var issues: [ForzaGame: String] = [:]
+
+        switch fh5RosterResult {
         case .failure(let error):
-            return fallback(
-                catalog: catalog,
-                issue: error.localizedDescription
-            )
+            entries += fallback(catalog: catalog, game: .fh5)
+            issues[.fh5] = error.localizedDescription
         case .success(let roster):
-            switch make(catalog: catalog, roster: roster) {
-            case .success(let snapshot):
-                return snapshot
+            switch makeFH5Entries(catalog: catalog, roster: roster) {
+            case .success(let resolved):
+                entries += resolved
             case .failure(let error):
-                return fallback(
-                    catalog: catalog,
-                    issue: error.localizedDescription
-                )
+                entries += fallback(catalog: catalog, game: .fh5)
+                issues[.fh5] = error.localizedDescription
             }
         }
+
+        switch fh6RosterResult {
+        case .failure(let error):
+            entries += fallback(catalog: catalog, game: .fh6)
+            issues[.fh6] = error.localizedDescription
+        case .success(let roster):
+            switch makeFH6Entries(catalog: catalog, roster: roster) {
+            case .success(let resolved):
+                entries += resolved
+            case .failure(let error):
+                entries += fallback(catalog: catalog, game: .fh6)
+                issues[.fh6] = error.localizedDescription
+            }
+        }
+
+        return CarCatalogBrowseSnapshot(
+            entries: entries,
+            rosterIssueDescriptions: issues
+        )
+    }
+
+    private static func makeFH5Entries(
+        catalog: CarCatalogSnapshot,
+        roster: FH5OfficialRosterSnapshot
+    ) -> Result<[CatalogBrowseEntry], CarCatalogBrowseOverlayError> {
+        let rosterByID = Dictionary(
+            uniqueKeysWithValues: roster.entries.map { ($0.id, $0) }
+        )
+        let reviewed = catalog.entries.filter { $0.game == .fh5 }
+        var selectionByID: [String: CatalogCarSelection] = [:]
+
+        for entry in reviewed {
+            guard let identity = rosterByID[entry.id] else {
+                return .failure(
+                    .reviewedIdentityMissing(.fh5, entry.id)
+                )
+            }
+            guard entry.year == identity.year,
+                  normalized(entry.displayName)
+                    == normalized(identity.officialDesignation)
+            else {
+                return .failure(
+                    .reviewedIdentityMismatch(.fh5, entry.id)
+                )
+            }
+            selectionByID[entry.id] = catalog.selection(for: entry)
+        }
+
+        return .success(
+            roster.entries.map { rosterEntry in
+                let browseEntry = CatalogBrowseEntry(
+                    rosterEntry: rosterEntry
+                )
+                guard let selection =
+                    selectionByID[rosterEntry.id] else {
+                    return browseEntry
+                }
+                return browseEntry.attaching(
+                    reviewedSelection: selection
+                )
+            }
+        )
+    }
+
+    private static func makeFH6Entries(
+        catalog: CarCatalogSnapshot,
+        roster: FH6OfficialRosterSnapshot
+    ) -> Result<[CatalogBrowseEntry], CarCatalogBrowseOverlayError> {
+        let rosterByID = Dictionary(
+            uniqueKeysWithValues: roster.entries.map { ($0.id, $0) }
+        )
+        let reviewed = catalog.entries.filter { $0.game == .fh6 }
+        var selectionByID: [String: CatalogCarSelection] = [:]
+
+        for entry in reviewed {
+            guard let identity = rosterByID[entry.id] else {
+                return .failure(
+                    .reviewedIdentityMissing(.fh6, entry.id)
+                )
+            }
+            guard entry.year == identity.year,
+                  entry.make == identity.make,
+                  entry.model == identity.model else {
+                return .failure(
+                    .reviewedIdentityMismatch(.fh6, entry.id)
+                )
+            }
+            selectionByID[entry.id] = catalog.selection(for: entry)
+        }
+
+        return .success(
+            roster.entries.map { rosterEntry in
+                let browseEntry = CatalogBrowseEntry(
+                    rosterEntry: rosterEntry
+                )
+                guard let selection =
+                    selectionByID[rosterEntry.id] else {
+                    return browseEntry
+                }
+                return browseEntry.attaching(
+                    reviewedSelection: selection
+                )
+            }
+        )
     }
 
     static func search(
@@ -310,16 +398,15 @@ enum CarCatalogBrowseOverlay {
 
     private static func fallback(
         catalog: CarCatalogSnapshot,
-        issue: String
-    ) -> CarCatalogBrowseSnapshot {
-        CarCatalogBrowseSnapshot(
-            entries: catalog.entries.map {
+        game: ForzaGame
+    ) -> [CatalogBrowseEntry] {
+        catalog.entries
+            .filter { $0.game == game }
+            .map {
                 CatalogBrowseEntry(
                     selection: catalog.selection(for: $0)
                 )
-            },
-            rosterIssueDescription: issue
-        )
+            }
     }
 
     private static func normalized(_ value: String) -> String {

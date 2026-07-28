@@ -19,6 +19,7 @@ struct ContentView: View {
     @State var errorRecovery: ErrorRecovery?
     @State var rootSheet: RootSheet?
     @State var catalogResult = BundledCarCatalog.load()
+    @State var fh5RosterResult = BundledFH5OfficialRoster.load()
     @State var fh6RosterResult = BundledFH6OfficialRoster.load()
     @State var firstSavedSetupCopilotHandoff =
         FirstSavedSetupCopilotHandoffState()
@@ -67,6 +68,7 @@ struct ContentView: View {
                 case .catalogPicker(let initialGame):
                     CarCatalogPickerView(
                         catalogResult: catalogResult,
+                        fh5RosterResult: fh5RosterResult,
                         fh6RosterResult: fh6RosterResult,
                         initialGame: initialGame,
                         onBack: { step = .newTune },
@@ -86,11 +88,11 @@ struct ContentView: View {
                 case .catalogIdentityEntry(let entry):
                     ManualEntryView(
                         draft: ManualEntryDraft(
-                            fh6RosterEntry: entry
+                            officialRosterIdentity: entry
                         ),
                         onCancel: {
                             step = .catalogPicker(
-                                initialGame: .fh6
+                                initialGame: entry.game
                             )
                         },
                         onContinue: { input in
@@ -661,7 +663,8 @@ struct ContentView: View {
         guard case .success(let snapshot) = catalogResult else { return 0 }
         return CarCatalogBrowseOverlay.resolve(
             catalog: snapshot,
-            rosterResult: fh6RosterResult
+            fh5RosterResult: fh5RosterResult,
+            fh6RosterResult: fh6RosterResult
         ).entries.count
     }
 

@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.40.0 (Build 66) - 2026-07-28
+
+- Adds all 902 cars in the official March 26 FH5 roster to car search alongside all 627 cars in the official July 14 FH6 roster.
+- Keeps the three reviewed FH5 and eight reviewed FH6 stock cars one tap away, with their reviewed stock details unchanged.
+- For roster-only cars, prefills official identity and asks for missing stock details; FH6 also uses its published PI and class, while FH5 leaves those fields unverified because its official roster does not publish them.
+
 ## Version 1.39.1 (Build 65) - 2026-07-28
 
 - Adds all 627 cars in the official July 14 FH6 roster to car search.

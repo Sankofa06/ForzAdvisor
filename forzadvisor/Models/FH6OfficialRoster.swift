@@ -8,6 +8,71 @@
 
 import Foundation
 
+struct OfficialRosterCarIdentity:
+    Equatable,
+    Identifiable,
+    Sendable
+{
+    let id: String
+    let game: ForzaGame
+    let year: Int
+    let make: String
+    let model: String
+    let officialDesignation: String
+    let performanceIndex: Int?
+    let performanceClass: PerformanceClass?
+}
+
+struct FH5OfficialRosterEntry:
+    Codable,
+    Equatable,
+    Identifiable,
+    Sendable
+{
+    let id: String
+    let year: Int
+    let officialDesignation: String
+    let carType: String
+    let collect: String
+    let added: String
+    let nickname: String
+    let officialID: Int
+
+    var displayName: String {
+        officialDesignation
+    }
+
+    var genericModel: String {
+        String(
+            officialDesignation.dropFirst(
+                String(year).count + 1
+            )
+        )
+    }
+
+    var identity: OfficialRosterCarIdentity {
+        OfficialRosterCarIdentity(
+            id: id,
+            game: .fh5,
+            year: year,
+            make: "",
+            model: genericModel,
+            officialDesignation: officialDesignation,
+            performanceIndex: nil,
+            performanceClass: nil
+        )
+    }
+}
+
+struct FH5OfficialRosterSnapshot: Codable, Equatable, Sendable {
+    let schemaVersion: Int
+    let revision: String
+    let sourceURL: URL
+    let sourceUpdatedAt: Date
+    let sourceSHA256: String
+    let entries: [FH5OfficialRosterEntry]
+}
+
 struct FH6OfficialRosterEntry:
     Codable,
     Equatable,
@@ -24,6 +89,19 @@ struct FH6OfficialRosterEntry:
 
     var displayName: String {
         officialDesignation
+    }
+
+    var identity: OfficialRosterCarIdentity {
+        OfficialRosterCarIdentity(
+            id: id,
+            game: .fh6,
+            year: year,
+            make: make,
+            model: model,
+            officialDesignation: officialDesignation,
+            performanceIndex: performanceIndex,
+            performanceClass: performanceClass
+        )
     }
 }
 
@@ -43,8 +121,8 @@ struct CatalogBrowseEntry: Equatable, Identifiable, Sendable {
     let make: String
     let model: String
     let officialDesignation: String
-    let officialPerformanceIndex: Int
-    let officialPerformanceClass: PerformanceClass
+    let officialPerformanceIndex: Int?
+    let officialPerformanceClass: PerformanceClass?
     let reviewedSelection: CatalogCarSelection?
 
     var displayName: String {
@@ -55,15 +133,36 @@ struct CatalogBrowseEntry: Equatable, Identifiable, Sendable {
         reviewedSelection != nil
     }
 
+    var identity: OfficialRosterCarIdentity {
+        OfficialRosterCarIdentity(
+            id: id,
+            game: game,
+            year: year,
+            make: make,
+            model: model,
+            officialDesignation: officialDesignation,
+            performanceIndex: officialPerformanceIndex,
+            performanceClass: officialPerformanceClass
+        )
+    }
+
+    init(rosterEntry: FH5OfficialRosterEntry) {
+        self.init(identity: rosterEntry.identity)
+    }
+
     init(rosterEntry: FH6OfficialRosterEntry) {
-        id = rosterEntry.id
-        game = .fh6
-        year = rosterEntry.year
-        make = rosterEntry.make
-        model = rosterEntry.model
-        officialDesignation = rosterEntry.officialDesignation
-        officialPerformanceIndex = rosterEntry.performanceIndex
-        officialPerformanceClass = rosterEntry.performanceClass
+        self.init(identity: rosterEntry.identity)
+    }
+
+    init(identity: OfficialRosterCarIdentity) {
+        id = identity.id
+        game = identity.game
+        year = identity.year
+        make = identity.make
+        model = identity.model
+        officialDesignation = identity.officialDesignation
+        officialPerformanceIndex = identity.performanceIndex
+        officialPerformanceClass = identity.performanceClass
         reviewedSelection = nil
     }
 
@@ -103,8 +202,8 @@ struct CatalogBrowseEntry: Equatable, Identifiable, Sendable {
         make: String,
         model: String,
         officialDesignation: String,
-        officialPerformanceIndex: Int,
-        officialPerformanceClass: PerformanceClass,
+        officialPerformanceIndex: Int?,
+        officialPerformanceClass: PerformanceClass?,
         reviewedSelection: CatalogCarSelection?
     ) {
         self.id = id
@@ -121,5 +220,11 @@ struct CatalogBrowseEntry: Equatable, Identifiable, Sendable {
 
 struct CarCatalogBrowseSnapshot: Equatable, Sendable {
     let entries: [CatalogBrowseEntry]
-    let rosterIssueDescription: String?
+    let rosterIssueDescriptions: [ForzaGame: String]
+
+    func rosterIssueDescription(
+        for game: ForzaGame
+    ) -> String? {
+        rosterIssueDescriptions[game]
+    }
 }
