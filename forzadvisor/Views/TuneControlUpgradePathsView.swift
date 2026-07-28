@@ -9,6 +9,10 @@ import SwiftUI
 
 struct TuneControlUpgradePathsView: View {
     let paths: [TuneControlUpgradePath]
+    let resolveClipboardText: (String) -> String?
+
+    @State private var copiedPathID: String?
+    @State private var feedbackMessage: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -35,8 +39,36 @@ struct TuneControlUpgradePathsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    Button {
+                        copy(path: path, number: index + 1)
+                    } label: {
+                        Label(
+                            copiedPathID == path.id
+                                ? "Copied Path \(index + 1)"
+                                : "Copy This Path",
+                            systemImage:
+                                copiedPathID == path.id
+                                ? "checkmark"
+                                : "doc.on.doc"
+                        )
+                    }
+                    .accessibilityIdentifier(
+                        "copyTuningControlUpgradePath-\(index + 1)"
+                    )
+                    .accessibilityHint(
+                        "Copies only Path \(index + 1) as an isolated upgrade-shop checklist."
+                    )
                 }
                 .accessibilityIdentifier("tuningControlUpgradePath-\(index + 1)")
+            }
+
+            if let feedbackMessage {
+                Text(feedbackMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier(
+                        "copyTuningControlUpgradePathFeedback"
+                    )
             }
 
             Text("Tuning-control paths do not predict PI, credits, entitlement, performance, or installation order. Confirm every item in your game build before buying.")
@@ -45,6 +77,10 @@ struct TuneControlUpgradePathsView: View {
         }
         .padding(.vertical, 4)
         .accessibilityIdentifier("tuningControlUpgradePaths")
+        .onChange(of: paths.map(\.id)) {
+            copiedPathID = nil
+            feedbackMessage = nil
+        }
     }
 
     private var sharedProvenance: TuneControlUpgradePathProvenance? {
@@ -53,5 +89,20 @@ struct TuneControlUpgradePathsView: View {
             return nil
         }
         return first
+    }
+
+    private func copy(
+        path: TuneControlUpgradePath,
+        number: Int
+    ) {
+        guard let text = resolveClipboardText(path.id) else {
+            copiedPathID = nil
+            feedbackMessage =
+                "Path \(number) could not be freshly verified. Nothing was copied; reopen Upgrade Lab if its evidence changed."
+            return
+        }
+        UIPasteboard.general.string = text
+        copiedPathID = path.id
+        feedbackMessage = nil
     }
 }

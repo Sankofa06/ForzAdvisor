@@ -741,8 +741,8 @@ struct CopilotEngine {
             if let exactUpgradePathCount = projection.exactUpgradePathCount,
                exactUpgradePathCount > 0 {
                 return projection.isSaved == true
-                    ? "Copy the FH5 build plan when you are ready to use one of its exact paths."
-                    : "Copy the FH5 build plan and save it so you can reopen the exact paths later."
+                    ? "Use Copy This Path when you are ready to take one of the \(exactUpgradePathCount) exact FH5 paths to the upgrade shop. The alternatives are not cumulative, and Copilot does not choose between them."
+                    : "Use Copy This Path for one of the \(exactUpgradePathCount) exact FH5 paths, then save the plan so you can reopen it later. The alternatives are not cumulative, and Copilot does not choose between them."
             }
             return "Save the FH5 build plan. Numeric tuning settings remain unavailable pending a separate validated FH5 ruleset."
         }
@@ -760,6 +760,10 @@ struct CopilotEngine {
         }
         if projection.fh6CommunityReferenceTrialEligible == true {
             return "Run a Community Reference Comparison to record one local A-B-B-A comparative observation. It is not validation, a ranking, or ground truth."
+        }
+        if let exactUpgradePathCount = projection.exactUpgradePathCount,
+           exactUpgradePathCount > 0 {
+            return "Use Copy This Path to take one of the \(exactUpgradePathCount) exact FH6 paths to the upgrade shop. The alternatives are not cumulative, and Copilot does not choose between them."
         }
         if projection.readyCount == 0 {
             return "All tune values are withheld. Follow the blocked status and reason labels before trying to use this tune."

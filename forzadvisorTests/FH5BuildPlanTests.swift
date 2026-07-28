@@ -479,7 +479,7 @@ final class FH5BuildPlanTests: XCTestCase {
         XCTAssertEqual(rebuiltContext.projection?.exactUpgradePathCount, 3)
         XCTAssertTrue(
             engine.response(to: .nextStep, in: rebuiltContext).message
-                .contains("Copy the FH5 build plan and save it")
+                .contains("Copy This Path")
         )
         XCTAssertTrue(
             engine.response(to: .missing, in: rebuiltContext).message

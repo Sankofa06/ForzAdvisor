@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.40.5 (Build 71) - 2026-07-28
+
+- Lets players copy one freshly reverified FH5 or FH6 tuning-control path as an isolated upgrade-shop checklist.
+- Keeps alternative paths separate and includes only the selected parts, unlocked controls, safe local evidence attribution, and purchase-boundary guidance.
+- Refuses to copy when the displayed path no longer matches current trusted Upgrade Lab evidence.
+
 ## Version 1.40.4 (Build 70) - 2026-07-28
 
 - After a local contribution is saved, offers an explicit one-shot path to choose another official car and start the next capture empty.

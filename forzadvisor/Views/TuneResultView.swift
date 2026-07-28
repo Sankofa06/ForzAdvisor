@@ -563,7 +563,14 @@ struct TuneResultView: View {
         }
         if !isStreaming, !upgradePaths.isEmpty {
             Section("Tuning-Control Upgrade Paths") {
-                TuneControlUpgradePathsView(paths: upgradePaths)
+                TuneControlUpgradePathsView(
+                    paths: upgradePaths
+                ) { displayedPathID in
+                    TuneControlUpgradePathClipboardFormatter.text(
+                        for: tune,
+                        displayedPathID: displayedPathID
+                    )
+                }
             }
             .forzAdvisorRowBackground()
         }
