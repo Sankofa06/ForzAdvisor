@@ -36,6 +36,7 @@ struct StockCatalogContributionView: View {
     @State private var separateReleaseReviewConfirmed = false
     @State private var preparedCurationPreflight: String?
     @State private var statusMessage: String?
+    @State private var showingOfficialRosterPicker = false
 
     init(
         draft: StockCatalogContributionDraft = .init(game: .fh6),
@@ -103,6 +104,22 @@ struct StockCatalogContributionView: View {
             }
         }
         .accessibilityIdentifier("stockCatalogContribution")
+        .sheet(isPresented: $showingOfficialRosterPicker) {
+            NavigationStack {
+                StockCatalogOfficialRosterPickerView(
+                    initialGame: draft.game
+                ) { identity in
+                    let applied =
+                        draft.applyOfficialRosterIdentityIfPristine(
+                            identity
+                        )
+                    statusMessage = applied
+                        ? "Official identity selected. Verify every stock specification directly in-game."
+                        : "The contribution draft changed while the official roster picker was open. Nothing was replaced."
+                    return applied
+                }
+            }
+        }
         .onChange(of: captureDraftFingerprint) { previous, current in
             draft.captureConfirmations.invalidateIfDraftChanged(
                 from: previous,
@@ -132,6 +149,17 @@ struct StockCatalogContributionView: View {
 
     private var identitySection: some View {
         Section("Exact Game And Car Identity") {
+            if draft.isPristineGameOnly {
+                Button("Choose from Official Roster") {
+                    showingOfficialRosterPicker = true
+                }
+                .accessibilityHint(
+                    "Copies official identity only. Stock specifications still require direct in-game verification."
+                )
+                .accessibilityIdentifier(
+                    "stockContributionChooseOfficialRoster"
+                )
+            }
             Picker("Game", selection: $draft.game) {
                 ForEach(ForzaGame.allCases) {
                     Text($0.shortTitle).tag($0)

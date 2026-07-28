@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.40.3 (Build 69) - 2026-07-28
+
+- Lets a pristine Stock Catalog Contribution search all 902 official FH5 cars and 627 official FH6 cars without retyping identity.
+- Copies only official game, year, make, and model; every stock fact and permission remains unselected until verified directly in-game.
+- Refuses to replace a draft after any identity, stock, observation, attestation, or permission value has been entered.
+
 ## Version 1.40.2 (Build 68) - 2026-07-28
 
 - Gives roster-only Manual Entry distinct local Copilot guidance for the source-attributed identity boundary and direct in-game stock checks.
