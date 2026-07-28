@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.40.1 (Build 67) - 2026-07-28
+
+- Lets roster-only Manual Entry open local catalog verification with only official identity carried over.
+- Requires explicit selection of every platform, stock fact source, verification status, rights basis, attestation, and permission instead of silently assuming evidence.
+- Supports the official 2554 AMG Transport Dynamics Warthog identity while rejecting unsupported future years.
+
 ## Version 1.40.0 (Build 66) - 2026-07-28
 
 - Adds all 902 cars in the official March 26 FH5 roster to car search alongside all 627 cars in the official July 14 FH6 roster.

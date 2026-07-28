@@ -12,24 +12,7 @@ struct StockCatalogContributionView: View {
 
     @State private var snapshot:
         StockCatalogContributionStoreSnapshot = .empty
-    @State private var game: ForzaGame
-    @State private var gameVersion = ""
-    @State private var platform:
-        StockContributionPlatform = .xboxSeries
-    @State private var year = ""
-    @State private var make = ""
-    @State private var model = ""
-    @State private var performanceIndex = ""
-    @State private var performanceClass: PerformanceClass = .a
-    @State private var drivetrain: Drivetrain = .awd
-    @State private var weightPounds = ""
-    @State private var frontWeightPercent = ""
-    @State private var peakHorsepower = ""
-    @State private var peakTorque = ""
-    @State private var observationScreens:
-        [CatalogDataField: StockContributionObservationScreen] = [:]
-    @State private var captureConfirmations =
-        StockCatalogCaptureConfirmationState()
+    @State private var draft: StockCatalogContributionDraft
     @State private var pastedJSON = ""
     @State private var reviewConfirmations =
         StockCatalogReviewConfirmationState()
@@ -38,13 +21,11 @@ struct StockCatalogContributionView: View {
     @State private var selectedCurationCandidate = ""
     @State private var proposedCatalogID = ""
     @State private var proposedCatalogRevision = ""
-    @State private var proposedVerificationStatus:
-        CatalogVerificationStatus = .officialRoster
+    @State private var curationChoices =
+        StockCatalogCurationChoiceState()
     @State private var identitySourceTitle = ""
     @State private var identitySourceURL = ""
     @State private var identitySourceAccessDate = ""
-    @State private var identityRightsBasis:
-        StockCatalogIdentityRightsBasis = .compatibleLicense
     @State private var identityRightsEvidenceReference = ""
     @State private var identityRightsEvidenceDigest = ""
     @State private var rightsIndependentlyReviewed = false
@@ -57,11 +38,11 @@ struct StockCatalogContributionView: View {
     @State private var statusMessage: String?
 
     init(
-        initialGame: ForzaGame = .fh6,
+        draft: StockCatalogContributionDraft = .init(game: .fh6),
         store: StockCatalogContributionStore = .init()
     ) {
         self.store = store
-        _game = State(initialValue: initialGame)
+        _draft = State(initialValue: draft)
     }
 
     var body: some View {
@@ -123,7 +104,7 @@ struct StockCatalogContributionView: View {
         }
         .accessibilityIdentifier("stockCatalogContribution")
         .onChange(of: captureDraftFingerprint) { previous, current in
-            captureConfirmations.invalidateIfDraftChanged(
+            draft.captureConfirmations.invalidateIfDraftChanged(
                 from: previous,
                 to: current
             )
@@ -146,60 +127,85 @@ struct StockCatalogContributionView: View {
                 statusMessage =
                     "Stored contribution data was unreadable and was excluded. The bundled catalog and tunes were unchanged."
             }
-            for field in StockCatalogContributionValidator
-                .expectedFields where observationScreens[field] == nil {
-                observationScreens[field] = defaultScreen(for: field)
-            }
         }
     }
 
     private var identitySection: some View {
         Section("Exact Game And Car Identity") {
-            Picker("Game", selection: $game) {
+            Picker("Game", selection: $draft.game) {
                 ForEach(ForzaGame.allCases) {
                     Text($0.shortTitle).tag($0)
                 }
             }
-            Picker("Platform", selection: $platform) {
+            .disabled(draft.isGameSelectionLocked)
+            if draft.isGameSelectionLocked {
+                Text(
+                    "Game is fixed to the selected official roster identity."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            Picker("Platform", selection: $draft.platform) {
+                Text("Select platform")
+                    .tag(nil as StockContributionPlatform?)
                 ForEach(StockContributionPlatform.allCases) {
-                    Text($0.rawValue).tag($0)
+                    Text($0.rawValue)
+                        .tag(Optional($0))
                 }
             }
-            TextField("Exact game version/build", text: $gameVersion)
+            TextField(
+                "Exact game version/build",
+                text: $draft.gameVersion
+            )
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-            TextField("Year", text: $year)
+            TextField("Year", text: $draft.year)
                 .keyboardType(.numberPad)
-            TextField("Make", text: $make)
-            TextField("Model", text: $model)
+            TextField("Make", text: $draft.make)
+            TextField("Model", text: $draft.model)
         }
         .forzAdvisorRowBackground()
     }
 
     private var stockSection: some View {
         Section("Untouched Stock Specifications") {
-            Picker("Class", selection: $performanceClass) {
-                ForEach(game.supportedPerformanceClasses) {
-                    Text($0.rawValue).tag($0)
+            Picker("Class", selection: $draft.performanceClass) {
+                Text("Select class")
+                    .tag(nil as PerformanceClass?)
+                ForEach(draft.game.supportedPerformanceClasses) {
+                    Text($0.rawValue)
+                        .tag(Optional($0))
                 }
             }
-            TextField("Performance index", text: $performanceIndex)
+            TextField(
+                "Performance index",
+                text: $draft.performanceIndex
+            )
                 .keyboardType(.numberPad)
-            Picker("Drivetrain", selection: $drivetrain) {
+            Picker("Drivetrain", selection: $draft.drivetrain) {
+                Text("Select drivetrain")
+                    .tag(nil as Drivetrain?)
                 ForEach(Drivetrain.allCases) {
-                    Text($0.rawValue).tag($0)
+                    Text($0.rawValue)
+                        .tag(Optional($0))
                 }
             }
-            TextField("Weight (lb)", text: $weightPounds)
+            TextField("Weight (lb)", text: $draft.weightPounds)
                 .keyboardType(.numberPad)
             TextField(
                 "Front weight (%)",
-                text: $frontWeightPercent
+                text: $draft.frontWeightPercent
             )
             .keyboardType(.decimalPad)
-            TextField("Peak horsepower", text: $peakHorsepower)
+            TextField(
+                "Peak horsepower",
+                text: $draft.peakHorsepower
+            )
                 .keyboardType(.numberPad)
-            TextField("Peak torque (lb-ft)", text: $peakTorque)
+            TextField(
+                "Peak torque (lb-ft)",
+                text: $draft.peakTorque
+            )
                 .keyboardType(.numberPad)
         }
         .forzAdvisorRowBackground()
@@ -220,16 +226,23 @@ struct StockCatalogContributionView: View {
                     fieldTitle(field),
                     selection: Binding(
                         get: {
-                            observationScreens[field]
-                                ?? defaultScreen(for: field)
+                            draft.observationScreens[field]
                         },
-                        set: { observationScreens[field] = $0 }
+                        set: {
+                            draft.observationScreens[field] = $0
+                        }
                     )
                 ) {
+                    Text("Select screen")
+                        .tag(
+                            nil as
+                                StockContributionObservationScreen?
+                        )
                     ForEach(
                         StockContributionObservationScreen.allCases
                     ) {
-                        Text($0.rawValue).tag($0)
+                        Text($0.rawValue)
+                            .tag(Optional($0))
                     }
                 }
             }
@@ -241,23 +254,33 @@ struct StockCatalogContributionView: View {
         Section("Capture And Rights") {
             Toggle(
                 "Exact untouched stock confirmed",
-                isOn: $captureConfirmations.exactStockConfirmed
+                isOn:
+                    $draft.captureConfirmations
+                    .exactStockConfirmed
             )
             Toggle(
                 "Personally read directly from the game",
-                isOn: $captureConfirmations.personallyReadConfirmed
+                isOn:
+                    $draft.captureConfirmations
+                    .personallyReadConfirmed
             )
             Toggle(
                 "English units confirmed where relevant",
-                isOn: $captureConfirmations.englishUnitsConfirmed
+                isOn:
+                    $draft.captureConfirmations
+                    .englishUnitsConfirmed
             )
             Toggle(
                 "I authored these structured facts",
-                isOn: $captureConfirmations.authorshipConfirmed
+                isOn:
+                    $draft.captureConfirmations
+                    .authorshipConfirmed
             )
             Toggle(
                 "Allow local storage",
-                isOn: $captureConfirmations.localStorageConfirmed
+                isOn:
+                    $draft.captureConfirmations
+                    .localStorageConfirmed
             )
             Divider()
             Text(
@@ -267,19 +290,25 @@ struct StockCatalogContributionView: View {
             .foregroundStyle(.secondary)
             Toggle(
                 "Tester-authored structured facts",
-                isOn: $captureConfirmations.testerFactsRight
+                isOn:
+                    $draft.captureConfirmations
+                    .testerFactsRight
             )
             Toggle(
                 "Deidentified structured reuse",
-                isOn: $captureConfirmations.reuseRight
+                isOn:
+                    $draft.captureConfirmations.reuseRight
             )
             Toggle(
                 "Catalog curation use",
-                isOn: $captureConfirmations.curationRight
+                isOn:
+                    $draft.captureConfirmations.curationRight
             )
             Toggle(
                 "Future bundled redistribution",
-                isOn: $captureConfirmations.redistributionRight
+                isOn:
+                    $draft.captureConfirmations
+                    .redistributionRight
             )
             Text(
                 StockCatalogContributionPolicy.permissionBoundary
@@ -468,20 +497,36 @@ struct StockCatalogContributionView: View {
             .autocorrectionDisabled()
             Picker(
                 "Proposed verification status",
-                selection: $proposedVerificationStatus
+                selection:
+                    $curationChoices
+                    .proposedVerificationStatus
             ) {
+                Text("Select verification status")
+                    .tag(nil as CatalogVerificationStatus?)
                 Text(CatalogVerificationStatus.officialRoster.label)
-                    .tag(CatalogVerificationStatus.officialRoster)
+                    .tag(
+                        Optional(
+                            CatalogVerificationStatus
+                                .officialRoster
+                        )
+                    )
                 Text(
                     CatalogVerificationStatus
                         .communityCrossChecked.label
                 )
                 .tag(
-                    CatalogVerificationStatus
-                        .communityCrossChecked
+                    Optional(
+                        CatalogVerificationStatus
+                            .communityCrossChecked
+                    )
                 )
                 Text(CatalogVerificationStatus.inGameVerified.label)
-                    .tag(CatalogVerificationStatus.inGameVerified)
+                    .tag(
+                        Optional(
+                            CatalogVerificationStatus
+                                .inGameVerified
+                        )
+                    )
             }
 
             Divider()
@@ -505,10 +550,14 @@ struct StockCatalogContributionView: View {
             .autocorrectionDisabled()
             Picker(
                 "Rights basis",
-                selection: $identityRightsBasis
+                selection:
+                    $curationChoices.identityRightsBasis
             ) {
+                Text("Select rights basis")
+                    .tag(nil as StockCatalogIdentityRightsBasis?)
                 ForEach(StockCatalogIdentityRightsBasis.allCases) {
-                    Text($0.label).tag($0)
+                    Text($0.label)
+                        .tag(Optional($0))
                 }
             }
             TextField(
@@ -639,9 +688,12 @@ struct StockCatalogContributionView: View {
             }
             && !proposedCatalogID.isEmpty
             && !proposedCatalogRevision.isEmpty
+            && curationChoices.proposedVerificationStatus
+                != nil
             && !identitySourceTitle.isEmpty
             && !identitySourceURL.isEmpty
             && !identitySourceAccessDate.isEmpty
+            && curationChoices.identityRightsBasis != nil
             && !identityRightsEvidenceReference.isEmpty
             && !identityRightsEvidenceDigest.isEmpty
             && rightsIndependentlyReviewed
@@ -656,6 +708,10 @@ struct StockCatalogContributionView: View {
         guard canPrepareCurationPreflight,
               let packetText = preparedMaintainerPacket,
               let packetData = packetText.data(using: .utf8),
+              let identityRightsBasis =
+                curationChoices.identityRightsBasis,
+              let proposedVerificationStatus =
+                curationChoices.proposedVerificationStatus,
               let option = eligibleCurationCandidates.first(
                   where: { $0.key == selectedCurationCandidate }
               ) else {
@@ -732,27 +788,42 @@ struct StockCatalogContributionView: View {
 
     private func saveContribution() {
         let capturedAt = Date()
-        guard let year = Int(year),
-              let performanceIndex = Int(performanceIndex),
-              let weightPounds = Int(weightPounds),
+        let fields =
+            StockCatalogContributionValidator.expectedFields
+        let selectedScreens = fields.compactMap { field in
+            draft.observationScreens[field].map {
+                (field, $0)
+            }
+        }
+        guard let platform = draft.platform,
+              let performanceClass = draft.performanceClass,
+              let drivetrain = draft.drivetrain,
+              selectedScreens.count == fields.count else {
+            statusMessage =
+                "Choose a platform, performance class, drivetrain, and observation screen for every field."
+            return
+        }
+        guard let year = Int(draft.year),
+              let performanceIndex =
+                Int(draft.performanceIndex),
+              let weightPounds = Int(draft.weightPounds),
               let frontWeightPercent =
-                Double(frontWeightPercent),
-              let peakHorsepower = Int(peakHorsepower),
-              let peakTorque = Int(peakTorque) else {
+                Double(draft.frontWeightPercent),
+              let peakHorsepower =
+                Int(draft.peakHorsepower),
+              let peakTorque = Int(draft.peakTorque) else {
             statusMessage = "Enter every numeric stock specification."
             return
         }
-        let fields =
-            StockCatalogContributionValidator.expectedFields
         let record = StockCatalogContributionRecord(
             capturedAt: capturedAt,
-            game: game,
-            gameVersion: gameVersion,
+            game: draft.game,
+            gameVersion: draft.gameVersion,
             platform: platform,
             vehicle: .init(
                 year: year,
-                make: make,
-                model: model,
+                make: draft.make,
+                model: draft.model,
                 stock: .init(
                     performanceIndex: performanceIndex,
                     performanceClass: performanceClass,
@@ -764,38 +835,46 @@ struct StockCatalogContributionView: View {
                 )
             ),
             reviewedFields: fields,
-            fieldAttestations: fields.map {
+            fieldAttestations: selectedScreens.map {
                 .init(
-                    field: $0,
-                    observationScreen:
-                        observationScreens[$0]
-                            ?? defaultScreen(for: $0),
+                    field: $0.0,
+                    observationScreen: $0.1,
                     directlyReadInGame:
-                        captureConfirmations.personallyReadConfirmed,
+                        draft.captureConfirmations
+                        .personallyReadConfirmed,
                     untouchedStockConfirmed:
-                        captureConfirmations.exactStockConfirmed,
+                        draft.captureConfirmations
+                        .exactStockConfirmed,
                     englishUnitsConfirmedWhenRelevant:
-                        captureConfirmations.englishUnitsConfirmed,
+                        draft.captureConfirmations
+                        .englishUnitsConfirmed,
                     observedAt: capturedAt
                 )
             },
             exactUntouchedStockConfirmed:
-                captureConfirmations.exactStockConfirmed,
+                draft.captureConfirmations
+                .exactStockConfirmed,
             personallyReadFromGameConfirmed:
-                captureConfirmations.personallyReadConfirmed,
+                draft.captureConfirmations
+                .personallyReadConfirmed,
             firstPartyAuthorshipConfirmed:
-                captureConfirmations.authorshipConfirmed,
+                draft.captureConfirmations
+                .authorshipConfirmed,
             localStoragePermissionConfirmed:
-                captureConfirmations.localStorageConfirmed,
+                draft.captureConfirmations
+                .localStorageConfirmed,
             rights: .init(
                 testerAuthoredStructuredFacts:
-                    captureConfirmations.testerFactsRight,
+                    draft.captureConfirmations
+                    .testerFactsRight,
                 deidentifiedStructuredReuse:
-                    captureConfirmations.reuseRight,
+                    draft.captureConfirmations.reuseRight,
                 catalogCurationUse:
-                    captureConfirmations.curationRight,
+                    draft.captureConfirmations
+                    .curationRight,
                 futureBundledRedistribution:
-                    captureConfirmations.redistributionRight
+                    draft.captureConfirmations
+                    .redistributionRight
             )
         )
         guard StockCatalogContributionValidator()
@@ -810,7 +889,7 @@ struct StockCatalogContributionView: View {
             success:
                 "Saved locally. This did not change the bundled catalog or create tuning output."
         ) {
-            captureConfirmations.reset()
+            draft.captureConfirmations.reset()
         }
     }
 
@@ -912,15 +991,25 @@ struct StockCatalogContributionView: View {
             .expectedFields.map {
                 draftPart($0.rawValue)
                     + draftPart(
-                        (observationScreens[$0]
-                            ?? defaultScreen(for: $0)).rawValue
+                        draft.observationScreens[$0]?
+                            .rawValue ?? ""
                     )
             }.joined()
         return [
-            game.rawValue, gameVersion, platform.rawValue, year, make,
-            model, performanceIndex, performanceClass.rawValue,
-            drivetrain.rawValue, weightPounds, frontWeightPercent,
-            peakHorsepower, peakTorque, observations
+            draft.game.rawValue,
+            draft.gameVersion,
+            draft.platform?.rawValue ?? "",
+            draft.year,
+            draft.make,
+            draft.model,
+            draft.performanceIndex,
+            draft.performanceClass?.rawValue ?? "",
+            draft.drivetrain?.rawValue ?? "",
+            draft.weightPounds,
+            draft.frontWeightPercent,
+            draft.peakHorsepower,
+            draft.peakTorque,
+            observations
         ].map(draftPart).joined()
     }
 
@@ -930,11 +1019,12 @@ struct StockCatalogContributionView: View {
             selectedCurationCandidate,
             proposedCatalogID,
             proposedCatalogRevision,
-            proposedVerificationStatus.rawValue,
+            curationChoices.proposedVerificationStatus?
+                .rawValue ?? "",
             identitySourceTitle,
             identitySourceURL,
             identitySourceAccessDate,
-            identityRightsBasis.rawValue,
+            curationChoices.identityRightsBasis?.rawValue ?? "",
             identityRightsEvidenceReference,
             identityRightsEvidenceDigest,
             String(rightsIndependentlyReviewed),
@@ -978,17 +1068,6 @@ struct StockCatalogContributionView: View {
         case .matchingObservation: "Matching observation"
         case .conflictingObservation: "Conflicting observation"
         case .excluded: "Excluded"
-        }
-    }
-
-    private func defaultScreen(
-        for field: CatalogDataField
-    ) -> StockContributionObservationScreen {
-        switch field {
-        case .identity, .performanceIndex, .performanceClass,
-                .drivetrain, .weightPounds, .frontWeightPercent,
-                .peakHorsepower, .peakTorqueFootPounds:
-            .garage
         }
     }
 

@@ -1,5 +1,16 @@
 import Foundation
 
+struct ManualEntryStockContributionContext:
+    Equatable, Sendable {
+    let sourceIdentity: OfficialRosterCarIdentity
+
+    var contributionDraft: StockCatalogContributionDraft {
+        StockCatalogContributionDraft(
+            officialRosterIdentity: sourceIdentity
+        )
+    }
+}
+
 struct ManualEntryDraft: Equatable, Sendable {
     var game: ForzaGame {
         didSet { clearCatalogReferenceIfChanged(from: oldValue, to: game) }

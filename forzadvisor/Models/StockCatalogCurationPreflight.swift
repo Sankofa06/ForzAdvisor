@@ -588,7 +588,7 @@ struct StockCatalogCurationPreflightExporter {
     private func safeVehicle(
         _ vehicle: StockCatalogContributionVehicle
     ) -> Bool {
-        (1800...2200).contains(vehicle.year)
+        StockCatalogVehicleYearPolicy.allows(vehicle.year)
             && safeString(vehicle.make, maximumLength: 120)
             && safeString(vehicle.model, maximumLength: 160)
     }

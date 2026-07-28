@@ -83,6 +83,19 @@ final class StockCatalogContributionTests: XCTestCase {
         )
     }
 
+    func testVehicleYearPolicyAllowsOfficialWarthogAndRejects2555() {
+        XCTAssertTrue(
+            StockCatalogContributionValidator().isValid(
+                record(year: 2554)
+            )
+        )
+        XCTAssertFalse(
+            StockCatalogContributionValidator().isValid(
+                record(year: 2555)
+            )
+        )
+    }
+
     func testReuseRightsDefaultOffAndAllFourGateExport() throws {
         let local = record(rights: .init())
         XCTAssertFalse(local.rights.allGranted)
@@ -864,6 +877,7 @@ final class StockCatalogContributionTests: XCTestCase {
         )!,
         gameVersion: String = "1.0.100.0",
         platform: StockContributionPlatform = .xboxSeries,
+        year: Int = 2024,
         make: String = "Test",
         model: String = "Stock Car",
         stock: CatalogStockSpecifications =
@@ -891,7 +905,7 @@ final class StockCatalogContributionTests: XCTestCase {
             gameVersion: gameVersion,
             platform: platform,
             vehicle: .init(
-                year: 2024,
+                year: year,
                 make: make,
                 model: model,
                 stock: stock

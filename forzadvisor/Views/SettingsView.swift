@@ -97,7 +97,9 @@ struct SettingsView: View {
 
                 Section("Catalog Research") {
                     NavigationLink {
-                        StockCatalogContributionView()
+                        StockCatalogContributionView(
+                            draft: .init(game: .fh6)
+                        )
                     } label: {
                         Label(
                             "Help Expand the Catalog",

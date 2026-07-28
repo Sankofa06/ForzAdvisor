@@ -189,7 +189,7 @@ struct CarCatalogPickerView: View {
             .accessibilityIdentifier("catalogManualEntryButton")
             NavigationLink {
                 StockCatalogContributionView(
-                    initialGame: selectedGame
+                    draft: .init(game: selectedGame)
                 )
             } label: {
                 Label(

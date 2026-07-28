@@ -90,6 +90,9 @@ struct ContentView: View {
                         draft: ManualEntryDraft(
                             officialRosterIdentity: entry
                         ),
+                        stockContributionContext: .init(
+                            sourceIdentity: entry
+                        ),
                         onCancel: {
                             step = .catalogPicker(
                                 initialGame: entry.game

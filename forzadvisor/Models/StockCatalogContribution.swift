@@ -374,6 +374,91 @@ struct StockCatalogReviewConfirmationState:
     }
 }
 
+enum StockCatalogContributionDraftProvenance:
+    Equatable, Sendable {
+    case gameOnly
+    case officialRosterIdentity(id: String, game: ForzaGame)
+
+    var lockedGame: ForzaGame? {
+        switch self {
+        case .gameOnly:
+            nil
+        case .officialRosterIdentity(_, let game):
+            game
+        }
+    }
+}
+
+struct StockCatalogContributionDraft:
+    Equatable, Sendable {
+    let provenance: StockCatalogContributionDraftProvenance
+    var game: ForzaGame {
+        didSet {
+            if let lockedGame = provenance.lockedGame,
+               game != lockedGame {
+                game = lockedGame
+                return
+            }
+            if let performanceClass,
+               !game.supportedPerformanceClasses.contains(
+                    performanceClass
+               ) {
+                self.performanceClass = nil
+            }
+        }
+    }
+    var gameVersion = ""
+    var platform: StockContributionPlatform?
+    var year = ""
+    var make = ""
+    var model = ""
+    var performanceIndex = ""
+    var performanceClass: PerformanceClass?
+    var drivetrain: Drivetrain?
+    var weightPounds = ""
+    var frontWeightPercent = ""
+    var peakHorsepower = ""
+    var peakTorque = ""
+    var observationScreens:
+        [CatalogDataField: StockContributionObservationScreen] = [:]
+    var captureConfirmations =
+        StockCatalogCaptureConfirmationState()
+
+    init(game: ForzaGame) {
+        provenance = .gameOnly
+        self.game = game
+    }
+
+    init(officialRosterIdentity identity: OfficialRosterCarIdentity) {
+        provenance = .officialRosterIdentity(
+            id: identity.id,
+            game: identity.game
+        )
+        game = identity.game
+        year = String(identity.year)
+        make = identity.make
+        model = identity.model
+    }
+
+    var isGameSelectionLocked: Bool {
+        provenance.lockedGame != nil
+    }
+}
+
+struct StockCatalogCurationChoiceState:
+    Equatable, Sendable {
+    var proposedVerificationStatus:
+        CatalogVerificationStatus?
+    var identityRightsBasis:
+        StockCatalogIdentityRightsBasis?
+}
+
+enum StockCatalogVehicleYearPolicy {
+    static func allows(_ year: Int) -> Bool {
+        (1886...2100).contains(year) || year == 2554
+    }
+}
+
 struct StockCatalogContributionValidator {
     static let expectedFields =
         CatalogDataField.allCases.sorted { $0.rawValue < $1.rawValue }
@@ -388,8 +473,9 @@ struct StockCatalogContributionValidator {
               canonicalString(record.gameVersion, maximumLength: 120),
               canonicalString(record.vehicle.make, maximumLength: 120),
               canonicalString(record.vehicle.model, maximumLength: 160),
-              record.vehicle.year >= 1886,
-              record.vehicle.year <= 2100,
+              StockCatalogVehicleYearPolicy.allows(
+                record.vehicle.year
+              ),
               record.exactUntouchedStockConfirmed,
               record.personallyReadFromGameConfirmed,
               record.firstPartyAuthorshipConfirmed,

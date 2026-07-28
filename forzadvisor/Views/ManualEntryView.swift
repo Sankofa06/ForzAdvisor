@@ -11,12 +11,22 @@ import SwiftUI
 struct ManualEntryView: View {
     let onCancel: () -> Void
     let onContinue: (CarInput) -> Void
+    let stockContributionContext:
+        ManualEntryStockContributionContext?
 
     @State private var draft: ManualEntryDraft
     @FocusState private var focusedField: ManualEntryField?
 
-    init(draft: ManualEntryDraft, onCancel: @escaping () -> Void, onContinue: @escaping (CarInput) -> Void) {
+    init(
+        draft: ManualEntryDraft,
+        stockContributionContext:
+            ManualEntryStockContributionContext? = nil,
+        onCancel: @escaping () -> Void,
+        onContinue: @escaping (CarInput) -> Void
+    ) {
         self._draft = State(initialValue: draft)
+        self.stockContributionContext =
+            stockContributionContext
         self.onCancel = onCancel
         self.onContinue = onContinue
     }
@@ -87,6 +97,32 @@ struct ManualEntryView: View {
                     .focused($focusedField, equals: .torque)
             }
             .forzAdvisorRowBackground()
+
+            if let stockContributionContext {
+                Section("Catalog Verification") {
+                    NavigationLink {
+                        StockCatalogContributionView(
+                            draft:
+                                stockContributionContext
+                                .contributionDraft
+                        )
+                    } label: {
+                        Label(
+                            "Verify Stock Specs for Catalog",
+                            systemImage: "checkmark.seal"
+                        )
+                    }
+                    .accessibilityIdentifier(
+                        "verifyRosterStockSpecsForCatalog"
+                    )
+                    Text(
+                        "Only the official roster identity carries over. Confirm every stock specification directly in the game; values typed in Manual Entry are never copied."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                .forzAdvisorRowBackground()
+            }
 
             if !draft.validationIssues.isEmpty {
                 Section("Fix before tuning") {
