@@ -51,8 +51,8 @@ struct NewTuneStartView: View {
             Section("Start") {
                 Button(action: onCatalog) {
                     StartRow(
-                        title: "Choose a Car",
-                        subtitle: "Browse reviewed stock cars for FH5 or FH6.",
+                        title: "Browse Full Official FH5/FH6 Roster",
+                        subtitle: "Reviewed cars include complete stock values; roster-only cars need stock details.",
                         systemImage: "car.2"
                     )
                 }

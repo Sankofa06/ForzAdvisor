@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.40.7 (Build 73) - 2026-07-28
+
+- Makes the complete official FH5 and FH6 rosters explicit from the New Tune screen.
+- Clearly separates cars with complete reviewed stock values from roster-only cars that still need stock details.
+- Keeps roster-only selection fail-closed: no tune is generated until every required stock value is supplied.
+
 ## Version 1.40.6 (Build 72) - 2026-07-28
 
 - Shows read-only local capture counts for every official FH5 and FH6 car in the contribution picker.

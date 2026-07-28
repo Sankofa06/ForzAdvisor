@@ -107,16 +107,16 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.40.6
-- Current project build: 72
+- Current project version: 1.40.7
+- Current project build: 73
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-The official FH5 and FH6 contribution picker now shows how many valid local capture records exist for every roster car.
+The complete official FH5 and FH6 rosters are now explicit from New Tune.
 
-Use Needs Local Capture to focus on official cars with no counted local observation, while normal search and game selection continue to work together.
+Cars with complete reviewed stock values stay one tap away. Roster-only cars clearly ask for the missing stock details before tuning can continue.
 
 Counts are read-only and collection-only. They do not establish verification, approval, permission completeness, catalog readiness, or tuning eligibility, and selecting a car still copies identity only.
 
