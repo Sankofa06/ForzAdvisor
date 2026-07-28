@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.40.4 (Build 70) - 2026-07-28
+
+- After a local contribution is saved, offers an explicit one-shot path to choose another official car and start the next capture empty.
+- Makes that continuation available only while the exact post-save draft and saved record still match, so later edits or deletion safely invalidate it.
+- Keeps the saved contribution and review state unchanged when opening the official roster for the next car.
+
 ## Version 1.40.3 (Build 69) - 2026-07-28
 
 - Lets a pristine Stock Catalog Contribution search all 902 official FH5 cars and 627 official FH6 cars without retyping identity.

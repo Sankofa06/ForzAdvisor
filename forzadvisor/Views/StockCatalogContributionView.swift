@@ -37,6 +37,8 @@ struct StockCatalogContributionView: View {
     @State private var preparedCurationPreflight: String?
     @State private var statusMessage: String?
     @State private var showingOfficialRosterPicker = false
+    @State private var contributionContinuation =
+        StockCatalogContributionContinuationState()
 
     init(
         draft: StockCatalogContributionDraft = .init(game: .fh6),
@@ -346,6 +348,17 @@ struct StockCatalogContributionView: View {
                 saveContribution()
             }
             .accessibilityIdentifier("saveStockContribution")
+            if canChooseAnotherOfficialCar {
+                Button("Choose Another Official Car") {
+                    chooseAnotherOfficialCar()
+                }
+                .accessibilityHint(
+                    "Keeps the saved record local and starts a new empty capture before opening the official roster."
+                )
+                .accessibilityIdentifier(
+                    "stockContributionChooseAnotherOfficialCar"
+                )
+            }
         }
         .forzAdvisorRowBackground()
     }
@@ -815,6 +828,7 @@ struct StockCatalogContributionView: View {
     }
 
     private func saveContribution() {
+        contributionContinuation.clearForSaveAttempt()
         let capturedAt = Date()
         let fields =
             StockCatalogContributionValidator.expectedFields
@@ -918,7 +932,34 @@ struct StockCatalogContributionView: View {
                 "Saved locally. This did not change the bundled catalog or create tuning output."
         ) {
             draft.captureConfirmations.reset()
+            contributionContinuation.recordSuccessfulSave(
+                recordID: record.id,
+                exactPostSaveDraft: draft
+            )
         }
+    }
+
+    private var canChooseAnotherOfficialCar: Bool {
+        contributionContinuation.isEligible(
+            currentDraft: draft,
+            snapshot: snapshot
+        )
+    }
+
+    private func chooseAnotherOfficialCar() {
+        guard let newDraft =
+                contributionContinuation.consumeIfEligible(
+                    currentDraft: draft,
+                    snapshot: snapshot
+                ) else {
+            statusMessage =
+                "The saved-record continuation is no longer available. Nothing was changed."
+            return
+        }
+        draft = newDraft
+        statusMessage =
+            "Your saved contribution remains local. A new empty collection-only capture is ready; choose an official identity and verify every stock fact directly in-game."
+        showingOfficialRosterPicker = true
     }
 
     private func importContribution() {

@@ -107,18 +107,18 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.40.3
-- Current project build: 69
+- Current project version: 1.40.4
+- Current project build: 70
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Roster-only Manual Entry can now open a separate local workspace for verifying untouched stock specifications while carrying over only the source-attributed official identity.
+After saving a local Stock Catalog contribution, you can explicitly choose another official FH5 or FH6 car and begin the next capture empty.
 
-Every platform, stock fact, observation screen, attestation, permission, verification status, and rights basis still requires explicit confirmation. Manual Entry values and FH6 roster PI or class are never converted into first-party evidence.
+The handoff is one-shot and remains available only while the exact post-save draft and saved record are unchanged. Editing the draft or deleting the saved record safely removes it.
 
-Contextual Copilot explains this boundary and the direct in-game next step without seeing the identity, selected game, draft, stock facts, contribution state, identifiers, fingerprints, or permissions.
+The previously saved contribution and review state remain unchanged, and every stock fact for the next car still requires direct in-game verification.
 
 ## Export Compliance Notes
 
