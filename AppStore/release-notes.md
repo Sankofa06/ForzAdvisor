@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 1.40.2 (Build 68) - 2026-07-28
+
+- Gives roster-only Manual Entry distinct local Copilot guidance for the source-attributed identity boundary and direct in-game stock checks.
+- Keeps Copilot phase-only: it cannot see the selected car, game, draft values, official PI or class, stock facts, contribution state, identifiers, fingerprints, or permissions.
+- Points players to the separate local verification workspace without making a verification claim or offering an automatic action.
+
 ## Version 1.40.1 (Build 67) - 2026-07-28
 
 - Lets roster-only Manual Entry open local catalog verification with only official identity carried over.

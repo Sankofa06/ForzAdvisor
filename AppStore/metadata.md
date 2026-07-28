@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata
 
-Last updated: 2026-07-26
+Last updated: 2026-07-28
 
 ## App Name
 
@@ -107,18 +107,18 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.39.0
-- Current project build: 64
+- Current project version: 1.40.2
+- Current project build: 68
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Complete Upgrade Lab once on an untouched FH5 or FH6 catalog car, then explicitly reuse that permission-bound part availability when starting another discipline for the same car and catalog revision.
+Roster-only Manual Entry can now open a separate local workspace for verifying untouched stock specifications while carrying over only the source-attributed official identity.
 
-ForzAdvisor rechecks the saved evidence before reuse and restores up to three exact alternative tuning-control purchase paths. Conflicting, incomplete, stale, edited, or untrusted observations remain unavailable.
+Every platform, stock fact, observation screen, attestation, permission, verification status, and rights basis still requires explicit confirmation. Manual Entry values and FH6 roster PI or class are never converted into first-party evidence.
 
-Only part availability and safe game-build/date attribution carry forward. Tire, gear, tuning-menu, constraint, provider, ruleset, discipline, and numeric-tuning evidence remain independently gated.
+Contextual Copilot explains this boundary and the direct in-game next step without seeing the identity, selected game, draft, stock facts, contribution state, identifiers, fingerprints, or permissions.
 
 ## Export Compliance Notes
 

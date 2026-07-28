@@ -17,6 +17,7 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
     case catalogEdit
     case ocrReview
     case manualEntry
+    case rosterIdentityStockEntry
     case discipline
     case loading
     case result
@@ -45,6 +46,8 @@ enum CopilotPhase: String, CaseIterable, Codable, Sendable {
         case .catalogEdit: "Edit Catalog Values"
         case .ocrReview: "OCR Review"
         case .manualEntry: "Manual Entry"
+        case .rosterIdentityStockEntry:
+            "Official Roster Stock Entry"
         case .discipline: "Discipline"
         case .loading: "Tune Generation"
         case .result: "Tune Result"
@@ -502,6 +505,10 @@ struct CopilotEngine {
             return unsavedEditsMessage("Confirm every recognized fact against the screenshot, then continue from the underlying screen.")
         case .manualEntry:
             return unsavedEditsMessage("Complete the required car facts and fix the validation messages before continuing.")
+        case .rosterIdentityStockEntry:
+            return unsavedEditsMessage(
+                "The official roster identity is already present as source-attributed context. Check every missing stock specification directly in-game. The underlying “Verify Stock Specs for Catalog” route can open the separate local verification workspace; values entered here do not become verified evidence automatically."
+            )
         case .discipline:
             return "Read the discipline summaries in the underlying screen and choose the one that matches how you plan to drive. Copilot does not claim one is objectively best."
         case .loading:
@@ -556,6 +563,10 @@ struct CopilotEngine {
             )
         case .catalogEdit, .ocrReview, .manualEntry, .fh6TuneMenuCapture, .tirePressureCapture, .upgradePartCapture, .fh5ResearchCapture, .fh5ControlledExperimentCapture, .recordTestDrive, .fh6CommunityReferenceTrialCapture, .editSavedTune:
             return unsavedEditsMessage("Trust only facts you personally confirm in the underlying screen and any validation it shows.")
+        case .rosterIdentityStockEntry:
+            return unsavedEditsMessage(
+                "Treat the official roster identity only as source-attributed context. Stock facts are not verified until you check them directly in-game. Copilot makes no verification claim and offers no action."
+            )
         case .settings, .betaValidationMissions, .fh6ValidationReview, .fh6CommunityOutcomeReview, .fh5ResearchReview, .fh5CandidateOutcomeReview:
             return unsavedEditsMessage("Trust only the guidance boundary described here and facts you personally confirm in the underlying screen.")
         case .loading:
@@ -595,6 +606,10 @@ struct CopilotEngine {
             return "Your confirmation is still missing. Check the displayed stock facts against the game before continuing."
         case .catalogEdit, .ocrReview, .manualEntry:
             return unsavedEditsMessage("Use the validation and confirmation messages in the underlying form to find missing facts.")
+        case .rosterIdentityStockEntry:
+            return unsavedEditsMessage(
+                "The stock specifications are still missing and must be checked directly in-game. The underlying form shows which facts and explicit confirmations remain incomplete."
+            )
         case .discipline:
             return "A driving discipline is still missing. Choose from the summaries in the underlying screen."
         case .loading:
@@ -637,6 +652,9 @@ struct CopilotEngine {
     }
 
     private func privacy(in context: CopilotContext) -> String {
+        if context.phase == .rosterIdentityStockEntry {
+            return "Copilot receives only the Official Roster Stock Entry phase. The official roster identity is source-attributed context, but stock facts are not verified. Copilot cannot see the identity, selected game, draft values, official PI or class, stock or tune facts, contribution payloads, state, or counts, identifiers, fingerprints, or permissions. It makes no verification claim, offers no action, calls no model or network service, and stores no transcript. Copilot cannot see unsaved field edits."
+        }
         if context.phase == .stockCatalogContribution {
             let exclusions =
                 StockCatalogContributionPolicy.privacyExclusions

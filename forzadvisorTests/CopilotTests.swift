@@ -108,7 +108,7 @@ final class CopilotTests: XCTestCase {
 
     func testEveryWorkflowPhaseAnswersEverySupportedIntent() {
         let engine = CopilotEngine()
-        XCTAssertEqual(CopilotPhase.allCases.count, 25)
+        XCTAssertEqual(CopilotPhase.allCases.count, 26)
 
         for phase in CopilotPhase.allCases {
             let context = syntheticContext(for: phase)
@@ -619,10 +619,26 @@ final class CopilotTests: XCTestCase {
         let draft = ManualEntryDraft(car: car)
         let request = TuneRequest(car: car, discipline: .road)
         let tune = projectedTune(car: car)
+        let fh5Identity = rosterIdentity(
+            game: .fh5,
+            sentinel: "fh5-mapping"
+        )
+        let fh6Identity = rosterIdentity(
+            game: .fh6,
+            sentinel: "fh6-mapping"
+        )
         let steps: [(WorkflowStep, CopilotPhase)] = [
             (.home, .home),
             (.newTune, .newTune),
             (.catalogPicker(), .catalogPicker),
+            (
+                .catalogIdentityEntry(fh5Identity),
+                .rosterIdentityStockEntry
+            ),
+            (
+                .catalogIdentityEntry(fh6Identity),
+                .rosterIdentityStockEntry
+            ),
             (.catalogReview(selection), .catalogReview),
             (.catalogEdit(selection), .catalogEdit),
             (.ocrReview(OCRConfirmationDraft()), .ocrReview),
@@ -651,6 +667,18 @@ final class CopilotTests: XCTestCase {
         let tune = projectedTune(car: car)
         let draft = ManualEntryDraft(car: car)
         let steps: [WorkflowStep] = [
+            .catalogIdentityEntry(
+                rosterIdentity(
+                    game: .fh5,
+                    sentinel: "secret-fh5-roster"
+                )
+            ),
+            .catalogIdentityEntry(
+                rosterIdentity(
+                    game: .fh6,
+                    sentinel: "secret-fh6-roster"
+                )
+            ),
             .catalogEdit(selection),
             .ocrReview(OCRConfirmationDraft(make: "Secret Make", model: "Secret Model")),
             .manualEntry(draft, thumbnailData: Data("secret-image".utf8)),
@@ -675,6 +703,175 @@ final class CopilotTests: XCTestCase {
             XCTAssertNil(context.projection)
             XCTAssertTrue(CopilotEngine().response(to: .nextStep, in: context).message.contains("cannot see unsaved field edits"))
         }
+    }
+
+    func testRosterIdentityEntryIsPhaseOnlyAndPayloadFreeForBothGames()
+        throws {
+        let sentinels = [
+            "secret-roster-id",
+            "Secret Roster Make",
+            "Secret Roster Model",
+            "Secret Official Designation",
+            "987"
+        ]
+        for game in ForzaGame.allCases {
+            let identity = OfficialRosterCarIdentity(
+                id: "secret-roster-id",
+                game: game,
+                year: 2554,
+                make: "Secret Roster Make",
+                model: "Secret Roster Model",
+                officialDesignation:
+                    "Secret Official Designation",
+                performanceIndex: 987,
+                performanceClass: .s2
+            )
+            let context = CopilotContextFactory().make(
+                step: .catalogIdentityEntry(identity),
+                savedTuneCount: 41,
+                catalogCarCount: 1_529
+            )
+            let encoded = try XCTUnwrap(
+                String(
+                    data: JSONEncoder().encode(context),
+                    encoding: .utf8
+                )
+            )
+            let object = try XCTUnwrap(
+                JSONSerialization.jsonObject(
+                    with: JSONEncoder().encode(context)
+                ) as? [String: Any]
+            )
+
+            XCTAssertEqual(
+                context.phase,
+                .rosterIdentityStockEntry
+            )
+            XCTAssertEqual(
+                context.phase.title,
+                "Official Roster Stock Entry"
+            )
+            XCTAssertEqual(
+                Set(object.keys),
+                ["phase", "cannotSeeUnsavedEdits"]
+            )
+            XCTAssertEqual(context.facts, [
+                CopilotFact(
+                    label: "Unsaved fields",
+                    value: "Not visible to Copilot"
+                )
+            ])
+            XCTAssertNil(context.carDisplayName)
+            XCTAssertNil(context.gameTitle)
+            XCTAssertNil(context.disciplineTitle)
+            XCTAssertNil(context.savedTuneCount)
+            XCTAssertNil(context.catalogCarCount)
+            XCTAssertNil(context.projection)
+            XCTAssertNil(context.fh5CandidateTrialAvailable)
+            XCTAssertTrue(context.cannotSeeUnsavedEdits)
+
+            for sentinel in sentinels {
+                XCTAssertFalse(encoded.contains(sentinel))
+            }
+            for intent in CopilotIntent.allCases {
+                let response = CopilotEngine().response(
+                    to: intent,
+                    in: context
+                )
+                XCTAssertNil(response.action)
+                for sentinel in sentinels {
+                    XCTAssertFalse(
+                        response.message.contains(sentinel),
+                        "\(game.rawValue) / \(intent.rawValue) / \(sentinel)"
+                    )
+                }
+            }
+        }
+    }
+
+    func testRosterIdentityGuidanceKeepsVerificationBoundary() {
+        let context = syntheticContext(
+            for: .rosterIdentityStockEntry
+        )
+        let engine = CopilotEngine()
+        let next = engine.response(to: .nextStep, in: context)
+        let trust = engine.response(to: .trust, in: context)
+        let missing = engine.response(to: .missing, in: context)
+        let privacy = engine.response(to: .privacy, in: context)
+
+        for fragment in [
+            "official roster identity",
+            "source-attributed context",
+            "missing stock specification",
+            "directly in-game",
+            "Verify Stock Specs for Catalog",
+            "separate local verification workspace"
+        ] {
+            XCTAssertTrue(
+                next.message.localizedCaseInsensitiveContains(
+                    fragment
+                ),
+                fragment
+            )
+        }
+        XCTAssertTrue(
+            trust.message.contains("Stock facts are not verified")
+        )
+        XCTAssertTrue(
+            trust.message.contains("no verification claim")
+        )
+        XCTAssertTrue(
+            missing.message.contains(
+                "must be checked directly in-game"
+            )
+        )
+        for fragment in [
+            "source-attributed context",
+            "stock facts are not verified",
+            "cannot see the identity",
+            "selected game",
+            "draft values",
+            "official PI or class",
+            "stock or tune facts",
+            "contribution payloads",
+            "state, or counts",
+            "identifiers",
+            "fingerprints",
+            "permissions",
+            "no verification claim",
+            "offers no action",
+            "no model or network service",
+            "stores no transcript"
+        ] {
+            XCTAssertTrue(
+                privacy.message.localizedCaseInsensitiveContains(
+                    fragment
+                ),
+                fragment
+            )
+        }
+        for response in [next, trust, missing, privacy] {
+            XCTAssertNil(response.action)
+        }
+    }
+
+    func testRosterPhaseDoesNotAlterManualOrOCRGuidance() {
+        let engine = CopilotEngine()
+
+        XCTAssertEqual(
+            engine.response(
+                to: .nextStep,
+                in: syntheticContext(for: .manualEntry)
+            ).message,
+            "Complete the required car facts and fix the validation messages before continuing. Copilot cannot see unsaved field edits."
+        )
+        XCTAssertEqual(
+            engine.response(
+                to: .nextStep,
+                in: syntheticContext(for: .ocrReview)
+            ).message,
+            "Confirm every recognized fact against the screenshot, then continue from the underlying screen. Copilot cannot see unsaved field edits."
+        )
     }
 
     func testResultAndPartialContextNeverSerializeOrRepeatRawTuneValues() throws {
@@ -1349,7 +1546,8 @@ final class CopilotTests: XCTestCase {
             catalogCarCount: phase == .catalogPicker ? 6 : nil,
             projection: phase == .result ? projectionFacts(readyCount: 2, isSaved: true) : nil,
             cannotSeeUnsavedEdits: [
-                .catalogEdit, .ocrReview, .manualEntry, .fh6TuneMenuCapture,
+                .catalogEdit, .ocrReview, .manualEntry,
+                .rosterIdentityStockEntry, .fh6TuneMenuCapture,
                 .tirePressureCapture,
                 .upgradePartCapture, .fh5ResearchCapture,
                 .fh5ControlledExperimentCapture, .recordTestDrive,
@@ -1357,6 +1555,23 @@ final class CopilotTests: XCTestCase {
                 .fh6CommunityOutcomeReview, .fh5ResearchReview,
                 .fh5CandidateOutcomeReview
             ].contains(phase)
+        )
+    }
+
+    private func rosterIdentity(
+        game: ForzaGame,
+        sentinel: String
+    ) -> OfficialRosterCarIdentity {
+        OfficialRosterCarIdentity(
+            id: "\(sentinel)-id",
+            game: game,
+            year: game == .fh5 ? 1986 : 2554,
+            make: game == .fh5 ? "" : "\(sentinel)-make",
+            model: "\(sentinel)-model",
+            officialDesignation:
+                "\(sentinel)-official-designation",
+            performanceIndex: game == .fh5 ? nil : 987,
+            performanceClass: game == .fh5 ? nil : .s2
         )
     }
 
