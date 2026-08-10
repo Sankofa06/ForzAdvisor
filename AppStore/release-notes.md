@@ -1,5 +1,9 @@
 # Release Notes
 
+## Version 1.40.8 (Build 74) - 2026-08-09
+
+- Improved reliability, usability, and app polish.
+
 ## Version 1.40.7 (Build 73) - 2026-07-28
 
 - Makes the complete official FH5 and FH6 rosters explicit from the New Tune screen.

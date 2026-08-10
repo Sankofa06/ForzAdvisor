@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata
 
-Last updated: 2026-07-28
+Last updated: 2026-08-09
 
 ## App Name
 
@@ -107,8 +107,8 @@ No account or API key is required. FH5 build planning is local and does not use 
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.40.7
-- Current project build: 73
+- Current project version: 1.40.8
+- Current project build: 74
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
