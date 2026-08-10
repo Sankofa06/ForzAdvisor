@@ -21,7 +21,7 @@ final class BetaValidationMissionTests: XCTestCase {
         )
         XCTAssertEqual(
             board.missions.map(\.destination),
-            [.catalog(.fh5), .catalog(.fh6)]
+            [.manualEntry(.fh5), .manualEntry(.fh6)]
         )
         XCTAssertEqual(
             board.progress,
@@ -556,20 +556,19 @@ final class BetaValidationMissionTests: XCTestCase {
     }
 
     @MainActor
-    func testSavedFH5PlanUsesProductionEligibilityAndCorruptStorageFailsClosed() async throws {
+    func testSavedFH5ManualPlanWithoutCatalogEvidenceFailsClosed() async throws {
         let plan = try await makeFH5Plan()
         let saved = try SavedTune(tune: plan)
 
         let board = BetaValidationMissionPlanner().makeBoard(savedTunes: [saved])
 
-        XCTAssertEqual(board.progress.savedSetupCount, 1)
+        XCTAssertEqual(board.progress.savedSetupCount, 0)
         XCTAssertEqual(board.progress.evidenceRecordCount, 0)
         XCTAssertEqual(board.progress.exactUpgradePathSetupCount, 0)
         XCTAssertEqual(
             board.missions.map(\.kind),
-            [.startFH6Tune, .recordFH5Research, .verifyUpgradeParts]
+            [.startFH5Plan, .startFH6Tune]
         )
-        XCTAssertTrue(board.missions.dropFirst().allSatisfy { $0.savedTuneID == saved.id })
 
         saved.replaceTuneDataForTesting(Data("corrupt".utf8))
         let corruptBoard = BetaValidationMissionPlanner().makeBoard(savedTunes: [saved])
@@ -612,15 +611,22 @@ final class BetaValidationMissionTests: XCTestCase {
     }
 
     private func makeFH5Plan() async throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.game == .fh5 })
-        let selection = catalog.selection(for: entry)
+        let car = CarInput(
+            game: .fh5,
+            year: 2024,
+            make: "Fixture",
+            model: "Track Coupe",
+            weightPounds: 3_000,
+            frontWeightPercent: 50,
+            performanceIndex: 700,
+            performanceClass: .a,
+            drivetrain: .rwd,
+            peakHorsepower: 350,
+            peakTorqueFootPounds: 325
+        )
         let request = TuneRequest(
-            car: selection.carInput,
-            discipline: .road,
-            buildSnapshot: selection.capabilityOnlyBuildSnapshot(
-                capturedAt: Date(timeIntervalSinceReferenceDate: 500)
-            )
+            car: car,
+            discipline: .road
         )
         return try await CapabilityProjectingTuneProvider(base: CompositeTuneProvider())
             .generateTune(for: request)

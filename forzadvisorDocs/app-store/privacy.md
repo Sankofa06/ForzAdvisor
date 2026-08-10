@@ -1,102 +1,55 @@
 # ForzAdvisor Privacy Review Notes
 
-Last updated: 2026-07-26
+Last updated: 2026-08-09
+
+## Current Release Boundary
+
+- The app no longer includes the FH5/FH6 roster JSON files or the reviewed stock catalog.
+- New tune inputs come from manual entry or a user-selected photo/screenshot.
+- Photo and camera images are processed on device for OCR and are not uploaded.
+- Offline formulas are the default.
+- Optional Anthropic API mode can transmit confirmed car details, selected discipline, current tune details, and player notes when the user selects that provider.
+- The app includes no advertising, analytics, or custom crash-reporting SDKs.
+- Local records are shared only through explicit system share-sheet actions.
 
 ## Privacy Manifest
 
 The app includes `forzadvisor/PrivacyInfo.xcprivacy`.
 
-Declared required-reason APIs:
+Review the manifest whenever required-reason API usage or third-party SDKs change. Apple requires covered APIs and approved reasons to be declared consistently with actual app behavior:
 
-- `NSPrivacyAccessedAPICategoryUserDefaults` with reason `CA92.1`
+https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api
 
-Reason: SwiftUI `@AppStorage` stores app-only preferences such as the selected tune provider mode. The app does not read defaults written by other apps or the system.
+## App Store Privacy Answers
 
-Stock Catalog Contribution also uses an app-only UserDefaults-backed workspace for manually entered first-party FH5 and FH6 stock observations and received review entries. It is separate from Saved Tunes and the bundled production catalog. Every field requires exact-build, direct in-game, untouched-stock, and English-units-where-relevant attestation. Local save does not require reuse permission. Canonical manual export requires explicit tester authorship, deidentified reuse, catalog-curation, and future bundled redistribution permission; manual import requires separate confirmation of direct receipt and every right. Permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim.
+Apple defines collection as transmitting data off device in a way that lets the developer or a third-party partner access it beyond the time needed to service the request. Data processed only on device is not collected for the label:
 
-The contribution workspace's toolbar Copilot is local, deterministic, and phase-only. It cannot read the selected game, draft fields, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints. It uses no model or network, stores no transcript, performs no action, and cannot approve a contribution, change the catalog, or activate tuning.
+https://developer.apple.com/app-store/app-privacy-details/
 
-Declared collected data:
+Conservative review recommendation for the current optional Anthropic mode:
 
-- `NSPrivacyCollectedDataTypeOtherUserContent`
-- Purpose: `NSPrivacyCollectedDataTypePurposeAppFunctionality`
-- Linked to user: false
-- Used for tracking: false
-
-Reason: optional Anthropic API mode can send reviewed car details, selected discipline, current tune details for adjustments, and player notes to Anthropic to generate or refine a tune. Screenshots and camera photos are processed on device and are not uploaded by the current app code.
-
-The FH6 Community Research Partner invitation is static public copy shared only through a user-initiated system share sheet. It contains no FH6 TestFlight link, local progress or counts, car or tune values, notes, identifiers, fingerprints, receipts, JSON, source permalink, publisher, or local state. It adds no recruitment analytics, account, authentication, background network activity, or share-history recording. Evidence reuse, manual permission-bound Community Outcome export, direct receipt, and Community Outcome Review permissions remain separate explicit decisions. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity.
-
-Every Stock Catalog Contribution field is attested as a direct in-game untouched-stock observation for an exact game build. Review states are limited to Received, Matching, Conflicting, and Excluded; they do not verify or approve a catalog entry and are not averaged or ranked. Contributions cannot automatically change a catalog, tune, ruleset, provider, or readiness state. The workflow stores no screenshots, OCR, notes, accounts, device identifiers, or location and performs no analytics, network request, or background upload. UUIDs and hashes bind bytes but do not authenticate identity. Local deletion cannot recall JSON already shared.
-
-The separate maintainer review packet requires explicit independent-source-review confirmation and is prepared locally for a user-initiated share. It preserves exact build, platform, structured facts, field observation screens, and permission scope; excludes raw contribution JSON and administrative IDs; globally excludes replays; and quarantines conflicting variants without choosing a winner. Existing bundle IDs are read-only comparison references. The packet proposes no sources, verification status, catalog identity/revision, entry, or patch and cannot change the catalog or tuning.
-
-Catalog Curation Preflight locally processes the exact maintainer packet, a digest of the full current catalog, the explicitly selected candidate and its structured vehicle facts, supporting observation digests, proposed catalog ID, revision and verification status, and a reviewed identity-source record. That record contains a safe title, canonical HTTPS URL, access date, compatible-license or explicit-permission basis, evidence reference, evidence SHA-256 digest, required no-copy confirmations, policy version, and artifact fingerprint. It excludes raw contribution JSON, administrative IDs, permission receipts, local review data, source prose or media, tune settings, provider or ruleset data, and device data. The prepared copy is transient, created locally, and shared only through an explicit system action; there is no background upload. Preflight cannot establish legal sufficiency or verification, edit the catalog or bundle, create a catalog entry, or activate tuning.
-
-Catalog Addition Review transiently processes that exact preflight, its maintainer-packet binding, and the freshly loaded bundled catalog. Its user-shared proposal may contain the full proposed catalog, URL-backed identity provenance, permission-bounded first-party stock provenance, a limited rights summary, six confirmations, and integrity fingerprints. It excludes raw contributions, administrative and permission-receipt identifiers, local review times, source prose or media, screenshots, device data, provider data, rulesets, and tune values. It performs no background upload and cannot establish legal sufficiency, edit the app bundle, activate tuning, or add a live car.
-
-FH5 Research Lab observations are manually entered and stored locally in a separate saved-plan record. The workflow does not contact a tune provider or upload the observation. A complete Upgrade Lab observation locks capture to its exact game build, and only records matching the current saved plan and catalog revision are surfaced or shared. Deidentified structured JSON sharing is off by default and requires explicit per-record permission; its allow-list excludes screenshots, OCR, notes, tune identifiers, generated tune values, provider and ruleset data, Upgrade Lab part availability, device identifiers, location, analytics, and share destinations. The public content fingerprint covers only exported semantic fields and does not expose the local integrity fingerprint.
-
-On a saved current FH5 build plan, contextual Copilot can open Research Lab only after fresh persisted-plan equality, plan-only Research eligibility, and confirmation that no matching observation exists. Candidate Trial and recorded-observation states stay action-free. When Research is ineligible, Upgrade Lab remains a lower-priority fallback after fresh eligibility checks. Both local routes preserve the tune, thumbnail, and notes without sharing them and fail closed for stale, unsafe, or corrupt evidence. They do not generate numeric settings, transact parts, claim PI, cost, or performance, call a provider or network, or bypass exact in-game availability.
-
-Exact alternative buy lists require one complete, permitted local Upgrade Lab observation with exactly one decision for every expected part, a known canonical FH5 or FH6 build, and a freshly derived matching stock projection. Stale, mixed, mismatched, missing, duplicate, already-installed, unknown, wrong-source, low-confidence, unpermitted, or tampered evidence fails closed. The result, copied plan, and Verified Build share card display safe human-readable local source, game-build, and snapshot capture attribution without exposing raw internal source IDs or private data or predicting PI, cost, credits, entitlement, performance, or purchase order. Legacy saves remain readable, but stale evidence can require rerunning Upgrade Lab.
-
-For an exact matching unedited catalog car and catalog revision, Catalog Review can locally inspect current saved tunes for one unambiguous complete Upgrade Lab observation and offer explicit reuse. If selected, the app copies only permitted part availability and its recorded game-build/date attribution into the new setup. It excludes tires, gears, tuning-menu measurements, numeric constraints, provider or ruleset data, discipline, notes, thumbnails, validation records, and other evidence. Nothing is uploaded, and conflicting or changed saved evidence suppresses reuse.
-
-FH5 Outcome Lab stores paired experiments locally in a separate saved-plan record only after matching Research Lab and complete Upgrade Lab evidence exist. Each record binds to the exact plan and menu fingerprints and includes one legal slider-step change, capture time, fixed A-B-B-A Horizon Test Track protocol, surface, input type, target symptom, comparative outcome, confirmations, and integrity identifiers.
-
-Deidentified calibration reuse and JSON sharing are off by default for each experiment. With explicit per-record permission, the system share sheet can share an allow-listed JSON copy. It excludes the local experiment ID, saved tune ID and plan fingerprint, Research Lab record ID and content fingerprint, generated tune values, provider and ruleset data, lap times, telemetry, notes, screenshots, OCR, location, device identifiers, analytics, share destination, and public attribution. It retains a menu-measurement fingerprint to bind the observed controls. A separate public fingerprint covers only exported fields. There is no background experiment uploader or importer, and deleting the local record cannot recall a shared copy. Experiments cannot register a ruleset or unlock numeric FH5 tuning.
-
-FH6 Validation Review imports exact ForzAdvisor Test Drive JSON only for an eligible matching saved setup after local confirmation of direct receipt and deidentified reuse permission. Imported entries are stored separately from locally authored validation records. The review reports controlled outcomes and conditions only and does not modify tunes, contact a provider, or promote the experimental ruleset.
-
-FH6 Community Reference Comparisons require a valid first-party Test Drive for the exact current candidate before a new comparison can be opened, created, or saved. Deleting the last matching Test Drive blocks new comparisons but preserves existing history. Evidence-chain stages and counts describe collection sequence only and never establish accuracy.
-
-Comparisons store only tester-entered YouTube or Reddit source metadata, controlled A-B-B-A context, confirmations, comparative outcomes, attestations, and integrity fields for the exact current saved candidate. They do not collect source tune settings, parts, share codes, prose, media, metrics, telemetry, accounts, or device identifiers. Reuse/export is optional and off by default, sharing is manual, and the records cannot validate, rank, recommend, promote, or modify a tune.
-
-FH6 Community Outcome Review accepts canonical permission-bound comparison JSON only after a fresh refetch matches the exact current saved candidate and the reviewer separately confirms direct receipt and structured-reuse permission. It stores canonical bytes and a bound local receipt in a separate optional queue. UUIDs and hashes bind bytes, not identity. Local-only, reviewed-only, and combined dimensions remain collection-only. Invalid, duplicate, conflicting, and replayed evidence is excluded or quarantined. Review imports no source tune values and cannot change tuning, rank or validate a candidate, promote a ruleset, look up a source, or upload in the background.
-
-Independent Validation Review Packet preparation and receiver inspection are transient and local. For preparation on the exact current saved FH6 candidate, the app rechecks the complete local Test Drive and Community Outcome collections, then includes only accepted permission-bound public exports. Shared packet fields contain the allow-listed Test Drive vehicle, build, shop, ruleset, applied candidate settings, controlled outcome, permission fields, and their existing public-export timestamps; the Community Outcome source metadata and controlled comparison result; exact candidate and evidence digests; included evidence counts; fixed policy, privacy exclusions, and integrity fingerprints. The packet adds no preparation timestamp and excludes local record IDs, saved-tune IDs, local review IDs and times, notes, attachments, device data, provider details, raw persistence, and every omitted or quarantined input. Any candidate or evidence change clears the prepared copy, and sharing requires a separate system-share-sheet action. For receiver inspection, pasted canonical JSON, the validated packet, status, included counts, and displayed fingerprint prefixes remain only in the open screen's view state. Every validation creates a fresh read context, excludes pending changes, and matches against persisted candidate state. Paste edits, validation failure, candidate change, Clear, or dismissal removes accepted state. The app persists no packet, destination, inspection, or share history and performs no background upload. Validation Review Copilot receives only the screen phase and cannot see the packet payload or inspection state. Neither preparation nor inspection authenticates identity, establishes accuracy or ranking, promotes a ruleset, or changes tuning.
-
-Tracking:
-
-- `NSPrivacyTracking`: false
-- `NSPrivacyTrackingDomains`: empty
-
-## App Store Privacy Labels
-
-Recommended App Store Connect answers for human review:
-
-- Data collected: Other User Content
+- Data type: Other User Content
 - Purpose: App Functionality
 - Linked to user: No
 - Used for tracking: No
 - Tracking: No
-- Third-party advertising: No
-- Developer advertising or marketing: No
+- Advertising: No
 - Analytics: No
-- Crash diagnostics: No custom crash reporting in this codebase
+- Custom crash diagnostics: No
 
-Do not mark photos/videos as collected for the current build unless the app changes to upload screenshots. Photo and camera images are used locally for OCR and optional local thumbnails.
+Because Anthropic mode is optional but present, App Store Connect answers should cover that mode. Keep the answers accurate for the exact submitted binary and publish them before App Review submission.
 
 ## Permissions
 
-- Camera: used only when the user taps Take Photo to capture a racing-game performance screen for OCR.
-- Photos: accessed through the system photo picker for user-selected screenshot import.
-- Network: used only in optional Anthropic API mode when the user saves an API key and selects that provider.
-- Keychain: stores the optional Anthropic API key on device.
+- Camera: requested only when the user chooses Take Photo.
+- Photos: selected through Apple's system picker.
+- Network: used for optional Anthropic API mode and system-provided services.
+- Keychain: stores the optional user-provided Anthropic API key.
+- UserDefaults: stores app-only preferences and supported local workspace state.
 
-## Third Parties
+## Manual App Store Connect Work
 
-- No embedded third-party SDKs are present in the repository.
-- Optional remote tune generation calls Anthropic's API directly with the user's saved API key.
-- Optional on-device model assistance uses Apple Foundation Models when available and falls back to offline formulas.
-- FH5 Research Lab records and exports are generated locally. The app has no background uploader, receiver, or remote-revocation mechanism for them.
-- FH5 Outcome Lab records remain local unless the user explicitly shares an eligible allow-listed JSON copy; the app has no background experiment uploader or importer, and records cannot promote themselves into a ruleset or numeric tune.
-- Imported FH6 Validation Review entries remain local unless the user separately acts through another app or system share destination; ForzAdvisor has no background review uploader.
-- FH6 Community Reference Comparison records remain local unless the user explicitly enables deidentified reuse and manually shares an allow-listed JSON copy. Community Outcome Review can manually import only that canonical allow-listed JSON into a separate local queue; ForzAdvisor performs no source lookup or background upload.
-
-## Sources
-
-- Apple privacy manifest overview: https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk
-- Apple required-reason API reference: https://developer.apple.com/documentation/bundleresources/app-privacy-configuration/nsprivacyaccessedapitypes/nsprivacyaccessedapitype
-- Apple App Store privacy reference: https://developer.apple.com/help/app-store-connect/reference/app-information/app-privacy/
+- Confirm the privacy policy URL.
+- Complete and publish App Privacy answers.
+- Recheck the Content Rights declaration separately from privacy.
+- Do not describe the removed roster as licensed, official, bundled, or available.

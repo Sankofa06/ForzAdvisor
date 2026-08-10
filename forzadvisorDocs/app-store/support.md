@@ -1,146 +1,70 @@
 # ForzAdvisor Support
 
-Public URL: https://Sankofa06.github.io/ForzAdvisor/support/
+ForzAdvisor helps racing-game players generate, save, copy, and adjust tuning setups from car details they confirm.
 
-ForzAdvisor helps racing-game players generate, save, copy, and adjust tuning setups from confirmed car details.
+The current app does not include a bundled car roster or reviewed stock catalog. Each new tune starts from information you provide.
 
 ## Common Questions
 
 ### Do I need an account?
 
-No. ForzAdvisor does not require a ForzAdvisor account.
+No. ForzAdvisor does not require an account.
 
 ### Do I need an API key?
 
-No. Offline formula tuning is the default. On-device model assistance is optional when available. Anthropic API mode is optional for users who want to use their own Anthropic API key.
-
-### Are screenshots uploaded?
-
-No. Camera photos and imported screenshots are processed on device for OCR in the current release. They are not uploaded by ForzAdvisor.
+No. Offline formula tuning is the default. Apple on-device model assistance is optional when available. Anthropic API mode is optional and uses an API key you provide.
 
 ### How do I start a tune?
 
-Tap New Tune, then choose Take Photo, Import Screenshot, or Enter Manually. Confirm the detected or entered car details, choose a discipline, and review the generated tune.
+Tap New Tune, then choose:
 
-### What happens after I save my first setup?
+- Take Photo to capture your own performance screen;
+- Import Screenshot to select your own image through the system picker; or
+- Enter Manually to type the car and performance details.
 
-When a save succeeds from an empty garage, the exact saved result shows a local confirmation with **Continue with Copilot** and **Not Now**. Continue opens the existing contextual Copilot, which evaluates the current saved result and explains its next eligible step. The prompt is transient and one-shot: either choice, Done, opening Copilot another way, or leaving the result dismisses it. It creates no evidence, changes no tune, and adds no analytics or background networking.
+Confirm every detected or entered value, choose a discipline, and review the result.
 
-### How do Stock Catalog Contributions work?
+### Where is the car catalog?
 
-Stock Catalog Contribution lets you manually record first-party FH5 or FH6 stock facts from an exact game build. It requires a direct in-game, untouched-stock attestation for every identity and stock field, plus English units where relevant. Records stay in a separate local UserDefaults-backed workspace; they are not Saved Tunes, do not edit the bundled catalog, and do not become tuning inputs.
+The bundled FH5/FH6 roster and reviewed stock catalog were removed. Use photo, screenshot, or manual entry instead.
 
-You can save a local observation without granting reuse. Canonical JSON export is available only after you explicitly confirm authorship and permit deidentified reuse, catalog curation, and future bundled redistribution of the structured facts. Sharing and importing are manual. A receiver must separately confirm direct receipt and every right before adding the record to the local review collection. The permission covers only tester-authored structured facts; it excludes screenshots, artwork, source prose, third-party databases, and tunes, and makes no endorsement, ownership, or licensing claim.
+### Are screenshots uploaded?
 
-Review uses only Received, Matching, Conflicting, or Excluded collection states. It never verifies or approves a catalog entry, averages or ranks observations, or changes the bundled catalog, a tune, ruleset, provider, or readiness state. The workspace contains no screenshots, OCR, notes, accounts, device identifiers, or location, and ForzAdvisor adds no analytics, network request, or background upload. UUIDs and hashes bind structured bytes but do not authenticate identity. You can delete a local observation or reviewed entry, but deletion cannot recall JSON already shared.
+No. Camera photos and imported screenshots are processed on device with Apple Vision OCR. If you save the resulting tune, the app may keep a small local thumbnail on your device.
 
-After reviewing received contributions, you can explicitly confirm independent source review and prepare a canonical maintainer review packet. The packet keeps exact FH5/FH6 build, platform, facts, field observation screens, permission scope, and a read-only comparison with the bundled catalog. It omits raw contribution JSON and administrative IDs, excludes replayed records, and keeps conflicting variants quarantined together. It does not choose a source, verification status, catalog ID, revision, entry, or winning value and cannot update the catalog or tuning. Sharing remains a separate system-share-sheet action.
+Optional Anthropic API mode sends confirmed text details and notes, not the source image.
 
-If that packet contains one non-conflicting car that is still absent from the exact current catalog and is supported by at least two distinct permission-complete observations, Catalog Curation Preflight can prepare the next review artifact. You must explicitly choose the candidate, proposed ID, new revision, proposed status, and an identity source whose compatible license or explicit permission you independently reviewed. Every stock field is bound to all supporting first-party observation digests. Changing the packet, candidate, catalog, proposal, rights evidence, or confirmations invalidates the prepared copy.
+### What does FH5 produce?
 
-Preflight rejects stale same-revision catalogs, existing normalized car identities, incomplete or foreign field evidence, unsafe rights records, tampering, and noncanonical JSON. It does not decide whether a license or permission is legally sufficient, verify the car, create a catalog entry, edit the bundle, or activate tuning. Share it manually only for a separate release review.
+FH5 manual entry creates a local build plan without numeric tuning settings. Numeric FH5 tuning remains unavailable until a separately validated ruleset exists.
 
-Catalog Addition Review opens directly from an exact prepared preflight. After you choose the reviewed identity-source role and a later review date and complete six independent confirmations, it freshly checks the preflight, packet, and current bundled 11-car catalog. It can then prepare a deterministic schema-v2 full-catalog proposal containing URL-backed identity provenance and permission-bounded first-party stock provenance. The review is transient and artifact-only: it cannot establish legal sufficiency, edit the bundle, activate tuning, or add a live car. Sharing and any later resource change are separate manual actions.
+### What does FH6 produce?
 
-Use the toolbar Copilot for local, deterministic guidance about exact untouched-stock identity, build and platform; every required fact and per-field source attestation; personally read values, English units, untouched state, authorship, local storage, all four export rights, explicit canonical sharing, and received-record review. Copilot receives only the contribution phase. It cannot read draft fields, the selected game, contribution or review counts, pasted or exported JSON, permissions, payloads, identifiers, or fingerprints; call a model or network; keep a transcript; or perform an action. It never approves a contribution, changes the catalog, or activates tuning.
+FH6 can generate menu-order numeric settings using offline formulas. Unsupported or out-of-range settings are withheld instead of guessed.
 
-### How do I copy a tune?
+### How do I copy or refine a setup?
 
-Open a generated or saved tune and tap Copy full tune. Individual tune lines can also be copied from their section rows.
-
-### How do I use Guided Refinement?
-
-Open a saved tune and use Guided Refinement to request changes such as more rotation, more stability, softer, stiffer, more top speed, or more acceleration.
-
-### What are Beta Validation Missions?
-
-Open Beta Validation Missions from the garage to see exact local testing tasks supported by your saved FH5 and FH6 setups. An empty garage offers one starter mission for each game. Eligible saved setups can offer Research Lab, Tire Lab, Upgrade Lab, Record Test Drive, or an FH6 Community Reference Comparison mission, and completed or stale tasks disappear when you reopen the board.
-
-The board does not upload progress or create evidence by itself. Share Beta Progress opens the iOS system share sheet with aggregate counts only and excludes car names, tune values, notes, identifiers, screenshots, and analytics.
-
-### How do I invite an FH6 Community Research Partner?
-
-In Beta Validation Missions, share the FH6 Community Research Partners invitation with an FH6 player who already has the latest ForzAdvisor beta. This FH6 invitation contains no TestFlight link. Apple controls external beta availability, and the invitation does not guarantee access.
-
-The partner must save an eligible exact FH6 tune, complete a first-party Record Test Drive for that exact current saved tune, and only then run the fixed Community Reference A-B-B-A comparison under constant conditions. Deidentified structured reuse must be explicitly permitted before the tester manually shares the canonical permission-bound Community Outcome export. The receiver opens Community Outcome Review for the matching exact current saved tune and separately confirms direct receipt and reuse permission.
-
-The invitation contains no local progress, car or tune values, notes, identifiers, fingerprints, receipts, JSON, source permalink, publisher, or local state. Sharing is user initiated and adds no analytics or background network activity. Outcomes remain collection-only and cannot validate a tune, establish ground truth, rank a source, promote a candidate or ruleset, or change tuning. Community outcomes are not an accuracy or quality score and are not a recommendation. ForzAdvisor does not authenticate tester identity. Use TestFlight's Send Beta Feedback without attaching private JSON or identifiers.
-
-### What is FH6 Validation Review?
-
-Open an eligible saved exact-build FH6 tune and choose Open Validation Review under Accuracy Evidence. Paste an exact ForzAdvisor Test Drive JSON export for that setup. The app validates the canonical bytes, current game build and ruleset, verified shop availability, car, discipline, and applied settings before import.
-
-Import requires confirmation of direct receipt and permission for deidentified structured reuse. UUIDs and hashes bind that local decision to the exact export but do not authenticate identity. Reviewed sessions stay in a separate local queue and report only Keep, Adjust, Reject, handling symptoms, course, surface, and input counts. They cannot change the tune or promote the experimental FH6 ruleset.
-
-When the exact current saved candidate still has at least one valid reuse-permitted Test Drive and one clean local or permission-bound reviewed Community Outcome, Validation Review can prepare a canonical Independent Review Packet. The packet includes only accepted public Test Drive and Community Outcome exports, exact candidate bindings, independently recomputable included counts, fixed privacy exclusions, and an integrity fingerprint. Preparation is local, sharing requires a separate system-share-sheet action, and any candidate or persisted evidence change invalidates the prepared copy.
-
-The packet does not attest, enumerate, or validate omitted or quarantined local inputs. Hashes and UUIDs do not authenticate a tester or publisher, and the packet does not prove every externally reviewed comparison historically followed one specific Test Drive. It cannot establish accuracy, validation, ranking, endorsement, or promotion; change a tune; or update a provider or ruleset.
-
-To inspect a packet someone shared with you, first save the exact current FH6 candidate, then open Validation Review and use Inspect Shared Review Packet. Paste the exact canonical JSON and choose Validate Shared Review Packet. The app creates a fresh read context on every tap, ignores pending in-memory changes, and matches the packet to persisted candidate state. You do not need enough local evidence to prepare your own packet.
-
-Accepted inspection shows sender-declared Test Drive, sender-local Community Outcome, permission-bound reviewed Community Outcome, and total accepted-evidence counts; the car and catalog ID; short candidate-binding and packet-fingerprint prefixes; and the fixed no-accuracy, no-promotion, independent-human-review boundary. “Sender-local” describes how the sender built the packet, not evidence stored on your device. Pasted JSON, validation status, and the summary remain transient. Editing the paste, a validation failure, changing the candidate, choosing Clear, or dismissing the screen removes accepted state. Nothing is imported or saved.
-
-Validation Review Copilot receives only the screen phase. It cannot see pasted JSON, accepted counts, permission identifiers, candidate bindings, packet fingerprints, or inspection status; call a model or network; retain a transcript; or validate, clear, import, save, apply, score, rank, or promote anything.
-
-### What is an FH6 Community Reference Comparison?
-
-On an eligible saved exact FH6 tune, choose Run Community Reference Comparison. Apply the exact ForzAdvisor candidate for A and one reference from a direct YouTube or Reddit permalink for B, then complete the fixed A-B-B-A sequence under the same route, conditions, assists, and input. Restore the ForzAdvisor candidate before saving or leaving.
-
-The app requires a valid first-party Test Drive for the exact current candidate before it will open, create, or save a new comparison. If the last matching Test Drive is deleted, existing comparison history remains available but new comparisons stay blocked until another matching Test Drive is recorded. The displayed evidence-chain stage and counts describe collection order only; they do not establish accuracy, validation, ranking, recommendation, or promotion.
-
-The app stores only source metadata, controlled context, run confirmations, and your comparative outcome. Do not enter community settings, parts, share codes, source prose, media, or metrics. The result is a comparative observation, not validation, ground truth, a ranking, or a promotion. Local storage is required; deidentified reuse and explicit JSON sharing are optional and off by default. There is no source lookup or background upload.
-
-### What is FH6 Community Outcome Review?
-
-Open this separate review from a saved tune's Community Reference Comparisons area or from FH6 Validation Review. Paste exact canonical comparison JSON. Before showing an exact-current success, the app freshly refetches the saved tune and independently matches its opaque candidate binding. Direct receipt and deidentified structured-reuse permission require separate confirmations.
-
-The screen reports clearly separate Local, Reviewed, and Combined collection-only counts for platform, outcome, course, surface, input, and candidate-deficiency symptoms. Same-semantic copies are deduplicated with local evidence preferred. Conflicting submissions, permission-receipt replays, and divergent outcomes reused as the same session are quarantined. Reviewed entries can be deleted. Review never imports source tune settings, parts, share codes, prose, media, or metrics; changes tuning; creates validation, ranking, or promotion; looks up a source; or uploads in the background. UUIDs and hashes bind bytes, not identity.
-
-### What is FH5 Research Lab?
-
-Research Lab appears on an eligible saved FH5 build plan for an untouched stock car from the reviewed catalog. In Horizon Test Track, use English units and record every expected tuning control as Adjustable, Shown locked, or Not shown. Enter slider bounds, step, and restored current values only when the control is adjustable.
-
-The observation is raw first-party evidence, not a tune, and it does not enable numeric FH5 settings or contact a tuning provider. Deidentified structured JSON reuse is off by default and must be enabled for that record before sharing.
-
-A complete Upgrade Lab observation locks Research Lab to the same exact game build. Saved observations appear and can be shared only while they match the current saved plan, catalog car, and catalog revision.
-
-### Can Copilot open FH5 Upgrade Lab?
-
-On a saved current FH5 build plan, Copilot can offer one-tap **Open FH5 Research Lab** only after it freshly matches the persisted plan, confirms plan-only Research eligibility, and finds no matching observation. Candidate Trial and recorded-observation states stay action-free. When Research is ineligible, **Open Upgrade Lab** remains a lower-priority fallback after a fresh eligibility check. Both routes preserve the saved tune, thumbnail, and notes and fail closed for stale, unsafe, or corrupt evidence.
-
-This action does not generate numeric FH5 settings; select, buy, or install parts; predict PI, credits, or performance; call a provider or network; or bypass exact in-game availability.
-
-### When does Upgrade Lab show exact alternative buy lists?
-
-Upgrade Lab shows exact alternatives only when one complete, permitted local observation contains exactly one decision for every expected part, matches a known canonical FH5 or FH6 game build, and matches a freshly derived stock projection. It fails closed if evidence is stale, mixed across captures, mismatched, missing, duplicated, already installed, unknown, from the wrong source, low confidence, unpermitted, or tampered. Rerun Upgrade Lab against the current untouched-stock car when older evidence is no longer eligible.
-
-When you select that exact same unedited catalog car again, Catalog Review can offer **Reuse Verified Parts** if all eligible saved observations agree on one build and the complete part facts. Check that your game still shows the displayed recorded build, then choose reuse explicitly. ForzAdvisor rechecks the saved evidence on tap and carries only part availability into the new discipline; it does not reuse tire, gear, tuning-menu, numeric constraint, provider, ruleset, or discipline data. Choose **Continue Without Reuse** or rerun Upgrade Lab whenever the recorded build may be stale.
-
-The main result, copied build plan, and Verified Build share card show a safe human-readable local source, FH5 or FH6 build, and stock-snapshot capture time. They do not expose raw internal source IDs or private data and do not predict PI, cost, credits, entitlement, performance, or purchase order. Existing saves remain readable even when their stale evidence can no longer produce exact alternatives.
-
-### What is FH5 Research Review?
-
-On a matching saved FH5 catalog plan, paste an exact Research Lab JSON export into Research Review. The app validates the canonical record, requires confirmation of direct receipt and reuse permission, and stores it locally. It can label exact distinct sessions as replicated raw observations or show exact-value conflicts, but it never averages values, creates a ruleset, or enables numeric FH5 tuning.
-
-### What is FH5 Outcome Lab?
-
-After a matching Research Lab record and complete Upgrade Lab observation exist, Outcome Lab guides a fixed A-B-B-A Horizon Test Track experiment. Compare stock with one user-selected slider step while keeping route, conditions, assists, input, and every other setting unchanged, then restore the stock value.
-
-The result remains calibration evidence. It does not generate a tune, collect lap times or telemetry, register a ruleset, or unlock numeric FH5 settings. Deidentified calibration reuse is off by default. When enabled before saving, the latest eligible record can be shared as allow-listed JSON through the iOS system share sheet. The copy omits the local experiment ID, saved tune ID and plan fingerprint, Research Lab record ID and content fingerprint, generated tune values, provider and ruleset data, device identifiers, location, analytics, and public attribution; it retains a menu-measurement fingerprint to bind the observed controls. There is no background experiment uploader or importer, and deleting the local record cannot recall a copy already shared.
+Open a generated or saved setup to copy eligible lines or the full setup. Use Guided Refinement after a run to request handling changes supported by the current result.
 
 ### How do I delete a tune?
 
-Open the garage, swipe left on a saved tune, and tap Delete.
+In the garage, swipe left on a saved tune and tap Delete.
 
 ### How do I remove my API key?
 
-Open Settings, switch the provider to Anthropic API if needed, and tap Clear Key.
+Open Settings, select Anthropic API mode if needed, and tap Clear Key.
 
-## Contact
+### How do I control camera or photo access?
 
-Use the public support tracker at https://github.com/Sankofa06/ForzAdvisor/issues.
+You can use manual entry without camera or photo access. Camera permission can be changed in iOS Settings. Screenshot import uses Apple's system photo picker.
 
-Do not include API keys, private screenshots, personal messages, private hostnames, private IP addresses, or other sensitive data in public support issues.
+### How do I report a problem?
+
+Use the public support tracker:
+
+https://github.com/Sankofa06/ForzAdvisor/issues
+
+Include the app version, game selection, input method, discipline, and the step that failed. Do not include API keys, private screenshots, personal messages, private hostnames, private IP addresses, or other sensitive information.
 
 ## Unofficial App Notice
 

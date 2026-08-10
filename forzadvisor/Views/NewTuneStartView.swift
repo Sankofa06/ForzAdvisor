@@ -14,7 +14,6 @@ typealias OCRDraftReadyHandler = @MainActor (OCRConfirmationDraft) -> Void
 
 struct NewTuneStartView: View {
     let onCancel: () -> Void
-    let onCatalog: () -> Void
     let onManualEntry: () -> Void
     let onDraftReady: OCRDraftReadyHandler
 
@@ -24,13 +23,11 @@ struct NewTuneStartView: View {
 
     init(
         onCancel: @escaping () -> Void,
-        onCatalog: @escaping () -> Void,
         onManualEntry: @escaping () -> Void,
         onDraftReady: @escaping OCRDraftReadyHandler,
         ocrService: any CarInputOCRService = VisionCarInputOCRService()
     ) {
         self.onCancel = onCancel
-        self.onCatalog = onCatalog
         self.onManualEntry = onManualEntry
         self.onDraftReady = onDraftReady
         self._photoImport = StateObject(wrappedValue: PhotoOCRImportController(ocrService: ocrService))
@@ -41,7 +38,7 @@ struct NewTuneStartView: View {
             Section {
                 ForzAdvisorScreenHeader(
                     title: "New Tune",
-                    subtitle: "Take or import a Forza performance screenshot, then confirm every value before tuning.",
+                    subtitle: "Take or import a performance screenshot, then confirm every value before tuning.",
                     systemImage: "camera.metering.matrix",
                     tint: ForzAdvisorTheme.warmAccent
                 )
@@ -49,17 +46,6 @@ struct NewTuneStartView: View {
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
             Section("Start") {
-                Button(action: onCatalog) {
-                    StartRow(
-                        title: "Browse Full Official FH5/FH6 Roster",
-                        subtitle: "Reviewed cars include complete stock values; roster-only cars need stock details.",
-                        systemImage: "car.2"
-                    )
-                }
-                .accessibilityIdentifier("catalogEntryButton")
-                .buttonStyle(.plain)
-                .forzAdvisorRowBackground()
-
                 Button {
                     isShowingCamera = true
                 } label: {

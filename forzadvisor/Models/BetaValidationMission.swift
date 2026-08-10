@@ -65,7 +65,7 @@ enum BetaValidationMissionKind: String, CaseIterable, Sendable {
 }
 
 enum BetaValidationMissionDestination: Equatable, Sendable {
-    case catalog(ForzaGame)
+    case manualEntry(ForzaGame)
     case savedTune(UUID, BetaValidationMissionKind)
 }
 
@@ -94,14 +94,14 @@ struct BetaValidationMission: Equatable, Identifiable, Sendable {
         if let savedTuneID {
             return .savedTune(savedTuneID, kind)
         }
-        return .catalog(game)
+        return .manualEntry(game)
     }
 
     var detail: String {
         guard let carDisplayName else {
             return game == .fh5
-                ? "Choose a reviewed FH5 catalog car and save its local plan."
-                : "Choose a reviewed FH6 catalog car and save its generated tune."
+                ? "Enter an FH5 car and its confirmed performance details, then save the local plan."
+                : "Enter an FH6 car and its confirmed performance details, then save the generated tune."
         }
         let setup = disciplineTitle.map { "\(carDisplayName) · \($0)" } ?? carDisplayName
         switch kind {
@@ -208,7 +208,7 @@ struct BetaValidationMissionBoard: Equatable, Sendable {
             mission.kind == .startFH6Tune
                 && mission.game == .fh6
                 && mission.savedTuneID == nil
-                && mission.destination == .catalog(.fh6)
+                && mission.destination == .manualEntry(.fh6)
         }
         return matches.count == 1 ? matches[0] : nil
     }

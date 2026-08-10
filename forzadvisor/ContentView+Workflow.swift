@@ -946,8 +946,11 @@ extension ContentView {
 
             cancelActiveTuneWork()
             switch mission.destination {
-            case .catalog(let game):
-                step = .catalogPicker(initialGame: game)
+            case .manualEntry(let game):
+                step = .manualEntry(
+                    ManualEntryDraft(game: game),
+                    thumbnailData: nil
+                )
             case .savedTune(let savedTuneID, let kind):
                 guard let savedTune = try savedTune(for: savedTuneID),
                       let storedTune = savedTune.tuneResult else {

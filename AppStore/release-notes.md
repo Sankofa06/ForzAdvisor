@@ -1,5 +1,12 @@
 # Release Notes
 
+## Version 1.40.8 (Build 75) - 2026-08-09
+
+- Removes the bundled FH5/FH6 car rosters and reviewed stock catalog.
+- Starts new tunes from a user-selected photo, screenshot, or manual entry.
+- Routes empty-garage starter missions to manual entry and removes catalog contribution access from Settings.
+- Refreshes App Store, support, privacy, and review copy for the roster-free release.
+
 ## Version 1.40.8 (Build 74) - 2026-08-09
 
 - Improved reliability, usability, and app polish.

@@ -57,7 +57,6 @@ struct ContentView: View {
                 case .newTune:
                     NewTuneStartView(
                         onCancel: { step = .home },
-                        onCatalog: { step = .catalogPicker() },
                         onManualEntry: {
                             step = .manualEntry(.empty, thumbnailData: nil)
                         },
