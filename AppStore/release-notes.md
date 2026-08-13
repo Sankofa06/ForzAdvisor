@@ -1,5 +1,9 @@
 # Release Notes
 
+## Version 1.41.0 (Build 76) - 2026-08-12
+
+- Improved tune workflow reliability, provider handling, and Guided Refinement.
+
 ## Version 1.40.8 (Build 75) - 2026-08-09
 
 - Removes the bundled FH5/FH6 car rosters and reviewed stock catalog.
