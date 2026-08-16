@@ -15,7 +15,7 @@ struct DisciplinePickerView: View {
     let onSelectionChanged: (DrivingDiscipline) -> Void
     let onStart: (DrivingDiscipline) -> Void
 
-    @State private var selection: DrivingDiscipline?
+    @State private var selectionState: DisciplineSelectionState
 
     init(
         car: CarInput,
@@ -30,7 +30,9 @@ struct DisciplinePickerView: View {
         self.onBack = onBack
         self.onSelectionChanged = onSelectionChanged
         self.onStart = onStart
-        _selection = State(initialValue: selection)
+        _selectionState = State(initialValue: DisciplineSelectionState(
+            selection: selection
+        ))
     }
 
     var body: some View {
@@ -43,41 +45,55 @@ struct DisciplinePickerView: View {
             Section("Discipline") {
                 ForEach(DrivingDiscipline.allCases) { discipline in
                     Button {
-                        selection = discipline
+                        selectionState.select(discipline)
                         onSelectionChanged(discipline)
                     } label: {
-                        DisciplineRow(discipline: discipline)
+                        DisciplineRow(
+                            discipline: discipline,
+                            isSelected: selectionState.selection == discipline
+                        )
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("disciplineButton-\(discipline.rawValue)")
-                    .signatureDisciplineBackground(discipline == .touge)
+                    .accessibilityValue(
+                        selectionState.selection == discipline
+                            ? "Selected"
+                            : "Not selected"
+                    )
+                    .accessibilityAddTraits(
+                        selectionState.selection == discipline ? .isSelected : []
+                    )
+                    .accessibilityHint("Selects this discipline without starting generation")
+                    .forzAdvisorRowBackground()
                 }
             }
 
-            Section("Generation") {
-                LabeledContent(
-                    "Preferred method",
-                    value: providerDisclosure.preferredMode.title
+            Section("Before you start") {
+                ProviderPreflightView(
+                    game: car.game,
+                    disclosure: providerDisclosure
                 )
-                Text(providerDisclosure.readiness.readinessTitle)
-                    .foregroundStyle(.secondary)
-                Text(providerDisclosure.dataBoundary.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+
                 Button(
-                    car.game == .fh5
-                        ? "Create FH5 Build Plan"
-                        : "Generate FH6 Tune"
+                    DisciplineGenerationCopy.startButtonTitle(for: car.game)
                 ) {
-                    guard let selection else { return }
+                    guard let selection = selectionState.startIntent else { return }
                     onStart(selection)
                 }
-                .disabled(selection == nil)
+                .buttonStyle(.borderedProminent)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .forzAdvisorMinimumTouchTarget()
+                .disabled(selectionState.startIntent == nil)
                 .accessibilityIdentifier("startTuneGenerationButton")
+                .accessibilityHint(
+                    selectionState.startIntent == nil
+                        ? "Select a discipline first"
+                        : "Starts generation using the route described above"
+                )
             }
             .forzAdvisorRowBackground()
         }
-        .navigationTitle("Pick Tune Type")
+        .navigationTitle("Choose Discipline")
         .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -134,6 +150,7 @@ private struct CarSummaryHeader: View {
 
 private struct DisciplineRow: View {
     let discipline: DrivingDiscipline
+    let isSelected: Bool
 
     var body: some View {
         HStack(spacing: 12) {
@@ -143,19 +160,8 @@ private struct DisciplineRow: View {
             )
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(discipline.title)
-                        .font(.headline)
-                    if discipline == .touge {
-                        Text("Signature")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(ForzAdvisorTheme.warmAccent)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(ForzAdvisorTheme.warmAccent.opacity(0.15))
-                            .clipShape(Capsule())
-                    }
-                }
+                Text(discipline.title)
+                    .font(.headline)
 
                 Text(discipline.summary)
                     .font(.subheadline)
@@ -164,65 +170,13 @@ private struct DisciplineRow: View {
 
             Spacer()
 
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tertiary)
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(
+                    isSelected ? ForzAdvisorTheme.accent : ForzAdvisorTheme.secondaryText
+                )
+                .accessibilityHidden(true)
         }
         .padding(.vertical, 6)
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func signatureDisciplineBackground(_ isSignature: Bool) -> some View {
-        if isSignature {
-            listRowBackground(
-                LinearGradient(
-                    colors: [
-                        ForzAdvisorTheme.warmAccent.opacity(0.13),
-                        ForzAdvisorTheme.surface
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-        } else {
-            self.forzAdvisorRowBackground()
-        }
-    }
-}
-
-struct TuneLoadingView: View {
-    let request: TuneRequest
-    let onCancel: () -> Void
-
-    init(request: TuneRequest, onCancel: @escaping () -> Void = {}) {
-        self.request = request
-        self.onCancel = onCancel
-    }
-
-    var body: some View {
-        VStack(spacing: 18) {
-            ZStack {
-                Circle()
-                    .fill(ForzAdvisorTheme.accent.opacity(0.14))
-                    .frame(width: 72, height: 72)
-                ProgressView()
-                    .controlSize(.large)
-            }
-            Text("Tuning \(request.car.displayName)")
-                .font(.title3.weight(.semibold))
-            Text(request.discipline.title)
-                .font(.subheadline)
-                .foregroundStyle(ForzAdvisorTheme.disciplineColor(request.discipline))
-                .fontWeight(.semibold)
-            Button("Cancel", role: .cancel, action: onCancel)
-                .frame(minWidth: 44, minHeight: 44)
-                .accessibilityIdentifier("cancelTuneGenerationButton")
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(ForzAdvisorTheme.screenBackground.ignoresSafeArea())
-        .tint(ForzAdvisorTheme.accent)
-        .navigationTitle("Generating")
     }
 }
