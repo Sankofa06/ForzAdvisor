@@ -5,7 +5,13 @@ extension XCUIElement {
         tap()
 
         if !waitForKeyboardFocus(timeout: 0.4) {
-            coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.2)).tap()
+            for offset in [
+                CGVector(dx: 0.8, dy: 0.5),
+                CGVector(dx: 0.5, dy: 0.5)
+            ] {
+                coordinate(withNormalizedOffset: offset).tap()
+                if waitForKeyboardFocus(timeout: 0.6) { break }
+            }
         }
 
         guard waitForKeyboardFocus(timeout: focusTimeout) else {
