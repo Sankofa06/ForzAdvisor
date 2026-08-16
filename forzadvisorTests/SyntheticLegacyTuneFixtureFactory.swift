@@ -5,17 +5,28 @@ enum SyntheticLegacyTuneFixtureFactory {
     static func selection(
         game: ForzaGame = .fh6,
         drivetrain: Drivetrain = .rwd,
+        variant: Int = 0,
         reviewedAt: Date
     ) -> CatalogCarSelection {
+        let performanceIndex: Int
+        let performanceClass: PerformanceClass
+        switch game {
+        case .fh5:
+            performanceIndex = 750
+            performanceClass = .a
+        case .fh6:
+            performanceIndex = 700
+            performanceClass = .a
+        }
         let entry = CatalogCarEntry(
-            id: "test-only:\(game.rawValue):2020-fixture-coupe",
+            id: "test-only:\(game.rawValue):\(variant):fixture-coupe",
             game: game,
-            year: 2020,
+            year: 2020 + variant,
             make: "Fixture",
-            model: "Coupe",
+            model: variant == 0 ? "Coupe" : "Coupe Variant \(variant)",
             stock: CatalogStockSpecifications(
-                performanceIndex: game == .fh5 ? 800 : 700,
-                performanceClass: .a,
+                performanceIndex: performanceIndex,
+                performanceClass: performanceClass,
                 drivetrain: drivetrain,
                 weightPounds: 3_100,
                 frontWeightPercent: 52,
