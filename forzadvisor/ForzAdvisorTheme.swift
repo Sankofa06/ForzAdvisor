@@ -11,10 +11,40 @@ import SwiftUI
 import UIKit
 
 enum ForzAdvisorTheme {
-    static let accent = Color(red: 0.00, green: 0.62, blue: 0.58)
-    static let warmAccent = Color(red: 0.95, green: 0.42, blue: 0.17)
-    static let warning = Color(red: 0.93, green: 0.53, blue: 0.11)
-    static let success = Color(red: 0.20, green: 0.62, blue: 0.38)
+    static let minimumTouchTarget: CGFloat = 44
+
+    static let accent = adaptive(
+        light: UIColor(red: 0.00, green: 0.38, blue: 0.36, alpha: 1),
+        dark: UIColor(red: 0.35, green: 0.85, blue: 0.81, alpha: 1)
+    )
+    static let warmAccent = adaptive(
+        light: UIColor(red: 0.70, green: 0.20, blue: 0.055, alpha: 1),
+        dark: UIColor(red: 1.00, green: 0.58, blue: 0.32, alpha: 1)
+    )
+    static let warning = adaptive(
+        light: UIColor(red: 0.49, green: 0.27, blue: 0.00, alpha: 1),
+        dark: UIColor(red: 1.00, green: 0.72, blue: 0.29, alpha: 1)
+    )
+    static let success = adaptive(
+        light: UIColor(red: 0.07, green: 0.42, blue: 0.20, alpha: 1),
+        dark: UIColor(red: 0.39, green: 0.84, blue: 0.55, alpha: 1)
+    )
+    static let destructive = adaptive(
+        light: UIColor(red: 0.70, green: 0.10, blue: 0.08, alpha: 1),
+        dark: UIColor(red: 1.00, green: 0.51, blue: 0.48, alpha: 1)
+    )
+    static let primaryText = adaptive(
+        light: UIColor(red: 0.07, green: 0.08, blue: 0.08, alpha: 1),
+        dark: UIColor(red: 0.95, green: 0.97, blue: 0.96, alpha: 1)
+    )
+    static let secondaryText = adaptive(
+        light: UIColor(red: 0.23, green: 0.29, blue: 0.28, alpha: 1),
+        dark: UIColor(red: 0.73, green: 0.79, blue: 0.77, alpha: 1)
+    )
+    static let onStrongColorText = adaptive(
+        light: .white,
+        dark: UIColor(red: 0.04, green: 0.055, blue: 0.05, alpha: 1)
+    )
 
     static let screenBackground = Color(uiColor: UIColor { traits in
         if traits.userInterfaceStyle == .dark {
@@ -42,9 +72,9 @@ enum ForzAdvisorTheme {
 
     static let separator = Color(uiColor: UIColor { traits in
         if traits.userInterfaceStyle == .dark {
-            return UIColor(white: 1, alpha: 0.09)
+            return UIColor(red: 0.41, green: 0.46, blue: 0.44, alpha: 1)
         } else {
-            return UIColor(white: 0, alpha: 0.08)
+            return UIColor(red: 0.46, green: 0.51, blue: 0.49, alpha: 1)
         }
     })
 
@@ -62,11 +92,25 @@ enum ForzAdvisorTheme {
         switch discipline {
         case .road: accent
         case .touge: warmAccent
-        case .drift: Color(red: 0.73, green: 0.28, blue: 0.70)
-        case .dirt: Color(red: 0.58, green: 0.47, blue: 0.22)
-        case .crossCountry: Color(red: 0.24, green: 0.57, blue: 0.30)
-        case .drag: Color(red: 0.78, green: 0.18, blue: 0.16)
+        case .drift:
+            adaptive(
+                light: UIColor(red: 0.40, green: 0.17, blue: 0.55, alpha: 1),
+                dark: UIColor(red: 0.82, green: 0.58, blue: 0.96, alpha: 1)
+            )
+        case .dirt:
+            adaptive(
+                light: UIColor(red: 0.36, green: 0.28, blue: 0.06, alpha: 1),
+                dark: UIColor(red: 0.88, green: 0.75, blue: 0.39, alpha: 1)
+            )
+        case .crossCountry: success
+        case .drag: destructive
         }
+    }
+
+    private static func adaptive(light: UIColor, dark: UIColor) -> Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark ? dark : light
+        })
     }
 }
 
@@ -86,6 +130,14 @@ extension View {
 
     func forzAdvisorRowBackground() -> some View {
         listRowBackground(ForzAdvisorTheme.surface)
+    }
+
+    func forzAdvisorMinimumTouchTarget() -> some View {
+        frame(
+            minWidth: ForzAdvisorTheme.minimumTouchTarget,
+            minHeight: ForzAdvisorTheme.minimumTouchTarget
+        )
+        .contentShape(Rectangle())
     }
 }
 
