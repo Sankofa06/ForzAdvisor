@@ -29,7 +29,7 @@ final class TuneRefinementProposalStoreTests: XCTestCase {
         XCTAssertEqual(store.proposal, fixture)
     }
 
-    func testApplyThenUndoWithinSixSecondsPersistsExactValues() throws {
+    func testApplyThenUndoBeforeSixSecondsPersistsExactValues() throws {
         let fixture = makeProposal()
         let store = TuneRefinementProposalStore()
         let start = Date(timeIntervalSince1970: 100)
@@ -46,7 +46,7 @@ final class TuneRefinementProposalStoreTests: XCTestCase {
 
         let restored = try store.undo(
             currentPersistedTune: fixture.candidate,
-            now: start.addingTimeInterval(6),
+            now: start.addingTimeInterval(5.999),
             persist: { persisted.append($0) }
         )
         XCTAssertEqual(restored, fixture.baseline)
@@ -54,7 +54,7 @@ final class TuneRefinementProposalStoreTests: XCTestCase {
         XCTAssertNil(store.applied)
     }
 
-    func testExpiredUndoDoesNotPersist() throws {
+    func testUndoAtDeadlineDoesNotPersist() throws {
         let fixture = makeProposal()
         let store = TuneRefinementProposalStore()
         let start = Date(timeIntervalSince1970: 100)
@@ -67,11 +67,44 @@ final class TuneRefinementProposalStoreTests: XCTestCase {
 
         XCTAssertThrowsError(try store.undo(
             currentPersistedTune: fixture.candidate,
-            now: start.addingTimeInterval(6.001),
+            now: start.addingTimeInterval(6),
             persist: { _ in XCTFail("Expired undo must not persist") }
         )) { error in
             XCTAssertEqual(error as? TuneRefinementProposalError, .undoExpired)
         }
+    }
+
+    func testApplySchedulesAutomaticExpirationAtSixSeconds() throws {
+        let fixture = makeProposal()
+        let start = Date(timeIntervalSince1970: 100)
+        var scheduledDelay: TimeInterval?
+        var scheduledAction: (@MainActor () -> Void)?
+        let store = TuneRefinementProposalStore { delay, action in
+            scheduledDelay = delay
+            scheduledAction = action
+        }
+        store.store(fixture)
+
+        _ = try store.apply(
+            currentPersistedTune: fixture.baseline,
+            now: start,
+            persist: { _ in }
+        )
+
+        XCTAssertEqual(scheduledDelay, 6)
+        XCTAssertTrue(store.canUndo(
+            savedTuneID: fixture.savedTuneID,
+            now: start.addingTimeInterval(5.999)
+        ))
+        XCTAssertFalse(store.canUndo(
+            savedTuneID: fixture.savedTuneID,
+            now: start.addingTimeInterval(6)
+        ))
+        XCTAssertNotNil(store.applied)
+
+        scheduledAction?()
+
+        XCTAssertNil(store.applied)
     }
 
     private func makeProposal() -> TuneRefinementProposal {

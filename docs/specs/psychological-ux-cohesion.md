@@ -54,7 +54,7 @@ The complete set below was approved for implementation on 2026-08-15.
 - Separate discipline selection from generation. A dedicated CTA starts work after provider/privacy consequences are visible.
 - Canceling a new generation returns to Discipline with the selection and draft intact. Canceling a saved re-tune returns to Edit with the full unsaved draft and leaves the saved tune unchanged.
 - Any change to weight, front-weight percentage, PI, class, or drivetrain requires **Re-tune & Save**. Identity and notes changes use **Save Changes**.
-- Guided refinement becomes proposal -> preview -> Apply or Discard -> six-second Undo after Apply. Provider completion alone never changes SwiftData.
+- Guided refinement becomes proposal -> preview -> Apply or Discard -> six-second Undo after Apply. Undo disappears automatically at the deadline, and late attempts cannot mutate SwiftData. Provider completion alone never changes SwiftData.
 - Garage removal is staged for six seconds with Undo. SwiftData is mutated only when the window expires, another removal is staged, or Garage is left.
 - Validation and research are explicitly optional. No streaks, urgency, fabricated progress, public ranking, or accuracy claims are added.
 - A test drive can be saved locally with reusable-evidence permission off. Reuse authorization is a separate, optional, later-revocable decision.
@@ -173,7 +173,7 @@ Required buckets:
 
 - domain and validation: OCR review, form validation, browse criteria, refinement stale checks, local/reusable evidence filtering;
 - state/navigation: draft/back/cancel/retry, provider session snapshot, mission-origin return, Step Guide stale action;
-- persistence/migration: Garage delayed removal, refinement Apply/Undo rollback, validation schema v1/v2 and draft store;
+- persistence/migration: Garage delayed removal, refinement Apply/Undo rollback and exact deadline expiry, validation schema v1/v2 and draft store;
 - privacy/security: payload allow-lists, no secret read in Settings, no local-only evidence export;
 - UI/accessibility: portrait/landscape, light/dark, Accessibility Dynamic Type, VoiceOver order/status, 44-point targets, Increase Contrast;
 - localization-sensitive terminology: FH5 Build Plan, FH6 Tune, Available/Withheld Settings, Optional Validation & Research;

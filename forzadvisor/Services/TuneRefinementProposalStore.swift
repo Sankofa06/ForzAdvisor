@@ -47,8 +47,24 @@ enum TuneRefinementProposalError: LocalizedError, Equatable {
 
 @MainActor
 final class TuneRefinementProposalStore: ObservableObject {
+    typealias UndoExpiryScheduler = (
+        _ delay: TimeInterval,
+        _ action: @escaping @MainActor () -> Void
+    ) -> Void
+
     @Published private(set) var proposal: TuneRefinementProposal?
     @Published private(set) var applied: AppliedTuneRefinement?
+
+    private let scheduleUndoExpiry: UndoExpiryScheduler
+
+    init(scheduleUndoExpiry: @escaping UndoExpiryScheduler = { delay, action in
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(delay))
+            action()
+        }
+    }) {
+        self.scheduleUndoExpiry = scheduleUndoExpiry
+    }
 
     func store(_ proposal: TuneRefinementProposal) {
         self.proposal = proposal
@@ -78,7 +94,19 @@ final class TuneRefinementProposalStore: ObservableObject {
         )
         self.applied = applied
         self.proposal = nil
+        scheduleUndoExpiry(6) { [weak self] in
+            guard self?.applied?.proposal.id == applied.proposal.id else {
+                return
+            }
+            self?.applied = nil
+        }
         return applied
+    }
+
+    func canUndo(savedTuneID: UUID, now: Date = .now) -> Bool {
+        guard let applied else { return false }
+        return applied.proposal.savedTuneID == savedTuneID
+            && now < applied.undoDeadline
     }
 
     func undo(
@@ -89,7 +117,7 @@ final class TuneRefinementProposalStore: ObservableObject {
         guard let applied else {
             throw TuneRefinementProposalError.noProposal
         }
-        guard now <= applied.undoDeadline else {
+        guard now < applied.undoDeadline else {
             self.applied = nil
             throw TuneRefinementProposalError.undoExpired
         }
@@ -102,7 +130,7 @@ final class TuneRefinementProposalStore: ObservableObject {
     }
 
     func expireUndo(now: Date = .now) {
-        guard let applied, now > applied.undoDeadline else { return }
+        guard let applied, now >= applied.undoDeadline else { return }
         self.applied = nil
     }
 }

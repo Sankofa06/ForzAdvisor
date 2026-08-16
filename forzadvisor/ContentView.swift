@@ -1056,8 +1056,9 @@ struct ContentView: View {
                     $0.savedTuneID == resolvedSavedTuneID ? $0 : nil
                 },
                 canUndoRefinement:
-                    refinementProposals.applied?.proposal.savedTuneID
-                    == resolvedSavedTuneID,
+                    resolvedSavedTuneID.map {
+                        refinementProposals.canUndo(savedTuneID: $0)
+                    } ?? false,
                 onApplyRefinement: applyRefinementProposal,
                 onDiscardRefinement: discardRefinementProposal,
                 onUndoRefinement: { undoAppliedRefinement() },
