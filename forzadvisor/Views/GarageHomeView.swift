@@ -1,22 +1,12 @@
-//
-//  GarageHomeView.swift
-//  forzadvisor
-//
-//  First screen for the app. Shows saved garage tunes and starts a new tune
-//  from camera capture, screenshot OCR, or manual entry.
-//
-
 import SwiftUI
+import UIKit
 
 struct GarageHomeView: View {
     let savedTunes: [SavedTune]
     let onNewTune: () -> Void
     let onOpenCopilot: () -> Void
     let onOpenTune: (SavedTune) -> Void
-    let onDeleteTune: (
-        UUID,
-        GarageRemovalCommitCallback?
-    ) -> Void
+    let onDeleteTune: (UUID, GarageRemovalCommitCallback?) -> Void
     let betaMissionCount: Int
     let onBetaMissions: () -> Void
     let onEmptyGarageFirstWin: (() -> Void)?
@@ -24,11 +14,22 @@ struct GarageHomeView: View {
 
     @State private var searchText = ""
     @State private var disciplineFilter: DrivingDiscipline?
+    @State private var removalState = GarageRemovalState()
+
+    private var uniqueTunes: [SavedTune] {
+        var seen = Set<UUID>()
+        return savedTunes.filter { seen.insert($0.id).inserted }
+    }
+
+    private var visibleTunes: [SavedTune] {
+        uniqueTunes.filter { !removalState.hiddenTuneIDs.contains($0.id) }
+    }
 
     private var filteredTunes: [SavedTune] {
-        savedTunes.filter { tune in
-            let matchesText = searchText.isEmpty
-                || tune.carName.localizedCaseInsensitiveContains(searchText)
+        visibleTunes.filter { tune in
+            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            let matchesText = query.isEmpty
+                || tune.carName.localizedCaseInsensitiveContains(query)
             let matchesDiscipline = disciplineFilter == nil
                 || tune.discipline == disciplineFilter
             return matchesText && matchesDiscipline
@@ -36,283 +37,137 @@ struct GarageHomeView: View {
     }
 
     var body: some View {
-        List {
-            Section {
-                Button(action: onNewTune) {
-                    HStack(spacing: 14) {
-                        ForzAdvisorIcon(systemName: "plus", tint: ForzAdvisorTheme.warmAccent, size: 42)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("New Tune")
-                                .font(.headline)
-                            Text("Photo, screenshot, or manual entry")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.vertical, 10)
-                }
-                .accessibilityIdentifier("newTuneButton")
-                .buttonStyle(.plain)
-                .listRowBackground(ForzAdvisorTheme.heroRowBackground)
-
-                Button(action: onOpenCopilot) {
-                    HStack(spacing: 14) {
-                        ForzAdvisorIcon(
-                            systemName: "sparkles",
-                            tint: ForzAdvisorTheme.accent,
-                            size: 42
-                        )
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Ask Copilot")
-                                .font(.headline)
-                            Text("Get the safest next step for this screen.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.vertical, 8)
-                }
-                .accessibilityIdentifier("garageCopilotButton")
-                .accessibilityLabel("Ask Copilot")
-                .accessibilityHint(
-                    "Opens local contextual guidance for the current screen."
-                )
-                .buttonStyle(.plain)
-                .forzAdvisorRowBackground()
-            }
-
-            Section {
-                Button(action: onBetaMissions) {
-                    HStack(spacing: 14) {
-                        ForzAdvisorIcon(
-                            systemName: "checklist",
-                            tint: ForzAdvisorTheme.accent,
-                            size: 42
-                        )
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Beta Validation Missions")
-                                .font(.headline)
-                            Text(
-                                betaMissionCount == 1
-                                    ? "1 local testing mission ready"
-                                    : "\(betaMissionCount) local testing missions ready"
-                            )
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.vertical, 8)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("betaValidationMissionsButton")
-                .accessibilityHint("Shows local testing tasks and aggregate progress.")
-            }
-            .forzAdvisorRowBackground()
-
-            Section("Garage") {
-                if savedTunes.isEmpty {
-                    if let onEmptyGarageFirstWin {
-                        VStack(alignment: .leading, spacing: 14) {
-                            Text("Build your first FH6 tune")
-                                .font(.title3.bold())
-                            Text("Start with a reviewed stock car, confirm its facts, choose how you drive, and save the result. Unknown tuning controls remain withheld until they are verified.")
-                                .foregroundStyle(.secondary)
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("1. Choose a reviewed FH6 stock car.")
-                                Text("2. Confirm its facts and choose a driving style.")
-                                Text("3. Generate and save your tune.")
-                            }
-                            .font(.subheadline)
-                            Button(action: onEmptyGarageFirstWin) {
-                                Text("Choose an FH6 Car")
-                                    .frame(
-                                        maxWidth: .infinity,
-                                        minHeight: 44
-                                    )
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .accessibilityLabel("Choose an FH6 car for your first tune")
-                            .accessibilityHint("Opens the reviewed FH6 car catalog so you can confirm its stock facts before tuning.")
-                            .accessibilityIdentifier("emptyGarageFirstFH6TuneButton")
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
-                        .accessibilityIdentifier("emptyGarageFirstWin")
-                        .listRowBackground(ForzAdvisorTheme.surface)
-                    } else {
-                        ContentUnavailableView(
-                            "No saved tunes",
-                            systemImage: "wrench.adjustable",
-                            description: Text("Create a tune from a photo, screenshot, or manual entry to start filling the garage.")
-                        )
-                        .listRowBackground(ForzAdvisorTheme.surface)
-                    }
-                } else if filteredTunes.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
-                        .listRowBackground(ForzAdvisorTheme.surface)
-                } else {
-                    ForEach(filteredTunes) { tune in
-                        Button {
-                            onOpenTune(tune)
-                        } label: {
-                            GarageTuneRow(tune: tune)
-                        }
-                        .accessibilityIdentifier("savedTuneRow")
-                        .buttonStyle(.plain)
-                        .swipeActions {
-                            Button("Delete", role: .destructive) {
-                                onDeleteTune(tune.id, nil)
-                            }
-                        }
-                        .forzAdvisorRowBackground()
-                    }
+        searchableContent
+            .navigationTitle("ForzAdvisor")
+            .accessibilityIdentifier("garageHome")
+            .forzAdvisorScreenChrome()
+            .toolbar { garageToolbar }
+            .safeAreaInset(edge: .bottom) { undoBanner }
+            .task(id: removalState.pending?.id) {
+                guard let pendingID = removalState.pending?.id else { return }
+                do {
+                    try await Task.sleep(for: .seconds(6))
+                    commitPendingRemoval(id: pendingID)
+                } catch {
+                    // A replacement removal or Undo cancels this timer.
                 }
             }
-
-            if let recentTune = savedTunes.first {
-                Section("Recent") {
-                    Button {
-                        onOpenTune(recentTune)
-                    } label: {
-                        GarageTuneRow(tune: recentTune)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .forzAdvisorRowBackground()
-            }
-        }
-        .navigationTitle("ForzAdvisor")
-        .accessibilityIdentifier("garageHome")
-        .forzAdvisorScreenChrome()
-        .searchable(text: $searchText, prompt: "Search garage")
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: onSettings) {
-                    Image(systemName: "gearshape")
-                }
-                .accessibilityLabel("Settings")
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            if !savedTunes.isEmpty {
-                DisciplineFilterBar(selection: $disciplineFilter)
-                    .padding(.horizontal)
-                    .padding(.vertical, 10)
-                    .background(.regularMaterial)
-                    .overlay(alignment: .top) {
-                        Rectangle()
-                            .fill(ForzAdvisorTheme.separator)
-                            .frame(height: 1)
-                    }
-            }
-        }
+            .onDisappear { commitPendingRemoval() }
     }
-}
 
-private struct GarageTuneRow: View {
-    let tune: SavedTune
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ForzAdvisorIcon(
-                systemName: tune.disciplineSymbolName,
-                tint: tune.discipline.map { ForzAdvisorTheme.disciplineColor($0) } ?? ForzAdvisorTheme.accent
+    @ViewBuilder
+    private var searchableContent: some View {
+        if uniqueTunes.isEmpty {
+            garageList
+        } else {
+            garageList.searchable(
+                text: $searchText,
+                placement: .navigationBarDrawer(displayMode: .always),
+                prompt: "Search saved tunes"
             )
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(tune.carName)
-                    .font(.headline)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForzAdvisorPill(
-                            title: tune.disciplineTitle,
-                            tint: tune.discipline.map { ForzAdvisorTheme.disciplineColor($0) } ?? ForzAdvisorTheme.accent
-                        )
-                        if let car = tune.carInput {
-                            ForzAdvisorPill(title: car.game.shortTitle, tint: ForzAdvisorTheme.accent)
-                            if car.catalogReference != nil {
-                                ForzAdvisorPill(
-                                    title: car.catalogValuesModified ? "Catalog · Edited" : "Catalog",
-                                    tint: ForzAdvisorTheme.success
-                                )
-                            }
-                        }
-                        ForzAdvisorPill(title: "\(tune.performanceClassRawValue) \(tune.performanceIndex)")
-                        ForzAdvisorPill(title: tune.drivetrainRawValue, tint: ForzAdvisorTheme.warmAccent)
-                    }
-                }
-                Text("Updated \(tune.updatedAt.formatted(.relative(presentation: .named)))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if !tune.playerNotes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text(tune.playerNotes)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-private struct DisciplineFilterBar: View {
-    @Binding var selection: DrivingDiscipline?
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                filterButton(title: "All", value: nil)
-                ForEach(DrivingDiscipline.allCases) { discipline in
-                    filterButton(title: discipline.title, value: discipline)
-                }
-            }
         }
     }
 
-    private func filterButton(title: String, value: DrivingDiscipline?) -> some View {
-        Button {
-            selection = value
-        } label: {
-            Text(title)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .background(
-                    selection == value ? activeTint(for: value) : ForzAdvisorTheme.mutedSurface,
-                    in: Capsule()
+    private var garageList: some View {
+        List {
+            if uniqueTunes.isEmpty {
+                GarageFirstTuneView(action: onEmptyGarageFirstWin ?? onNewTune)
+            } else {
+                GarageNewTuneRow(action: onNewTune)
+                savedTuneSection
+            }
+
+            GarageOptionalTestingRow(
+                missionCount: betaMissionCount,
+                action: onBetaMissions
+            )
+        }
+    }
+
+    private var savedTuneSection: some View {
+        Section("Garage") {
+            GarageDisciplinePicker(selection: $disciplineFilter)
+
+            if filteredTunes.isEmpty {
+                GarageNoResultsView(
+                    searchText: searchText,
+                    discipline: disciplineFilter,
+                    onClearSearch: { searchText = "" },
+                    onShowAllDisciplines: { disciplineFilter = nil }
                 )
-                .foregroundColor(selection == value ? .white : .primary)
-                .clipShape(Capsule())
+            } else {
+                ForEach(filteredTunes) { tune in
+                    Button { onOpenTune(tune) } label: {
+                        GarageTuneRow(tune: tune)
+                    }
+                    .accessibilityIdentifier("savedTuneRow")
+                    .buttonStyle(.plain)
+                    .swipeActions {
+                        Button("Remove", role: .destructive) {
+                            stageRemoval(of: tune)
+                        }
+                    }
+                    .forzAdvisorRowBackground()
+                }
+            }
         }
-        .buttonStyle(.plain)
     }
 
-    private func activeTint(for value: DrivingDiscipline?) -> Color {
-        value.map { ForzAdvisorTheme.disciplineColor($0) } ?? ForzAdvisorTheme.accent
+    @ToolbarContentBuilder
+    private var garageToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button(action: onOpenCopilot) {
+                Label("Step Guide", systemImage: "questionmark.circle")
+            }
+            .accessibilityLabel("Open Step Guide")
+            .accessibilityHint("Opens local guidance for this screen")
+            .accessibilityIdentifier("garageStepGuideButton")
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Button(action: onSettings) { Image(systemName: "gearshape") }
+                .accessibilityLabel("Settings")
+        }
+    }
+
+    @ViewBuilder
+    private var undoBanner: some View {
+        if let pending = removalState.pending {
+            ForzAdvisorUndoBanner(
+                message: "Removed \(pending.carName). Undo available for 6 seconds.",
+                undo: undoRemoval
+            )
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(.regularMaterial)
+            .accessibilityIdentifier("garageRemovalUndo")
+        }
+    }
+
+    private func stageRemoval(of tune: SavedTune) {
+        if let priorID = removalState.stage(id: tune.id, carName: tune.carName) {
+            commitRemoval(id: priorID)
+        }
+        announce("\(tune.carName) removed. Undo available for 6 seconds.")
+    }
+
+    private func undoRemoval() {
+        guard let restored = removalState.undo() else { return }
+        announce("Restored \(restored.carName).")
+    }
+
+    private func commitPendingRemoval(id: UUID? = nil) {
+        guard let tuneID = removalState.beginPendingCommit(matching: id) else { return }
+        commitRemoval(id: tuneID)
+    }
+
+    private func commitRemoval(id: UUID) {
+        onDeleteTune(id) { result in
+            guard removalState.resolve(result) else { return }
+            if case .rolledBack(_, let message) = result { announce(message) }
+        }
+    }
+
+    private func announce(_ message: String) {
+        UIAccessibility.post(notification: .announcement, argument: message)
     }
 }
