@@ -1,5 +1,17 @@
 import Foundation
 
+struct ValidationEvidenceTransactionError: Error, LocalizedError {
+    let primary: Error
+    let recoveryFailures: [Error]
+
+    var errorDescription: String? {
+        let recovery = recoveryFailures.map(\.localizedDescription)
+            .joined(separator: "; ")
+        guard !recovery.isEmpty else { return primary.localizedDescription }
+        return "\(primary.localizedDescription) Recovery also failed: \(recovery)"
+    }
+}
+
 /// Produces rollback-safe persistence steps. The caller must confirm its
 /// SwiftData mutation before invoking the matching finalize method.
 struct ValidationEvidenceTransitionCoordinator {
@@ -74,11 +86,26 @@ struct ValidationEvidenceTransitionCoordinator {
     }
 
     func compensateGrant(_ plan: GrantPlan) throws {
-        try saveLocal(
-            record: plan.legacyReusableRecord,
-            savedTuneID: plan.savedTuneID
-        )
-        _ = try? authorizationStore.remove(fingerprint: plan.fingerprint)
+        var failures: [Error] = []
+        do {
+            try saveLocal(
+                record: plan.legacyReusableRecord,
+                savedTuneID: plan.savedTuneID
+            )
+        } catch {
+            failures.append(error)
+        }
+        do {
+            _ = try authorizationStore.remove(fingerprint: plan.fingerprint)
+        } catch {
+            failures.append(error)
+        }
+        if let first = failures.first {
+            throw ValidationEvidenceTransactionError(
+                primary: first,
+                recoveryFailures: Array(failures.dropFirst())
+            )
+        }
     }
 
     func prepareRevoke(
@@ -106,5 +133,24 @@ struct ValidationEvidenceTransitionCoordinator {
             savedTuneID: plan.savedTuneID,
             fingerprint: plan.fingerprint
         )
+    }
+}
+
+struct ValidationEvidenceLiveRecordResolver {
+    func resolve(
+        fingerprint: String,
+        savedTuneID: UUID,
+        legacyRecords: [FirstPartyValidationRecord],
+        localStore: ValidationLocalObservationStore
+    ) throws -> ValidationEvidenceRecord? {
+        if let reusable = legacyRecords.first(where: {
+            $0.contentFingerprint == fingerprint
+        }) {
+            return .reusable(reusable)
+        }
+        return try localStore.observation(
+            savedTuneID: savedTuneID,
+            fingerprint: fingerprint
+        ).map(ValidationEvidenceRecord.localOnly)
     }
 }

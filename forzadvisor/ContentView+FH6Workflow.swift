@@ -28,7 +28,7 @@ extension ContentView {
                 localStore: .init(),
                 authorizationStore: .init()
             ).saveLocal(record: record, savedTuneID: savedTuneID)
-            try? ValidationDraftStore().delete(
+            try ValidationDraftStore().deleteAfterConfirmedCommit(
                 kind: .firstPartyTestDrive,
                 savedTuneID: savedTuneID
             )
@@ -164,7 +164,7 @@ extension ContentView {
             )
             try savedTune.appendFH6CommunityReferenceTrialRecord(record)
             try modelContext.save()
-            try? ValidationDraftStore().delete(
+            try ValidationDraftStore().deleteAfterConfirmedCommit(
                 kind: .fh6CommunityReferenceTrial,
                 savedTuneID: savedTuneID
             )

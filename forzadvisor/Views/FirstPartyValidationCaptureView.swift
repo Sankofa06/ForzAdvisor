@@ -210,8 +210,15 @@ struct FirstPartyValidationCaptureView: View {
     }
 
     private func discardDraft() {
-        try? draftStore.delete(kind: .firstPartyTestDrive, savedTuneID: tune.id)
-        onBack()
+        do {
+            try draftStore.delete(
+                kind: .firstPartyTestDrive,
+                savedTuneID: tune.id
+            )
+            onBack()
+        } catch {
+            message = "Draft could not be discarded. Your form remains open."
+        }
     }
 
     private var draftContext: ValidationDraftRestoreContext? {

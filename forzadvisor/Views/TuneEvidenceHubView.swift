@@ -13,9 +13,9 @@ struct TuneEvidenceHubAdapter {
     let fh6CommunityReview: AnyView?
     let authorization: (String) -> ValidationEvidenceAuthorizationEnvelope?
     let onGrant: (String) throws -> ValidationEvidenceAuthorizationEnvelope
-    let onRevoke: (FirstPartyValidationRecord) throws
+    let onRevoke: (String) throws
         -> ValidationEvidenceAuthorizationEnvelope?
-    let onDelete: (ValidationEvidenceRecord) throws -> Void
+    let onDelete: (String) throws -> Bool
 }
 
 struct TuneEvidenceHubView: View {
@@ -102,26 +102,15 @@ struct TuneEvidenceHubView: View {
     private func authorizationView(
         for evidence: ValidationEvidenceRecord
     ) -> some View {
-        switch evidence {
-        case .localOnly:
-            ValidationEvidenceAuthorizationView(
-                observationFingerprint: evidence.fingerprint,
-                allowedFields: ValidationLocalObservation.reusableFieldLabels,
-                authorization: adapter.authorization(evidence.fingerprint),
-                onGrant: { try adapter.onGrant(evidence.fingerprint) },
-                onRevoke: { adapter.authorization(evidence.fingerprint) },
-                onDelete: { try adapter.onDelete(evidence) }
-            )
-        case .reusable(let record):
-            ValidationEvidenceAuthorizationView(
-                observationFingerprint: evidence.fingerprint,
-                allowedFields: ValidationLocalObservation.reusableFieldLabels,
-                authorization: adapter.authorization(evidence.fingerprint),
-                onGrant: { try adapter.onGrant(evidence.fingerprint) },
-                onRevoke: { try adapter.onRevoke(record) },
-                onDelete: { try adapter.onDelete(evidence) }
-            )
-        }
+        let fingerprint = evidence.fingerprint
+        ValidationEvidenceAuthorizationView(
+            observationFingerprint: fingerprint,
+            allowedFields: ValidationLocalObservation.reusableFieldLabels,
+            authorization: { adapter.authorization(fingerprint) },
+            onGrant: { try adapter.onGrant(fingerprint) },
+            onRevoke: { try adapter.onRevoke(fingerprint) },
+            onDelete: { try adapter.onDelete(fingerprint) }
+        )
     }
 
     private func evidenceTitle(

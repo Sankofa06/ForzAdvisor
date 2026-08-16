@@ -3,10 +3,10 @@ import SwiftUI
 struct ValidationEvidenceAuthorizationView: View {
     let observationFingerprint: String
     let allowedFields: [String]
-    let initialAuthorization: ValidationEvidenceAuthorizationEnvelope?
+    let currentAuthorization: () -> ValidationEvidenceAuthorizationEnvelope?
     let onGrant: () throws -> ValidationEvidenceAuthorizationEnvelope
     let onRevoke: () throws -> ValidationEvidenceAuthorizationEnvelope?
-    let onDelete: () throws -> Void
+    let onDelete: () throws -> Bool
 
     @State private var authorization:
         ValidationEvidenceAuthorizationEnvelope?
@@ -18,16 +18,16 @@ struct ValidationEvidenceAuthorizationView: View {
     init(
         observationFingerprint: String,
         allowedFields: [String],
-        authorization: ValidationEvidenceAuthorizationEnvelope?,
+        authorization: @escaping () -> ValidationEvidenceAuthorizationEnvelope?,
         onGrant: @escaping () throws
             -> ValidationEvidenceAuthorizationEnvelope,
         onRevoke: @escaping () throws
             -> ValidationEvidenceAuthorizationEnvelope?,
-        onDelete: @escaping () throws -> Void
+        onDelete: @escaping () throws -> Bool
     ) {
         self.observationFingerprint = observationFingerprint
         self.allowedFields = allowedFields
-        initialAuthorization = authorization
+        currentAuthorization = authorization
         self.onGrant = onGrant
         self.onRevoke = onRevoke
         self.onDelete = onDelete
@@ -73,7 +73,7 @@ struct ValidationEvidenceAuthorizationView: View {
             ValidationRecoveryMessageSection(message: message)
         }
         .navigationTitle("Evidence Reuse")
-        .task { authorization = initialAuthorization }
+        .task { authorization = currentAuthorization() }
         .confirmationDialog(
             "Allow future reuse of these exact fields?",
             isPresented: $confirmingGrant,
@@ -89,7 +89,9 @@ struct ValidationEvidenceAuthorizationView: View {
         ) {
             Button("Delete Evidence Record", role: .destructive) {
                 do {
-                    try onDelete()
+                    guard try onDelete() else {
+                        throw ValidationEvidenceActionError.noLiveRecord
+                    }
                     authorization = nil
                     message = "Evidence record deleted from this device."
                 } catch {
@@ -114,7 +116,11 @@ struct ValidationEvidenceAuthorizationView: View {
 
     private func grant() {
         do {
-            authorization = try onGrant()
+            let result = try onGrant()
+            guard result.allowsReuse(of: observationFingerprint) else {
+                throw ValidationEvidenceActionError.invalidResult
+            }
+            authorization = result
             message = "Future explicit export is now allowed for this exact observation."
         } catch {
             authorization = nil
@@ -124,10 +130,19 @@ struct ValidationEvidenceAuthorizationView: View {
 
     private func revoke() {
         do {
-            authorization = try onRevoke()
+            let result = try onRevoke()
+            guard result?.allowsReuse(of: observationFingerprint) != true else {
+                throw ValidationEvidenceActionError.invalidResult
+            }
+            authorization = result
             message = "Future export is blocked. Previously shared files cannot be recalled."
         } catch {
             message = "Authorization could not be revoked. Do not export until this is resolved."
         }
     }
+}
+
+private enum ValidationEvidenceActionError: Error {
+    case noLiveRecord
+    case invalidResult
 }

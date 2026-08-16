@@ -220,8 +220,13 @@ struct UpgradePartCaptureView: View {
     }
 
     private func discardDraft() {
-        try? recovery?.discard()
-        onBack()
+        do {
+            guard let recovery else { throw ValidationDraftStoreError.unavailable }
+            try recovery.discard()
+            onBack()
+        } catch {
+            recoveryMessage = "Draft could not be discarded. Your form remains open."
+        }
     }
 
     private func parts(in category: TunePartCategory) -> [TunePartDefinition] {

@@ -6,9 +6,18 @@ enum ValidationEvidenceExportError: Error, Equatable {
 }
 
 struct ValidationEvidenceAuthorizationStore {
-    let fileURL: URL
+    enum Operation: Equatable {
+        case read, persist, remove, revoke, purge
+    }
 
-    init(fileURL: URL? = nil) {
+    let fileURL: URL
+    let fault: ((Operation) throws -> Void)?
+
+    init(
+        fileURL: URL? = nil,
+        fault: ((Operation) throws -> Void)? = nil
+    ) {
+        self.fault = fault
         if let fileURL {
             self.fileURL = fileURL
         } else {
@@ -24,7 +33,13 @@ struct ValidationEvidenceAuthorizationStore {
 
     func authorization(for fingerprint: String)
         -> ValidationEvidenceAuthorizationEnvelope? {
-        (try? readAll())?[fingerprint]
+        try? authorizationResult(for: fingerprint)
+    }
+
+    func authorizationResult(for fingerprint: String) throws
+        -> ValidationEvidenceAuthorizationEnvelope? {
+        try fault?(.read)
+        return try readAll()[fingerprint]
     }
 
     func allowsExport(of record: FirstPartyValidationRecord) -> Bool {
@@ -40,6 +55,7 @@ struct ValidationEvidenceAuthorizationStore {
         at date: Date = .now,
         id: UUID = UUID()
     ) throws -> ValidationEvidenceAuthorizationEnvelope {
+        try fault?(.persist)
         let envelope = ValidationEvidenceAuthorizationEnvelope.reusable(
             observationFingerprint: fingerprint,
             authorizationID: id,
@@ -56,6 +72,7 @@ struct ValidationEvidenceAuthorizationStore {
     }
 
     func persist(_ envelope: ValidationEvidenceAuthorizationEnvelope) throws {
+        try fault?(.persist)
         guard envelope.isValid else {
             throw ValidationEvidenceExportError.invalidAuthorization
         }
@@ -66,6 +83,7 @@ struct ValidationEvidenceAuthorizationStore {
 
     @discardableResult
     func remove(fingerprint: String) throws -> Bool {
+        try fault?(.remove)
         var values = try readAll()
         guard values.removeValue(forKey: fingerprint) != nil else {
             return false
@@ -76,12 +94,26 @@ struct ValidationEvidenceAuthorizationStore {
 
     @discardableResult
     func revoke(fingerprint: String, at date: Date = .now) throws -> Bool {
+        try fault?(.revoke)
         var values = try readAll()
         guard let existing = values[fingerprint],
               existing.allowsReuse(of: fingerprint) else { return false }
         values[fingerprint] = existing.revoking(at: date)
         try write(values)
         return true
+    }
+
+    @discardableResult
+    func purge(fingerprints: Set<String>) throws -> Int {
+        try fault?(.purge)
+        guard !fingerprints.isEmpty else { return 0 }
+        var values = try readAll()
+        let count = values.count
+        values = values.filter { !fingerprints.contains($0.key) }
+        let removed = count - values.count
+        guard removed > 0 else { return 0 }
+        try write(values)
+        return removed
     }
 
     private func readAll() throws

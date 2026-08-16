@@ -321,6 +321,14 @@ final class SavedTune {
     }
 
     @MainActor
+    func allFH5ResearchObservationRecords() throws
+        -> [FH5ResearchObservationRecord] {
+        try decodedFH5ResearchObservationRecords().sorted {
+            $0.capturedAt < $1.capturedAt
+        }
+    }
+
+    @MainActor
     func fh5ResearchObservationRecords(
         matching tune: TuneResult
     ) -> [FH5ResearchObservationRecord] {
@@ -380,6 +388,14 @@ final class SavedTune {
     @MainActor
     var fh5ResearchReviewEntries: [FH5ResearchReviewEntry] {
         (try? decodedFH5ResearchReviewEntries()) ?? []
+    }
+
+    @MainActor
+    func allFH5ResearchReviewEntries() throws
+        -> [FH5ResearchReviewEntry] {
+        try decodedFH5ResearchReviewEntries().sorted {
+            $0.importedAt < $1.importedAt
+        }
     }
 
     @MainActor
@@ -720,6 +736,14 @@ final class SavedTune {
     }
 
     @MainActor
+    func allFH6ValidationReviewEntries() throws
+        -> [FH6ValidationReviewEntry] {
+        try decodedFH6ValidationReviewEntries().sorted {
+            $0.importedAt < $1.importedAt
+        }
+    }
+
+    @MainActor
     func fh6ValidationReviewReport(
         matching tune: TuneResult
     ) throws -> FH6ValidationReviewReport {
@@ -829,7 +853,10 @@ final class SavedTune {
                 .missingFirstPartyValidation
         }
         var records = try decodedFH6CommunityReferenceTrialRecords()
-        guard !records.contains(where: { $0.recordID == record.recordID })
+        guard !records.contains(where: {
+            $0.recordID == record.recordID
+                || $0.contentFingerprint == record.contentFingerprint
+        })
         else { return }
         records.append(record)
         records.sort(by: Self.communityTrialPrecedes)

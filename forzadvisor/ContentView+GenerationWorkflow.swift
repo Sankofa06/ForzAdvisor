@@ -117,7 +117,7 @@ extension ContentView {
                 }
                 if let kind = session.completedValidationDraftKind,
                    let savedTuneID = session.savedTuneID {
-                    try? ValidationDraftStore().delete(
+                    try ValidationDraftStore().deleteAfterConfirmedCommit(
                         kind: kind,
                         savedTuneID: savedTuneID
                     )
@@ -138,7 +138,10 @@ extension ContentView {
                     playerNotes: session.playerNotes
                 )
             },
-            onFailure: { failedSession, _ in
+            onFailure: { failedSession, error in
+                if let cleanup = error as? ValidationPostCommitCleanupError {
+                    errorMessage = cleanup.localizedDescription
+                }
                 step = .generationFailed(failedSession)
             }
         )

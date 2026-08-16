@@ -24,23 +24,46 @@ extension ContentView {
             try evidenceCoordinator.finalizeGrant(plan)
             return plan.authorization
         } catch {
+            let primary = error
             modelContext.rollback()
-            if (try? savedTune.deleteValidationRecord(
-                id: plan.legacyReusableRecord.recordID
-            )) == true {
-                try? modelContext.save()
+            var recoveryFailures: [Error] = []
+            do {
+                if try savedTune.deleteValidationRecord(
+                    id: plan.legacyReusableRecord.recordID
+                ) {
+                    try modelContext.save()
+                }
+            } catch {
+                modelContext.rollback()
+                recoveryFailures.append(error)
             }
-            try? evidenceCoordinator.compensateGrant(plan)
-            throw error
+            do {
+                try evidenceCoordinator.compensateGrant(plan)
+            } catch {
+                recoveryFailures.append(error)
+            }
+            throw ValidationEvidenceTransactionError(
+                primary: primary,
+                recoveryFailures: recoveryFailures
+            )
         }
     }
 
     func revokeEvidenceReuse(
         savedTuneID: UUID,
-        reusableRecord: FirstPartyValidationRecord
+        fingerprint: String
     ) throws -> ValidationEvidenceAuthorizationEnvelope? {
         guard let savedTune = try savedTune(for: savedTuneID) else {
             throw ContentWorkflowError.missingSavedTune
+        }
+        guard case .reusable(let reusableRecord) = try
+            ValidationEvidenceLiveRecordResolver().resolve(
+                fingerprint: fingerprint,
+                savedTuneID: savedTuneID,
+                legacyRecords: savedTune.allFirstPartyValidationRecords(),
+                localStore: evidenceCoordinator.localStore
+            ) else {
+            throw ValidationEvidenceRootError.missingLiveRecord
         }
         let plan = try evidenceCoordinator.prepareRevoke(
             savedTuneID: savedTuneID,
@@ -58,11 +81,18 @@ extension ContentView {
                 for: plan.fingerprint
             )
         } catch {
+            let primary = error
             modelContext.rollback()
-            var restored = (try? savedTune.allFirstPartyValidationRecords())?
-                .contains(where: {
+            var recoveryFailures: [Error] = []
+            var restored = false
+            do {
+                restored = try savedTune.allFirstPartyValidationRecords()
+                    .contains(where: {
                     $0.recordID == reusableRecord.recordID
-                }) == true
+                })
+            } catch {
+                recoveryFailures.append(error)
+            }
             if !restored {
                 do {
                     try savedTune.appendValidationRecord(reusableRecord)
@@ -70,12 +100,20 @@ extension ContentView {
                     restored = true
                 } catch {
                     modelContext.rollback()
+                    recoveryFailures.append(error)
                 }
             }
             if restored {
-                try? evidenceCoordinator.rollbackRevoke(plan)
+                do {
+                    try evidenceCoordinator.rollbackRevoke(plan)
+                } catch {
+                    recoveryFailures.append(error)
+                }
             }
-            throw error
+            throw ValidationEvidenceTransactionError(
+                primary: primary,
+                recoveryFailures: recoveryFailures
+            )
         }
     }
 
@@ -86,55 +124,61 @@ extension ContentView {
         savedTuneID: UUID
     ) throws -> [FirstPartyValidationRecord] {
         let records = try savedTune.allFirstPartyValidationRecords()
-        var authorized: [FirstPartyValidationRecord] = []
-        var orphaned: [FirstPartyValidationRecord] = []
-        for record in records {
-            let authorization = evidenceCoordinator.authorizationStore
-                .authorization(for: record.contentFingerprint)
-            if authorization?.allowsReuse(of: record.contentFingerprint)
-                == true,
-               authorization?.authorizationID == record.permissionReceiptID {
-                authorized.append(record)
-            } else {
-                orphaned.append(record)
-            }
-        }
-        guard !orphaned.isEmpty else { return authorized }
-        for record in orphaned {
-            try evidenceCoordinator.saveLocal(
-                record: record,
-                savedTuneID: savedTuneID
-            )
-            _ = try savedTune.deleteValidationRecord(id: record.recordID)
-        }
-        do {
-            try modelContext.save()
-        } catch {
-            modelContext.rollback()
-            throw error
-        }
-        return authorized
+        return try ValidationEvidenceOrphanReconciler(
+            coordinator: evidenceCoordinator
+        ).reconcile(
+            records: records,
+            savedTuneID: savedTuneID,
+            removeLegacyRecord: { recordID in
+                guard try savedTune.deleteValidationRecord(id: recordID) else {
+                    throw ValidationEvidenceRootError.missingLiveRecord
+                }
+            },
+            saveLegacyChanges: { try modelContext.save() },
+            rollbackLegacyChanges: { modelContext.rollback() }
+        )
     }
 
+    @discardableResult
     func deleteValidationEvidence(
-        _ evidence: ValidationEvidenceRecord,
+        fingerprint: String,
         savedTuneID: UUID
-    ) throws {
-        switch evidence {
-        case .localOnly:
-            _ = try evidenceCoordinator.localStore.delete(
-                savedTuneID: savedTuneID,
-                fingerprint: evidence.fingerprint
-            )
-        case .reusable(let record):
+    ) throws -> Bool {
+        guard let savedTune = try savedTune(for: savedTuneID) else {
+            throw ContentWorkflowError.missingSavedTune
+        }
+        let liveRecord = try ValidationEvidenceLiveRecordResolver().resolve(
+            fingerprint: fingerprint,
+            savedTuneID: savedTuneID,
+            legacyRecords: savedTune.allFirstPartyValidationRecords(),
+            localStore: evidenceCoordinator.localStore
+        )
+        if case .reusable = liveRecord {
             _ = try revokeEvidenceReuse(
                 savedTuneID: savedTuneID,
-                reusableRecord: record
+                fingerprint: fingerprint
             )
-            _ = try evidenceCoordinator.localStore.delete(
+            let deleted = try evidenceCoordinator.localStore.delete(
                 savedTuneID: savedTuneID,
-                fingerprint: evidence.fingerprint
+                fingerprint: fingerprint
             )
+            return deleted
         }
+        guard case .localOnly = liveRecord else {
+            throw ValidationEvidenceRootError.missingLiveRecord
+        }
+        let deleted = try evidenceCoordinator.localStore.delete(
+            savedTuneID: savedTuneID,
+            fingerprint: fingerprint
+        )
+        guard deleted else { throw ValidationEvidenceRootError.missingLiveRecord }
+        _ = try evidenceCoordinator.authorizationStore.remove(
+            fingerprint: fingerprint
+        )
+        return true
     }
+}
+
+enum ValidationEvidenceRootError: Error {
+    case missingLiveRecord
 }

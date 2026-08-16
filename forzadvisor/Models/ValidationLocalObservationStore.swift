@@ -6,14 +6,23 @@ enum ValidationLocalObservationStoreError: Error, Equatable {
 }
 
 struct ValidationLocalObservationStore {
+    enum Operation: Equatable {
+        case read, upsert, delete, purge
+    }
+
     struct Entry: Codable, Equatable, Sendable {
         let savedTuneID: UUID
         let observation: ValidationLocalObservation
     }
 
     let fileURL: URL
+    let fault: ((Operation) throws -> Void)?
 
-    init(fileURL: URL? = nil) {
+    init(
+        fileURL: URL? = nil,
+        fault: ((Operation) throws -> Void)? = nil
+    ) {
+        self.fault = fault
         if let fileURL {
             self.fileURL = fileURL
         } else {
@@ -28,7 +37,8 @@ struct ValidationLocalObservationStore {
 
     func observations(savedTuneID: UUID) throws
         -> [ValidationLocalObservation] {
-        try readAll().filter { $0.savedTuneID == savedTuneID }
+        try fault?(.read)
+        return try readAll().filter { $0.savedTuneID == savedTuneID }
             .map(\.observation)
             .sorted { $0.capturedAt < $1.capturedAt }
     }
@@ -37,7 +47,8 @@ struct ValidationLocalObservationStore {
         savedTuneID: UUID,
         fingerprint: String
     ) throws -> ValidationLocalObservation? {
-        try readAll().first {
+        try fault?(.read)
+        return try readAll().first {
             $0.savedTuneID == savedTuneID
                 && $0.observation.observationFingerprint == fingerprint
         }?.observation
@@ -47,6 +58,7 @@ struct ValidationLocalObservationStore {
         _ observation: ValidationLocalObservation,
         savedTuneID: UUID
     ) throws {
+        try fault?(.upsert)
         guard !observation.observationFingerprint.isEmpty else {
             throw ValidationLocalObservationStoreError.invalidObservation
         }
@@ -62,6 +74,7 @@ struct ValidationLocalObservationStore {
 
     @discardableResult
     func delete(savedTuneID: UUID, fingerprint: String) throws -> Bool {
+        try fault?(.delete)
         var entries = try readAll()
         let count = entries.count
         entries.removeAll {
@@ -75,6 +88,7 @@ struct ValidationLocalObservationStore {
 
     @discardableResult
     func purge(savedTuneID: UUID) throws -> Int {
+        try fault?(.purge)
         var entries = try readAll()
         let count = entries.count
         entries.removeAll { $0.savedTuneID == savedTuneID }

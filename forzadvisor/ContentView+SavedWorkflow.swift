@@ -8,10 +8,15 @@ import SwiftData
 extension ContentView {
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
-        _ = try? reusableAuthorizedValidationRecords(
-            savedTune: savedTune,
-            savedTuneID: savedTune.id
-        )
+        do {
+            _ = try reusableAuthorizedValidationRecords(
+                savedTune: savedTune,
+                savedTuneID: savedTune.id
+            )
+        } catch {
+            errorMessage = "Evidence privacy reconciliation failed safely: \(error.localizedDescription)"
+            return
+        }
         if let tune = savedTune.tuneResult {
             let displayTune = TuneResultBoundarySanitizer().sanitize(tune)
             step = .result(
@@ -78,17 +83,66 @@ extension ContentView {
     ) {
         tuneWorkflow.cancelAdjustment(for: savedTune.id)
         let savedTuneID = savedTune.id
+        var cleanupFingerprints = Set<String>()
+        var cleanupPreparationFailures: [Error] = []
+        do {
+            cleanupFingerprints.formUnion(
+                try savedTune.allFirstPartyValidationRecords()
+                    .map(\.contentFingerprint)
+            )
+        } catch {
+            cleanupPreparationFailures.append(error)
+        }
+        do {
+            cleanupFingerprints.formUnion(
+                try ValidationLocalObservationStore()
+                    .observations(savedTuneID: savedTuneID)
+                    .map(\.observationFingerprint)
+            )
+        } catch {
+            cleanupPreparationFailures.append(error)
+        }
+        var fingerprintsReferencedByOtherTunes = Set<String>()
+        for otherTune in savedTunes where otherTune.id != savedTuneID {
+            do {
+                fingerprintsReferencedByOtherTunes.formUnion(
+                    try otherTune.allFirstPartyValidationRecords()
+                        .map(\.contentFingerprint)
+                )
+                fingerprintsReferencedByOtherTunes.formUnion(
+                    try ValidationLocalObservationStore()
+                        .observations(savedTuneID: otherTune.id)
+                        .map(\.observationFingerprint)
+                )
+            } catch {
+                cleanupPreparationFailures.append(error)
+            }
+        }
+        cleanupFingerprints.subtract(fingerprintsReferencedByOtherTunes)
         modelContext.delete(savedTune)
 
         do {
             try modelContext.save()
-            _ = try? ValidationDraftStore().purge(
-                savedTuneID: savedTuneID
-            )
-            _ = try? ValidationLocalObservationStore().purge(
-                savedTuneID: savedTuneID
-            )
             completion?(.committed(savedTuneID: savedTuneID))
+            var cleanupFailures = cleanupPreparationFailures
+            do {
+                try ValidationEvidencePurgeCoordinator().scheduleAndRun(
+                    ValidationTunePurgeTask(
+                        savedTuneID: savedTuneID,
+                        authorizationFingerprints: cleanupFingerprints
+                    )
+                )
+            } catch {
+                cleanupFailures.append(error)
+            }
+            if let first = cleanupFailures.first {
+                errorMessage = ValidationEvidenceTransactionError(
+                    primary: first,
+                    recoveryFailures: Array(cleanupFailures.dropFirst())
+                ).errorDescription.map {
+                    "Tune deleted, but private cleanup is pending and will retry next launch: \($0)"
+                }
+            }
         } catch {
             modelContext.rollback()
             let message =

@@ -521,6 +521,13 @@ struct ContentView: View {
             } message: {
                 Text(errorMessage ?? "Try again from the discipline picker.")
             }
+            .task {
+                do {
+                    try ValidationEvidencePurgeCoordinator().retryPending()
+                } catch {
+                    errorMessage = "Private cleanup is still pending and will retry: \(error.localizedDescription)"
+                }
+            }
             .toolbar {
                 if RootStepGuideEntryPolicy().presentation(
                     for: step,
@@ -1020,24 +1027,14 @@ struct ContentView: View {
                 controlledOutcomeReport: controlledOutcomeReport
             )
             : nil
-        let evidenceSummary = TuneEvidenceSummary(
-            savedTuneID: resolvedSavedTuneID ?? tune.id,
-            localOnlyRecordCount: validationEvidenceRecords.filter {
-                if case .localOnly = $0 { return true }
-                return false
-            }.count + [
-                latestResearchRecord != nil,
-                latestExperimentRecord != nil
-            ].filter { $0 }.count + communityTrialState.records.count,
-            reusableRecordCount: validationEvidenceRecords.filter {
-                if case .reusable = $0 { return true }
-                return false
-            }.count,
-            reviewedRecordCount: researchReviewEntries.count
-                + candidateOutcomeReviewState.entries.count
-                + validationReviewState.entries.count
-                + communityOutcomeReviewState.entries.count
-        )
+        let evidenceSummary: TuneEvidenceSummary = {
+            guard let resolvedSavedTune else {
+                return .empty(savedTuneID: resolvedSavedTuneID ?? tune.id)
+            }
+            return (try? TuneEvidenceSummaryFactory().make(
+                savedTune: resolvedSavedTune
+            )) ?? .empty(savedTuneID: resolvedSavedTune.id)
+        }()
 
         TuneResultView(
             tune: tune,
@@ -1257,21 +1254,21 @@ struct ContentView: View {
                     fingerprint: fingerprint
                 )
             },
-            onRevokeEvidenceReuse: { record in
+            onRevokeEvidenceReuse: { fingerprint in
                 guard let resolvedSavedTuneID else {
                     throw ContentWorkflowError.missingSavedTune
                 }
                 return try revokeEvidenceReuse(
                     savedTuneID: resolvedSavedTuneID,
-                    reusableRecord: record
+                    fingerprint: fingerprint
                 )
             },
-            onDeleteValidationEvidence: { evidence in
+            onDeleteValidationEvidence: { fingerprint in
                 guard let resolvedSavedTuneID else {
                     throw ContentWorkflowError.missingSavedTune
                 }
-                try deleteValidationEvidence(
-                    evidence,
+                return try deleteValidationEvidence(
+                    fingerprint: fingerprint,
                     savedTuneID: resolvedSavedTuneID
                 )
             },

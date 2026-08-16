@@ -26,7 +26,7 @@ extension ContentView {
             )
             try savedTune.appendFH5ResearchObservationRecord(record)
             try modelContext.save()
-            try? ValidationDraftStore().delete(
+            try ValidationDraftStore().deleteAfterConfirmedCommit(
                 kind: .fh5ResearchObservation,
                 savedTuneID: savedTuneID
             )
@@ -115,7 +115,7 @@ extension ContentView {
             )
             try savedTune.appendFH5ControlledExperimentRecord(record)
             try modelContext.save()
-            try? ValidationDraftStore().delete(
+            try ValidationDraftStore().deleteAfterConfirmedCommit(
                 kind: .fh5ControlledExperiment,
                 savedTuneID: savedTuneID
             )
@@ -187,7 +187,7 @@ extension ContentView {
             )
             try savedTune.appendFH5ControlledExperimentRecord(record)
             try modelContext.save()
-            try? ValidationDraftStore().delete(
+            try ValidationDraftStore().deleteAfterConfirmedCommit(
                 kind: .fh5CandidateTrial,
                 savedTuneID: savedTuneID
             )

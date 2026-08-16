@@ -53,6 +53,52 @@ struct TuneEvidenceSummary: Codable, Equatable, Sendable {
     }
 }
 
+@MainActor
+struct TuneEvidenceSummaryFactory {
+    let localStore: ValidationLocalObservationStore
+    let authorizationStore: ValidationEvidenceAuthorizationStore
+
+    init(
+        localStore: ValidationLocalObservationStore,
+        authorizationStore: ValidationEvidenceAuthorizationStore
+    ) {
+        self.localStore = localStore
+        self.authorizationStore = authorizationStore
+    }
+
+    init() {
+        localStore = ValidationLocalObservationStore()
+        authorizationStore = ValidationEvidenceAuthorizationStore()
+    }
+
+    func make(savedTune: SavedTune) throws -> TuneEvidenceSummary {
+        let legacy = try savedTune.allFirstPartyValidationRecords()
+        let reusable = try legacy.filter { record in
+            guard let authorization = try authorizationStore
+                .authorizationResult(for: record.contentFingerprint) else {
+                return false
+            }
+            return authorization.allowsReuse(of: record.contentFingerprint)
+                && authorization.authorizationID == record.permissionReceiptID
+        }
+        let localOnly = try localStore.observations(savedTuneID: savedTune.id)
+            .count
+            + savedTune.allFH5ResearchObservationRecords().count
+            + savedTune.allFH5ControlledExperimentRecords().count
+            + savedTune.allFH6CommunityReferenceTrialRecords().count
+        let reviewed = try savedTune.allFH5ResearchReviewEntries().count
+            + savedTune.allFH5CandidateOutcomeReviewEntries().count
+            + savedTune.allFH6ValidationReviewEntries().count
+            + savedTune.allFH6CommunityOutcomeReviewEntries().count
+        return TuneEvidenceSummary(
+            savedTuneID: savedTune.id,
+            localOnlyRecordCount: localOnly,
+            reusableRecordCount: reusable.count,
+            reviewedRecordCount: reviewed
+        )
+    }
+}
+
 enum ValidationEvidenceScope: String, Codable, Equatable, Sendable {
     case localOnly
     case reusable

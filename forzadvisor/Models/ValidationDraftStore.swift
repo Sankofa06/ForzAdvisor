@@ -7,6 +7,14 @@ enum ValidationDraftStoreError: Error, Equatable {
     case migrationRequired
 }
 
+struct ValidationPostCommitCleanupError: Error, LocalizedError {
+    let underlying: Error
+
+    var errorDescription: String? {
+        "The record was saved, but its recovery draft could not be deleted. Retry to finish cleanup. \(underlying.localizedDescription)"
+    }
+}
+
 struct ValidationDraftStore {
     let directory: URL
 
@@ -102,6 +110,17 @@ struct ValidationDraftStore {
         let target = url(for: identity)
         if FileManager.default.fileExists(atPath: target.path) {
             try FileManager.default.removeItem(at: target)
+        }
+    }
+
+    func deleteAfterConfirmedCommit(
+        kind: ValidationDraftKind,
+        savedTuneID: UUID
+    ) throws {
+        do {
+            try delete(kind: kind, savedTuneID: savedTuneID)
+        } catch {
+            throw ValidationPostCommitCleanupError(underlying: error)
         }
     }
 
