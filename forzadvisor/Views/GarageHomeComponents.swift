@@ -8,9 +8,6 @@ struct GarageFirstTuneView: View {
             VStack(alignment: .leading, spacing: 14) {
                 Label("Create your first tune", systemImage: "wrench.and.screwdriver.fill")
                     .font(.title3.bold())
-                Text("Start from a car photo, a screenshot, or manual entry. You will confirm the car facts before choosing how you drive.")
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
                 Button(action: action) {
                     Text("Start First Tune")
                         .frame(maxWidth: .infinity)
@@ -19,6 +16,9 @@ struct GarageFirstTuneView: View {
                 .buttonStyle(.borderedProminent)
                 .accessibilityHint("Shows photo, screenshot, and manual entry options")
                 .accessibilityIdentifier("newTuneButton")
+                Text("Start from a car photo, a screenshot, or manual entry. You will confirm the car facts before choosing how you drive.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.vertical, 8)
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)

@@ -153,6 +153,8 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Create your first tune"].exists)
         let firstTune = app.buttons["newTuneButton"].firstMatch
         XCTAssertTrue(firstTune.waitForExistence(timeout: 5))
+        let garageList = app.collectionViews.firstMatch
+        for _ in 0..<6 where !firstTune.isHittable { garageList.swipeUp() }
         XCTAssertTrue(firstTune.waitUntilHittable(timeout: 5))
         XCTAssertEqual(firstTune.label, "Start First Tune")
         XCTAssertFalse(app.searchFields.firstMatch.exists)
@@ -166,6 +168,8 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         newTune.tap()
         XCTAssertTrue(app.buttons["takePhotoPrimaryButton"].waitForExistence(timeout: 5))
         let importScreenshot = app.buttons["importScreenshotButton"].firstMatch
+        let sourceList = app.collectionViews.firstMatch
+        for _ in 0..<6 where !importScreenshot.exists { sourceList.swipeUp() }
         XCTAssertTrue(
             importScreenshot.waitForExistence(timeout: 5)
         )
@@ -173,9 +177,9 @@ final class ScreenshotEvidenceUITests: XCTestCase {
             importScreenshot.label,
             "Import Screenshot, Run on-device Vision OCR, then confirm every value."
         )
-        XCTAssertTrue(
-            app.buttons["manualEntryButton"].waitForExistence(timeout: 5)
-        )
+        let manualEntry = app.buttons["manualEntryButton"]
+        for _ in 0..<6 where !manualEntry.exists { sourceList.swipeUp() }
+        XCTAssertTrue(manualEntry.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["catalogEntryButton"].exists)
     }
 
@@ -188,14 +192,17 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         app.textFields["manualEntryMakeField"].enterText("Mazda")
         app.textFields["manualEntryModelField"].enterText("Miata")
         dismissKeyboard(in: app)
-        app.swipeUp()
-        app.textFields["manualEntryWeightField"].enterText("2345")
+        let weight = app.textFields["manualEntryWeightField"]
+        scrollToHittable(weight, in: app)
+        weight.enterText("2345")
         dismissKeyboard(in: app)
-        app.swipeUp()
-        app.textFields["manualEntryFrontWeightField"].enterText("55")
+        let frontWeight = app.textFields["manualEntryFrontWeightField"]
+        scrollToHittable(frontWeight, in: app)
+        frontWeight.enterText("55")
         dismissKeyboard(in: app)
-        app.swipeUp()
-        app.textFields["manualEntryPerformanceIndexField"].enterText("750")
+        let performanceIndex = app.textFields["manualEntryPerformanceIndexField"]
+        scrollToHittable(performanceIndex, in: app)
+        performanceIndex.enterText("750")
         dismissKeyboard(in: app)
 
         let performanceClass = app.buttons["manualEntryClass-S1"]
@@ -220,7 +227,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
             app.navigationBars["Choose Discipline"].waitForExistence(timeout: 5)
         )
         let road = app.buttons["disciplineButton-road"]
-        XCTAssertTrue(road.waitForExistence(timeout: 5))
+        scrollToHittable(road, in: app)
         road.tap()
 
         let start = app.buttons["startTuneGenerationButton"]
@@ -236,11 +243,12 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         XCTAssertTrue(start.isHittable)
         start.tap()
         XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["saveTuneButton"].waitForExistence(timeout: 15))
         XCTAssertTrue(
             app.descendants(matching: .any)["tuneResultStatus"]
                 .firstMatch.exists
         )
+        let save = app.buttons["saveTuneButton"]
+        scrollToHittable(save, in: app)
     }
 
     @MainActor
@@ -266,9 +274,10 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         _ element: XCUIElement,
         in app: XCUIApplication
     ) {
-        for _ in 0..<10 where !element.exists { app.swipeUp() }
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<12 where !element.exists { list.swipeUp(velocity: .slow) }
         XCTAssertTrue(element.waitForExistence(timeout: 5))
-        for _ in 0..<10 where !element.isHittable { app.swipeUp() }
+        for _ in 0..<12 where !element.isHittable { list.swipeUp(velocity: .slow) }
         XCTAssertTrue(element.isHittable)
     }
 
