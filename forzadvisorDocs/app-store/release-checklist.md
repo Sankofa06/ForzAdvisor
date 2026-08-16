@@ -1,6 +1,6 @@
 # ForzAdvisor Release Checklist
 
-Last updated: 2026-08-09
+Last updated: 2026-08-16
 
 Readiness: TestFlight candidate
 
@@ -11,8 +11,8 @@ The current release removes the bundled FH5/FH6 car rosters and reviewed stock c
 - Bundle identifier is `com.michaelwilliams.forzadvisor`.
 - Development team is set to `5RGU344VJR`.
 - Installed display name is `ForzAdvisor`.
-- Current project version is `1.40.8`.
-- Current project build is `75`.
+- Current project version is `1.41.1`.
+- Current project build is `77`.
 - Target device family is iPhone.
 - The three bundled roster/catalog JSON resources are removed.
 - The two roster-generation scripts are removed.
@@ -24,14 +24,16 @@ The current release removes the bundled FH5/FH6 car rosters and reviewed stock c
 - Camera usage description is present.
 - Privacy manifest is present at `forzadvisor/PrivacyInfo.xcprivacy`.
 - App Store metadata, release notes, privacy policy, support copy, screenshot specifications, and six accepted-size marketing screenshots are present.
+- `ReleaseVerify.xctestplan` runs the complete supported unit and UI targets serially without skips or expected failures.
+- Local ReleaseVerify evidence at source commit `02e50b2519ea83d8f889a51d500efeb758f7bead`: 570 unit tests and 10 UI tests passed with zero failures or skips; dark mode, Accessibility XXXL, and Increase Contrast captures were inspected.
 
 ## Local Package Verification
 
-- Run a clean simulator build with zero source warnings and zero errors.
-- Run the focused roster-removal and mission-routing tests.
-- Run the broader non-UI suite after TestFlight upload; tests dedicated to deleted bundled roster resources are no longer release behavior and must not be used to restore those resources.
+- Run a clean `ReleaseVerify` simulator build with zero source warnings and zero errors.
+- Run the complete `ReleaseVerify` unit and UI targets serially with zero failures, skips, or expected failures.
 - Archive and export with App Store signing.
-- Upload build 75 and wait for App Store Connect processing.
+- Push the immutable release commit and require Xcode Cloud Verify to pass before distribution.
+- Upload build 77 through the release workflow and wait for App Store Connect processing.
 
 ## Screenshots
 
@@ -41,7 +43,7 @@ The current release removes the bundled FH5/FH6 car rosters and reviewed stock c
 
 ## Required App Store Connect Values
 
-- Attach processed build 75 to App Store version 1.40.8.
+- Attach processed build 77 to App Store version 1.41.1.
 - Replace the prior roster-oriented description, promotional text, What's New copy, and review notes with `AppStore/metadata.md`.
 - Keep the six marketing screenshots in their existing order; they show photo, screenshot, and manual-entry workflows rather than the removed catalog.
 - Verify the public privacy URL resolves: https://Sankofa06.github.io/ForzAdvisor/privacy/

@@ -1,6 +1,6 @@
 # ForzAdvisor Privacy Policy
 
-Effective date: 2026-08-09
+Effective date: 2026-08-16
 
 ForzAdvisor is an unofficial racing-game tuning assistant. This policy explains how the current iPhone app handles information.
 
