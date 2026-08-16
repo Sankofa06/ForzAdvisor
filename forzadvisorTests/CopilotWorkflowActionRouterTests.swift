@@ -537,12 +537,9 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         for route: Route,
         game: ForzaGame = .fh6
     ) throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(
-            catalog.entries.first { $0.game == game }
-        )
-        let selection = catalog.selection(for: entry)
-        let snapshot = selection.capabilityOnlyBuildSnapshot(
+        let car = CopilotRouterFixtureFactory.car(game: game)
+        let snapshot = CopilotRouterFixtureFactory.capabilitySnapshot(
+            car: car,
             capturedAt: Date(timeIntervalSinceReferenceDate: 867)
         )
 
@@ -579,7 +576,7 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
         let tune = TuneResult(
             id: savedTuneID,
             request: TuneRequest(
-                car: selection.carInput,
+                car: car,
                 discipline: .road,
                 buildSnapshot: snapshot
             ),
@@ -610,13 +607,9 @@ final class CopilotWorkflowActionRouterTests: XCTestCase {
     }
 
     private func eligibleCommunityTune() async throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(
-            catalog.entries.first { $0.game == .fh6 }
-        )
-        let selection = catalog.selection(for: entry)
         let capturedAt = Date(timeIntervalSinceReferenceDate: 909)
-        let capability = selection.capabilityOnlyBuildSnapshot(
+        let capability = CopilotRouterFixtureFactory.capabilitySnapshot(
+            car: CopilotRouterFixtureFactory.car(game: .fh6),
             capturedAt: capturedAt
         )
         let parts = try UpgradePartCapture(
