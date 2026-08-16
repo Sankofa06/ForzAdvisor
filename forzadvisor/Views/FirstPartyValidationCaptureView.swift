@@ -1,8 +1,3 @@
-//
-//  FirstPartyValidationCaptureView.swift
-//  forzadvisor
-//
-
 import SwiftUI
 
 struct FirstPartyValidationCaptureView: View {
@@ -10,157 +5,251 @@ struct FirstPartyValidationCaptureView: View {
     let onBack: () -> Void
     let onSubmit: (FirstPartyValidationCapture) -> Void
 
-    @State private var courseType = ValidationCourseType.roadCircuit
-    @State private var surface = ValidationSurface.dry
-    @State private var input = ValidationInput.controller
-    @State private var runCount = 1
-    @State private var verdict = ValidationVerdict.keep
+    @State private var courseType: ValidationCourseType?
+    @State private var surface: ValidationSurface?
+    @State private var input: ValidationInput?
+    @State private var runCountText = ""
+    @State private var verdict: ValidationVerdict?
     @State private var feedback = Set<TuneFeedback>()
     @State private var exactSetupConfirmed = false
-    @State private var allExportedSettingsApplied = false
-    @State private var firstPartyAuthorshipConfirmed = false
-    @State private var deidentifiedReusePermitted = false
+    @State private var allSettingsApplied = false
+    @State private var authorshipConfirmed = false
+    @State private var reusePermitted = false
+    @State private var message: String?
+    @State private var showingDiscardConfirmation = false
+    @FocusState private var focusedField: Field?
+
+    private enum Field: Hashable { case course, surface, input, runs, verdict }
+    private let draftStore = ValidationDraftStore()
+    private static let captureRevision = "first-party-test-drive-v2"
 
     var body: some View {
         Form {
+            Section("Optional Validation") {
+                Text("This test drive is optional. Saving it locally does not authorize export, sharing, aggregation, or review-packet use.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Required Progress") {
+                Label(
+                    "\(completedRequiredCount) of \(requiredCount) required fields complete",
+                    systemImage: canSubmit ? "checkmark.circle" : "circle.dotted"
+                )
+                .accessibilityIdentifier("validationProgress")
+                if let firstIncompleteMessage {
+                    Text("Next: \(firstIncompleteMessage)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Button("Go to first incomplete field") { focusFirstIncomplete() }
+                    .disabled(canSubmit)
+            }
             Section("Test Session") {
                 Picker("Course type", selection: $courseType) {
-                    ForEach(ValidationCourseType.allCases) { Text($0.title).tag($0) }
+                    Text("Choose course type").tag(nil as ValidationCourseType?)
+                    ForEach(ValidationCourseType.allCases) { Text($0.title).tag(Optional($0)) }
                 }
-                .accessibilityIdentifier("validationCourseTypePicker")
-                .accessibilityHint("Choose the general event type; track names and locations are not collected.")
+                .focused($focusedField, equals: .course)
                 Picker("Surface", selection: $surface) {
-                    ForEach(ValidationSurface.allCases) { Text($0.title).tag($0) }
+                    Text("Choose surface").tag(nil as ValidationSurface?)
+                    ForEach(ValidationSurface.allCases) { Text($0.title).tag(Optional($0)) }
                 }
-                .accessibilityIdentifier("validationSurfacePicker")
-                .accessibilityHint("Choose the surface conditions for this test session.")
+                .focused($focusedField, equals: .surface)
                 Picker("Input", selection: $input) {
-                    ForEach(ValidationInput.allCases) { Text($0.title).tag($0) }
+                    Text("Choose input").tag(nil as ValidationInput?)
+                    ForEach(ValidationInput.allCases) { Text($0.title).tag(Optional($0)) }
                 }
-                .accessibilityIdentifier("validationInputPicker")
-                .accessibilityHint("Choose the input device used for every recorded run.")
-                Stepper("Runs: \(runCount)", value: $runCount, in: 1...99)
-                    .accessibilityIdentifier("validationRunCountStepper")
-                    .accessibilityHint("Set the number of runs represented by this one session.")
+                .focused($focusedField, equals: .input)
+                TextField("Number of runs (1–99)", text: $runCountText)
+                    .keyboardType(.numberPad)
+                    .focused($focusedField, equals: .runs)
+                    .accessibilityIdentifier("validationRunCount")
             }
-
             Section("Outcome") {
                 Picker("Verdict", selection: $verdict) {
-                    ForEach(ValidationVerdict.allCases) { Text($0.title).tag($0) }
+                    Text("Choose outcome").tag(nil as ValidationVerdict?)
+                    ForEach(ValidationVerdict.allCases) { Text($0.title).tag(Optional($0)) }
                 }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("validationVerdictPicker")
-                .accessibilityHint("Choose whether to keep, adjust, or reject this tune after the session.")
-                .onChange(of: verdict) { _, newVerdict in
-                    if newVerdict == .keep {
-                        feedback.removeAll()
-                    }
+                .focused($focusedField, equals: .verdict)
+                .onChange(of: verdict) { _, value in
+                    if value == .keep { feedback.removeAll() }
                 }
-
-                if verdict != .keep {
-                    Text("Select at least one symptom.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                if let verdict, verdict != .keep {
+                    Text("Select at least one observed symptom.").font(.caption)
                     ForEach(TuneFeedback.allCases) { item in
                         Toggle(item.title, isOn: feedbackBinding(item))
-                            .accessibilityIdentifier("validationFeedback-\(item.rawValue)")
-                            .accessibilityHint(item.prompt)
                     }
                 }
             }
-
             Section("Confirm What You Tested") {
                 Toggle("The car matched the verified stock setup", isOn: $exactSetupConfirmed)
-                    .accessibilityIdentifier("validationSetupAttestation")
-                    .accessibilityHint("Required. Confirm the tested car matched the locally verified stock build.")
-                Toggle("I applied every exported setting", isOn: $allExportedSettingsApplied)
-                    .accessibilityIdentifier("validationAppliedSettingsAttestation")
-                    .accessibilityHint("Required. Confirm every setting in the exported tune was applied in game.")
-                Toggle("This is my own test-drive observation", isOn: $firstPartyAuthorshipConfirmed)
-                    .accessibilityIdentifier("validationAuthorshipAttestation")
-                    .accessibilityHint("Required. Confirm you personally performed and observed this session.")
+                Toggle("I applied every available setting", isOn: $allSettingsApplied)
+                Toggle("This is my own test-drive observation", isOn: $authorshipConfirmed)
             }
-
-            Section("Required Benchmark Permission") {
-                Toggle("Allow deidentified benchmark reuse", isOn: $deidentifiedReusePermitted)
-                    .accessibilityIdentifier("validationReusePermission")
-                    .accessibilityHint("Required to create this record. It remains off until you explicitly opt in.")
-                Text("Off by default and required to create a reusable validation record. Turning it on permits this one deidentified session to be reused for tune-quality benchmarking. It does not publish your identity or upload anything in the background.")
+            Section("Optional Reuse") {
+                Toggle("Allow deidentified reuse for this observation", isOn: $reusePermitted)
+                Text(reusePermitted
+                     ? "This exact observation may be exported or included in a review packet. You can revoke future reuse later."
+                     : "Local only. It can advance your on-device evidence chain, but export, sharing, aggregation, and review packets remain blocked.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            Section("What This Record Means") {
-                Text("This records one tester's experience in one session. It is evidence, not a guarantee that the tune is accurate, optimal, or best for another driver.")
-                    .font(.caption)
-                Text("ForzAdvisor does not collect notes, attachments, lap time, telemetry, assists, weather, location, device identifiers, or public attribution in this record.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            if let message {
+                Section { Text(message).foregroundStyle(ForzAdvisorTheme.warning) }
             }
-
-            Section("Validation Status") {
-                Label(
-                    canSubmit ? "Ready to create" : "\(unmetRequirements.count) requirement\(unmetRequirements.count == 1 ? "" : "s") remaining",
-                    systemImage: canSubmit ? "checkmark.circle" : "exclamationmark.circle"
-                )
-                .foregroundStyle(canSubmit ? ForzAdvisorTheme.accent : ForzAdvisorTheme.warning)
-                .accessibilityIdentifier("validationStatusSummary")
-                ForEach(unmetRequirements, id: \.self) { requirement in
-                    Text(requirement)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
             Section {
-                Button("Create Validation Record") {
-                    onSubmit(capture)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(!canSubmit)
-                .accessibilityIdentifier("createValidationRecordButton")
-                .accessibilityHint(canSubmit ? "Creates and stores the validation record locally." : unmetRequirements.joined(separator: ". "))
+                Button(reusePermitted ? "Save Reusable Test Drive" : "Save Local Test Drive") { submit() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!canSubmit)
+                    .accessibilityIdentifier("createValidationRecordButton")
+                Button("Save & Exit") { saveAndExit() }
+                Button("Discard Draft", role: .destructive) { showingDiscardConfirmation = true }
             }
         }
         .navigationTitle("Record Test Drive")
         .forzAdvisorScreenChrome()
+        .task { restoreDraft() }
+        .confirmationDialog(
+            "Discard this validation draft?",
+            isPresented: $showingDiscardConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Discard Draft", role: .destructive) { discardDraft() }
+            Button("Keep Editing", role: .cancel) {}
+        } message: { Text("Only this unfinished local draft will be removed.") }
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Back", action: onBack)
-            }
+            ToolbarItem(placement: .topBarLeading) { Button("Back") { saveAndExit() } }
         }
     }
 
-    private var capture: FirstPartyValidationCapture {
-        FirstPartyValidationCapture(
-            courseType: courseType, surface: surface, input: input, runCount: runCount,
-            verdict: verdict, feedback: feedback, exactSetupConfirmed: exactSetupConfirmed,
-            allExportedSettingsApplied: allExportedSettingsApplied,
-            firstPartyAuthorshipConfirmed: firstPartyAuthorshipConfirmed,
-            deidentifiedReusePermitted: deidentifiedReusePermitted
+    private var runCount: Int? {
+        guard let value = Int(runCountText), (1...99).contains(value) else { return nil }
+        return value
+    }
+
+    private var requiredChecks: [(Bool, String, Field?)] {
+        var values: [(Bool, String, Field?)] = [
+            (courseType != nil, "Choose a course type", .course),
+            (surface != nil, "Choose a surface", .surface),
+            (input != nil, "Enter the input used", .input),
+            (runCount != nil, "Enter a run count from 1 to 99", .runs),
+            (verdict != nil, "Choose an outcome", .verdict)
+        ]
+        if verdict != nil && verdict != .keep {
+            values.append((!feedback.isEmpty, "Select an observed symptom", nil))
+        }
+        values += [
+            (exactSetupConfirmed, "Confirm the exact setup", nil),
+            (allSettingsApplied, "Confirm settings were applied", nil),
+            (authorshipConfirmed, "Confirm first-party authorship", nil)
+        ]
+        return values
+    }
+
+    private var requiredCount: Int { requiredChecks.count }
+    private var completedRequiredCount: Int { requiredChecks.filter(\.0).count }
+    private var firstIncompleteMessage: String? { requiredChecks.first { !$0.0 }?.1 }
+    private var canSubmit: Bool { requiredChecks.allSatisfy(\.0) }
+
+    private func focusFirstIncomplete() { focusedField = requiredChecks.first { !$0.0 }?.2 }
+
+    private func submit() {
+        guard let courseType, let surface, let input, let runCount, let verdict else {
+            focusFirstIncomplete()
+            return
+        }
+        onSubmit(.init(
+            courseType: courseType, surface: surface, input: input,
+            runCount: runCount, verdict: verdict, feedback: feedback,
+            exactSetupConfirmed: exactSetupConfirmed,
+            allExportedSettingsApplied: allSettingsApplied,
+            firstPartyAuthorshipConfirmed: authorshipConfirmed,
+            deidentifiedReusePermitted: reusePermitted
+        ))
+    }
+
+    private func saveAndExit() {
+        guard let context = draftContext else {
+            message = "This tune revision cannot safely bind a draft."
+            return
+        }
+        do {
+            let now = Date.now
+            let existing = try? draftStore.load(expected: context)
+            let document = try ValidationDraftDocument(
+                identity: .init(
+                    draftID: existing?.identity.draftID ?? UUID(), kind: context.kind,
+                    savedTuneID: context.savedTuneID,
+                    tuneRevisionFingerprint: context.tuneRevisionFingerprint,
+                    gameBuildVersion: context.gameBuildVersion,
+                    captureRevision: context.captureRevision
+                ),
+                lifecycle: .init(createdAt: existing?.lifecycle.createdAt ?? now, updatedAt: now),
+                factualFields: factualFields
+            )
+            try draftStore.save(document)
+            onBack()
+        } catch {
+            message = "Draft could not be saved. Your form remains open."
+        }
+    }
+
+    private func restoreDraft() {
+        guard let context = draftContext else { return }
+        do {
+            guard let document = try draftStore.load(expected: context) else { return }
+            apply(document.factualFields)
+            message = "Resumed the factual fields from your local draft."
+        } catch ValidationDraftStoreError.migrationRequired {
+            do {
+                let migrated = try draftStore.migrateLegacy(expected: context)
+                apply(migrated.factualFields)
+                message = "Resumed and safely updated an older local draft."
+            } catch { message = "The older draft could not be safely resumed." }
+        } catch ValidationDraftStoreError.stale {
+            message = "A draft for an older tune or game build was discarded."
+        } catch {
+            message = "An unreadable draft was quarantined and not restored."
+        }
+    }
+
+    private func discardDraft() {
+        try? draftStore.delete(kind: .firstPartyTestDrive, savedTuneID: tune.id)
+        onBack()
+    }
+
+    private var draftContext: ValidationDraftRestoreContext? {
+        guard let fingerprint = FirstPartyValidationRecordFactory().revisionFingerprint(for: tune),
+              let build = tune.request.buildSnapshot?.gameBuild.version else { return nil }
+        return .init(
+            kind: .firstPartyTestDrive, savedTuneID: tune.id,
+            tuneRevisionFingerprint: fingerprint, gameBuildVersion: build,
+            captureRevision: Self.captureRevision
         )
     }
 
-    private var canSubmit: Bool {
-        unmetRequirements.isEmpty
+    private var factualFields: [String: String] {
+        var fields: [String: String] = ["runCount": runCountText]
+        if let courseType { fields["courseType"] = courseType.rawValue }
+        if let surface { fields["surface"] = surface.rawValue }
+        if let input { fields["input"] = input.rawValue }
+        if let verdict { fields["verdict"] = verdict.rawValue }
+        if !feedback.isEmpty { fields["feedback"] = feedback.map(\.rawValue).sorted().joined(separator: ",") }
+        return fields
     }
 
-    private var unmetRequirements: [String] {
-        var requirements: [String] = []
-        if verdict != .keep && feedback.isEmpty {
-            requirements.append("Select at least one handling symptom for Adjust or Reject.")
-        }
-        if !exactSetupConfirmed { requirements.append("Confirm the verified stock setup.") }
-        if !allExportedSettingsApplied { requirements.append("Confirm every exported setting was applied.") }
-        if !firstPartyAuthorshipConfirmed { requirements.append("Confirm first-party authorship.") }
-        if !deidentifiedReusePermitted { requirements.append("Grant deidentified benchmark reuse permission.") }
-        return requirements
+    private func apply(_ fields: [String: String]) {
+        courseType = fields["courseType"].flatMap(ValidationCourseType.init(rawValue:))
+        surface = fields["surface"].flatMap(ValidationSurface.init(rawValue:))
+        input = fields["input"].flatMap(ValidationInput.init(rawValue:))
+        runCountText = fields["runCount"] ?? ""
+        verdict = fields["verdict"].flatMap(ValidationVerdict.init(rawValue:))
+        feedback = Set((fields["feedback"] ?? "").split(separator: ",")
+            .compactMap { TuneFeedback(rawValue: String($0)) })
     }
 
     private func feedbackBinding(_ item: TuneFeedback) -> Binding<Bool> {
-        Binding {
-            feedback.contains(item)
-        } set: { enabled in
+        Binding { feedback.contains(item) } set: { enabled in
             if enabled { feedback.insert(item) } else { feedback.remove(item) }
         }
     }

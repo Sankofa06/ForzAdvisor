@@ -16,7 +16,7 @@ struct FH5ResearchCaptureView: View {
     @State private var platform = FH5Platform.xboxSeries
     @State private var gameVersion: String
     @State private var tireCompound = ""
-    @State private var gearCount = "6"
+    @State private var gearCount = ""
     @State private var drafts: [TuneFieldID: FieldDraft] = [:]
     @State private var exactStockConfirmed = false
     @State private var slidersRestoredConfirmed = false

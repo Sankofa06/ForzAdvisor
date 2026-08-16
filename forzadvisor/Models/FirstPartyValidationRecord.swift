@@ -178,6 +178,9 @@ struct FirstPartyValidationRecord: Codable, Equatable, Sendable, Identifiable {
         guard FirstPartyValidationRecordFactory().isValid(self) else {
             throw FirstPartyValidationError.invalidStoredRecord
         }
+        guard deidentifiedReusePermitted else {
+            throw FirstPartyValidationError.reuseNotPermitted
+        }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes]
         encoder.dateEncodingStrategy = .iso8601
@@ -341,7 +344,6 @@ struct FirstPartyValidationRecordFactory {
         guard capture.exactSetupConfirmed else { throw FirstPartyValidationError.setupNotConfirmed }
         guard capture.allExportedSettingsApplied else { throw FirstPartyValidationError.settingsNotApplied }
         guard capture.firstPartyAuthorshipConfirmed else { throw FirstPartyValidationError.authorshipNotConfirmed }
-        guard capture.deidentifiedReusePermitted else { throw FirstPartyValidationError.reuseNotPermitted }
 
         guard let snapshot = projected.request.buildSnapshot,
               let catalog = snapshot.car.catalogReference,
@@ -417,7 +419,8 @@ struct FirstPartyValidationRecordFactory {
             tuneGeneratedAt: projected.generatedAt, tuneRevisionFingerprint: revision,
             ruleset: publicRuleset, appliedFields: fields, session: session, outcome: outcome,
             exactSetupConfirmed: true, allExportedSettingsApplied: true,
-            firstPartyAuthorshipConfirmed: true, deidentifiedReusePermitted: true,
+            firstPartyAuthorshipConfirmed: true,
+            deidentifiedReusePermitted: capture.deidentifiedReusePermitted,
             unknowns: Self.unknowns, privacyExclusions: Self.exclusions,
             contentFingerprint: content
         )
@@ -484,7 +487,6 @@ struct FirstPartyValidationRecordFactory {
               record.exactSetupConfirmed,
               record.allExportedSettingsApplied,
               record.firstPartyAuthorshipConfirmed,
-              record.deidentifiedReusePermitted,
               (1...99).contains(record.session.runCount),
               ((record.outcome.verdict == .keep && record.outcome.feedback.isEmpty)
                 || (record.outcome.verdict != .keep && !record.outcome.feedback.isEmpty)),

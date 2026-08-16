@@ -47,50 +47,30 @@ struct BetaValidationMissionsView: View {
                 }
                 .forzAdvisorRowBackground()
 
-                Section("Next Missions") {
+                Section("Optional Next Steps") {
                     if board.missions.isEmpty {
                         ContentUnavailableView(
-                            "No missions ready",
+                            "No optional steps available",
                             systemImage: "checkmark.seal",
                             description: Text(
                                 "Current saved setups have no eligible evidence gaps. New game builds or saved cars can create more missions."
                             )
                         )
                     } else {
-                        ForEach(board.missions) { mission in
-                            Button {
-                                onSelect(mission)
-                            } label: {
-                                HStack(alignment: .top, spacing: 12) {
-                                    ForzAdvisorIcon(
-                                        systemName: mission.kind.systemImage,
-                                        tint: mission.game == .fh5
-                                            ? ForzAdvisorTheme.warmAccent
-                                            : ForzAdvisorTheme.accent
-                                    )
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text(mission.title)
-                                            .font(.headline)
-                                            .foregroundStyle(.primary)
-                                        Text(mission.detail)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                            .multilineTextAlignment(.leading)
-                                    }
-                                    Spacer(minLength: 8)
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(.tertiary)
+                        ForEach(starterMissions) { mission in
+                            missionButton(mission, recommended: false)
+                        }
+                        ForEach(groupedMissions) { group in
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(group.carDisplayName).font(.headline)
+                                if let discipline = group.disciplineTitle {
+                                    Text(discipline).font(.caption).foregroundStyle(.secondary)
                                 }
-                                .padding(.vertical, 4)
+                                ForEach(group.missions, id: \.mission.id) { item in
+                                    missionButton(item.mission, recommended: item.isRecommended)
+                                }
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier(
-                                "betaMission-\(mission.id)"
-                            )
-                            .accessibilityHint(
-                                "Opens the existing \(mission.title) workflow."
-                            )
+                            .padding(.vertical, 4)
                         }
                     }
                 }
@@ -201,5 +181,51 @@ struct BetaValidationMissionsView: View {
                 }
             }
         }
+    }
+
+    private var starterMissions: [BetaValidationMission] {
+        board.missions.filter { $0.savedTuneID == nil }
+    }
+
+    private var groupedMissions: [GroupedValidationMissionSummary] {
+        GroupedValidationMissionSummary.make(
+            missions: board.missions,
+            evidenceBySavedTuneID: [:]
+        )
+    }
+
+    private func missionButton(
+        _ mission: BetaValidationMission,
+        recommended: Bool
+    ) -> some View {
+        Button { onSelect(mission) } label: {
+            HStack(alignment: .top, spacing: 12) {
+                ForzAdvisorIcon(
+                    systemName: mission.kind.systemImage,
+                    tint: mission.game == .fh5
+                        ? ForzAdvisorTheme.warmAccent
+                        : ForzAdvisorTheme.accent
+                )
+                VStack(alignment: .leading, spacing: 5) {
+                    if recommended {
+                        Text("Recommended next optional step")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(ForzAdvisorTheme.accent)
+                    }
+                    Text(mission.title).font(.headline).foregroundStyle(.primary)
+                    Text(mission.detail)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("betaMission-\(mission.id)")
+        .accessibilityHint("Optional. Opens the \(mission.title) workflow.")
     }
 }

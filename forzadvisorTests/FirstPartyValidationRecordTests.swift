@@ -357,7 +357,7 @@ final class FirstPartyValidationRecordTests: XCTestCase {
         )
     }
 
-    func testCaptureValidationRejectsEveryRequiredConsentAndOutcomeGate() async throws {
+    func testCaptureValidationRejectsRequiredFactsButAllowsLocalOnlyReuseScope() async throws {
         let tune = try await eligibleTune()
         let factory = FirstPartyValidationRecordFactory()
         var capture = validCapture()
@@ -375,7 +375,18 @@ final class FirstPartyValidationRecordTests: XCTestCase {
         capture = validCapture(); capture.firstPartyAuthorshipConfirmed = false
         XCTAssertThrows(factory, tune, capture, .authorshipNotConfirmed)
         capture = validCapture(); capture.deidentifiedReusePermitted = false
-        XCTAssertThrows(factory, tune, capture, .reuseNotPermitted)
+        let local = try factory.make(
+            tune: tune, savedTune: tune, isStreaming: false,
+            capture: capture
+        )
+        XCTAssertTrue(factory.isValid(local))
+        XCTAssertFalse(local.deidentifiedReusePermitted)
+        XCTAssertThrowsError(try local.deterministicJSON()) {
+            XCTAssertEqual(
+                $0 as? FirstPartyValidationError,
+                .reuseNotPermitted
+            )
+        }
     }
 
     func testLocalizedCommaDecimalAppliedFieldIsParsedNumerically() async throws {

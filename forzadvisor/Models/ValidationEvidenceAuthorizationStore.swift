@@ -1,0 +1,115 @@
+import Foundation
+
+enum ValidationEvidenceExportError: Error, Equatable {
+    case localOnly
+    case invalidAuthorization
+}
+
+struct ValidationEvidenceAuthorizationStore {
+    let fileURL: URL
+
+    init(fileURL: URL? = nil) {
+        if let fileURL {
+            self.fileURL = fileURL
+        } else {
+            let base = FileManager.default.urls(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask
+            ).first ?? FileManager.default.temporaryDirectory
+            self.fileURL = base
+                .appendingPathComponent("ForzAdvisor", isDirectory: true)
+                .appendingPathComponent("validation-authorizations.json")
+        }
+    }
+
+    func authorization(for fingerprint: String)
+        -> ValidationEvidenceAuthorizationEnvelope? {
+        (try? readAll())?[fingerprint]
+    }
+
+    func grant(
+        fingerprint: String,
+        version: String,
+        at date: Date = .now,
+        id: UUID = UUID()
+    ) throws -> ValidationEvidenceAuthorizationEnvelope {
+        let envelope = ValidationEvidenceAuthorizationEnvelope.reusable(
+            observationFingerprint: fingerprint,
+            authorizationID: id,
+            authorizationVersion: version,
+            authorizedAt: date
+        )
+        guard envelope.isValid else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
+        var values = try readAll()
+        values[fingerprint] = envelope
+        try write(values)
+        return envelope
+    }
+
+    @discardableResult
+    func revoke(fingerprint: String, at date: Date = .now) throws -> Bool {
+        var values = try readAll()
+        guard let existing = values[fingerprint],
+              existing.allowsReuse(of: fingerprint) else { return false }
+        values[fingerprint] = existing.revoking(at: date)
+        try write(values)
+        return true
+    }
+
+    private func readAll() throws
+        -> [String: ValidationEvidenceAuthorizationEnvelope] {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            return [:]
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let values = try decoder.decode(
+            [String: ValidationEvidenceAuthorizationEnvelope].self,
+            from: Data(contentsOf: fileURL)
+        )
+        guard values.allSatisfy({ key, value in
+            key == value.observationFingerprint && value.isValid
+        }) else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
+        return values
+    }
+
+    private func write(
+        _ values: [String: ValidationEvidenceAuthorizationEnvelope]
+    ) throws {
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
+        try encoder.encode(values).write(to: fileURL, options: .atomic)
+    }
+}
+
+struct FirstPartyValidationExportGate {
+    func deterministicJSON(
+        for record: FirstPartyValidationRecord,
+        authorization: ValidationEvidenceAuthorizationEnvelope?
+    ) throws -> Data {
+        guard FirstPartyValidationRecordFactory().isValid(record) else {
+            throw FirstPartyValidationError.invalidStoredRecord
+        }
+        if record.deidentifiedReusePermitted {
+            return try record.deterministicJSON()
+        }
+        guard let authorization,
+              authorization.allowsReuse(of: record.contentFingerprint),
+              let permissionID = authorization.authorizationID else {
+            throw ValidationEvidenceExportError.localOnly
+        }
+        var reusable = record
+        reusable.deidentifiedReusePermitted = true
+        reusable.permissionReceiptID = permissionID
+        return try reusable.deterministicJSON()
+    }
+}
