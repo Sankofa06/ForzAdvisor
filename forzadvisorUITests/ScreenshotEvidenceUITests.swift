@@ -43,7 +43,12 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         )
         capture("06-result-available-settings-light", in: app)
 
-        let evidenceSummary = app.staticTexts["Optional Validation & Research"]
+        let evidenceSummary = app.staticTexts.matching(
+            NSPredicate(
+                format: "label == %@",
+                "Optional Validation & Research"
+            )
+        ).firstMatch
         scrollToHittable(evidenceSummary, in: app)
         let evidenceExplanation = app.staticTexts.matching(
             NSPredicate(
