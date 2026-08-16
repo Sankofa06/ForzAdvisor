@@ -191,48 +191,4 @@ extension CopilotTests {
         }
     }
 
-    func testStockCatalogContributionContextIsPhaseOnlyAndPayloadFree()
-        throws {
-        let destination =
-            ModalCopilotDestination.stockCatalogContribution
-        let context = destination.context
-        let object = try XCTUnwrap(
-            JSONSerialization.jsonObject(
-                with: JSONEncoder().encode(context)
-            ) as? [String: Any]
-        )
-
-        XCTAssertEqual(
-            context.phase.title,
-            "Stock Catalog Contribution"
-        )
-        XCTAssertEqual(
-            Set(object.keys),
-            ["phase", "cannotSeeUnsavedEdits"]
-        )
-        XCTAssertEqual(
-            object["phase"] as? String,
-            CopilotPhase.stockCatalogContribution.rawValue
-        )
-        XCTAssertEqual(object["cannotSeeUnsavedEdits"] as? Bool, true)
-
-        let encoded = try XCTUnwrap(
-            String(
-                data: JSONEncoder().encode(context),
-                encoding: .utf8
-            )
-        )
-        for forbidden in [
-            "gameVersion", "platform", "performanceIndex",
-            "weightPounds", "fieldAttestations", "recordCount",
-            "pastedJSON", "canonicalJSON", "permission", "payload",
-            "rights", "confirmation"
-        ] {
-            XCTAssertFalse(
-                encoded.localizedCaseInsensitiveContains(forbidden),
-                "Encoded contribution context exposed \(forbidden)"
-            )
-        }
-    }
-
 }

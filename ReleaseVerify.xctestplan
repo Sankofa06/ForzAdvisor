@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "A5E67B2B-6C0E-48F5-A65F-B1B7DD28EB9B",
+      "name" : "Release Verification",
+      "options" : {
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:forzadvisor.xcodeproj",
+      "identifier" : "849462C02FBD93A6004B8D9D",
+      "name" : "forzadvisor"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:forzadvisor.xcodeproj",
+        "identifier" : "849462D82FBDAB12004B8D9D",
+        "name" : "forzadvisorTests"
+      }
+    },
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:forzadvisor.xcodeproj",
+        "identifier" : "849462E52FBE0000004B8D9D",
+        "name" : "forzadvisorUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
