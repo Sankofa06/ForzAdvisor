@@ -219,7 +219,7 @@ Rollback is commit-based for non-persistent view slices. Validation schema v2 is
 - [x] Six Sol Medium view slices land green and are integrated.
 - [x] Behavioral integration acceptance criteria and terminology pass.
 - [x] Local build, unit/UI test, visual, Dynamic Type, dark-mode, and Increase Contrast gates are green with zero warnings.
-- [ ] Complete the manual VoiceOver auditory-order pass.
+- [x] Manual VoiceOver auditory-order pass completed and confirmed by the user on 2026-08-16.
 - [x] SF-03 release waiver approved by the user on 2026-08-16 for the 24 touched legacy files over 350 lines; scope is limited to non-behavioral refactoring debt and does not waive behavioral, privacy, accessibility, test, or release failures.
 - [x] Immutable integration branch is pushed and draft PR #1 targets `main`.
 - [ ] Xcode Cloud Verify and release workflows are green.
