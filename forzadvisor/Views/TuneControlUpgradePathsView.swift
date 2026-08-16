@@ -99,10 +99,18 @@ struct TuneControlUpgradePathsView: View {
             copiedPathID = nil
             feedbackMessage =
                 "Path \(number) could not be freshly verified. Nothing was copied; reopen Upgrade Lab if its evidence changed."
+            UIAccessibility.post(
+                notification: .announcement,
+                argument: feedbackMessage
+            )
             return
         }
         UIPasteboard.general.string = text
         copiedPathID = path.id
-        feedbackMessage = nil
+        feedbackMessage = "Path \(number) copied as a separate checklist."
+        UIAccessibility.post(
+            notification: .announcement,
+            argument: feedbackMessage
+        )
     }
 }

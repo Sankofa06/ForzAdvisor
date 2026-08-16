@@ -258,6 +258,37 @@ final class FirstPartyValidationRecordTests: XCTestCase {
         })
     }
 
+    func testUserConfirmedInputCanRecordTestDriveAfterExactStockCapture() async throws {
+        var tune = try await eligibleTune()
+        tune.request.car.catalogReference = nil
+        tune.request.car.catalogValuesModified = false
+        tune.request.buildSnapshot?.car.catalogReference = nil
+        tune.request.buildSnapshot?.car.catalogValuesModified = false
+        tune.request.buildSnapshot?.capabilityProfile.vehicle.catalogID =
+            "input-source:userConfirmedManual"
+        tune.request.buildSnapshot?.inputFactsSource = .userConfirmedManual
+        tune = TuneOutputProjector().project(tune)
+
+        let factory = FirstPartyValidationRecordFactory()
+        XCTAssertSuccess(
+            factory.eligibility(
+                for: tune,
+                savedTune: tune,
+                isStreaming: false
+            )
+        )
+        let record = try factory.make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validCapture()
+        )
+        XCTAssertEqual(
+            record.vehicle.catalogID,
+            "input-source:userConfirmedManual"
+        )
+    }
+
     func testLegacyTireRulesetAcceptsOnlyTirePressureFields() async throws {
         let factory = FirstPartyValidationRecordFactory()
         var tireOnly = try await eligibleTune()

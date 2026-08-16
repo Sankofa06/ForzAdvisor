@@ -9,9 +9,8 @@ import Foundation
 
 struct UpgradePartCaptureEligibility {
     func snapshot(for tune: TuneResult) -> VehicleBuildSnapshot? {
-        guard tune.request.car.catalogReference != nil,
-              !tune.request.car.catalogValuesModified,
-              let snapshot = tune.request.buildSnapshot,
+        guard let snapshot = tune.request.buildSnapshot,
+              snapshot.hasConfirmedInputFacts,
               snapshot.isValid,
               snapshot.matches(car: tune.request.car),
               !snapshot.capabilityProfile.parts.contains(where: { $0.availability == .installed }),

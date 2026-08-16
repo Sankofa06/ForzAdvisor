@@ -321,6 +321,13 @@ enum VehicleBuildSnapshotKind: String, Codable, Sendable {
     case exactBuildObservation
 }
 
+enum VehicleInputFactsSource: String, Codable, Equatable, Sendable {
+    case reviewedCatalog
+    case userConfirmedManual
+    case userConfirmedOCR
+    case legacyUnspecified
+}
+
 nonisolated enum TuneDataUsagePermission: String, Codable, Sendable {
     case permitted
     case unknown
@@ -432,6 +439,7 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
     var gearCount: Int?
     var constraints: [TuneFieldConstraint]
     var evidenceSources: [TuneDataProvenance]
+    var inputFactsSource: VehicleInputFactsSource
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
@@ -445,6 +453,7 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
         case gearCount
         case constraints
         case evidenceSources
+        case inputFactsSource
     }
 
     init(
@@ -458,7 +467,8 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
         tireCompound: TireCompoundReference?,
         gearCount: Int?,
         constraints: [TuneFieldConstraint],
-        evidenceSources: [TuneDataProvenance]
+        evidenceSources: [TuneDataProvenance],
+        inputFactsSource: VehicleInputFactsSource? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.id = id
@@ -471,6 +481,9 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
         self.gearCount = gearCount
         self.constraints = constraints
         self.evidenceSources = evidenceSources
+        self.inputFactsSource = inputFactsSource ?? Self.inferredInputFactsSource(
+            for: car
+        )
     }
 
     init(from decoder: Decoder) throws {
@@ -486,6 +499,10 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
         gearCount = try container.decodeIfPresent(Int.self, forKey: .gearCount)
         constraints = try container.decode([TuneFieldConstraint].self, forKey: .constraints)
         evidenceSources = try container.decode([TuneDataProvenance].self, forKey: .evidenceSources)
+        inputFactsSource = try container.decodeIfPresent(
+            VehicleInputFactsSource.self,
+            forKey: .inputFactsSource
+        ) ?? Self.inferredInputFactsSource(for: car)
     }
 
     var validationIssues: [VehicleBuildSnapshotIssue] {
@@ -664,6 +681,17 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
 
     var isValid: Bool { validationIssues.isEmpty }
 
+    var hasConfirmedInputFacts: Bool {
+        switch inputFactsSource {
+        case .reviewedCatalog:
+            car.catalogReference != nil && !car.catalogValuesModified
+        case .userConfirmedManual, .userConfirmedOCR:
+            car.catalogReference == nil && !car.catalogValuesModified
+        case .legacyUnspecified:
+            false
+        }
+    }
+
     func matches(car other: CarInput) -> Bool {
         car.game == other.game
             && car.year == other.year
@@ -681,6 +709,14 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
 
     private func normalized(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func inferredInputFactsSource(
+        for car: CarInput
+    ) -> VehicleInputFactsSource {
+        car.catalogReference == nil
+            ? .legacyUnspecified
+            : .reviewedCatalog
     }
 }
 

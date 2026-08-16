@@ -11,7 +11,7 @@ enum CopilotRouterFixtureFactory {
             model: "Coupe",
             weightPounds: 3_100,
             frontWeightPercent: 52,
-            performanceIndex: 700,
+            performanceIndex: game == .fh5 ? 800 : 700,
             performanceClass: .a,
             drivetrain: .rwd,
             peakHorsepower: 350,

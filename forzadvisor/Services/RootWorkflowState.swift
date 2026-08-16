@@ -105,20 +105,38 @@ enum InputOrigin: Equatable, Sendable {
         matching input: CarInput,
         capturedAt: Date = .now
     ) -> VehicleBuildSnapshot? {
-        guard case .catalog(
-            let selection,
-            let reusedUpgradeSnapshot
-        ) = self, input == selection.carInput else {
-            return nil
+        switch self {
+        case .manual(let confirmedInput):
+            guard confirmedInput == input, input.isValid else {
+                return nil
+            }
+            return Self.userConfirmedSnapshot(
+                for: input,
+                source: .userConfirmedManual,
+                capturedAt: capturedAt
+            )
+        case .ocr(let draft):
+            guard draft.confirmedCarInput() == input else {
+                return nil
+            }
+            return Self.userConfirmedSnapshot(
+                for: input,
+                source: .userConfirmedOCR,
+                capturedAt: capturedAt
+            )
+        case .catalog(let selection, let reusedUpgradeSnapshot):
+            guard input == selection.carInput else { return nil }
+            if let reusedUpgradeSnapshot,
+               CatalogUpgradeEvidenceReuseResolver().isValidReuseSnapshot(
+                    reusedUpgradeSnapshot,
+                    for: selection
+               ) {
+                return reusedUpgradeSnapshot
+            }
+            return selection.capabilityOnlyBuildSnapshot(
+                capturedAt: capturedAt
+            )
         }
-        if let reusedUpgradeSnapshot,
-           CatalogUpgradeEvidenceReuseResolver().isValidReuseSnapshot(
-                reusedUpgradeSnapshot,
-                for: selection
-           ) {
-            return reusedUpgradeSnapshot
-        }
-        return selection.capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
     }
 
     func resolvedBuildSnapshot(
@@ -131,6 +149,46 @@ enum InputOrigin: Equatable, Sendable {
             return snapshot
         }
         return buildSnapshot(matching: input, capturedAt: capturedAt)
+    }
+
+    private static func userConfirmedSnapshot(
+        for input: CarInput,
+        source: VehicleInputFactsSource,
+        capturedAt: Date
+    ) -> VehicleBuildSnapshot {
+        let resolvedSource: VehicleInputFactsSource =
+            input.catalogReference == nil ? source : .reviewedCatalog
+        let sourceID = input.catalogReference?.entryID
+            ?? "input-source:\(source.rawValue)"
+        return VehicleBuildSnapshot(
+            schemaVersion: VehicleBuildSnapshot.currentSchemaVersion,
+            id: UUID(),
+            kind: .capabilityOnly,
+            capturedAt: capturedAt,
+            gameBuild: GameBuildReference(
+                game: input.game,
+                version: nil,
+                capturedAt: nil
+            ),
+            car: input,
+            capabilityProfile: TuneVehicleCapabilityProfile(
+                vehicle: TuneVehicleIdentity(
+                    game: input.game,
+                    catalogID: sourceID,
+                    year: input.year ?? 0,
+                    make: input.make,
+                    model: input.model
+                ),
+                drivetrain: input.drivetrain,
+                parts: [],
+                stockAdjustableSettings: []
+            ),
+            tireCompound: nil,
+            gearCount: nil,
+            constraints: [],
+            evidenceSources: [],
+            inputFactsSource: resolvedSource
+        )
     }
 }
 

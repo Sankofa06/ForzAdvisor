@@ -47,9 +47,9 @@ enum UpgradePartCaptureIssue: Error, LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .invalidBaseSnapshot:
-            "The selected catalog snapshot is not valid."
+            "The selected car-facts snapshot is not valid."
         case .missingCatalogIdentity:
-            "Choose an unedited car from the catalog before verifying upgrade-shop parts."
+            "Confirm the car facts from photo, OCR, or manual entry before verifying upgrade-shop parts."
         case .modifiedCatalogIdentity:
             "The selected catalog car was edited. Restore its stock catalog values before verifying it."
         case .installedPartsPresent:
@@ -63,7 +63,7 @@ enum UpgradePartCaptureIssue: Error, LocalizedError, Equatable {
         case .duplicatePartDecision(let partID):
             "\(TunePartCatalog.definition(for: partID).label) was recorded more than once."
         case .exactStockBuildNotConfirmed:
-            "Confirm that this is the exact untouched stock catalog car."
+            "Confirm that this is the exact untouched stock car shown in the game."
         case .localUseNotPermitted:
             "Allow ForzAdvisor to store and use this observation locally for this tune."
         case .reusedSnapshotIdentity:
@@ -140,7 +140,8 @@ struct UpgradePartCapture: Codable, Equatable, Sendable {
             tireCompound: snapshot.tireCompound,
             gearCount: snapshot.gearCount,
             constraints: snapshot.constraints,
-            evidenceSources: snapshot.evidenceSources
+            evidenceSources: snapshot.evidenceSources,
+            inputFactsSource: snapshot.inputFactsSource
         )
 
         guard verified.isValid else {
@@ -157,10 +158,8 @@ struct UpgradePartCapture: Codable, Equatable, Sendable {
         if !snapshot.isValid {
             issues.append(.invalidBaseSnapshot)
         }
-        if snapshot.car.catalogReference == nil {
+        if !snapshot.hasConfirmedInputFacts {
             issues.append(.missingCatalogIdentity)
-        } else if snapshot.car.catalogValuesModified {
-            issues.append(.modifiedCatalogIdentity)
         }
         if snapshot.capabilityProfile.parts.contains(where: { $0.availability == .installed }) {
             issues.append(.installedPartsPresent)

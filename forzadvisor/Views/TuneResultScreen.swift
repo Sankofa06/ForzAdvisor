@@ -12,6 +12,8 @@ struct TuneResultScreen: View {
     let showsFirstSavedSetupStepGuideHandoff: Bool
     let evidenceSummary: TuneEvidenceSummary
     let evidenceHubDestination: AnyView?
+    let upgradePaths: [TuneControlUpgradePath]
+    let resolveUpgradePathClipboardText: (String) -> String?
     let onContinueFirstSavedSetupWithStepGuide: () -> Void
     let onDismissFirstSavedSetupStepGuideHandoff: () -> Void
     let onDone: () -> Void
@@ -80,11 +82,23 @@ struct TuneResultScreen: View {
             TuneAdjustmentHistorySection(changes: adjustmentChanges)
             TuneResultNotesSection(tune: tune, playerNotes: playerNotes)
 
+            if !upgradePaths.isEmpty {
+                Section("Verified tuning-control paths") {
+                    TuneControlUpgradePathsView(
+                        paths: upgradePaths,
+                        resolveClipboardText:
+                            resolveUpgradePathClipboardText
+                    )
+                }
+                .forzAdvisorRowBackground()
+            }
+
             TuneEvidenceHubSection(
                 summary: evidenceSummary,
                 isSaved: isSaved,
                 isStreaming: isStreaming,
-                destination: evidenceHubDestination
+                destination: evidenceHubDestination,
+                availabilityNote: evidenceAvailabilityNote
             )
 
             if showsFirstSavedSetupStepGuideHandoff {
@@ -131,6 +145,15 @@ struct TuneResultScreen: View {
                 argument: message
             )
         }
+    }
+
+    private var evidenceAvailabilityNote: String? {
+        guard tune.request.car.game == .fh5,
+              tune.request.buildSnapshot?.inputFactsSource
+                != .reviewedCatalog else {
+            return nil
+        }
+        return "FH5 Research remains unavailable because photo, OCR, and manual entry do not provide reviewed stock provenance."
     }
 }
 

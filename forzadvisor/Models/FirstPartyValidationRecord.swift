@@ -282,8 +282,7 @@ struct FirstPartyValidationRecordFactory {
               snapshot.gameBuild.hasKnownVersion,
               let buildVersion = snapshot.gameBuild.version,
               !buildVersion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              snapshot.car.catalogReference != nil,
-              !snapshot.car.catalogValuesModified,
+              snapshot.hasConfirmedInputFacts,
               snapshot.car.peakHorsepower != nil,
               snapshot.car.peakTorqueFootPounds != nil,
               snapshot.tireCompound != nil,
@@ -346,7 +345,6 @@ struct FirstPartyValidationRecordFactory {
         guard capture.firstPartyAuthorshipConfirmed else { throw FirstPartyValidationError.authorshipNotConfirmed }
 
         guard let snapshot = projected.request.buildSnapshot,
-              let catalog = snapshot.car.catalogReference,
               let year = snapshot.car.year,
               let horsepower = snapshot.car.peakHorsepower,
               let torque = snapshot.car.peakTorqueFootPounds,
@@ -360,7 +358,7 @@ struct FirstPartyValidationRecordFactory {
             throw FirstPartyValidationError.invalidProjection
         }
         guard let canonicalBuild = canonicalPublicString(build, maximumLength: 120),
-              let catalogID = canonicalPublicString(catalog.entryID, maximumLength: 160),
+              let catalogID = vehicleSourceID(for: snapshot),
               let make = canonicalPublicString(snapshot.car.make, maximumLength: 120),
               let model = canonicalPublicString(snapshot.car.model, maximumLength: 120),
               let tireID = canonicalPublicString(tire.id, maximumLength: 160),
@@ -434,12 +432,11 @@ struct FirstPartyValidationRecordFactory {
               let torque = snapshot.car.peakTorqueFootPounds,
               let tire = snapshot.tireCompound,
               let gears = snapshot.gearCount,
-              let catalog = snapshot.car.catalogReference,
               let ruleset = tune.rulesetReference,
               let report = tune.projectionReport,
               let fields = validAppliedFields(in: tune, report: report) else { return nil }
         guard let canonicalBuild = canonicalPublicString(build, maximumLength: 120),
-              let catalogID = canonicalPublicString(catalog.entryID, maximumLength: 160),
+              let catalogID = vehicleSourceID(for: snapshot),
               let make = canonicalPublicString(snapshot.car.make, maximumLength: 120),
               let model = canonicalPublicString(snapshot.car.model, maximumLength: 120),
               let tireID = canonicalPublicString(tire.id, maximumLength: 160),
@@ -707,10 +704,10 @@ struct FirstPartyValidationRecordFactory {
         ruleset: TuneRulesetReference
     ) -> Bool {
         guard let build = snapshot.gameBuild.version,
-              let catalog = snapshot.car.catalogReference,
+              let vehicleSourceID = vehicleSourceID(for: snapshot),
               let tire = snapshot.tireCompound else { return false }
         return canonicalPublicString(build, maximumLength: 120) != nil
-            && canonicalPublicString(catalog.entryID, maximumLength: 160) != nil
+            && canonicalPublicString(vehicleSourceID, maximumLength: 160) != nil
             && canonicalPublicString(snapshot.car.make, maximumLength: 120) != nil
             && canonicalPublicString(snapshot.car.model, maximumLength: 120) != nil
             && canonicalPublicString(tire.id, maximumLength: 160) != nil
@@ -718,6 +715,14 @@ struct FirstPartyValidationRecordFactory {
             && canonicalPublicString(ruleset.id, maximumLength: 160) != nil
             && canonicalPublicString(ruleset.algorithmVersion, maximumLength: 120) != nil
             && canonicalPublicString(ruleset.knowledgeRevision, maximumLength: 160) != nil
+    }
+
+    private func vehicleSourceID(
+        for snapshot: VehicleBuildSnapshot
+    ) -> String? {
+        let value = snapshot.car.catalogReference?.entryID
+            ?? snapshot.capabilityProfile.vehicle.catalogID
+        return canonicalPublicString(value, maximumLength: 160)
     }
 
     private func canonicalPublicString(_ value: String, maximumLength: Int) -> String? {

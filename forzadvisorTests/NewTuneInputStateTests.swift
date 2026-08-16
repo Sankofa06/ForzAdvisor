@@ -67,7 +67,7 @@ final class NewTuneInputStateTests: XCTestCase {
             model: "Supra",
             weightPounds: 3_400,
             frontWeightPercent: 52,
-            performanceIndex: 800,
+            performanceIndex: 700,
             performanceClass: .a,
             drivetrain: .rwd
         )

@@ -198,7 +198,7 @@ final class CarCatalogTests: XCTestCase {
         XCTAssertTrue(snapshot.isValid, "Unexpected issues: \(snapshot.validationIssues)")
     }
 
-    func testEditedCatalogManualAndOCROriginsDoNotCreateSnapshots() throws {
+    func testMismatchedCatalogAndUnconfirmedOCROriginsDoNotCreateSnapshots() throws {
         let catalog = try loadedSnapshot()
         let entry = try XCTUnwrap(catalog.entries.first { $0.id == "fh6-2020-toyota-gr-supra" })
         let selection = catalog.selection(for: entry)
@@ -206,7 +206,7 @@ final class CarCatalogTests: XCTestCase {
         edited.weightPounds += 1
 
         XCTAssertNil(InputOrigin.catalog(selection).buildSnapshot(matching: edited))
-        XCTAssertNil(InputOrigin.manual(selection.carInput).buildSnapshot(matching: selection.carInput))
+        XCTAssertNotNil(InputOrigin.manual(selection.carInput).buildSnapshot(matching: selection.carInput))
         XCTAssertNil(InputOrigin.ocr(OCRConfirmationDraft()).buildSnapshot(matching: selection.carInput))
     }
 

@@ -373,6 +373,7 @@ struct BetaValidationMissionPlanner {
         }
         let tune = TuneResultBoundarySanitizer().sanitize(stored)
         guard tune.request.car.isValid,
+              tune.request.buildSnapshot?.hasConfirmedInputFacts == true,
               tune.projectionReport != nil,
               (tune.request.car.game == .fh5 && tune.purpose == .fh5BuildPlan)
                 || (tune.request.car.game == .fh6 && tune.purpose == .numericTune) else {
@@ -544,7 +545,9 @@ struct BetaValidationProgressShareFactory {
             ForzAdvisor Beta Validation Progress
 
             Saved setups: \(progress.savedSetupCount)
-            Permission-bound evidence records: \(progress.evidenceRecordCount)
+            Evidence records on this device: \(progress.evidenceRecordCount)
+            Local-only records: \(progress.localEvidenceRecordCount)
+            Reusable records: \(progress.reusableEvidenceRecordCount)
             Setups with exact upgrade paths: \(progress.exactUpgradePathSetupCount)
             Validation missions ready: \(progress.availableMissionCount)
 

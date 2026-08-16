@@ -10,9 +10,8 @@ import Foundation
 struct TirePressureCaptureEligibility {
     func snapshot(for tune: TuneResult) -> VehicleBuildSnapshot? {
         guard tune.request.car.game == .fh6,
-              tune.request.car.catalogReference != nil,
-              !tune.request.car.catalogValuesModified,
               let snapshot = tune.request.buildSnapshot,
+              snapshot.hasConfirmedInputFacts,
               snapshot.kind == .capabilityOnly,
               snapshot.isValid,
               snapshot.matches(car: tune.request.car),

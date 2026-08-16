@@ -55,7 +55,7 @@ enum FH6TuneMenuCaptureIssue: Error, LocalizedError, Equatable {
         case .unsupportedGame(let game):
             "Tune Menu Lab is not available for \(game.title)."
         case .missingCatalogIdentity:
-            "Choose an untouched catalog car before recording its tuning menu."
+            "Confirm the car facts from photo, OCR, or manual entry before recording its tuning menu."
         case .modifiedCatalogIdentity:
             "Restore the selected car's stock catalog values before recording its tuning menu."
         case .installedPartsPresent:
@@ -85,7 +85,7 @@ enum FH6TuneMenuCaptureIssue: Error, LocalizedError, Equatable {
         case .lockedFieldContainsValues(let field):
             "\(field.projectionLabel) cannot contain numeric values when it is locked or not shown."
         case .exactStockBuildNotConfirmed:
-            "Confirm that this is the exact untouched stock catalog car."
+            "Confirm that this is the exact untouched stock car shown in the game."
         case .slidersNotRestored:
             "Restore every slider to its original value before saving."
         case .firstPartyReadingNotConfirmed:
@@ -235,7 +235,8 @@ struct FH6TuneMenuCapture: Codable, Equatable, Sendable {
             ),
             gearCount: forwardGearCount,
             constraints: globalConstraints + constraints,
-            evidenceSources: globalEvidence + [capturedEvidence]
+            evidenceSources: globalEvidence + [capturedEvidence],
+            inputFactsSource: snapshot.inputFactsSource
         )
         guard exact.isValid else {
             throw FH6TuneMenuCaptureError.invalidGeneratedSnapshot(exact.validationIssues)
@@ -255,10 +256,8 @@ struct FH6TuneMenuCapture: Codable, Equatable, Sendable {
         if snapshot.car.game != .fh6 {
             issues.append(.unsupportedGame(snapshot.car.game))
         }
-        if snapshot.car.catalogReference == nil {
+        if !snapshot.hasConfirmedInputFacts {
             issues.append(.missingCatalogIdentity)
-        } else if snapshot.car.catalogValuesModified {
-            issues.append(.modifiedCatalogIdentity)
         }
         if snapshot.capabilityProfile.parts.contains(where: { $0.availability == .installed }) {
             issues.append(.installedPartsPresent)

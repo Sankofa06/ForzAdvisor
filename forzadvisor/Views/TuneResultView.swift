@@ -94,6 +94,10 @@ struct TuneResultView: View {
         )))
     }
 
+    private var upgradePaths: [TuneControlUpgradePath] {
+        isStreaming ? [] : TuneControlUpgradePlanner().paths(for: tune)
+    }
+
     var body: some View {
         TuneResultScreen(
             tune: tune,
@@ -109,6 +113,14 @@ struct TuneResultView: View {
             evidenceSummary: evidenceSummary,
             evidenceHubDestination:
                 isSaved && !isStreaming ? evidenceHubDestination : nil,
+            upgradePaths: upgradePaths,
+            resolveUpgradePathClipboardText: { pathID in
+                guard !isStreaming else { return nil }
+                return TuneControlUpgradePathClipboardFormatter.text(
+                    for: tune,
+                    displayedPathID: pathID
+                )
+            },
             onContinueFirstSavedSetupWithStepGuide:
                 onContinueFirstSavedSetupWithCopilot,
             onDismissFirstSavedSetupStepGuideHandoff:

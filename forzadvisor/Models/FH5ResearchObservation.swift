@@ -160,7 +160,8 @@ enum FH5ResearchIssue: Error, LocalizedError, Equatable {
         case .missingProjection: "This plan does not contain current capability coverage metadata."
         case .invalidProjection: "This plan's capability coverage no longer matches its catalog snapshot."
         case .invalidCapabilitySnapshot: "Use an unmodified capability-only catalog plan."
-        case .missingCatalogIdentity: "Choose and save an FH5 car from the catalog first."
+        case .missingCatalogIdentity:
+            "FH5 Research requires reviewed stock provenance that is not available from photo, OCR, or manual entry yet."
         case .modifiedCatalogIdentity: "Restore the original catalog values before recording stock evidence."
         case .staleSavedRevision: "Reopen the latest saved plan before recording evidence."
         case .missingGameVersion: "Enter the exact FH5 game version shown on this platform."
@@ -242,7 +243,8 @@ struct FH5ResearchEligibility {
         else {
             return .failure(.invalidCapabilitySnapshot)
         }
-        guard tune.request.car.catalogReference != nil else {
+        guard snapshot.inputFactsSource == .reviewedCatalog,
+              tune.request.car.catalogReference != nil else {
             return .failure(.missingCatalogIdentity)
         }
         guard !tune.request.car.catalogValuesModified else {

@@ -389,7 +389,6 @@ struct FH6CommunityReferenceTrialFactory {
         from tune: TuneResult
     ) throws -> FH6CommunityReferenceCandidateProof {
         guard let snapshot = tune.request.buildSnapshot,
-              let catalog = snapshot.car.catalogReference,
               let year = snapshot.car.year,
               let horsepower = snapshot.car.peakHorsepower,
               let torque = snapshot.car.peakTorqueFootPounds,
@@ -400,7 +399,11 @@ struct FH6CommunityReferenceTrialFactory {
               let report = tune.projectionReport,
               let revision = validationFactory.revisionFingerprint(for: tune),
               let canonicalBuild = canonicalString(gameBuild, maximumLength: 120),
-              let catalogID = canonicalString(catalog.entryID, maximumLength: 160),
+              let catalogID = canonicalString(
+                  snapshot.car.catalogReference?.entryID
+                    ?? snapshot.capabilityProfile.vehicle.catalogID,
+                  maximumLength: 160
+              ),
               let make = canonicalString(snapshot.car.make, maximumLength: 120),
               let model = canonicalString(snapshot.car.model, maximumLength: 120),
               let tireID = canonicalString(tire.id, maximumLength: 160),

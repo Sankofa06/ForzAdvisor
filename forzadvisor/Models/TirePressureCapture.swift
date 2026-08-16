@@ -48,13 +48,13 @@ enum TirePressureCaptureIssue: Error, LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .invalidBaseSnapshot:
-            "The selected catalog snapshot is not valid."
+            "The selected car-facts snapshot is not valid."
         case .requiresCapabilityOnlySnapshot:
-            "Tire verification must start from an unverified catalog snapshot."
+            "Tire verification must start before exact menu ranges are recorded."
         case .unsupportedGame(let game):
             "Tire verification is not available for \(game.title) yet."
         case .missingCatalogIdentity:
-            "Choose an unedited car from the catalog before verifying tire pressures."
+            "Confirm the car facts from photo, OCR, or manual entry before verifying tire pressures."
         case .modifiedCatalogIdentity:
             "The selected catalog car was edited. Restore its stock catalog values before verifying it."
         case .missingGameBuildVersion:
@@ -66,7 +66,7 @@ enum TirePressureCaptureIssue: Error, LocalizedError, Equatable {
         case .invalidGearCount(let count):
             "Forward gear count must be between 1 and 10, not \(count)."
         case .exactStockBuildNotConfirmed:
-            "Confirm that the in-game stock build exactly matches the selected catalog car."
+            "Confirm that the in-game stock build exactly matches the confirmed car facts."
         case .localUseNotPermitted:
             "Allow ForzAdvisor to store and use this observation locally for this tune."
         case .nonFiniteValue(let axle):
@@ -177,7 +177,8 @@ struct TirePressureCapture: Codable, Equatable, Sendable {
                 constraint(for: .frontTirePressure, range: front, evidenceID: normalizedEvidenceID),
                 constraint(for: .rearTirePressure, range: rear, evidenceID: normalizedEvidenceID)
             ],
-            evidenceSources: snapshot.evidenceSources + [evidence]
+            evidenceSources: snapshot.evidenceSources + [evidence],
+            inputFactsSource: snapshot.inputFactsSource
         )
 
         guard exactSnapshot.isValid else {
@@ -202,10 +203,8 @@ struct TirePressureCapture: Codable, Equatable, Sendable {
         if snapshot.car.game != .fh6 {
             issues.append(.unsupportedGame(snapshot.car.game))
         }
-        if snapshot.car.catalogReference == nil {
+        if !snapshot.hasConfirmedInputFacts {
             issues.append(.missingCatalogIdentity)
-        } else if snapshot.car.catalogValuesModified {
-            issues.append(.modifiedCatalogIdentity)
         }
         let enteredBuild = normalized(gameBuildVersion)
         if enteredBuild.isEmpty {

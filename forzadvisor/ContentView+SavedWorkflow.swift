@@ -324,6 +324,12 @@ extension ContentView {
                     throw ContentWorkflowError.staleBetaMission
                 }
             }
+        } catch ContentWorkflowError.staleBetaMission {
+            validationMissionReturnContext = nil
+            validationMissionOutcomeMessage =
+                ValidationMissionReturnOutcome.stale.message
+            step = .home
+            rootSheet = .betaMissions
         } catch {
             validationMissionReturnContext = nil
             errorMessage = "Could not open this beta mission: \(error.localizedDescription)"
