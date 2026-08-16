@@ -25,7 +25,7 @@ The current release removes the bundled FH5/FH6 car rosters and reviewed stock c
 - Privacy manifest is present at `forzadvisor/PrivacyInfo.xcprivacy`.
 - App Store metadata, release notes, privacy policy, support copy, screenshot specifications, and six accepted-size marketing screenshots are present.
 - `ReleaseVerify.xctestplan` runs the complete supported unit and UI targets serially without skips or expected failures.
-- Local ReleaseVerify evidence at commit `02e50b2519ea83d8f889a51d500efeb758f7bead`: 570 unit tests and 10 UI tests passed with zero failures or skips; dark mode, Accessibility XXXL, and Increase Contrast captures were inspected.
+- Latest local ReleaseVerify evidence: 573 unit tests and 10 UI tests passed with zero failures, skips, or expected failures; dark mode, Accessibility XXXL, and Increase Contrast captures were inspected. The exact remote commit is recorded after immutable push.
 
 ## Local Package Verification
 

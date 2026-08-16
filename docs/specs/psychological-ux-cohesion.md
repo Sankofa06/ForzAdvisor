@@ -41,7 +41,7 @@ Canonical flow:
 
 Screenshot evidence covers empty Garage, source selection, completed manual entry, discipline/provider preflight, Tune Result states, Evidence Hub, Settings, and Step Guide on the dedicated iPhone 17 simulator. Light, true dark appearance, Accessibility XXXL, and Increase Contrast captures were exercised and visually inspected. The automated hierarchy verifies accessible labels, identifiers, enabled states, and critical navigation; a manual VoiceOver auditory-order pass and camera/OCR hardware interaction remain delivery checks where simulator automation cannot reproduce the physical interaction.
 
-At commit `02e50b2519ea83d8f889a51d500efeb758f7bead`, the shared `ReleaseVerify` plan builds the app, unit, and UI targets without source warnings. Its serial local gates passed 570 unit tests and 10 UI tests with zero failures, skips, or expected failures.
+The shared `ReleaseVerify` plan builds the app, unit, and UI targets without source warnings. Its latest serial local gates passed 573 unit tests and 10 UI tests with zero failures, skips, or expected failures. The exact remote commit is recorded after immutable push.
 
 ## 4. Proposed Product Decisions
 
