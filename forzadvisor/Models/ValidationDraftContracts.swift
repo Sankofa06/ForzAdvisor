@@ -11,6 +11,7 @@ enum ValidationDraftKind: String, Codable, Equatable, Sendable {
     case firstPartyTestDrive
     case fh5ResearchObservation
     case fh5ControlledExperiment
+    case fh5CandidateTrial
     case fh6CommunityReferenceTrial
     case fh6TuneMenuCapture
     case tirePressureCapture

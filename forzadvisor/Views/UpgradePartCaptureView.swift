@@ -18,6 +18,7 @@ struct UpgradePartCaptureView: View {
     @State private var exactStockBuildConfirmed = false
     @State private var localUsePermitted = false
     @State private var hasAttemptedSubmit = false
+    @State private var recoveryMessage: String?
 
     init(
         tune: TuneResult,
@@ -29,16 +30,8 @@ struct UpgradePartCaptureView: View {
         self.snapshot = snapshot
         self.onBack = onBack
         self.onSubmit = onSubmit
-        _gameBuildVersion = State(initialValue: snapshot.gameBuild.version ?? "")
-        _statuses = State(initialValue: Dictionary(uniqueKeysWithValues:
-            snapshot.capabilityProfile.parts.compactMap { part in
-                switch part.availability {
-                case .available: (part.partID, .offered)
-                case .unavailable: (part.partID, .notOffered)
-                case .installed, .unknown: nil
-                }
-            }
-        ))
+        _gameBuildVersion = State(initialValue: "")
+        _statuses = State(initialValue: [:])
     }
 
     var body: some View {
@@ -106,6 +99,13 @@ struct UpgradePartCaptureView: View {
             }
             .forzAdvisorRowBackground()
 
+            ValidationCaptureProgressSection(
+                completed: requiredChecks.filter(\.0).count,
+                required: requiredChecks.count,
+                next: requiredChecks.first { !$0.0 }?.1,
+                focusNext: { hasAttemptedSubmit = true }
+            )
+
             if hasAttemptedSubmit, !validationMessages.isEmpty {
                 Section("Check This Observation") {
                     ForEach(validationMessages, id: \.self) { message in
@@ -127,15 +127,22 @@ struct UpgradePartCaptureView: View {
                 .accessibilityIdentifier("submitUpgradeCaptureButton")
             }
             .forzAdvisorRowBackground()
+
+            ValidationRecoveryMessageSection(message: recoveryMessage)
+            ValidationDraftActionsSection(
+                saveAndExit: saveAndExit,
+                discard: discardDraft
+            )
         }
         .navigationTitle("Verify Upgrades")
         .forzAdvisorScreenChrome()
         .scrollDismissesKeyboard(.interactively)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Back", action: onBack)
+                Button("Back", action: saveAndExit)
             }
         }
+        .task { restoreDraft() }
     }
 
     private var capture: UpgradePartCapture {
@@ -151,6 +158,70 @@ struct UpgradePartCaptureView: View {
 
     private var validationMessages: [String] {
         capture.validationIssues(upgrading: snapshot).compactMap(\.errorDescription)
+    }
+
+    private var requiredChecks: [(Bool, String)] {
+        [
+            (!gameBuildVersion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "Enter the exact game build"),
+            (statuses.count == TunePartID.allCases.count, "Review every tuning-control part"),
+            (exactStockBuildConfirmed, "Confirm the exact stock build"),
+            (localUsePermitted, "Allow local storage")
+        ]
+    }
+
+    private var recovery: ValidationCaptureRecovery? {
+        try? ValidationCaptureRecovery(
+            kind: .upgradePartCapture,
+            tune: tune,
+            gameBuildVersion: snapshot.gameBuild.version,
+            captureRevision: "upgrade-parts-v2"
+        )
+    }
+
+    private var factualFields: [String: String] {
+        var fields = ["gameBuildVersion": gameBuildVersion]
+        for (part, status) in statuses {
+            fields["part.\(part.rawValue)"] = status.rawValue
+        }
+        return fields
+    }
+
+    private func restoreDraft() {
+        guard let recovery else { return }
+        do {
+            guard let fields = try recovery.restore() else { return }
+            gameBuildVersion = fields["gameBuildVersion"] ?? ""
+            statuses = Dictionary(uniqueKeysWithValues:
+                TunePartID.allCases.compactMap { part in
+                    fields["part.\(part.rawValue)"]
+                        .flatMap(UpgradePartCaptureStatus.init(rawValue:))
+                        .map { (part, $0) }
+                }
+            )
+            recoveryMessage = "Resumed the factual fields from your local draft."
+        } catch ValidationDraftStoreError.stale {
+            recoveryMessage = "An older incompatible draft was discarded."
+        } catch {
+            recoveryMessage = "An unreadable draft was not restored."
+        }
+    }
+
+    private func saveAndExit() {
+        guard let recovery else {
+            recoveryMessage = "This tune revision cannot safely bind a draft."
+            return
+        }
+        do {
+            try recovery.save(factualFields: factualFields)
+            onBack()
+        } catch {
+            recoveryMessage = "Draft could not be saved. Your form remains open."
+        }
+    }
+
+    private func discardDraft() {
+        try? recovery?.discard()
+        onBack()
     }
 
     private func parts(in category: TunePartCategory) -> [TunePartDefinition] {

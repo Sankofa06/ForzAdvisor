@@ -14,7 +14,6 @@ struct FirstPartyValidationCaptureView: View {
     @State private var exactSetupConfirmed = false
     @State private var allSettingsApplied = false
     @State private var authorshipConfirmed = false
-    @State private var reusePermitted = false
     @State private var message: String?
     @State private var showingDiscardConfirmation = false
     @FocusState private var focusedField: Field?
@@ -86,11 +85,8 @@ struct FirstPartyValidationCaptureView: View {
                 Toggle("I applied every available setting", isOn: $allSettingsApplied)
                 Toggle("This is my own test-drive observation", isOn: $authorshipConfirmed)
             }
-            Section("Optional Reuse") {
-                Toggle("Allow deidentified reuse for this observation", isOn: $reusePermitted)
-                Text(reusePermitted
-                     ? "This exact observation may be exported or included in a review packet. You can revoke future reuse later."
-                     : "Local only. It can advance your on-device evidence chain, but export, sharing, aggregation, and review packets remain blocked.")
+            Section("Local Evidence") {
+                Text("This observation is saved locally first. Reuse is a separate decision you can grant later for the exact saved observation, then revoke for future exports.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -98,7 +94,7 @@ struct FirstPartyValidationCaptureView: View {
                 Section { Text(message).foregroundStyle(ForzAdvisorTheme.warning) }
             }
             Section {
-                Button(reusePermitted ? "Save Reusable Test Drive" : "Save Local Test Drive") { submit() }
+                Button("Save Local Test Drive") { submit() }
                     .buttonStyle(.borderedProminent)
                     .disabled(!canSubmit)
                     .accessibilityIdentifier("createValidationRecordButton")
@@ -164,7 +160,7 @@ struct FirstPartyValidationCaptureView: View {
             exactSetupConfirmed: exactSetupConfirmed,
             allExportedSettingsApplied: allSettingsApplied,
             firstPartyAuthorshipConfirmed: authorshipConfirmed,
-            deidentifiedReusePermitted: reusePermitted
+            deidentifiedReusePermitted: false
         ))
     }
 

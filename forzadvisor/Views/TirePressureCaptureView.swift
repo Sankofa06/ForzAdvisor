@@ -28,6 +28,7 @@ struct TirePressureCaptureView: View {
     @State private var exactStockBuildConfirmed = false
     @State private var localUsePermitted = false
     @State private var hasAttemptedSubmit = false
+    @State private var recoveryMessage: String?
 
     init(
         tune: TuneResult,
@@ -39,7 +40,7 @@ struct TirePressureCaptureView: View {
         self.snapshot = snapshot
         self.onBack = onBack
         self.onSubmit = onSubmit
-        _gameBuildVersion = State(initialValue: snapshot.gameBuild.version ?? "")
+        _gameBuildVersion = State(initialValue: "")
     }
 
     var body: some View {
@@ -93,6 +94,13 @@ struct TirePressureCaptureView: View {
                 identifierPrefix: "front"
             )
 
+            ValidationCaptureProgressSection(
+                completed: requiredChecks.filter(\.0).count,
+                required: requiredChecks.count,
+                next: requiredChecks.first { !$0.0 }?.1,
+                focusNext: { hasAttemptedSubmit = true }
+            )
+
             pressureSection(
                 title: "Rear Tires",
                 minimum: $rearMinimum,
@@ -134,15 +142,22 @@ struct TirePressureCaptureView: View {
                 .accessibilityIdentifier("submitTireCaptureButton")
             }
             .forzAdvisorRowBackground()
+
+            ValidationRecoveryMessageSection(message: recoveryMessage)
+            ValidationDraftActionsSection(
+                saveAndExit: saveAndExit,
+                discard: discardDraft
+            )
         }
         .navigationTitle("Verify Tires")
         .forzAdvisorScreenChrome()
         .scrollDismissesKeyboard(.interactively)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Back", action: onBack)
+                Button("Back", action: saveAndExit)
             }
         }
+        .task { restoreDraft() }
     }
 
     private var capture: TirePressureCapture {
@@ -169,6 +184,91 @@ struct TirePressureCaptureView: View {
 
     private var validationMessages: [String] {
         capture.validationIssues(upgrading: snapshot).map(\.localizedDescription)
+    }
+
+    private var requiredChecks: [(Bool, String)] {
+        [
+            (!gameBuildVersion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "Enter the exact game build"),
+            (!tireCompound.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "Enter the tire compound"),
+            (Self.parsedGearCount(gearCount) > 0, "Enter a forward gear count from 1 to 10"),
+            (frontValues.allSatisfy(isNumeric), "Complete all front tire values"),
+            (rearValues.allSatisfy(isNumeric), "Complete all rear tire values"),
+            (exactStockBuildConfirmed, "Confirm the exact stock build"),
+            (localUsePermitted, "Allow local storage")
+        ]
+    }
+
+    private var frontValues: [String] {
+        [frontMinimum, frontMaximum, frontStep, frontCurrent]
+    }
+
+    private var rearValues: [String] {
+        [rearMinimum, rearMaximum, rearStep, rearCurrent]
+    }
+
+    private func isNumeric(_ value: String) -> Bool {
+        LocalizedNumberText.parse(value)?.isFinite == true
+    }
+
+    private var recovery: ValidationCaptureRecovery? {
+        try? ValidationCaptureRecovery(
+            kind: .tirePressureCapture,
+            tune: tune,
+            gameBuildVersion: snapshot.gameBuild.version,
+            captureRevision: "fh6-tire-pressure-v2"
+        )
+    }
+
+    private var factualFields: [String: String] {
+        [
+            "gameBuildVersion": gameBuildVersion,
+            "tireCompound": tireCompound, "gearCount": gearCount,
+            "frontMinimum": frontMinimum, "frontMaximum": frontMaximum,
+            "frontStep": frontStep, "frontCurrent": frontCurrent,
+            "rearMinimum": rearMinimum, "rearMaximum": rearMaximum,
+            "rearStep": rearStep, "rearCurrent": rearCurrent
+        ]
+    }
+
+    private func restoreDraft() {
+        guard let recovery else { return }
+        do {
+            guard let fields = try recovery.restore() else { return }
+            gameBuildVersion = fields["gameBuildVersion"] ?? ""
+            tireCompound = fields["tireCompound"] ?? ""
+            gearCount = fields["gearCount"] ?? ""
+            frontMinimum = fields["frontMinimum"] ?? ""
+            frontMaximum = fields["frontMaximum"] ?? ""
+            frontStep = fields["frontStep"] ?? ""
+            frontCurrent = fields["frontCurrent"] ?? ""
+            rearMinimum = fields["rearMinimum"] ?? ""
+            rearMaximum = fields["rearMaximum"] ?? ""
+            rearStep = fields["rearStep"] ?? ""
+            rearCurrent = fields["rearCurrent"] ?? ""
+            recoveryMessage = "Resumed the factual fields from your local draft."
+        } catch ValidationDraftStoreError.stale {
+            recoveryMessage = "An older incompatible draft was discarded."
+        } catch {
+            recoveryMessage = "An unreadable draft was not restored."
+        }
+    }
+
+    private func saveAndExit() {
+        guard let recovery else {
+            recoveryMessage = "This tune revision cannot safely bind a draft."
+            return
+        }
+        do {
+            try recovery.save(factualFields: factualFields)
+            onBack()
+        } catch {
+            recoveryMessage = "Draft could not be saved. Your form remains open."
+        }
+    }
+
+    private func discardDraft() {
+        try? recovery?.discard()
+        onBack()
     }
 
     private func parsed(_ text: String) -> Double {

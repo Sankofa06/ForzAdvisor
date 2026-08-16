@@ -16,11 +16,11 @@ struct FH5CandidateTrialCaptureView: View {
             -> FH5GeneratedCandidateArtifact
     let onSubmit: (FH5CandidateTrialSubmission) -> Void
 
-    @State private var input = ValidationInput.controller
-    @State private var surface = ValidationSurface.dry
+    @State var input: ValidationInput?
+    @State var surface: ValidationSurface?
     @State private var lockedArtifact: FH5GeneratedCandidateArtifact?
     @State private var lockError: String?
-    @State private var outcome = FH5ExperimentOutcome.inconclusive
+    @State var outcome: FH5ExperimentOutcome?
     @State private var sameRouteAndConditionsConfirmed = false
     @State private var sameAssistsAndInputConfirmed = false
     @State private var onlyDeclaredFieldChangedConfirmed = false
@@ -28,8 +28,8 @@ struct FH5CandidateTrialCaptureView: View {
     @State private var stockValuesRestoredConfirmed = false
     @State private var firstPartyAuthorshipConfirmed = false
     @State private var localStoragePermitted = false
-    @State private var deidentifiedReusePermitted = false
     @State private var showsExitRestorationReminder = false
+    @State var recoveryMessage: String?
 
     var body: some View {
         Form {
@@ -65,9 +65,20 @@ struct FH5CandidateTrialCaptureView: View {
                         $firstPartyAuthorshipConfirmed
                 )
                 FH5CandidateTrialPermissionSection(
-                    localStoragePermitted: $localStoragePermitted,
-                    deidentifiedReusePermitted:
-                        $deidentifiedReusePermitted
+                    localStoragePermitted: $localStoragePermitted
+                )
+
+                ValidationCaptureProgressSection(
+                    completed: requiredChecks.filter(\.0).count,
+                    required: requiredChecks.count,
+                    next: requiredChecks.first { !$0.0 }?.1,
+                    focusNext: nil
+                )
+
+                ValidationRecoveryMessageSection(message: recoveryMessage)
+                ValidationDraftActionsSection(
+                    saveAndExit: saveAndExit,
+                    discard: discardDraft
                 )
 
                 Section("Status") {
@@ -124,10 +135,12 @@ struct FH5CandidateTrialCaptureView: View {
                 )
             }
         }
+        .task { restoreDraft() }
     }
 
     private var canSubmit: Bool {
         lockedArtifact != nil
+            && outcome != nil
             && sameRouteAndConditionsConfirmed
             && sameAssistsAndInputConfirmed
             && onlyDeclaredFieldChangedConfirmed
@@ -138,18 +151,28 @@ struct FH5CandidateTrialCaptureView: View {
     }
 
     private var unmetRequirementCount: Int {
+        requiredChecks.count { !$0.0 }
+    }
+
+    private var requiredChecks: [(Bool, String)] {
         [
-            sameRouteAndConditionsConfirmed,
-            sameAssistsAndInputConfirmed,
-            onlyDeclaredFieldChangedConfirmed,
-            sequenceCompletedConfirmed,
-            stockValuesRestoredConfirmed,
-            firstPartyAuthorshipConfirmed,
-            localStoragePermitted
-        ].count { !$0 }
+            (lockedArtifact != nil, "Choose context and lock a candidate"),
+            (outcome != nil, "Choose the comparative outcome"),
+            (sameRouteAndConditionsConfirmed, "Confirm the same route and conditions"),
+            (sameAssistsAndInputConfirmed, "Confirm the same assists and input"),
+            (onlyDeclaredFieldChangedConfirmed, "Confirm only one field changed"),
+            (sequenceCompletedConfirmed, "Complete the A-B-B-A sequence"),
+            (stockValuesRestoredConfirmed, "Restore the stock value"),
+            (firstPartyAuthorshipConfirmed, "Confirm first-party authorship"),
+            (localStoragePermitted, "Allow local storage")
+        ]
     }
 
     private func lockCandidate() {
+        guard let input, let surface else {
+            lockError = "Choose the input and surface before locking a candidate."
+            return
+        }
         do {
             lockedArtifact = try onLockCandidate(input, surface)
             lockError = nil
@@ -160,6 +183,7 @@ struct FH5CandidateTrialCaptureView: View {
     }
 
     private func submit(artifact: FH5GeneratedCandidateArtifact) {
+        guard let outcome else { return }
         onSubmit(FH5CandidateTrialSubmission(
             capture: FH5ControlledExperimentCapture(
                 field: artifact.change.field,
@@ -181,8 +205,7 @@ struct FH5CandidateTrialCaptureView: View {
                 firstPartyAuthorshipConfirmed:
                     firstPartyAuthorshipConfirmed,
                 localStoragePermitted: localStoragePermitted,
-                deidentifiedReusePermitted:
-                    deidentifiedReusePermitted
+                deidentifiedReusePermitted: false
             ),
             lockedArtifact: artifact
         ))

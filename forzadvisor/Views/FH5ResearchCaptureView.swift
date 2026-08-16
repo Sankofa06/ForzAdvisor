@@ -13,18 +13,18 @@ struct FH5ResearchCaptureView: View {
     let onBack: () -> Void
     let onSubmit: (FH5ResearchCapture) -> Void
 
-    @State private var platform = FH5Platform.xboxSeries
-    @State private var gameVersion: String
-    @State private var tireCompound = ""
-    @State private var gearCount = ""
-    @State private var drafts: [TuneFieldID: FieldDraft] = [:]
+    @State var platform: FH5Platform?
+    @State var gameVersion: String
+    @State var tireCompound = ""
+    @State var gearCount = ""
+    @State var drafts: [TuneFieldID: FH5ResearchFieldDraft] = [:]
     @State private var exactStockConfirmed = false
     @State private var slidersRestoredConfirmed = false
     @State private var personallyReadConfirmed = false
     @State private var firstPartyAuthorshipConfirmed = false
     @State private var localStoragePermitted = false
-    @State private var deidentifiedReusePermitted = false
     @State private var hasAttemptedSubmit = false
+    @State var recoveryMessage: String?
 
     init(
         tune: TuneResult,
@@ -38,7 +38,6 @@ struct FH5ResearchCaptureView: View {
         self.onSubmit = onSubmit
         _gameVersion = State(initialValue:
             FH5ResearchObservationFactory().verifiedUpgradeGameVersion(in: snapshot)
-                ?? snapshot.gameBuild.version
                 ?? ""
         )
     }
@@ -81,8 +80,9 @@ struct FH5ResearchCaptureView: View {
 
             Section("Observation Context") {
                 Picker("Platform", selection: $platform) {
+                    Text("Choose platform").tag(nil as FH5Platform?)
                     ForEach(FH5Platform.allCases) { platform in
-                        Text(platform.title).tag(platform)
+                        Text(platform.title).tag(Optional(platform))
                     }
                 }
                 .accessibilityIdentifier("fh5ResearchPlatform")
@@ -128,7 +128,10 @@ struct FH5ResearchCaptureView: View {
                 if !fields.isEmpty {
                     Section {
                         ForEach(fields, id: \.stableID) { field in
-                            fieldEditor(field)
+                            FH5ResearchFieldEditor(
+                                field: field,
+                                draft: fieldDraftBinding(for: field)
+                            )
                         }
                     } header: {
                         Label(section.title, systemImage: section.symbolName)
@@ -148,17 +151,18 @@ struct FH5ResearchCaptureView: View {
                     .accessibilityIdentifier("fh5ResearchAuthorshipConfirmation")
                 Toggle("Allow local storage with this saved plan", isOn: $localStoragePermitted)
                     .accessibilityIdentifier("fh5ResearchLocalPermission")
-                Toggle(
-                    "Allow deidentified structured reuse and JSON sharing",
-                    isOn: $deidentifiedReusePermitted
-                )
-                .accessibilityIdentifier("fh5ResearchReusePermission")
-
-                Text("Reuse is off by default and applies only to the structured record. Screenshots, notes, tune IDs, provider data, device data, and locations are excluded.")
+                Text("This observation is stored locally first. Reuse can be authorized later for its exact immutable fingerprint and revoked for future exports.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .forzAdvisorRowBackground()
+
+            ValidationCaptureProgressSection(
+                completed: requiredChecks.filter(\.0).count,
+                required: requiredChecks.count,
+                next: requiredChecks.first { !$0.0 }?.1,
+                focusNext: { hasAttemptedSubmit = true }
+            )
 
             if hasAttemptedSubmit, !validationMessages.isEmpty {
                 Section("Check This Observation") {
@@ -174,93 +178,35 @@ struct FH5ResearchCaptureView: View {
             Section {
                 Button("Save Stock Observation") {
                     hasAttemptedSubmit = true
-                    guard validationMessages.isEmpty else { return }
+                    guard validationMessages.isEmpty,
+                          requiredChecks.allSatisfy(\.0) else { return }
                     onSubmit(capture)
                 }
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("submitFH5ResearchObservationButton")
             }
             .forzAdvisorRowBackground()
+
+            ValidationRecoveryMessageSection(message: recoveryMessage)
+            ValidationDraftActionsSection(
+                saveAndExit: saveAndExit,
+                discard: discardDraft
+            )
         }
         .navigationTitle("FH5 Research")
         .forzAdvisorScreenChrome()
         .scrollDismissesKeyboard(.interactively)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Back", action: onBack)
+                Button("Back", action: saveAndExit)
             }
         }
-    }
-
-    @ViewBuilder
-    private func fieldEditor(_ field: TuneFieldID) -> some View {
-        let draft = draftBinding(for: field)
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(field.projectionLabel)
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                if !field.expectedDisplayUnit.isEmpty {
-                    Text(field.expectedDisplayUnit)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Picker("Availability", selection: availabilityBinding(for: field)) {
-                Text("Adjustable").tag(FH5TuneFieldAvailability?.some(.adjustable))
-                Text("Locked").tag(FH5TuneFieldAvailability?.some(.shownLocked))
-                Text("Not shown").tag(FH5TuneFieldAvailability?.some(.notShown))
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("fh5ResearchAvailability-\(field.stableID)")
-
-            switch draft.wrappedValue.availability {
-            case .adjustable:
-                numericField("Minimum", text: valueBinding(draft, \.minimum), field: field, suffix: "minimum")
-                numericField("Maximum", text: valueBinding(draft, \.maximum), field: field, suffix: "maximum")
-                numericField("Slider step", text: valueBinding(draft, \.step), field: field, suffix: "step")
-                numericField("Current stock value", text: valueBinding(draft, \.current), field: field, suffix: "current")
-            case .shownLocked:
-                numericField(
-                    "Current shown value (optional)",
-                    text: valueBinding(draft, \.current),
-                    field: field,
-                    suffix: "lockedCurrent"
-                )
-            case .notShown:
-                Text("No numeric values are stored for a control that is not shown.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            case nil:
-                Text("Choose exactly one state after checking this menu position in FH5.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 3)
-    }
-
-    private func numericField(
-        _ title: String,
-        text: Binding<String>,
-        field: TuneFieldID,
-        suffix: String
-    ) -> some View {
-        HStack {
-            Text(title)
-                .font(.caption)
-            Spacer()
-            TextField("—", text: text)
-                .keyboardType(supportsSignedInput(field) ? .numbersAndPunctuation : .decimalPad)
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: 120)
-                .accessibilityIdentifier("fh5Research-\(field.stableID)-\(suffix)")
-        }
+        .task { restoreDraft() }
     }
 
     private var capture: FH5ResearchCapture {
         FH5ResearchCapture(
-            platform: platform,
+            platform: platform ?? .xboxSeries,
             gameVersion: gameVersion,
             tireCompoundDisplayName: tireCompound,
             forwardGearCount: parsedGearCount,
@@ -297,7 +243,7 @@ struct FH5ResearchCaptureView: View {
             personallyReadFromGameConfirmed: personallyReadConfirmed,
             firstPartyAuthorshipConfirmed: firstPartyAuthorshipConfirmed,
             localStoragePermitted: localStoragePermitted,
-            deidentifiedStructuredReusePermitted: deidentifiedReusePermitted
+            deidentifiedStructuredReusePermitted: false
         )
     }
 
@@ -311,17 +257,23 @@ struct FH5ResearchCaptureView: View {
             .compactMap(\.errorDescription)
     }
 
-    private var requiredGameVersion: String? {
-        FH5ResearchObservationFactory().verifiedUpgradeGameVersion(in: snapshot)
+    private var requiredChecks: [(Bool, String)] {
+        [
+            (platform != nil, "Choose the platform"),
+            (!gameVersion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "Enter the exact game version"),
+            (!tireCompound.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "Enter the tire compound"),
+            (parsedGearCount > 0, "Enter a forward gear count from 1 to 10"),
+            (expectedFields.allSatisfy { drafts[$0]?.availability != nil }, "Review every menu control"),
+            (exactStockConfirmed, "Confirm the exact stock car"),
+            (slidersRestoredConfirmed, "Confirm every slider was restored"),
+            (personallyReadConfirmed, "Confirm the values were personally read"),
+            (firstPartyAuthorshipConfirmed, "Confirm first-party authorship"),
+            (localStoragePermitted, "Allow local storage")
+        ]
     }
 
-    private func supportsSignedInput(_ field: TuneFieldID) -> Bool {
-        switch field {
-        case .frontCamber, .rearCamber, .frontToe, .rearToe:
-            true
-        default:
-            false
-        }
+    private var requiredGameVersion: String? {
+        FH5ResearchObservationFactory().verifiedUpgradeGameVersion(in: snapshot)
     }
 
     private var parsedGearCount: Int {
@@ -345,48 +297,13 @@ struct FH5ResearchCaptureView: View {
         expectedFields.filter { $0.projectionSectionTitle == section }
     }
 
-    private func availabilityBinding(
+    private func fieldDraftBinding(
         for field: TuneFieldID
-    ) -> Binding<FH5TuneFieldAvailability?> {
-        Binding {
-            drafts[field]?.availability
-        } set: { newValue in
-            var draft = drafts[field] ?? FieldDraft()
-            draft.availability = newValue
-            switch newValue {
-            case .adjustable:
-                break
-            case .shownLocked:
-                draft.minimum = ""
-                draft.maximum = ""
-                draft.step = ""
-            case .notShown, nil:
-                draft.minimum = ""
-                draft.maximum = ""
-                draft.step = ""
-                draft.current = ""
-            }
-            drafts[field] = draft
-        }
-    }
-
-    private func draftBinding(for field: TuneFieldID) -> Binding<FieldDraft> {
-        Binding {
-            drafts[field] ?? FieldDraft()
-        } set: { drafts[field] = $0 }
-    }
-
-    private func valueBinding(
-        _ draft: Binding<FieldDraft>,
-        _ keyPath: WritableKeyPath<FieldDraft, String>
-    ) -> Binding<String> {
-        Binding {
-            draft.wrappedValue[keyPath: keyPath]
-        } set: { value in
-            var updated = draft.wrappedValue
-            updated[keyPath: keyPath] = value
-            draft.wrappedValue = updated
-        }
+    ) -> Binding<FH5ResearchFieldDraft> {
+        Binding(
+            get: { drafts[field] ?? .init() },
+            set: { drafts[field] = $0 }
+        )
     }
 
     private func parsed(_ value: String) -> Double? {
@@ -396,12 +313,4 @@ struct FH5ResearchCaptureView: View {
     private func parsedOptional(_ value: String) -> Double? {
         value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : parsed(value)
     }
-}
-
-private struct FieldDraft: Equatable {
-    var availability: FH5TuneFieldAvailability?
-    var minimum = ""
-    var maximum = ""
-    var step = ""
-    var current = ""
 }

@@ -36,8 +36,8 @@ struct FH5CandidateTrialBoundarySection: View {
 }
 
 struct FH5CandidateTrialLockSection: View {
-    @Binding var input: ValidationInput
-    @Binding var surface: ValidationSurface
+    @Binding var input: ValidationInput?
+    @Binding var surface: ValidationSurface?
     let lockedArtifact: FH5GeneratedCandidateArtifact?
     let lockError: String?
     let onLock: () -> Void
@@ -45,15 +45,17 @@ struct FH5CandidateTrialLockSection: View {
     var body: some View {
         Section("Choose Context And Lock") {
             Picker("Surface", selection: $surface) {
+                Text("Choose surface").tag(nil as ValidationSurface?)
                 ForEach(ValidationSurface.allCases) {
-                    Text($0.title).tag($0)
+                    Text($0.title).tag(Optional($0))
                 }
             }
             .disabled(lockedArtifact != nil)
 
             Picker("Input", selection: $input) {
+                Text("Choose input").tag(nil as ValidationInput?)
                 ForEach(ValidationInput.allCases) {
-                    Text($0.title).tag($0)
+                    Text($0.title).tag(Optional($0))
                 }
             }
             .disabled(lockedArtifact != nil)
@@ -91,7 +93,7 @@ struct FH5CandidateTrialLockSection: View {
 
 struct FH5CandidateTrialProtocolSection: View {
     let artifact: FH5GeneratedCandidateArtifact
-    @Binding var outcome: FH5ExperimentOutcome
+    @Binding var outcome: FH5ExperimentOutcome?
 
     var body: some View {
         Section("Locked A-B-B-A Hypothesis") {
@@ -116,8 +118,9 @@ struct FH5CandidateTrialProtocolSection: View {
             .foregroundStyle(.secondary)
 
             Picker("After all four runs", selection: $outcome) {
+                Text("Choose outcome").tag(nil as FH5ExperimentOutcome?)
                 ForEach(FH5ExperimentOutcome.allCases) {
-                    Text($0.title).tag($0)
+                    Text($0.title).tag(Optional($0))
                 }
             }
             .accessibilityIdentifier("fh5CandidateTrialOutcomePicker")
@@ -170,7 +173,6 @@ struct FH5CandidateTrialConfirmationSection: View {
 
 struct FH5CandidateTrialPermissionSection: View {
     @Binding var localStoragePermitted: Bool
-    @Binding var deidentifiedReusePermitted: Bool
 
     var body: some View {
         Section("Local Evidence Permissions") {
@@ -178,12 +180,8 @@ struct FH5CandidateTrialPermissionSection: View {
                 "Keep this trial with the saved plan",
                 isOn: $localStoragePermitted
             )
-            Toggle(
-                "Allow this local record to count in deidentified outcome evaluation",
-                isOn: $deidentifiedReusePermitted
-            )
             Text(
-                "Evaluation reuse is optional and off by default. When enabled, a separate explicit confirmation can share one deidentified Candidate Outcome JSON copy. Sharing is manual, copies cannot be recalled, and no background upload occurs."
+                "This trial is local first. Reuse can be authorized later for its exact fingerprint and revoked for future exports. Already shared copies cannot be recalled."
             )
             .font(.caption)
             .foregroundStyle(.secondary)

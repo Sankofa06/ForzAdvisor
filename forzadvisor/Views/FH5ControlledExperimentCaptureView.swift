@@ -1,10 +1,3 @@
-//
-//  FH5ControlledExperimentCaptureView.swift
-//  forzadvisor
-//
-//  Guided one-variable A-B-B-A capture for Horizon Test Track.
-//
-
 import SwiftUI
 
 struct FH5ControlledExperimentCaptureView: View {
@@ -13,21 +6,21 @@ struct FH5ControlledExperimentCaptureView: View {
     let onBack: () -> Void
     let onSubmit: (FH5ControlledExperimentCapture) -> Void
 
-    @State private var field: TuneFieldID
-    @State private var direction = FH5ExperimentDirection.decrease
-    @State private var input = ValidationInput.controller
-    @State private var surface = ValidationSurface.dry
-    @State private var targetSymptom = TuneFeedback.pushesWide
-    @State private var outcome = FH5ExperimentOutcome.inconclusive
-    @State private var sameRouteAndConditionsConfirmed = false
-    @State private var sameAssistsAndInputConfirmed = false
-    @State private var onlyDeclaredFieldChangedConfirmed = false
-    @State private var sequenceCompletedConfirmed = false
-    @State private var stockValuesRestoredConfirmed = false
-    @State private var firstPartyAuthorshipConfirmed = false
-    @State private var localStoragePermitted = false
-    @State private var deidentifiedReusePermitted = false
+    @State var field: TuneFieldID
+    @State var direction: FH5ExperimentDirection?
+    @State var input: ValidationInput?
+    @State var surface: ValidationSurface?
+    @State var targetSymptom: TuneFeedback?
+    @State var outcome: FH5ExperimentOutcome?
+    @State var sameRouteAndConditionsConfirmed = false
+    @State var sameAssistsAndInputConfirmed = false
+    @State var onlyDeclaredFieldChangedConfirmed = false
+    @State var sequenceCompletedConfirmed = false
+    @State var stockValuesRestoredConfirmed = false
+    @State var firstPartyAuthorshipConfirmed = false
+    @State var localStoragePermitted = false
     @State private var showsExitRestorationReminder = false
+    @State var recoveryMessage: String?
 
     init(
         tune: TuneResult,
@@ -77,14 +70,15 @@ struct FH5ControlledExperimentCaptureView: View {
                 }
                 .accessibilityIdentifier("fh5ExperimentFieldPicker")
                 .onChange(of: field) { _, _ in
-                    if !availableDirections.contains(direction) {
-                        direction = availableDirections.first ?? .increase
+                    if direction.map(availableDirections.contains) != true {
+                        direction = nil
                     }
                 }
 
                 Picker("Variant", selection: $direction) {
+                    Text("Choose direction").tag(nil as FH5ExperimentDirection?)
                     ForEach(availableDirections) { direction in
-                        Text(direction.title).tag(direction)
+                        Text(direction.title).tag(Optional(direction))
                     }
                 }
                 .pickerStyle(.segmented)
@@ -117,18 +111,21 @@ struct FH5ControlledExperimentCaptureView: View {
                     .foregroundStyle(.secondary)
 
                 Picker("Surface", selection: $surface) {
+                    Text("Choose surface").tag(nil as ValidationSurface?)
                     ForEach(ValidationSurface.allCases) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
                 Picker("Input", selection: $input) {
+                    Text("Choose input").tag(nil as ValidationInput?)
                     ForEach(ValidationInput.allCases) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
                 Picker("Target symptom", selection: $targetSymptom) {
+                    Text("Choose symptom").tag(nil as TuneFeedback?)
                     ForEach(TuneFeedback.allCases) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
                 .accessibilityIdentifier("fh5ExperimentTargetPicker")
@@ -136,8 +133,9 @@ struct FH5ControlledExperimentCaptureView: View {
 
             Section("Comparative Outcome") {
                 Picker("After all four runs", selection: $outcome) {
+                    Text("Choose outcome").tag(nil as FH5ExperimentOutcome?)
                     ForEach(FH5ExperimentOutcome.allCases) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
                 .accessibilityIdentifier("fh5ExperimentOutcomePicker")
@@ -180,12 +178,8 @@ struct FH5ControlledExperimentCaptureView: View {
                     "Keep this experiment with the saved plan",
                     isOn: $localStoragePermitted
                 )
-                Toggle(
-                    "Allow deidentified calibration reuse",
-                    isOn: $deidentifiedReusePermitted
-                )
                 Text(
-                    "Reuse is optional and off by default. Turning it on only makes an allow-listed JSON copy eligible to share later. ForzAdvisor keeps the record local and never uploads it in the background; sharing is always a separate action."
+                    "This experiment is stored locally first. Reuse can be authorized later for its exact immutable fingerprint."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -203,11 +197,22 @@ struct FH5ControlledExperimentCaptureView: View {
                 .foregroundStyle(
                     canSubmit ? ForzAdvisorTheme.success : ForzAdvisorTheme.warning
                 )
+                if let nextRequirement {
+                    Text("Next: \(nextRequirement)")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
+
+            ValidationRecoveryMessageSection(message: recoveryMessage)
+            ValidationDraftActionsSection(
+                saveAndExit: saveAndExit,
+                discard: discardDraft
+            )
 
             Section {
                 Button("Record Paired Experiment") {
-                    guard let candidateValue else { return }
+                    guard let candidateValue, let input, let surface,
+                          let targetSymptom, let outcome else { return }
                     onSubmit(FH5ControlledExperimentCapture(
                         field: field,
                         candidateValue: candidateValue,
@@ -228,8 +233,7 @@ struct FH5ControlledExperimentCaptureView: View {
                         firstPartyAuthorshipConfirmed:
                             firstPartyAuthorshipConfirmed,
                         localStoragePermitted: localStoragePermitted,
-                        deidentifiedReusePermitted:
-                            deidentifiedReusePermitted
+                        deidentifiedReusePermitted: false
                     ))
                 }
                 .buttonStyle(.borderedProminent)
@@ -265,10 +269,11 @@ struct FH5ControlledExperimentCaptureView: View {
             }
         }
         .onAppear {
-            if !availableDirections.contains(direction) {
-                direction = availableDirections.first ?? .increase
+            if direction.map(availableDirections.contains) != true {
+                direction = nil
             }
         }
+        .task { restoreDraft() }
     }
 
     private var adjustableObservations: [FH5TuneFieldObservation] {
@@ -302,8 +307,8 @@ struct FH5ControlledExperimentCaptureView: View {
         }
     }
 
-    private var candidateValue: Double? {
-        guard availableDirections.contains(direction),
+    var candidateValue: Double? {
+        guard let direction, availableDirections.contains(direction),
               let current = selectedObservation?.current,
               let step = selectedObservation?.step else {
             return nil
@@ -311,33 +316,4 @@ struct FH5ControlledExperimentCaptureView: View {
         return current + direction.multiplier * step
     }
 
-    private var canSubmit: Bool {
-        candidateValue != nil
-            && sameRouteAndConditionsConfirmed
-            && sameAssistsAndInputConfirmed
-            && onlyDeclaredFieldChangedConfirmed
-            && sequenceCompletedConfirmed
-            && stockValuesRestoredConfirmed
-            && firstPartyAuthorshipConfirmed
-            && localStoragePermitted
-    }
-
-    private var unmetRequirementCount: Int {
-        [
-            candidateValue != nil,
-            sameRouteAndConditionsConfirmed,
-            sameAssistsAndInputConfirmed,
-            onlyDeclaredFieldChangedConfirmed,
-            sequenceCompletedConfirmed,
-            stockValuesRestoredConfirmed,
-            firstPartyAuthorshipConfirmed,
-            localStoragePermitted
-        ].count { !$0 }
-    }
-
-    private func formatted(_ value: Double, unit: TuneUnit?) -> String {
-        let number = value.formatted(.number.precision(.fractionLength(0...3)))
-        guard let unit else { return number }
-        return "\(number) \(unit.rawValue)"
-    }
 }

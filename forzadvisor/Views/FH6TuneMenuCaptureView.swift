@@ -14,15 +14,16 @@ struct FH6TuneMenuCaptureView: View {
     let onBack: () -> Void
     let onSubmit: (FH6TuneMenuCapture) -> Void
 
-    @State private var gameBuildVersion: String
-    @State private var tireCompound: String
-    @State private var gearCount: String
-    @State private var drafts: [TuneFieldID: ControlDraft] = [:]
-    @State private var exactStockConfirmed = false
-    @State private var slidersRestored = false
-    @State private var personallyRead = false
-    @State private var localStoragePermitted = false
+    @State var gameBuildVersion: String
+    @State var tireCompound: String
+    @State var gearCount: String
+    @State var drafts: [TuneFieldID: FH6TuneMenuControlDraft] = [:]
+    @State var exactStockConfirmed = false
+    @State var slidersRestored = false
+    @State var personallyRead = false
+    @State var localStoragePermitted = false
     @State private var hasAttemptedSubmit = false
+    @State var recoveryMessage: String?
 
     init(
         tune: TuneResult,
@@ -34,9 +35,9 @@ struct FH6TuneMenuCaptureView: View {
         self.snapshot = snapshot
         self.onBack = onBack
         self.onSubmit = onSubmit
-        _gameBuildVersion = State(initialValue: snapshot.gameBuild.version ?? "")
-        _tireCompound = State(initialValue: snapshot.tireCompound?.displayName ?? "")
-        _gearCount = State(initialValue: snapshot.gearCount.map(String.init) ?? "")
+        _gameBuildVersion = State(initialValue: "")
+        _tireCompound = State(initialValue: "")
+        _gearCount = State(initialValue: "")
     }
 
     var body: some View {
@@ -80,7 +81,10 @@ struct FH6TuneMenuCaptureView: View {
             ForEach(menuSections, id: \.title) { section in
                 Section(section.title) {
                     ForEach(section.fields, id: \.stableID) { field in
-                        controlEditor(for: field)
+                            FH6TuneMenuControlEditor(
+                                field: field,
+                                draft: controlDraftBinding(for: field)
+                            )
                     }
                 }
                 .forzAdvisorRowBackground()
@@ -109,6 +113,13 @@ struct FH6TuneMenuCaptureView: View {
             }
             .forzAdvisorRowBackground()
 
+            ValidationCaptureProgressSection(
+                completed: requiredChecks.filter(\.0).count,
+                required: requiredChecks.count,
+                next: requiredChecks.first { !$0.0 }?.1,
+                focusNext: { hasAttemptedSubmit = true }
+            )
+
             if hasAttemptedSubmit, !validationMessages.isEmpty {
                 Section("Check These Values") {
                     ForEach(validationMessages, id: \.self) { message in
@@ -130,15 +141,22 @@ struct FH6TuneMenuCaptureView: View {
                 .accessibilityIdentifier("submitTuneMenuCaptureButton")
             }
             .forzAdvisorRowBackground()
+
+            ValidationRecoveryMessageSection(message: recoveryMessage)
+            ValidationDraftActionsSection(
+                saveAndExit: saveAndExit,
+                discard: discardDraft
+            )
         }
         .navigationTitle("Verify Tune Menu")
         .forzAdvisorScreenChrome()
         .scrollDismissesKeyboard(.interactively)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Back", action: onBack)
+                Button("Back", action: saveAndExit)
             }
         }
+        .task { restoreDraft() }
     }
 
     private var expectedFields: [TuneFieldID] {
@@ -209,56 +227,17 @@ struct FH6TuneMenuCaptureView: View {
         capture.validationIssues(upgrading: snapshot).map(\.localizedDescription)
     }
 
-    @ViewBuilder
-    private func controlEditor(for field: TuneFieldID) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(field.projectionLabel)
-                        .font(.subheadline.weight(.semibold))
-                    Text(field.expectedDisplayUnit.isEmpty ? "No unit" : field.expectedDisplayUnit)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Picker("State", selection: availabilityBinding(for: field)) {
-                    Text("Not reviewed")
-                        .tag(FH6TuneMenuFieldAvailability?.none)
-                    ForEach(FH6TuneMenuFieldAvailability.allCases, id: \.rawValue) {
-                        Text(availabilityTitle($0))
-                            .tag(Optional($0))
-                    }
-                }
-                .labelsHidden()
-                .accessibilityLabel("\(field.projectionLabel) state")
-            }
-
-            if drafts[field]?.availability == .adjustable {
-                HStack(spacing: 8) {
-                    compactNumericField("Min", field: field, keyPath: \.minimum)
-                    compactNumericField("Max", field: field, keyPath: \.maximum)
-                    compactNumericField("Step", field: field, keyPath: \.step)
-                    compactNumericField("Current", field: field, keyPath: \.current)
-                }
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    private func compactNumericField(
-        _ label: String,
-        field: TuneFieldID,
-        keyPath: WritableKeyPath<ControlDraft, String>
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            TextField("—", text: draftBinding(for: field, keyPath: keyPath))
-                .keyboardType(.decimalPad)
-                .textFieldStyle(.roundedBorder)
-                .accessibilityLabel("\(field.projectionLabel) \(label)")
-        }
+    var requiredChecks: [(Bool, String)] {
+        [
+            (!gameBuildVersion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "Enter the exact game build"),
+            (!tireCompound.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "Enter the tire compound"),
+            (parsedGearCount != nil, "Enter a forward gear count from 1 to 10"),
+            (expectedFields.allSatisfy { drafts[$0]?.availability != nil }, "Review every menu control"),
+            (exactStockConfirmed, "Confirm the exact stock car"),
+            (slidersRestored, "Confirm every slider was restored"),
+            (personallyRead, "Confirm the values were read in FH6"),
+            (localStoragePermitted, "Allow local storage")
+        ]
     }
 
     private func numericField(
@@ -278,36 +257,12 @@ struct FH6TuneMenuCaptureView: View {
         }
     }
 
-    private func availabilityBinding(
+    private func controlDraftBinding(
         for field: TuneFieldID
-    ) -> Binding<FH6TuneMenuFieldAvailability?> {
+    ) -> Binding<FH6TuneMenuControlDraft> {
         Binding(
-            get: { drafts[field]?.availability },
-            set: { availability in
-                var draft = drafts[field] ?? ControlDraft()
-                draft.availability = availability
-                if availability != .adjustable {
-                    draft.minimum = ""
-                    draft.maximum = ""
-                    draft.step = ""
-                    draft.current = ""
-                }
-                drafts[field] = draft
-            }
-        )
-    }
-
-    private func draftBinding(
-        for field: TuneFieldID,
-        keyPath: WritableKeyPath<ControlDraft, String>
-    ) -> Binding<String> {
-        Binding(
-            get: { drafts[field]?[keyPath: keyPath] ?? "" },
-            set: { value in
-                var draft = drafts[field] ?? ControlDraft()
-                draft[keyPath: keyPath] = value
-                drafts[field] = draft
-            }
+            get: { drafts[field] ?? .init() },
+            set: { drafts[field] = $0 }
         )
     }
 
@@ -315,21 +270,4 @@ struct FH6TuneMenuCaptureView: View {
         LocalizedNumberText.parse(text) ?? .nan
     }
 
-    private func availabilityTitle(
-        _ availability: FH6TuneMenuFieldAvailability
-    ) -> String {
-        switch availability {
-        case .adjustable: "Adjustable"
-        case .shownLocked: "Shown locked"
-        case .notShown: "Not shown"
-        }
-    }
-}
-
-private struct ControlDraft {
-    var availability: FH6TuneMenuFieldAvailability?
-    var minimum = ""
-    var maximum = ""
-    var step = ""
-    var current = ""
 }

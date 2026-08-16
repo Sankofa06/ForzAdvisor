@@ -96,7 +96,8 @@ struct FirstPartyValidationExportGate {
         for record: FirstPartyValidationRecord,
         authorization: ValidationEvidenceAuthorizationEnvelope?
     ) throws -> Data {
-        guard FirstPartyValidationRecordFactory().isValid(record) else {
+        guard FirstPartyValidationRecordFactory()
+            .isValidLocalObservation(record) else {
             throw FirstPartyValidationError.invalidStoredRecord
         }
         if record.deidentifiedReusePermitted {

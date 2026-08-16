@@ -8,7 +8,7 @@ import XCTest
 @testable import forzadvisor
 
 final class FirstPartyValidationRecordTests: XCTestCase {
-    private let date = Date(timeIntervalSinceReferenceDate: 12_345)
+    let date = Date(timeIntervalSinceReferenceDate: 12_345)
 
     func testEligibleRecordIsCanonicalDeterministicAndPrivacyAllowListed() async throws {
         var tune = try await eligibleTune()
@@ -379,7 +379,7 @@ final class FirstPartyValidationRecordTests: XCTestCase {
             tune: tune, savedTune: tune, isStreaming: false,
             capture: capture
         )
-        XCTAssertTrue(factory.isValid(local))
+        XCTAssertTrue(factory.isValidLocalObservation(local))
         XCTAssertFalse(local.deidentifiedReusePermitted)
         XCTAssertThrowsError(try local.deterministicJSON()) {
             XCTAssertEqual(
@@ -526,7 +526,7 @@ final class FirstPartyValidationRecordTests: XCTestCase {
         }
     }
 
-    private func eligibleTune() async throws -> TuneResult {
+    func eligibleTune() async throws -> TuneResult {
         let catalog = try BundledCarCatalog.load().get()
         let entry = try XCTUnwrap(catalog.entries.first { $0.game == .fh6 })
         let selection = catalog.selection(for: entry)
@@ -609,7 +609,7 @@ final class FirstPartyValidationRecordTests: XCTestCase {
         return tune
     }
 
-    private func validCapture() -> FirstPartyValidationCapture {
+    func validCapture() -> FirstPartyValidationCapture {
         FirstPartyValidationCapture(
             courseType: .testTrack, surface: .dry, input: .controller,
             runCount: 3, verdict: .adjust, feedback: [.pushesWide],

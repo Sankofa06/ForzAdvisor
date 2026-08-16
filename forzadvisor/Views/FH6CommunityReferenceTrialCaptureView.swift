@@ -12,8 +12,9 @@ struct FH6CommunityReferenceTrialCaptureView: View {
     let onBack: () -> Void
     let onSubmit: (FH6CommunityReferenceTrialCapture) -> Void
 
-    @State private var draft = FH6CommunityReferenceTrialDraft()
+    @State var draft = FH6CommunityReferenceTrialDraft()
     @State private var showsRestoreAlert = false
+    @State var recoveryMessage: String?
 
     private var association: FH6CommunityReferenceCandidateAssociation? {
         guard let catalogID = tune.request.car.catalogReference?.entryID else {
@@ -46,8 +47,9 @@ struct FH6CommunityReferenceTrialCaptureView: View {
 
             Section("Community Reference") {
                 Picker("Platform", selection: $draft.kind) {
+                    Text("Choose platform").tag(nil as FH6CommunityReferenceKind?)
                     ForEach(FH6CommunityReferenceKind.allCases, id: \.self) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
                 .accessibilityIdentifier("communityTrialPlatformPicker")
@@ -66,18 +68,21 @@ struct FH6CommunityReferenceTrialCaptureView: View {
 
             Section("Controlled Context") {
                 Picker("Course", selection: $draft.courseType) {
+                    Text("Choose course").tag(nil as ValidationCourseType?)
                     ForEach(ValidationCourseType.allCases) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
                 Picker("Surface", selection: $draft.surface) {
+                    Text("Choose surface").tag(nil as ValidationSurface?)
                     ForEach(ValidationSurface.allCases) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
                 Picker("Input", selection: $draft.input) {
+                    Text("Choose input").tag(nil as ValidationInput?)
                     ForEach(ValidationInput.allCases) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
             }
@@ -109,11 +114,12 @@ struct FH6CommunityReferenceTrialCaptureView: View {
 
             Section("Observed Outcome") {
                 Picker("Outcome", selection: $draft.outcome) {
+                    Text("Choose outcome").tag(nil as FH6CommunityReferenceTrialOutcome?)
                     ForEach(
                         FH6CommunityReferenceTrialOutcome.allCases,
                         id: \.self
                     ) {
-                        Text($0.title).tag($0)
+                        Text($0.title).tag(Optional($0))
                     }
                 }
                 if draft.outcome == .referencePreferred {
@@ -139,13 +145,24 @@ struct FH6CommunityReferenceTrialCaptureView: View {
 
             Section("Required Confirmations") {
                 confirmationToggles
-                Toggle(
-                    "Allow deidentified outcome reuse and explicit export",
-                    isOn: $draft.deidentifiedOutcomeReusePermitted
-                )
-                .accessibilityIdentifier("communityTrialReuseToggle")
+                Text("This comparison is stored locally first. Reuse can be authorized later for its exact fingerprint.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             .forzAdvisorRowBackground()
+
+            ValidationCaptureProgressSection(
+                completed: requiredChecks.filter(\.0).count,
+                required: requiredChecks.count,
+                next: requiredChecks.first { !$0.0 }?.1,
+                focusNext: nil
+            )
+
+            ValidationRecoveryMessageSection(message: recoveryMessage)
+            ValidationDraftActionsSection(
+                saveAndExit: saveAndExit,
+                discard: discardDraft
+            )
 
             Section {
                 Button("Save Local Comparison") {
@@ -191,6 +208,7 @@ struct FH6CommunityReferenceTrialCaptureView: View {
                 "Before leaving, reapply the exact ForzAdvisor candidate used for A1 and A2."
             )
         }
+        .task { restoreDraft() }
     }
 
     @ViewBuilder
@@ -243,6 +261,28 @@ struct FH6CommunityReferenceTrialCaptureView: View {
                 }
             }
         )
+    }
+
+    private var requiredChecks: [(Bool, String)] {
+        [
+            (draft.kind != nil, "Choose the reference platform"),
+            (!draft.contentURL.isEmpty, "Enter the direct permalink"),
+            (!draft.publisherDisplayName.isEmpty, "Enter the publisher label"),
+            (draft.courseType != nil, "Choose the course"),
+            (draft.surface != nil, "Choose the surface"),
+            (draft.input != nil, "Choose the input"),
+            (draft.runs.allSatisfy(\.completed), "Complete all four runs"),
+            (draft.runs.allSatisfy(\.correctTuneConfirmed), "Confirm the correct tune for every run"),
+            (draft.outcome != nil, "Choose the observed outcome"),
+            (draft.outcome != .referencePreferred || !draft.candidateDeficiencySymptoms.isEmpty, "Choose an observed symptom"),
+            (draft.sameRouteAndConditionsConfirmed, "Confirm the same conditions"),
+            (draft.sameAssistsAndInputConfirmed, "Confirm the same assists and input"),
+            (draft.candidateSettingsAppliedConfirmed, "Confirm candidate settings"),
+            (draft.communityIdentityConfirmed, "Confirm reference identity"),
+            (draft.finalCandidateRestoredConfirmed, "Restore the candidate"),
+            (draft.firstPartyAuthorshipConfirmed, "Confirm first-party authorship"),
+            (draft.localStoragePermitted, "Allow local storage")
+        ]
     }
 
     private func runTitle(_ role: FH6CommunityReferenceTrialRole) -> String {

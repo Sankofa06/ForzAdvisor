@@ -487,6 +487,7 @@ struct FirstPartyValidationRecordFactory {
               record.exactSetupConfirmed,
               record.allExportedSettingsApplied,
               record.firstPartyAuthorshipConfirmed,
+              record.deidentifiedReusePermitted,
               (1...99).contains(record.session.runCount),
               ((record.outcome.verdict == .keep && record.outcome.feedback.isEmpty)
                 || (record.outcome.verdict != .keep && !record.outcome.feedback.isEmpty)),
@@ -541,6 +542,12 @@ struct FirstPartyValidationRecordFactory {
             session: record.session, outcome: record.outcome
         )
         return (try? hash(contentPayload)) == record.contentFingerprint
+    }
+
+    func isValidLocalObservation(_ record: FirstPartyValidationRecord) -> Bool {
+        var legacyCompatible = record
+        legacyCompatible.deidentifiedReusePermitted = true
+        return isValid(legacyCompatible)
     }
 
     private func hasPermissionClearStockCapture(_ snapshot: VehicleBuildSnapshot) -> Bool {
