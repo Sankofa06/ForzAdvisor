@@ -1,6 +1,6 @@
 # Psychological UX Cohesion
 
-Status: Proposed for product approval. No implementation is authorized by this spec yet.
+Status: Approved on 2026-08-15; implementation in progress.
 
 ## 1. Problem And Outcome
 
@@ -40,6 +40,8 @@ Canonical flow:
 - `TuneResultView.swift`, root workflow files, and several evidence/review files exceed the PRD's 350-line limit.
 
 Screenshot evidence now covers empty and populated Garage, source selection, pristine and completed manual entry, discipline selection, the top and lower Tune Result states, the first-save handoff, Beta Missions, offline and API Settings, and Step Guide plus one nested response. Captures use the dedicated iPhone 17 simulator in light mode at default text size; VoiceOver, larger Dynamic Type sizes, dark mode beyond the earlier Garage baseline, and camera/OCR success and failure states remain verification requirements.
+
+The shared foundation app and test bundles compile without source warnings. In the latest canonical focused run, 36 tests passed; six router tests exposed obsolete bundled-catalog fixtures. Those fixtures were replaced with explicit catalog-free data and compile cleanly, but their runtime rerun is pending because CoreSimulator temporarily exposes no devices. This does not waive the final green runtime gate.
 
 ## 4. Proposed Product Decisions
 
@@ -212,7 +214,7 @@ Rollback is commit-based for non-persistent view slices. Validation schema v2 is
 - [x] User approves the proposed product decisions and full scope.
 - [x] T1 Theme/Foundation lands green.
 - [x] S1 Settings Contracts lands green.
-- [ ] R1 Root Workflow/Foundation lands green.
+- [x] R1 Root Workflow/Foundation lands compile-green; runtime rerun remains a pre-integration gate.
 - [x] V1 Validation Public Contract and migration fixtures land green.
 - [ ] Six Sol Medium view slices land green from one immutable base.
 - [ ] Integration acceptance criteria and terminology pass.
