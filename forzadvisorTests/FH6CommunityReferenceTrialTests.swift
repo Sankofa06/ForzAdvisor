@@ -355,13 +355,13 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         XCTAssertEqual(
             try saved.allFH6CommunityReferenceTrialRecords()
                 .map(\.recordID),
-            [recordID, second.recordID]
+            [recordID]
         )
         XCTAssertEqual(
             try saved.fh6CommunityReferenceTrialRecords(
                 matching: tune
             ).count,
-            2
+            1
         )
 
         XCTAssertTrue(
@@ -372,7 +372,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         XCTAssertEqual(
             try saved.allFH6CommunityReferenceTrialRecords()
                 .map(\.recordID),
-            [second.recordID]
+            []
         )
 
         var retuned = tune
@@ -385,7 +385,7 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
         )
         XCTAssertEqual(
             try saved.allFH6CommunityReferenceTrialRecords().count,
-            1
+            0
         )
         XCTAssertThrowsError(
             try saved.appendFH6CommunityReferenceTrialRecord(first)
@@ -1323,51 +1323,9 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
     }
 
     private func eligibleTune() async throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.game == .fh6 })
-        let selection = catalog.selection(for: entry)
-        let capability = selection.capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
-        let parts = try UpgradePartCapture(
-            gameBuildVersion: "test-build",
-            parts: TunePartID.allCases.map {
-                UpgradePartCaptureValue(partID: $0, status: .offered)
-            },
-            exactStockBuildConfirmed: true,
-            localUsePermitted: true
-        ).verifiedSnapshot(upgrading: capability, capturedAt: capturedAt)
-        let exact = try TirePressureCapture(
-            gameBuildVersion: "test-build",
-            tireCompound: "Stock",
-            gearCount: 6,
-            front: .init(
-                minimumPSI: 15,
-                maximumPSI: 40,
-                stepPSI: 0.5,
-                currentPSI: 30
-            ),
-            rear: .init(
-                minimumPSI: 15,
-                maximumPSI: 40,
-                stepPSI: 0.5,
-                currentPSI: 30
-            ),
-            exactStockBuildConfirmed: true,
-            localUsePermitted: true
-        ).exactBuildSnapshot(
-            upgrading: parts,
-            capturedAt: capturedAt,
-            evidenceID: "local-tire"
+        try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
+            capturedAt: capturedAt
         )
-        let request = TuneRequest(
-            car: exact.car,
-            discipline: .road,
-            buildSnapshot: exact
-        )
-        var tune = try await CapabilityProjectingTuneProvider(
-            base: LocalSampleTuneProvider()
-        ).generateTune(for: request)
-        tune.generatedAt = capturedAt
-        return tune
     }
 
     private func coreAssociation(
@@ -1431,9 +1389,13 @@ final class FH6CommunityReferenceTrialTests: XCTestCase {
 
     private func validDraft() -> FH6CommunityReferenceTrialDraft {
         var draft = FH6CommunityReferenceTrialDraft()
+        draft.kind = .youtube
         draft.contentURL =
             "https://www.youtube.com/watch?v=abc123"
         draft.publisherDisplayName = "Community Tuner"
+        draft.courseType = .testTrack
+        draft.surface = .dry
+        draft.input = .controller
         draft.runs = FH6CommunityReferenceTrialRecord.requiredRoles
             .map {
                 .init(

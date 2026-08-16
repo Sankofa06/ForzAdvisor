@@ -1262,61 +1262,9 @@ final class FH6CommunityOutcomeReviewTests: XCTestCase {
     }
 
     private func eligibleTune() async throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(
-            catalog.entries.first { $0.game == .fh6 }
-        )
-        let selection = catalog.selection(for: entry)
-        let capability =
-            selection.capabilityOnlyBuildSnapshot(
-                capturedAt: capturedAt
-            )
-        let parts = try UpgradePartCapture(
-            gameBuildVersion: "test-build",
-            parts: TunePartID.allCases.map {
-                UpgradePartCaptureValue(
-                    partID: $0,
-                    status: .offered
-                )
-            },
-            exactStockBuildConfirmed: true,
-            localUsePermitted: true
-        ).verifiedSnapshot(
-            upgrading: capability,
+        try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
             capturedAt: capturedAt
         )
-        let exact = try TirePressureCapture(
-            gameBuildVersion: "test-build",
-            tireCompound: "Stock",
-            gearCount: 6,
-            front: .init(
-                minimumPSI: 15,
-                maximumPSI: 40,
-                stepPSI: 0.5,
-                currentPSI: 30
-            ),
-            rear: .init(
-                minimumPSI: 15,
-                maximumPSI: 40,
-                stepPSI: 0.5,
-                currentPSI: 30
-            ),
-            exactStockBuildConfirmed: true,
-            localUsePermitted: true
-        ).exactBuildSnapshot(
-            upgrading: parts,
-            capturedAt: capturedAt,
-            evidenceID: "community-outcome-review"
-        )
-        var tune = try await CapabilityProjectingTuneProvider(
-            base: LocalSampleTuneProvider()
-        ).generateTune(for: .init(
-            car: exact.car,
-            discipline: .road,
-            buildSnapshot: exact
-        ))
-        tune.generatedAt = capturedAt
-        return tune
     }
 
     private func validationCapture()

@@ -35,7 +35,8 @@ enum SyntheticLegacyTuneFixtureFactory {
 
     static func eligibleValidationTune(
         capturedAt: Date,
-        usesMenuCapture: Bool = false
+        usesMenuCapture: Bool = false,
+        discipline: DrivingDiscipline = .road
     ) async throws -> TuneResult {
         let selection = selection(reviewedAt: capturedAt)
         let capability = selection.capabilityOnlyBuildSnapshot(
@@ -54,7 +55,7 @@ enum SyntheticLegacyTuneFixtureFactory {
             : tireSnapshot(upgrading: parts, capturedAt: capturedAt)
         let request = TuneRequest(
             car: exact.car,
-            discipline: .road,
+            discipline: discipline,
             buildSnapshot: exact
         )
         var tune = try await CapabilityProjectingTuneProvider(

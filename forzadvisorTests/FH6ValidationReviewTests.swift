@@ -683,51 +683,9 @@ final class FH6ValidationReviewTests: XCTestCase {
     }
 
     private func eligibleTune() async throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.game == .fh6 })
-        let selection = catalog.selection(for: entry)
-        let capability = selection.capabilityOnlyBuildSnapshot(capturedAt: date)
-        let parts = try UpgradePartCapture(
-            gameBuildVersion: "test-build",
-            parts: TunePartID.allCases.map {
-                UpgradePartCaptureValue(partID: $0, status: .offered)
-            },
-            exactStockBuildConfirmed: true,
-            localUsePermitted: true
-        ).verifiedSnapshot(upgrading: capability, capturedAt: date)
-        let exact = try TirePressureCapture(
-            gameBuildVersion: "test-build",
-            tireCompound: "Stock",
-            gearCount: 6,
-            front: .init(
-                minimumPSI: 15,
-                maximumPSI: 40,
-                stepPSI: 0.5,
-                currentPSI: 30
-            ),
-            rear: .init(
-                minimumPSI: 15,
-                maximumPSI: 40,
-                stepPSI: 0.5,
-                currentPSI: 30
-            ),
-            exactStockBuildConfirmed: true,
-            localUsePermitted: true
-        ).exactBuildSnapshot(
-            upgrading: parts,
-            capturedAt: date,
-            evidenceID: "local-tire"
+        try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
+            capturedAt: date
         )
-        let request = TuneRequest(
-            car: exact.car,
-            discipline: .road,
-            buildSnapshot: exact
-        )
-        var tune = try await CapabilityProjectingTuneProvider(
-            base: LocalSampleTuneProvider()
-        ).generateTune(for: request)
-        tune.generatedAt = date
-        return tune
     }
 
     private func makeFixture(
