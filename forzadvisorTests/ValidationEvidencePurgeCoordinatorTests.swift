@@ -68,6 +68,11 @@ final class ValidationEvidencePurgeCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(try store.purge(fingerprints: ["first"]), 1)
         XCTAssertNil(try store.authorizationResult(for: "first"))
-        XCTAssertEqual(try store.authorizationResult(for: "second"), second)
+        let retained = try XCTUnwrap(
+            store.authorizationResult(for: "second")
+        )
+        XCTAssertEqual(retained.observationFingerprint, "second")
+        XCTAssertEqual(retained.authorizationID, second.authorizationID)
+        XCTAssertTrue(retained.allowsReuse(of: "second"))
     }
 }

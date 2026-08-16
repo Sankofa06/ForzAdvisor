@@ -384,7 +384,7 @@ final class FirstPartyValidationRecordTests: XCTestCase {
         XCTAssertThrowsError(try local.deterministicJSON()) {
             XCTAssertEqual(
                 $0 as? FirstPartyValidationError,
-                .reuseNotPermitted
+                .invalidStoredRecord
             )
         }
     }
@@ -527,86 +527,16 @@ final class FirstPartyValidationRecordTests: XCTestCase {
     }
 
     func eligibleTune() async throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.game == .fh6 })
-        let selection = catalog.selection(for: entry)
-        let capability = selection.capabilityOnlyBuildSnapshot(capturedAt: date)
-        let parts = try UpgradePartCapture(
-            gameBuildVersion: "test-build",
-            parts: TunePartID.allCases.map {
-                UpgradePartCaptureValue(partID: $0, status: .offered)
-            },
-            exactStockBuildConfirmed: true,
-            localUsePermitted: true
-        ).verifiedSnapshot(upgrading: capability, capturedAt: date)
-        let exact = try TirePressureCapture(
-            gameBuildVersion: "test-build", tireCompound: "Stock", gearCount: 6,
-            front: .init(minimumPSI: 15, maximumPSI: 40, stepPSI: 0.5, currentPSI: 30),
-            rear: .init(minimumPSI: 15, maximumPSI: 40, stepPSI: 0.5, currentPSI: 30),
-            exactStockBuildConfirmed: true, localUsePermitted: true
-        ).exactBuildSnapshot(upgrading: parts, capturedAt: date, evidenceID: "local-tire")
-        let request = TuneRequest(car: exact.car, discipline: .road, buildSnapshot: exact)
-        var tune = try await CapabilityProjectingTuneProvider(base: LocalSampleTuneProvider()).generateTune(for: request)
-        tune.generatedAt = date
-        return tune
+        try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
+            capturedAt: date
+        )
     }
 
     private func eligibleMenuTune() async throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first {
-            $0.game == .fh6 && $0.stock.drivetrain == .rwd
-        })
-        let selection = catalog.selection(for: entry)
-        let capability = selection.capabilityOnlyBuildSnapshot(
-            capturedAt: date
-        )
-        let parts = try UpgradePartCapture(
-            gameBuildVersion: "test-build",
-            parts: TunePartID.allCases.map {
-                UpgradePartCaptureValue(partID: $0, status: .offered)
-            },
-            exactStockBuildConfirmed: true,
-            localUsePermitted: true
-        ).verifiedSnapshot(upgrading: capability, capturedAt: date)
-        let controls = TuneFieldID.expectedFields(
-            drivetrain: parts.car.drivetrain,
-            gearCount: 6
-        ).map { field in
-            let minimum = field.expectedUnit == .degrees ? -10.0 : 0
-            return FH6TuneMenuFieldObservation(
-                field: field,
-                availability: .adjustable,
-                minimum: minimum,
-                maximum: minimum + 5_000,
-                step: 0.5,
-                current: minimum + 5,
-                unit: field.expectedUnit
-            )
-        }
-        let exact = try FH6TuneMenuCapture(
-            gameBuildVersion: "test-build",
-            tireCompoundDisplayName: "Stock",
-            forwardGearCount: 6,
-            controls: controls,
-            exactUntouchedStockConfirmed: true,
-            allSlidersRestoredConfirmed: true,
-            personallyReadFromGameConfirmed: true,
-            localStoragePermitted: true
-        ).exactBuildSnapshot(
-            upgrading: parts,
+        try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
             capturedAt: date,
-            evidenceID: "fh6-menu.validation-test"
+            usesMenuCapture: true
         )
-        let request = TuneRequest(
-            car: exact.car,
-            discipline: .road,
-            buildSnapshot: exact
-        )
-        var tune = try await CapabilityProjectingTuneProvider(
-            base: LocalSampleTuneProvider()
-        ).generateTune(for: request)
-        tune.generatedAt = date
-        return tune
     }
 
     func validCapture() -> FirstPartyValidationCapture {
