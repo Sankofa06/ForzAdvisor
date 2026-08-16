@@ -13,7 +13,7 @@ extension ForzAdvisorUITests {
         garageHome.descendants(matching: .button)["newTuneButton"].tap()
 
         XCTAssertTrue(app.buttons["takePhotoPrimaryButton"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Import Screenshot"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["importScreenshotButton"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["manualEntryButton"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["catalogEntryButton"].exists)
     }

@@ -21,7 +21,6 @@ struct GarageFirstTuneView: View {
                 .accessibilityIdentifier("newTuneButton")
             }
             .padding(.vertical, 8)
-            .accessibilityIdentifier("emptyGarageFirstWin")
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
         }
     }

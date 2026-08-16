@@ -86,6 +86,7 @@ struct NewTuneStartView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(photoImport.isProcessingPhoto)
+                .accessibilityIdentifier("importScreenshotButton")
                 .forzAdvisorRowBackground()
 
                 Button { request(.manual) } label: {
