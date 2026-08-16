@@ -304,6 +304,35 @@ final class SavedTune {
     }
 
     @MainActor
+    func replaceValidationRecord(
+        fingerprint: String,
+        with record: FirstPartyValidationRecord
+    ) throws {
+        guard record.contentFingerprint == fingerprint,
+              FirstPartyValidationRecordFactory().isValid(record) else {
+            throw FirstPartyValidationError.invalidStoredRecord
+        }
+        var records = try decodedValidationRecords()
+        records.removeAll { $0.contentFingerprint == fingerprint }
+        records.append(record)
+        firstPartyValidationRecordsData = try Self.encoder.encode(records)
+        updatedAt = .now
+    }
+
+    @MainActor
+    @discardableResult
+    func deleteValidationRecords(fingerprint: String) throws -> Bool {
+        var records = try decodedValidationRecords()
+        let priorCount = records.count
+        records.removeAll { $0.contentFingerprint == fingerprint }
+        guard records.count != priorCount else { return false }
+        firstPartyValidationRecordsData = records.isEmpty
+            ? nil : try Self.encoder.encode(records)
+        updatedAt = .now
+        return true
+    }
+
+    @MainActor
     @discardableResult
     func deleteValidationRecord(id: UUID) throws -> Bool {
         var records = try decodedValidationRecords()

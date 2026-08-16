@@ -48,6 +48,21 @@ struct ValidationEvidenceTransitionCoordinator {
         fingerprint: String,
         authorizationVersion: String = "validation-reuse-v1"
     ) throws -> GrantPlan {
+        if let pending = try authorizationStore.exportBlockStore.block(
+            for: fingerprint
+        ), pending.savedTuneID == savedTuneID,
+           pending.reason == .grantRecovery,
+           let authorization = pending.authorization,
+           let sourceObservation = pending.sourceObservation {
+            return GrantPlan(
+                savedTuneID: savedTuneID,
+                fingerprint: fingerprint,
+                authorization: authorization,
+                legacyReusableRecord: try sourceObservation.reusableRecord(
+                    authorization: authorization
+                )
+            )
+        }
         guard let local = try localStore.observation(
             savedTuneID: savedTuneID,
             fingerprint: fingerprint
@@ -73,6 +88,21 @@ struct ValidationEvidenceTransitionCoordinator {
         )
     }
 
+    /// Must be durably persisted before any reusable blob or receipt is saved.
+    func stageGrant(_ plan: GrantPlan) throws {
+        try authorizationStore.exportBlockStore.persist(
+            ValidationEvidenceExportBlock(
+                savedTuneID: plan.savedTuneID,
+                fingerprint: plan.fingerprint,
+                reason: .grantRecovery,
+                authorization: plan.authorization,
+                sourceObservation: try ValidationLocalObservation(
+                    record: plan.legacyReusableRecord
+                )
+            )
+        )
+    }
+
     /// Call only after the reusable legacy blob has been persisted and saved.
     func finalizeGrant(_ plan: GrantPlan) throws {
         _ = try localStore.delete(
@@ -83,6 +113,12 @@ struct ValidationEvidenceTransitionCoordinator {
 
     func activateGrant(_ plan: GrantPlan) throws {
         try authorizationStore.persist(plan.authorization)
+    }
+
+    func completeGrant(_ plan: GrantPlan) throws {
+        _ = try authorizationStore.exportBlockStore.remove(
+            fingerprint: plan.fingerprint
+        )
     }
 
     func compensateGrant(_ plan: GrantPlan) throws {
@@ -108,10 +144,25 @@ struct ValidationEvidenceTransitionCoordinator {
         }
     }
 
+    func resolveGrantRecovery(_ plan: GrantPlan) throws {
+        _ = try authorizationStore.exportBlockStore.remove(
+            fingerprint: plan.fingerprint
+        )
+    }
+
     func prepareRevoke(
         savedTuneID: UUID,
         reusableRecord: FirstPartyValidationRecord
     ) throws -> RevokePlan {
+        try authorizationStore.exportBlockStore.persist(
+            ValidationEvidenceExportBlock(
+                savedTuneID: savedTuneID,
+                fingerprint: reusableRecord.contentFingerprint,
+                reason: .revokeRecovery,
+                authorization: nil,
+                sourceObservation: nil
+            )
+        )
         try localStore.upsert(
             ValidationLocalObservation(record: reusableRecord),
             savedTuneID: savedTuneID
@@ -126,11 +177,33 @@ struct ValidationEvidenceTransitionCoordinator {
     /// Call only after the reusable record is absent from the saved legacy blob.
     func finalizeRevoke(_ plan: RevokePlan) throws {
         _ = try authorizationStore.revoke(fingerprint: plan.fingerprint)
+        _ = try authorizationStore.exportBlockStore.remove(
+            fingerprint: plan.fingerprint
+        )
+    }
+
+    func completePendingRevoke(
+        savedTuneID: UUID,
+        fingerprint: String
+    ) throws {
+        guard let block = try authorizationStore.exportBlockStore.block(
+            for: fingerprint
+        ), block.savedTuneID == savedTuneID,
+           block.reason == .revokeRecovery else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
+        _ = try authorizationStore.revoke(fingerprint: fingerprint)
+        _ = try authorizationStore.exportBlockStore.remove(
+            fingerprint: fingerprint
+        )
     }
 
     func rollbackRevoke(_ plan: RevokePlan) throws {
         _ = try localStore.delete(
             savedTuneID: plan.savedTuneID,
+            fingerprint: plan.fingerprint
+        )
+        _ = try authorizationStore.exportBlockStore.remove(
             fingerprint: plan.fingerprint
         )
     }
@@ -152,5 +225,52 @@ struct ValidationEvidenceLiveRecordResolver {
             savedTuneID: savedTuneID,
             fingerprint: fingerprint
         ).map(ValidationEvidenceRecord.localOnly)
+    }
+}
+
+struct ValidationEvidenceDeleteCoordinator {
+    func delete(
+        liveRecord: ValidationEvidenceRecord,
+        revoke: () throws -> ValidationEvidenceReuseActionResult,
+        deleteLocal: () throws -> Bool,
+        removeAuthorization: () throws -> Void
+    ) throws -> ValidationEvidenceDeleteActionResult {
+        if case .reusable = liveRecord {
+            switch try revoke() {
+            case .reusable:
+                return .retainedReusable
+            case .exportBlockedRecoveryPending:
+                return .exportBlockedRecoveryPending
+            case .localOnly:
+                do {
+                    guard try deleteLocal() else {
+                        return .retainedLocalOnly
+                    }
+                } catch {
+                    return .retainedLocalOnly
+                }
+                do {
+                    try removeAuthorization()
+                    return .deleted
+                } catch {
+                    return .deletedAuthorizationCleanupPending
+                }
+            }
+        }
+        do {
+            guard try deleteLocal() else {
+                throw ValidationEvidenceRootError.missingLiveRecord
+            }
+        } catch ValidationEvidenceRootError.missingLiveRecord {
+            throw ValidationEvidenceRootError.missingLiveRecord
+        } catch {
+            return .retainedLocalOnly
+        }
+        do {
+            try removeAuthorization()
+            return .deleted
+        } catch {
+            return .deletedAuthorizationCleanupPending
+        }
     }
 }

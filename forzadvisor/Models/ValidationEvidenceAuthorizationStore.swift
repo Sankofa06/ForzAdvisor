@@ -5,6 +5,120 @@ enum ValidationEvidenceExportError: Error, Equatable {
     case invalidAuthorization
 }
 
+enum ValidationEvidenceAuthorizationStatus: Equatable, Sendable {
+    case localOnly
+    case reusable(ValidationEvidenceAuthorizationEnvelope)
+    case exportBlockedRecoveryPending(ValidationEvidenceExportBlockReason?)
+}
+
+enum ValidationEvidenceExportBlockReason: String, Codable, Sendable {
+    case grantRecovery
+    case revokeRecovery
+}
+
+struct ValidationEvidenceExportBlock: Codable, Equatable, Sendable {
+    let savedTuneID: UUID
+    let fingerprint: String
+    let reason: ValidationEvidenceExportBlockReason
+    let authorization: ValidationEvidenceAuthorizationEnvelope?
+    let sourceObservation: ValidationLocalObservation?
+}
+
+struct ValidationEvidenceExportBlockStore {
+    enum Operation: Equatable {
+        case read, persist, remove, purge
+    }
+
+    let fileURL: URL
+    let fault: ((Operation) throws -> Void)?
+
+    init(
+        fileURL: URL,
+        fault: ((Operation) throws -> Void)? = nil
+    ) {
+        self.fileURL = fileURL
+        self.fault = fault
+    }
+
+    func block(for fingerprint: String) throws
+        -> ValidationEvidenceExportBlock? {
+        try fault?(.read)
+        return try readAll()[fingerprint]
+    }
+
+    func fingerprints(savedTuneID: UUID) throws -> Set<String> {
+        try fault?(.read)
+        return Set(try readAll().values.compactMap {
+            $0.savedTuneID == savedTuneID ? $0.fingerprint : nil
+        })
+    }
+
+    func persist(_ block: ValidationEvidenceExportBlock) throws {
+        try fault?(.persist)
+        guard !block.fingerprint.isEmpty else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
+        var values = try readAll()
+        values[block.fingerprint] = block
+        try write(values)
+    }
+
+    @discardableResult
+    func remove(fingerprint: String) throws -> Bool {
+        try fault?(.remove)
+        var values = try readAll()
+        guard values.removeValue(forKey: fingerprint) != nil else {
+            return false
+        }
+        try write(values)
+        return true
+    }
+
+    @discardableResult
+    func purge(fingerprints: Set<String>) throws -> Int {
+        try fault?(.purge)
+        guard !fingerprints.isEmpty else { return 0 }
+        var values = try readAll()
+        let priorCount = values.count
+        values = values.filter { !fingerprints.contains($0.key) }
+        let removed = priorCount - values.count
+        guard removed > 0 else { return 0 }
+        try write(values)
+        return removed
+    }
+
+    private func readAll() throws -> [String: ValidationEvidenceExportBlock] {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            return [:]
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let values = try decoder.decode(
+            [String: ValidationEvidenceExportBlock].self,
+            from: Data(contentsOf: fileURL)
+        )
+        guard values.allSatisfy({ key, value in
+            key == value.fingerprint && !key.isEmpty
+        }) else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
+        return values
+    }
+
+    private func write(
+        _ values: [String: ValidationEvidenceExportBlock]
+    ) throws {
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.sortedKeys]
+        try encoder.encode(values).write(to: fileURL, options: .atomic)
+    }
+}
+
 struct ValidationEvidenceAuthorizationStore {
     enum Operation: Equatable {
         case read, persist, remove, revoke, purge
@@ -12,23 +126,35 @@ struct ValidationEvidenceAuthorizationStore {
 
     let fileURL: URL
     let fault: ((Operation) throws -> Void)?
+    let exportBlockStore: ValidationEvidenceExportBlockStore
 
     init(
         fileURL: URL? = nil,
-        fault: ((Operation) throws -> Void)? = nil
+        fault: ((Operation) throws -> Void)? = nil,
+        exportBlockURL: URL? = nil,
+        exportBlockFault:
+            ((ValidationEvidenceExportBlockStore.Operation) throws -> Void)? = nil
     ) {
         self.fault = fault
+        let resolvedFileURL: URL
         if let fileURL {
-            self.fileURL = fileURL
+            resolvedFileURL = fileURL
         } else {
             let base = FileManager.default.urls(
                 for: .applicationSupportDirectory,
                 in: .userDomainMask
             ).first ?? FileManager.default.temporaryDirectory
-            self.fileURL = base
+            resolvedFileURL = base
                 .appendingPathComponent("ForzAdvisor", isDirectory: true)
                 .appendingPathComponent("validation-authorizations.json")
         }
+        self.fileURL = resolvedFileURL
+        self.exportBlockStore = ValidationEvidenceExportBlockStore(
+            fileURL: exportBlockURL ?? resolvedFileURL
+                .deletingLastPathComponent()
+                .appendingPathComponent("validation-export-blocks.json"),
+            fault: exportBlockFault
+        )
     }
 
     func authorization(for fingerprint: String)
@@ -38,8 +164,35 @@ struct ValidationEvidenceAuthorizationStore {
 
     func authorizationResult(for fingerprint: String) throws
         -> ValidationEvidenceAuthorizationEnvelope? {
+        if try exportBlockStore.block(for: fingerprint) != nil {
+            return nil
+        }
         try fault?(.read)
         return try readAll()[fingerprint]
+    }
+
+    func storedAuthorizationResult(for fingerprint: String) throws
+        -> ValidationEvidenceAuthorizationEnvelope? {
+        try fault?(.read)
+        return try readAll()[fingerprint]
+    }
+
+    func status(for fingerprint: String)
+        -> ValidationEvidenceAuthorizationStatus {
+        do {
+            if let block = try exportBlockStore.block(for: fingerprint) {
+                return .exportBlockedRecoveryPending(block.reason)
+            }
+            guard let authorization = try storedAuthorizationResult(
+                for: fingerprint
+            ) else {
+                return .localOnly
+            }
+            return authorization.allowsReuse(of: fingerprint)
+                ? .reusable(authorization) : .localOnly
+        } catch {
+            return .exportBlockedRecoveryPending(nil)
+        }
     }
 
     func allowsExport(of record: FirstPartyValidationRecord) -> Bool {
@@ -114,6 +267,20 @@ struct ValidationEvidenceAuthorizationStore {
         guard removed > 0 else { return 0 }
         try write(values)
         return removed
+    }
+
+    func purgeAllState(fingerprints: Set<String>) throws {
+        var failures: [Error] = []
+        do { _ = try purge(fingerprints: fingerprints) }
+        catch { failures.append(error) }
+        do { _ = try exportBlockStore.purge(fingerprints: fingerprints) }
+        catch { failures.append(error) }
+        if let first = failures.first {
+            throw ValidationEvidenceTransactionError(
+                primary: first,
+                recoveryFailures: Array(failures.dropFirst())
+            )
+        }
     }
 
     private func readAll() throws

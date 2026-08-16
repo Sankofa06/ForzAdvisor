@@ -1,15 +1,17 @@
 import SwiftUI
+import UIKit
 
 struct ValidationEvidenceAuthorizationView: View {
     let observationFingerprint: String
     let allowedFields: [String]
-    let currentAuthorization: () -> ValidationEvidenceAuthorizationEnvelope?
-    let onGrant: () throws -> ValidationEvidenceAuthorizationEnvelope
-    let onRevoke: () throws -> ValidationEvidenceAuthorizationEnvelope?
-    let onDelete: () throws -> Bool
+    let currentAuthorization: () -> ValidationEvidenceAuthorizationStatus
+    let onGrant: () throws -> ValidationEvidenceReuseActionResult
+    let onRevoke: () throws -> ValidationEvidenceReuseActionResult
+    let onDelete: () throws -> ValidationEvidenceDeleteActionResult
 
-    @State private var authorization:
-        ValidationEvidenceAuthorizationEnvelope?
+    @State private var authorizationStatus:
+        ValidationEvidenceAuthorizationStatus = .localOnly
+    @State private var evidenceDeleted = false
     @State private var message: String?
     @State private var confirmingGrant = false
     @State private var confirmingRevoke = false
@@ -18,12 +20,12 @@ struct ValidationEvidenceAuthorizationView: View {
     init(
         observationFingerprint: String,
         allowedFields: [String],
-        authorization: @escaping () -> ValidationEvidenceAuthorizationEnvelope?,
+        authorization: @escaping () -> ValidationEvidenceAuthorizationStatus,
         onGrant: @escaping () throws
-            -> ValidationEvidenceAuthorizationEnvelope,
+            -> ValidationEvidenceReuseActionResult,
         onRevoke: @escaping () throws
-            -> ValidationEvidenceAuthorizationEnvelope?,
-        onDelete: @escaping () throws -> Bool
+            -> ValidationEvidenceReuseActionResult,
+        onDelete: @escaping () throws -> ValidationEvidenceDeleteActionResult
     ) {
         self.observationFingerprint = observationFingerprint
         self.allowedFields = allowedFields
@@ -52,14 +54,31 @@ struct ValidationEvidenceAuthorizationView: View {
                     .foregroundStyle(.secondary)
             }
             Section("Reuse Status") {
-                if allowsReuse {
+                if evidenceDeleted {
+                    Label("Deleted from this device", systemImage: "trash")
+                        .accessibilityIdentifier("evidenceReuseStatus")
+                } else if allowsReuse {
                     Label("Allowed for future explicit exports", systemImage: "checkmark.shield")
+                        .accessibilityIdentifier("evidenceReuseStatus")
                     Button("Revoke Future Reuse", role: .destructive) {
                         confirmingRevoke = true
                     }
+                    .accessibilityIdentifier("revokeEvidenceReuseButton")
+                } else if recoveryPending {
+                    Label("Export blocked · recovery pending", systemImage: "exclamationmark.shield")
+                        .accessibilityIdentifier("evidenceReuseStatus")
+                    if recoveryReason == .grantRecovery {
+                        Button("Retry Allow Future Reuse", action: grant)
+                            .accessibilityIdentifier("retryGrantEvidenceButton")
+                    } else if recoveryReason == .revokeRecovery {
+                        Button("Retry Revoke Future Reuse", action: revoke)
+                            .accessibilityIdentifier("retryRevokeEvidenceButton")
+                    }
                 } else {
                     Label("Local only", systemImage: "lock")
+                        .accessibilityIdentifier("evidenceReuseStatus")
                     Button("Allow Future Reuse") { confirmingGrant = true }
+                        .accessibilityIdentifier("grantEvidenceReuseButton")
                 }
                 Text("Already shared files are separate copies and cannot be recalled. Revocation blocks only future exports from this device.")
                     .font(.caption)
@@ -69,11 +88,14 @@ struct ValidationEvidenceAuthorizationView: View {
                 Button("Delete Evidence Record", role: .destructive) {
                     confirmingDelete = true
                 }
+                .disabled(evidenceDeleted)
+                .accessibilityIdentifier("deleteEvidenceButton")
             }
             ValidationRecoveryMessageSection(message: message)
+                .accessibilityIdentifier("evidenceActionStatus")
         }
         .navigationTitle("Evidence Reuse")
-        .task { authorization = currentAuthorization() }
+        .task { authorizationStatus = currentAuthorization() }
         .confirmationDialog(
             "Allow future reuse of these exact fields?",
             isPresented: $confirmingGrant,
@@ -89,13 +111,19 @@ struct ValidationEvidenceAuthorizationView: View {
         ) {
             Button("Delete Evidence Record", role: .destructive) {
                 do {
-                    guard try onDelete() else {
-                        throw ValidationEvidenceActionError.noLiveRecord
-                    }
-                    authorization = nil
-                    message = "Evidence record deleted from this device."
+                    let result = try onDelete()
+                    let presentation = ValidationEvidenceActionPresentation
+                        .delete(result)
+                    evidenceDeleted = result == .deleted
+                        || result == .deletedAuthorizationCleanupPending
+                    authorizationStatus = currentAuthorization()
+                    announce(presentation)
                 } catch {
-                    message = "Evidence could not be deleted. Nothing was changed."
+                    authorizationStatus = currentAuthorization()
+                    announce(.init(
+                        message: "Evidence deletion could not start. The current reuse status is shown above.",
+                        announcement: "Evidence deletion could not start. The current reuse status is shown above."
+                    ))
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -111,38 +139,66 @@ struct ValidationEvidenceAuthorizationView: View {
     }
 
     private var allowsReuse: Bool {
-        authorization?.allowsReuse(of: observationFingerprint) == true
+        guard case .reusable(let authorization) = authorizationStatus else {
+            return false
+        }
+        return authorization.allowsReuse(of: observationFingerprint)
+    }
+
+    private var recoveryPending: Bool {
+        if case .exportBlockedRecoveryPending = authorizationStatus {
+            return true
+        }
+        return false
+    }
+
+    private var recoveryReason: ValidationEvidenceExportBlockReason? {
+        guard case .exportBlockedRecoveryPending(let reason) =
+                authorizationStatus else { return nil }
+        return reason
     }
 
     private func grant() {
         do {
             let result = try onGrant()
-            guard result.allowsReuse(of: observationFingerprint) else {
+            if case .reusable(let authorization) = result,
+               !authorization.allowsReuse(of: observationFingerprint) {
                 throw ValidationEvidenceActionError.invalidResult
             }
-            authorization = result
-            message = "Future explicit export is now allowed for this exact observation."
+            authorizationStatus = currentAuthorization()
+            announce(.grant(result))
         } catch {
-            authorization = nil
-            message = "Authorization could not be stored. Evidence remains local only."
+            authorizationStatus = currentAuthorization()
+            announce(.init(
+                message: "Authorization could not be completed. The current export status is shown above.",
+                announcement: "Authorization could not be completed. The current export status is shown above."
+            ))
         }
     }
 
     private func revoke() {
         do {
             let result = try onRevoke()
-            guard result?.allowsReuse(of: observationFingerprint) != true else {
-                throw ValidationEvidenceActionError.invalidResult
-            }
-            authorization = result
-            message = "Future export is blocked. Previously shared files cannot be recalled."
+            authorizationStatus = currentAuthorization()
+            announce(.revoke(result))
         } catch {
-            message = "Authorization could not be revoked. Do not export until this is resolved."
+            authorizationStatus = currentAuthorization()
+            announce(.init(
+                message: "Revocation could not be completed. The current export status is shown above.",
+                announcement: "Revocation could not be completed. The current export status is shown above."
+            ))
         }
+    }
+
+    private func announce(_ presentation: ValidationEvidenceActionPresentation) {
+        message = presentation.message
+        UIAccessibility.post(
+            notification: .announcement,
+            argument: presentation.announcement
+        )
     }
 }
 
 private enum ValidationEvidenceActionError: Error {
-    case noLiveRecord
     case invalidResult
 }

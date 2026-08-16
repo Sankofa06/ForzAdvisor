@@ -523,7 +523,9 @@ struct ContentView: View {
             }
             .task {
                 do {
-                    try ValidationEvidencePurgeCoordinator().retryPending()
+                    try ValidationEvidencePurgeCoordinator().retryPending {
+                        try savedTune(for: $0) != nil
+                    }
                 } catch {
                     errorMessage = "Private cleanup is still pending and will retry: \(error.localizedDescription)"
                 }
@@ -1246,7 +1248,7 @@ struct ContentView: View {
             latestValidationRecord: latestValidationRecord,
             validationEvidenceRecords: validationEvidenceRecords,
             evidenceAuthorization: { fingerprint in
-                ValidationEvidenceAuthorizationStore().authorization(
+                ValidationEvidenceAuthorizationStore().status(
                     for: fingerprint
                 )
             },

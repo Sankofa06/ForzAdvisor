@@ -30,8 +30,10 @@ extension FirstPartyValidationRecordTests {
             fingerprint: record.contentFingerprint
         )
         var legacy = [grant.legacyReusableRecord]
+        try coordinator.stageGrant(grant)
         try coordinator.activateGrant(grant)
         try coordinator.finalizeGrant(grant)
+        try coordinator.completeGrant(grant)
 
         guard case .reusable(let liveReusable) = try resolver.resolve(
             fingerprint: record.contentFingerprint,
@@ -79,6 +81,10 @@ extension FirstPartyValidationRecordTests {
         XCTAssertNil(try failing.authorizationStore.authorizationResult(
             for: fixture.plan.fingerprint
         ))
+        XCTAssertEqual(
+            failing.authorizationStore.status(for: fixture.plan.fingerprint),
+            .exportBlockedRecoveryPending(.grantRecovery)
+        )
     }
 
     @MainActor
@@ -88,18 +94,60 @@ extension FirstPartyValidationRecordTests {
             localStore: .init(fileURL: fixture.localURL) { operation in
                 if operation == .upsert { throw InjectedFailure.expected }
             },
-            authorizationStore: .init(fileURL: fixture.authURL) { operation in
-                if operation == .remove { throw InjectedFailure.expected }
-            }
+            authorizationStore: .init(
+                fileURL: fixture.authURL,
+                fault: { operation in
+                    if operation == .remove {
+                        throw InjectedFailure.expected
+                    }
+                }
+            )
         )
 
         XCTAssertThrowsError(try failing.compensateGrant(fixture.plan)) { error in
             let transaction = error as? ValidationEvidenceTransactionError
             XCTAssertEqual(transaction?.recoveryFailures.count, 1)
         }
-        XCTAssertNotNil(try ValidationEvidenceAuthorizationStore(
+        let persisted = ValidationEvidenceAuthorizationStore(
             fileURL: fixture.authURL
-        ).authorizationResult(for: fixture.plan.fingerprint))
+        )
+        XCTAssertNotNil(try persisted.storedAuthorizationResult(
+            for: fixture.plan.fingerprint
+        ))
+        XCTAssertNil(persisted.authorization(for: fixture.plan.fingerprint))
+        XCTAssertFalse(persisted.allowsExport(
+            of: fixture.plan.legacyReusableRecord
+        ))
+        XCTAssertThrowsError(
+            try FirstPartyValidationExportGate().deterministicJSON(
+                for: fixture.plan.legacyReusableRecord,
+                authorization: persisted.authorization(
+                    for: fixture.plan.fingerprint
+                )
+            )
+        ) { error in
+            XCTAssertEqual(
+                error as? ValidationEvidenceExportError,
+                .localOnly
+            )
+        }
+
+        let retry = ValidationEvidenceTransitionCoordinator(
+            localStore: .init(fileURL: fixture.localURL),
+            authorizationStore: persisted
+        )
+        let retryPlan = try retry.prepareGrant(
+            savedTuneID: fixture.plan.savedTuneID,
+            fingerprint: fixture.plan.fingerprint
+        )
+        XCTAssertEqual(
+            retryPlan.authorization.authorizationID,
+            fixture.plan.authorization.authorizationID
+        )
+        try retry.activateGrant(retryPlan)
+        try retry.finalizeGrant(retryPlan)
+        try retry.completeGrant(retryPlan)
+        XCTAssertTrue(persisted.allowsExport(of: retryPlan.legacyReusableRecord))
     }
 
     @MainActor
@@ -118,6 +166,7 @@ extension FirstPartyValidationRecordTests {
             authorizationStore: .init(fileURL: fixture.authURL)
         )
         try recovery.compensateGrant(fixture.plan)
+        try recovery.resolveGrantRecovery(fixture.plan)
         XCTAssertNotNil(try recovery.localStore.observation(
             savedTuneID: fixture.plan.savedTuneID,
             fingerprint: fixture.plan.fingerprint
@@ -154,12 +203,24 @@ extension FirstPartyValidationRecordTests {
         )
         let failing = ValidationEvidenceTransitionCoordinator(
             localStore: .init(fileURL: localURL),
-            authorizationStore: .init(fileURL: authURL) { operation in
-                if operation == .revoke { throw InjectedFailure.expected }
-            }
+            authorizationStore: .init(
+                fileURL: authURL,
+                fault: { operation in
+                    if operation == .revoke {
+                        throw InjectedFailure.expected
+                    }
+                }
+            )
         )
 
         XCTAssertThrowsError(try failing.finalizeRevoke(plan))
+        XCTAssertEqual(
+            base.authorizationStore.status(
+                for: reusable.contentFingerprint
+            ),
+            .exportBlockedRecoveryPending(.revokeRecovery)
+        )
+        XCTAssertFalse(base.authorizationStore.allowsExport(of: reusable))
         try failing.rollbackRevoke(plan)
         XCTAssertNil(try failing.localStore.observation(
             savedTuneID: tune.id,
@@ -228,6 +289,64 @@ extension FirstPartyValidationRecordTests {
         XCTAssertEqual(summary.totalRecordCount, 3)
     }
 
+    func testPartialMutationPresentationsAreTruthfulAnnouncementContracts() {
+        let blocked = ValidationEvidenceActionPresentation.revoke(
+            .exportBlockedRecoveryPending
+        )
+        XCTAssertEqual(blocked.message, blocked.announcement)
+        XCTAssertTrue(blocked.message.contains("export is blocked"))
+        XCTAssertTrue(blocked.message.contains("recovery"))
+
+        let retained = ValidationEvidenceActionPresentation.delete(
+            .retainedLocalOnly
+        )
+        XCTAssertEqual(retained.message, retained.announcement)
+        XCTAssertTrue(retained.message.contains("local evidence record"))
+        XCTAssertFalse(retained.message.contains("Nothing was changed"))
+
+        let deleted = ValidationEvidenceActionPresentation.delete(
+            .deletedAuthorizationCleanupPending
+        )
+        XCTAssertEqual(deleted.message, deleted.announcement)
+        XCTAssertTrue(deleted.message.contains("Evidence was deleted"))
+        XCTAssertTrue(deleted.message.contains("cleanup is still pending"))
+    }
+
+    @MainActor
+    func testDeleteCoordinatorReportsEveryPartialBoundary() async throws {
+        let tune = try await eligibleTune()
+        let reusable = try FirstPartyValidationRecordFactory().make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validCapture(),
+            createdAt: date
+        )
+        let local = try ValidationLocalObservation(record: reusable)
+        let coordinator = ValidationEvidenceDeleteCoordinator()
+
+        XCTAssertEqual(try coordinator.delete(
+            liveRecord: .reusable(reusable),
+            revoke: { .exportBlockedRecoveryPending },
+            deleteLocal: { XCTFail("Must not delete while recovery is pending"); return true },
+            removeAuthorization: { XCTFail("Must not remove authorization") }
+        ), .exportBlockedRecoveryPending)
+
+        XCTAssertEqual(try coordinator.delete(
+            liveRecord: .reusable(reusable),
+            revoke: { .localOnly },
+            deleteLocal: { throw InjectedFailure.expected },
+            removeAuthorization: { XCTFail("Must not remove authorization") }
+        ), .retainedLocalOnly)
+
+        XCTAssertEqual(try coordinator.delete(
+            liveRecord: .localOnly(local),
+            revoke: { XCTFail("Local evidence must not revoke"); return .localOnly },
+            deleteLocal: { true },
+            removeAuthorization: { throw InjectedFailure.expected }
+        ), .deletedAuthorizationCleanupPending)
+    }
+
     @MainActor
     private func compensationFixture() async throws -> (
         plan: ValidationEvidenceTransitionCoordinator.GrantPlan,
@@ -254,7 +373,9 @@ extension FirstPartyValidationRecordTests {
             savedTuneID: tune.id,
             fingerprint: record.contentFingerprint
         )
+        try coordinator.stageGrant(plan)
         try coordinator.activateGrant(plan)
+        try coordinator.finalizeGrant(plan)
         return (plan, localURL, authURL)
     }
 }

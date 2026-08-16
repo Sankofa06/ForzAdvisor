@@ -44,14 +44,14 @@ struct TuneResultView: View {
     let latestValidationRecord: FirstPartyValidationRecord?
     let validationEvidenceRecords: [ValidationEvidenceRecord]
     let evidenceAuthorization:
-        (String) -> ValidationEvidenceAuthorizationEnvelope?
+        (String) -> ValidationEvidenceAuthorizationStatus
     let onGrantEvidenceReuse:
-        (String) throws -> ValidationEvidenceAuthorizationEnvelope
+        (String) throws -> ValidationEvidenceReuseActionResult
     let onRevokeEvidenceReuse:
         (String) throws
-            -> ValidationEvidenceAuthorizationEnvelope?
+            -> ValidationEvidenceReuseActionResult
     let onDeleteValidationEvidence:
-        (String) throws -> Bool
+        (String) throws -> ValidationEvidenceDeleteActionResult
     let onRecordTestDrive: (() -> Void)?
     let onDeleteValidationRecord: (FirstPartyValidationRecord) -> Void
     let fh6ValidationReviewEntries: [FH6ValidationReviewEntry]

@@ -11,11 +11,11 @@ struct TuneEvidenceHubAdapter {
     let fh5CandidateReview: AnyView?
     let fh6ValidationReview: AnyView?
     let fh6CommunityReview: AnyView?
-    let authorization: (String) -> ValidationEvidenceAuthorizationEnvelope?
-    let onGrant: (String) throws -> ValidationEvidenceAuthorizationEnvelope
+    let authorization: (String) -> ValidationEvidenceAuthorizationStatus
+    let onGrant: (String) throws -> ValidationEvidenceReuseActionResult
     let onRevoke: (String) throws
-        -> ValidationEvidenceAuthorizationEnvelope?
-    let onDelete: (String) throws -> Bool
+        -> ValidationEvidenceReuseActionResult
+    let onDelete: (String) throws -> ValidationEvidenceDeleteActionResult
 }
 
 struct TuneEvidenceHubView: View {

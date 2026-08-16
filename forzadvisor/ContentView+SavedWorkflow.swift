@@ -83,70 +83,61 @@ extension ContentView {
     ) {
         tuneWorkflow.cancelAdjustment(for: savedTune.id)
         let savedTuneID = savedTune.id
-        var cleanupFingerprints = Set<String>()
-        var cleanupPreparationFailures: [Error] = []
+        let purgeCoordinator = ValidationEvidencePurgeCoordinator()
+        let task: ValidationTunePurgeTask
         do {
-            cleanupFingerprints.formUnion(
-                try savedTune.allFirstPartyValidationRecords()
-                    .map(\.contentFingerprint)
+            let allTunes = try modelContext.fetch(FetchDescriptor<SavedTune>())
+            let localStore = ValidationLocalObservationStore()
+            let exportBlocks = ValidationEvidenceAuthorizationStore()
+                .exportBlockStore
+            let sources = allTunes.map { tune in
+                ValidationTunePurgeFingerprintSource(
+                    savedTuneID: tune.id,
+                    legacy: {
+                        Set(try tune.allFirstPartyValidationRecords()
+                            .map(\.contentFingerprint))
+                    },
+                    local: {
+                        Set(try localStore.observations(savedTuneID: tune.id)
+                            .map(\.observationFingerprint))
+                    },
+                    blocked: {
+                        try exportBlocks.fingerprints(savedTuneID: tune.id)
+                    }
+                )
+            }
+            task = try ValidationTunePurgePlanner().makeTask(
+                deleting: savedTuneID,
+                sources: sources
             )
         } catch {
-            cleanupPreparationFailures.append(error)
-        }
-        do {
-            cleanupFingerprints.formUnion(
-                try ValidationLocalObservationStore()
-                    .observations(savedTuneID: savedTuneID)
-                    .map(\.observationFingerprint)
-            )
-        } catch {
-            cleanupPreparationFailures.append(error)
-        }
-        var fingerprintsReferencedByOtherTunes = Set<String>()
-        for otherTune in savedTunes where otherTune.id != savedTuneID {
-            do {
-                fingerprintsReferencedByOtherTunes.formUnion(
-                    try otherTune.allFirstPartyValidationRecords()
-                        .map(\.contentFingerprint)
-                )
-                fingerprintsReferencedByOtherTunes.formUnion(
-                    try ValidationLocalObservationStore()
-                        .observations(savedTuneID: otherTune.id)
-                        .map(\.observationFingerprint)
-                )
-            } catch {
-                cleanupPreparationFailures.append(error)
-            }
-        }
-        cleanupFingerprints.subtract(fingerprintsReferencedByOtherTunes)
-        modelContext.delete(savedTune)
-
-        do {
-            try modelContext.save()
-            completion?(.committed(savedTuneID: savedTuneID))
-            var cleanupFailures = cleanupPreparationFailures
-            do {
-                try ValidationEvidencePurgeCoordinator().scheduleAndRun(
-                    ValidationTunePurgeTask(
-                        savedTuneID: savedTuneID,
-                        authorizationFingerprints: cleanupFingerprints
-                    )
-                )
-            } catch {
-                cleanupFailures.append(error)
-            }
-            if let first = cleanupFailures.first {
-                errorMessage = ValidationEvidenceTransactionError(
-                    primary: first,
-                    recoveryFailures: Array(cleanupFailures.dropFirst())
-                ).errorDescription.map {
-                    "Tune deleted, but private cleanup is pending and will retry next launch: \($0)"
-                }
-            }
-        } catch {
-            modelContext.rollback()
             let message =
-                "Could not delete this tune: \(error.localizedDescription)"
+                "Could not safely prepare this tune for deletion: \(error.localizedDescription)"
+            errorMessage = message
+            completion?(.rolledBack(
+                savedTuneID: savedTuneID,
+                message: message
+            ))
+            return
+        }
+        do {
+            let outcome = try ValidationTuneDeletionTransactionCoordinator(
+                purgeCoordinator: purgeCoordinator
+            ).perform(
+                task: task,
+                commitDeletion: {
+                    modelContext.delete(savedTune)
+                    try modelContext.save()
+                },
+                rollbackDeletion: { modelContext.rollback() }
+            )
+            completion?(.committed(savedTuneID: savedTuneID))
+            if let cleanupError = outcome.cleanupError {
+                errorMessage =
+                    "Tune deleted, but private cleanup is pending and will retry next launch: \(cleanupError.localizedDescription)"
+            }
+        } catch {
+            let message = "Could not delete this tune: \(error.localizedDescription)"
             errorMessage = message
             completion?(.rolledBack(
                 savedTuneID: savedTuneID,
