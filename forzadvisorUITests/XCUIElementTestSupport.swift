@@ -7,6 +7,7 @@ extension XCUIElement {
         if !waitForKeyboardFocus(timeout: 0.4) {
             for offset in [
                 CGVector(dx: 0.8, dy: 0.5),
+                CGVector(dx: 0.95, dy: 0.5),
                 CGVector(dx: 0.5, dy: 0.5)
             ] {
                 coordinate(withNormalizedOffset: offset).tap()

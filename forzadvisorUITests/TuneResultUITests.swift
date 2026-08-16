@@ -15,11 +15,17 @@ final class TuneResultUITests: XCTestCase {
         openCompletedManualResult(in: app)
 
         XCTAssertTrue(app.descendants(matching: .any)["tuneResultStatus"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["saveTuneButton"].exists)
+        let save = app.buttons["saveTuneButton"]
+        XCTAssertTrue(save.exists)
         XCTAssertTrue(app.descendants(matching: .any)["availableSettingsSection"].exists)
-        XCTAssertTrue(app.staticTexts["Optional Validation & Research"].exists)
+        let evidenceHeading = app.staticTexts["Optional Validation & Research"]
+        for _ in 0..<8 where !evidenceHeading.exists { app.swipeUp() }
+        XCTAssertTrue(evidenceHeading.waitForExistence(timeout: 5))
 
-        app.buttons["saveTuneButton"].tap()
+        for _ in 0..<8 where !save.isHittable { app.swipeDown() }
+        XCTAssertTrue(save.isHittable)
+
+        save.tap()
         XCTAssertTrue(
             app.descendants(matching: .any)["savedTuneStatus"]
                 .waitForExistence(timeout: 5)
@@ -62,7 +68,11 @@ final class TuneResultUITests: XCTestCase {
         XCTAssertTrue(next.waitUntilResultEnabled(timeout: 5))
         next.tap()
         app.buttons["disciplineButton-road"].tap()
-        app.buttons["startTuneGenerationButton"].tap()
+        let start = app.buttons["startTuneGenerationButton"]
+        for _ in 0..<8 where !start.exists { app.swipeUp() }
+        XCTAssertTrue(start.waitForExistence(timeout: 5))
+        XCTAssertTrue(start.isHittable)
+        start.tap()
         XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["saveTuneButton"].waitForExistence(timeout: 15))
     }

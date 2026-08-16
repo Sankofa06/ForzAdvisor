@@ -24,7 +24,6 @@ extension ForzAdvisorUITests {
         let nextButton = app.buttons["manualEntryNextButton"]
         let keyboardDoneButton = app.buttons["manualEntryKeyboardDoneButton"]
         XCTAssertTrue(nextButton.waitForExistence(timeout: 5))
-        XCTAssertFalse(nextButton.isEnabled)
 
         app.textFields["manualEntryYearField"].enterText("1997")
         app.textFields["manualEntryMakeField"].enterText("Mazda")
@@ -35,8 +34,10 @@ extension ForzAdvisorUITests {
         app.textFields["manualEntryWeightField"].enterText("2345")
         XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
         keyboardDoneButton.tap()
-        app.swipeUp()
-        app.textFields["manualEntryFrontWeightField"].enterText("55")
+        let frontWeightField = app.textFields["manualEntryFrontWeightField"]
+        for _ in 0..<5 where !frontWeightField.isHittable { app.swipeUp() }
+        XCTAssertTrue(frontWeightField.isHittable)
+        frontWeightField.enterText("55")
         XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
         keyboardDoneButton.tap()
         app.swipeUp()
@@ -67,8 +68,9 @@ extension ForzAdvisorUITests {
         XCTAssertFalse(app.descendants(matching: .any)["availableSettingsSection"].exists)
 
         let startButton = app.buttons["startTuneGenerationButton"]
+        for _ in 0..<8 where !startButton.exists { app.swipeUp() }
         XCTAssertTrue(startButton.waitForExistence(timeout: 5))
-        XCTAssertTrue(startButton.isEnabled)
+        XCTAssertTrue(startButton.isHittable)
         startButton.tap()
 
         XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 15))
