@@ -123,7 +123,9 @@ extension ContentView {
     private func reuseResult(
         for fingerprint: String
     ) -> ValidationEvidenceReuseActionResult {
-        switch evidenceCoordinator.authorizationStore.status(for: fingerprint) {
+        let status = try? evidenceCoordinator.authorizationStore
+            .transitionStatus(for: fingerprint)
+        switch status ?? .exportBlockedRecoveryPending(nil) {
         case .localOnly:
             return .localOnly
         case .reusable(let authorization):
@@ -172,26 +174,70 @@ extension ContentView {
         guard let liveRecord else {
             throw ValidationEvidenceRootError.missingLiveRecord
         }
-        return try ValidationEvidenceDeleteCoordinator().delete(
-            liveRecord: liveRecord,
-            revoke: {
-                try revokeEvidenceReuse(
-                    savedTuneID: savedTuneID,
-                    fingerprint: fingerprint
-                )
-            },
-            deleteLocal: {
-                try evidenceCoordinator.localStore.delete(
-                    savedTuneID: savedTuneID,
-                    fingerprint: fingerprint
-                )
-            },
-            removeAuthorization: {
-                try evidenceCoordinator.authorizationStore.purgeAllState(
-                    fingerprints: [fingerprint]
-                )
-            }
+        let cleanupCoordinator =
+            ValidationEvidenceAuthorizationCleanupCoordinator()
+        let cleanupTask = ValidationEvidenceAuthorizationCleanupTask(
+            savedTuneID: savedTuneID,
+            fingerprint: fingerprint
         )
+        try cleanupCoordinator.schedule(cleanupTask)
+        do {
+            let result = try ValidationEvidenceDeleteCoordinator().delete(
+                liveRecord: liveRecord,
+                revoke: {
+                    try revokeEvidenceReuse(
+                        savedTuneID: savedTuneID,
+                        fingerprint: fingerprint
+                    )
+                },
+                deleteLocal: {
+                    try evidenceCoordinator.localStore.delete(
+                        savedTuneID: savedTuneID,
+                        fingerprint: fingerprint
+                    )
+                },
+                removeAuthorization: {
+                    try cleanupCoordinator.confirmAndRun(cleanupTask) {
+                        try authorizationCleanupHasLiveReference($0)
+                    }
+                }
+            )
+            switch result {
+            case .retainedReusable, .retainedLocalOnly,
+                    .exportBlockedRecoveryPending:
+                try? cleanupCoordinator.cancel(cleanupTask)
+            case .deleted, .deletedAuthorizationCleanupPending:
+                break
+            }
+            return result
+        } catch {
+            try? cleanupCoordinator.cancel(cleanupTask)
+            throw error
+        }
+    }
+
+    func authorizationCleanupHasLiveReference(
+        _ task: ValidationEvidenceAuthorizationCleanupTask
+    ) throws -> Bool {
+        for savedTune in savedTunes {
+            if try savedTune.allFirstPartyValidationRecords().contains(where: {
+                $0.contentFingerprint == task.fingerprint
+            }) {
+                return true
+            }
+            if try evidenceCoordinator.localStore.observation(
+                savedTuneID: savedTune.id,
+                fingerprint: task.fingerprint
+            ) != nil {
+                return true
+            }
+        }
+        if let block = try evidenceCoordinator.authorizationStore
+            .exportBlockStore.block(for: task.fingerprint),
+           block.savedTuneID != task.savedTuneID {
+            return true
+        }
+        return false
     }
 }
 

@@ -12,6 +12,74 @@ struct ValidationEvidenceTransactionError: Error, LocalizedError {
     }
 }
 
+struct ValidationEvidenceAuthorizationCleanupCoordinator {
+    let pendingStore: ValidationEvidenceAuthorizationCleanupStore
+    let purgeAuthorization: (Set<String>) throws -> Void
+
+    init(
+        pendingURL: URL? = nil,
+        purgeAuthorization: @escaping (Set<String>) throws -> Void = {
+            try ValidationEvidenceAuthorizationStore()
+                .purgeAllState(fingerprints: $0)
+        }
+    ) {
+        let base = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first ?? FileManager.default.temporaryDirectory
+        self.pendingStore = ValidationEvidenceAuthorizationCleanupStore(
+            fileURL: pendingURL ?? base
+                .appendingPathComponent("ForzAdvisor", isDirectory: true)
+                .appendingPathComponent(
+                    "pending-validation-authorization-cleanups.json"
+                )
+        )
+        self.purgeAuthorization = purgeAuthorization
+    }
+
+    func schedule(
+        _ task: ValidationEvidenceAuthorizationCleanupTask
+    ) throws {
+        try pendingStore.schedule(task)
+    }
+
+    func cancel(
+        _ task: ValidationEvidenceAuthorizationCleanupTask
+    ) throws {
+        try pendingStore.remove(task)
+    }
+
+    func confirmAndRun(
+        _ task: ValidationEvidenceAuthorizationCleanupTask,
+        hasLiveReference: (ValidationEvidenceAuthorizationCleanupTask) throws
+            -> Bool
+    ) throws {
+        try execute(task, hasLiveReference: hasLiveReference)
+    }
+
+    func retryPending(
+        hasLiveReference: (ValidationEvidenceAuthorizationCleanupTask) throws
+            -> Bool
+    ) throws {
+        for task in try pendingStore.tasks() {
+            try execute(task, hasLiveReference: hasLiveReference)
+        }
+    }
+
+    private func execute(
+        _ task: ValidationEvidenceAuthorizationCleanupTask,
+        hasLiveReference: (ValidationEvidenceAuthorizationCleanupTask) throws
+            -> Bool
+    ) throws {
+        if try hasLiveReference(task) {
+            try pendingStore.remove(task)
+            return
+        }
+        try purgeAuthorization([task.fingerprint])
+        try pendingStore.remove(task)
+    }
+}
+
 /// Produces rollback-safe persistence steps. The caller must confirm its
 /// SwiftData mutation before invoking the matching finalize method.
 struct ValidationEvidenceTransitionCoordinator {

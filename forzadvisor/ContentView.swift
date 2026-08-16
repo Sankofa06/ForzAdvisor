@@ -534,6 +534,14 @@ struct ContentView: View {
                 } catch {
                     errorMessage = "Recovery-draft cleanup is still pending and will retry: \(error.localizedDescription)"
                 }
+                do {
+                    try ValidationEvidenceAuthorizationCleanupCoordinator()
+                        .retryPending {
+                            try authorizationCleanupHasLiveReference($0)
+                        }
+                } catch {
+                    errorMessage = "Evidence authorization cleanup is still pending and will retry: \(error.localizedDescription)"
+                }
             }
             .toolbar {
                 if RootStepGuideEntryPolicy().presentation(

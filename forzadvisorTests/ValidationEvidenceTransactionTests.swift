@@ -348,6 +348,121 @@ extension FirstPartyValidationRecordTests {
     }
 
     @MainActor
+    func testAuthorizationCleanupPersistsBlocksExportRetriesAndIsIdempotent()
+        async throws {
+        let tune = try await eligibleTune()
+        let reusable = try FirstPartyValidationRecordFactory().make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validCapture(),
+            createdAt: date
+        )
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let authorizationURL = directory.appendingPathComponent("auth.json")
+        let pendingURL = directory.appendingPathComponent("pending.json")
+        let authorizationStore = ValidationEvidenceAuthorizationStore(
+            fileURL: authorizationURL,
+            authorizationCleanupURL: pendingURL
+        )
+        try authorizationStore.persist(.reusable(
+            observationFingerprint: reusable.contentFingerprint,
+            authorizationID: reusable.permissionReceiptID,
+            authorizationVersion: "validation-reuse-v1",
+            authorizedAt: date
+        ))
+        let task = ValidationEvidenceAuthorizationCleanupTask(
+            savedTuneID: tune.id,
+            fingerprint: reusable.contentFingerprint
+        )
+        var purgeCalls = 0
+        var purgeFails = true
+        let makeCoordinator = {
+            ValidationEvidenceAuthorizationCleanupCoordinator(
+                pendingURL: pendingURL,
+                purgeAuthorization: { fingerprints in
+                    purgeCalls += 1
+                    if purgeFails { throw InjectedFailure.expected }
+                    try authorizationStore.purgeAllState(
+                        fingerprints: fingerprints
+                    )
+                }
+            )
+        }
+
+        let initial = makeCoordinator()
+        try initial.schedule(task)
+        XCTAssertNil(authorizationStore.authorization(
+            for: reusable.contentFingerprint
+        ))
+        XCTAssertFalse(authorizationStore.allowsExport(of: reusable))
+        XCTAssertThrowsError(try initial.confirmAndRun(task) { _ in false })
+        XCTAssertTrue(FileManager.default.fileExists(atPath: pendingURL.path))
+
+        purgeFails = false
+        let afterRelaunch = makeCoordinator()
+        try afterRelaunch.retryPending { _ in false }
+        XCTAssertEqual(purgeCalls, 2)
+        XCTAssertNil(try authorizationStore.storedAuthorizationResult(
+            for: reusable.contentFingerprint
+        ))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: pendingURL.path))
+
+        try afterRelaunch.retryPending { _ in false }
+        XCTAssertEqual(purgeCalls, 2)
+    }
+
+    @MainActor
+    func testAuthorizationCleanupPreservesCrossTuneFingerprint() async throws {
+        let tune = try await eligibleTune()
+        let reusable = try FirstPartyValidationRecordFactory().make(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            capture: validCapture(),
+            createdAt: date
+        )
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let authorizationURL = directory.appendingPathComponent("auth.json")
+        let pendingURL = directory.appendingPathComponent("pending.json")
+        let authorizationStore = ValidationEvidenceAuthorizationStore(
+            fileURL: authorizationURL,
+            authorizationCleanupURL: pendingURL
+        )
+        try authorizationStore.persist(.reusable(
+            observationFingerprint: reusable.contentFingerprint,
+            authorizationID: reusable.permissionReceiptID,
+            authorizationVersion: "validation-reuse-v1",
+            authorizedAt: date
+        ))
+        let task = ValidationEvidenceAuthorizationCleanupTask(
+            savedTuneID: UUID(),
+            fingerprint: reusable.contentFingerprint
+        )
+        var purgeCalls = 0
+        let coordinator = ValidationEvidenceAuthorizationCleanupCoordinator(
+            pendingURL: pendingURL,
+            purgeAuthorization: { _ in purgeCalls += 1 }
+        )
+
+        try coordinator.schedule(task)
+        XCTAssertNil(authorizationStore.authorization(
+            for: reusable.contentFingerprint
+        ))
+        try coordinator.retryPending { pending in
+            pending.fingerprint == reusable.contentFingerprint
+        }
+
+        XCTAssertEqual(purgeCalls, 0)
+        XCTAssertNotNil(authorizationStore.authorization(
+            for: reusable.contentFingerprint
+        ))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: pendingURL.path))
+    }
+
+    @MainActor
     private func compensationFixture() async throws -> (
         plan: ValidationEvidenceTransitionCoordinator.GrantPlan,
         localURL: URL,

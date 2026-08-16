@@ -24,6 +24,71 @@ struct ValidationEvidenceExportBlock: Codable, Equatable, Sendable {
     let sourceObservation: ValidationLocalObservation?
 }
 
+struct ValidationEvidenceAuthorizationCleanupTask:
+    Codable, Equatable, Sendable {
+    let savedTuneID: UUID
+    let fingerprint: String
+}
+
+struct ValidationEvidenceAuthorizationCleanupStore {
+    let fileURL: URL
+
+    func contains(fingerprint: String) throws -> Bool {
+        try readAll().contains { $0.fingerprint == fingerprint }
+    }
+
+    func tasks() throws -> [ValidationEvidenceAuthorizationCleanupTask] {
+        try readAll()
+    }
+
+    func schedule(_ task: ValidationEvidenceAuthorizationCleanupTask) throws {
+        guard !task.fingerprint.isEmpty else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
+        var tasks = try readAll()
+        tasks.removeAll { $0 == task }
+        tasks.append(task)
+        try write(tasks)
+    }
+
+    func remove(_ task: ValidationEvidenceAuthorizationCleanupTask) throws {
+        var tasks = try readAll()
+        tasks.removeAll { $0 == task }
+        if tasks.isEmpty {
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                try FileManager.default.removeItem(at: fileURL)
+            }
+        } else {
+            try write(tasks)
+        }
+    }
+
+    private func readAll() throws
+        -> [ValidationEvidenceAuthorizationCleanupTask] {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            return []
+        }
+        let tasks = try JSONDecoder().decode(
+            [ValidationEvidenceAuthorizationCleanupTask].self,
+            from: Data(contentsOf: fileURL)
+        )
+        guard tasks.allSatisfy({ !$0.fingerprint.isEmpty }) else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
+        return tasks
+    }
+
+    private func write(
+        _ tasks: [ValidationEvidenceAuthorizationCleanupTask]
+    ) throws {
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try JSONEncoder().encode(tasks).write(to: fileURL, options: .atomic)
+    }
+}
+
 struct ValidationEvidenceExportBlockStore {
     enum Operation: Equatable {
         case read, persist, remove, purge
@@ -127,11 +192,13 @@ struct ValidationEvidenceAuthorizationStore {
     let fileURL: URL
     let fault: ((Operation) throws -> Void)?
     let exportBlockStore: ValidationEvidenceExportBlockStore
+    let authorizationCleanupStore: ValidationEvidenceAuthorizationCleanupStore
 
     init(
         fileURL: URL? = nil,
         fault: ((Operation) throws -> Void)? = nil,
         exportBlockURL: URL? = nil,
+        authorizationCleanupURL: URL? = nil,
         exportBlockFault:
             ((ValidationEvidenceExportBlockStore.Operation) throws -> Void)? = nil
     ) {
@@ -155,6 +222,14 @@ struct ValidationEvidenceAuthorizationStore {
                 .appendingPathComponent("validation-export-blocks.json"),
             fault: exportBlockFault
         )
+        self.authorizationCleanupStore =
+            ValidationEvidenceAuthorizationCleanupStore(
+                fileURL: authorizationCleanupURL ?? resolvedFileURL
+                    .deletingLastPathComponent()
+                    .appendingPathComponent(
+                        "pending-validation-authorization-cleanups.json"
+                    )
+            )
     }
 
     func authorization(for fingerprint: String)
@@ -164,6 +239,9 @@ struct ValidationEvidenceAuthorizationStore {
 
     func authorizationResult(for fingerprint: String) throws
         -> ValidationEvidenceAuthorizationEnvelope? {
+        if try authorizationCleanupStore.contains(fingerprint: fingerprint) {
+            return nil
+        }
         if try exportBlockStore.block(for: fingerprint) != nil {
             return nil
         }
@@ -178,6 +256,22 @@ struct ValidationEvidenceAuthorizationStore {
     }
 
     func status(for fingerprint: String)
+        -> ValidationEvidenceAuthorizationStatus {
+        do {
+            if try authorizationCleanupStore.contains(
+                fingerprint: fingerprint
+            ) {
+                return .exportBlockedRecoveryPending(nil)
+            }
+            return try transitionStatus(for: fingerprint)
+        } catch {
+            return .exportBlockedRecoveryPending(nil)
+        }
+    }
+
+    /// Transaction compensation uses this view while a delete has staged its
+    /// own cleanup task. Public export lookup must continue to use `status`.
+    func transitionStatus(for fingerprint: String) throws
         -> ValidationEvidenceAuthorizationStatus {
         do {
             if let block = try exportBlockStore.block(for: fingerprint) {
