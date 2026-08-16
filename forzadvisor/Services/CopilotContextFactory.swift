@@ -24,17 +24,6 @@ struct CopilotContextFactory {
             return context(.home, savedTuneCount: savedTuneCount)
         case .newTune:
             return context(.newTune, catalogCarCount: catalogCarCount)
-        case .catalogPicker:
-            return context(.catalogPicker, catalogCarCount: catalogCarCount)
-        case .catalogIdentityEntry:
-            return context(
-                .rosterIdentityStockEntry,
-                cannotSeeUnsavedEdits: true
-            )
-        case .catalogReview(let selection):
-            return context(.catalogReview, car: selection.carInput)
-        case .catalogEdit:
-            return context(.catalogEdit, cannotSeeUnsavedEdits: true)
         case .ocrReview:
             return context(.ocrReview, cannotSeeUnsavedEdits: true)
         case .manualEntry:
@@ -95,7 +84,7 @@ struct CopilotContextFactory {
                 .fh6CommunityReferenceTrialCapture,
                 cannotSeeUnsavedEdits: true
             )
-        case .editSavedTune:
+        case .editSavedTune, .editSavedTuneDraft:
             return context(.editSavedTune, cannotSeeUnsavedEdits: true)
         }
     }

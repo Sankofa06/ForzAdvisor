@@ -10,8 +10,28 @@ import SwiftUI
 
 struct DisciplinePickerView: View {
     let car: CarInput
+    let providerDisclosure: TuneProviderDisclosure
     let onBack: () -> Void
-    let onSelect: (DrivingDiscipline) -> Void
+    let onSelectionChanged: (DrivingDiscipline) -> Void
+    let onStart: (DrivingDiscipline) -> Void
+
+    @State private var selection: DrivingDiscipline?
+
+    init(
+        car: CarInput,
+        selection: DrivingDiscipline?,
+        providerDisclosure: TuneProviderDisclosure,
+        onBack: @escaping () -> Void,
+        onSelectionChanged: @escaping (DrivingDiscipline) -> Void,
+        onStart: @escaping (DrivingDiscipline) -> Void
+    ) {
+        self.car = car
+        self.providerDisclosure = providerDisclosure
+        self.onBack = onBack
+        self.onSelectionChanged = onSelectionChanged
+        self.onStart = onStart
+        _selection = State(initialValue: selection)
+    }
 
     var body: some View {
         List {
@@ -23,7 +43,8 @@ struct DisciplinePickerView: View {
             Section("Discipline") {
                 ForEach(DrivingDiscipline.allCases) { discipline in
                     Button {
-                        onSelect(discipline)
+                        selection = discipline
+                        onSelectionChanged(discipline)
                     } label: {
                         DisciplineRow(discipline: discipline)
                     }
@@ -32,6 +53,29 @@ struct DisciplinePickerView: View {
                     .signatureDisciplineBackground(discipline == .touge)
                 }
             }
+
+            Section("Generation") {
+                LabeledContent(
+                    "Preferred method",
+                    value: providerDisclosure.preferredMode.title
+                )
+                Text(providerDisclosure.readiness.readinessTitle)
+                    .foregroundStyle(.secondary)
+                Text(providerDisclosure.dataBoundary.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Button(
+                    car.game == .fh5
+                        ? "Create FH5 Build Plan"
+                        : "Generate FH6 Tune"
+                ) {
+                    guard let selection else { return }
+                    onStart(selection)
+                }
+                .disabled(selection == nil)
+                .accessibilityIdentifier("startTuneGenerationButton")
+            }
+            .forzAdvisorRowBackground()
         }
         .navigationTitle("Pick Tune Type")
         .forzAdvisorScreenChrome()
@@ -150,6 +194,12 @@ private extension View {
 
 struct TuneLoadingView: View {
     let request: TuneRequest
+    let onCancel: () -> Void
+
+    init(request: TuneRequest, onCancel: @escaping () -> Void = {}) {
+        self.request = request
+        self.onCancel = onCancel
+    }
 
     var body: some View {
         VStack(spacing: 18) {
@@ -166,6 +216,9 @@ struct TuneLoadingView: View {
                 .font(.subheadline)
                 .foregroundStyle(ForzAdvisorTheme.disciplineColor(request.discipline))
                 .fontWeight(.semibold)
+            Button("Cancel", role: .cancel, action: onCancel)
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityIdentifier("cancelTuneGenerationButton")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(ForzAdvisorTheme.screenBackground.ignoresSafeArea())

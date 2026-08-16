@@ -17,6 +17,7 @@ struct TuneResultView: View {
     let thumbnailData: Data?
     let adjustmentChanges: [TuneAdjustmentChange]
     let activeFeedback: TuneFeedback?
+    let rootActions: TuneResultRootActions
     let showsFirstSavedSetupCopilotHandoff: Bool
     let onContinueFirstSavedSetupWithCopilot: () -> Void
     let onDismissFirstSavedSetupCopilotHandoff: () -> Void
@@ -241,6 +242,40 @@ struct TuneResultView: View {
                         Spacer()
                     }
                     .foregroundStyle(ForzAdvisorTheme.accent)
+                    Button(
+                        "Cancel generation",
+                        role: .cancel,
+                        action: rootActions.onCancelStreaming
+                    )
+                    .accessibilityIdentifier(
+                        "cancelStreamingTuneGenerationButton"
+                    )
+                }
+                .forzAdvisorRowBackground()
+            }
+
+            if let proposal = rootActions.refinementProposal {
+                Section("Refinement proposal") {
+                    Text(
+                        "Review \(proposal.changes.count) proposed setting changes before saving."
+                    )
+                    Button(
+                        "Apply refinement",
+                        action: rootActions.onApplyRefinement
+                    )
+                    Button(
+                        "Discard",
+                        role: .cancel,
+                        action: rootActions.onDiscardRefinement
+                    )
+                }
+                .forzAdvisorRowBackground()
+            } else if rootActions.canUndoRefinement {
+                Section {
+                    Button(
+                        "Undo refinement",
+                        action: rootActions.onUndoRefinement
+                    )
                 }
                 .forzAdvisorRowBackground()
             }

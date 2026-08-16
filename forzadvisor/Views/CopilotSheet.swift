@@ -156,17 +156,18 @@ private struct ModalCopilotNavigationDestination: View {
 
 struct CopilotSheet: View {
     let context: CopilotContext
-    let onAction: ((CopilotAction) -> Void)?
+    let onAction: ((StepGuideAction) -> StepGuideActionResult)?
     let onClose: () -> Void
 
     @State private var question = ""
     @State private var response: CopilotResponse
+    @State private var actionRejection: StepGuideActionRejection?
 
     private let engine = CopilotEngine()
 
     init(
         context: CopilotContext,
-        onAction: ((CopilotAction) -> Void)? = nil,
+        onAction: ((StepGuideAction) -> StepGuideActionResult)? = nil,
         onClose: @escaping () -> Void
     ) {
         self.context = context
@@ -194,6 +195,7 @@ struct CopilotSheet: View {
         .presentationDragIndicator(.visible)
         .onChange(of: context) { _, _ in
             question = ""
+            actionRejection = nil
             response = engine.defaultResponse(in: context)
         }
     }
@@ -285,8 +287,12 @@ struct CopilotSheet: View {
                 .fixedSize(horizontal: false, vertical: true)
             if let action = response.action, let onAction {
                 Button {
-                    onAction(action)
-                    onClose()
+                    let result = onAction(action)
+                    if result.shouldDismiss {
+                        onClose()
+                    } else {
+                        actionRejection = result.rejection
+                    }
                 } label: {
                     Text(action.title)
                         .frame(
@@ -296,6 +302,15 @@ struct CopilotSheet: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("copilotResponseActionButton")
+            }
+            if let actionRejection {
+                Label(
+                    actionRejection.message,
+                    systemImage: "arrow.clockwise.circle"
+                )
+                .font(.subheadline)
+                .foregroundStyle(ForzAdvisorTheme.warning)
+                .accessibilityIdentifier("stepGuideActionRejection")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -11,6 +11,7 @@ import SwiftUI
 struct ManualEntryView: View {
     let onCancel: () -> Void
     let onContinue: (CarInput) -> Void
+    let onDraftChanged: (ManualEntryDraft) -> Void
     let stockContributionContext:
         ManualEntryStockContributionContext?
 
@@ -21,12 +22,14 @@ struct ManualEntryView: View {
         draft: ManualEntryDraft,
         stockContributionContext:
             ManualEntryStockContributionContext? = nil,
+        onDraftChanged: @escaping (ManualEntryDraft) -> Void = { _ in },
         onCancel: @escaping () -> Void,
         onContinue: @escaping (CarInput) -> Void
     ) {
         self._draft = State(initialValue: draft)
         self.stockContributionContext =
             stockContributionContext
+        self.onDraftChanged = onDraftChanged
         self.onCancel = onCancel
         self.onContinue = onContinue
     }
@@ -133,6 +136,9 @@ struct ManualEntryView: View {
                 }
                 .forzAdvisorRowBackground()
             }
+        }
+        .onChange(of: draft) { _, newDraft in
+            onDraftChanged(newDraft)
         }
         .navigationTitle("Manual Entry")
         .scrollDismissesKeyboard(.interactively)

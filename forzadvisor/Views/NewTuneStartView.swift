@@ -13,6 +13,8 @@ import UIKit
 typealias OCRDraftReadyHandler = @MainActor (OCRConfirmationDraft) -> Void
 
 struct NewTuneStartView: View {
+    let draftSession: TuneDraftSession?
+    let onResume: () -> Void
     let onCancel: () -> Void
     let onManualEntry: () -> Void
     let onDraftReady: OCRDraftReadyHandler
@@ -22,11 +24,15 @@ struct NewTuneStartView: View {
     @StateObject private var photoImport: PhotoOCRImportController
 
     init(
+        draftSession: TuneDraftSession? = nil,
+        onResume: @escaping () -> Void = {},
         onCancel: @escaping () -> Void,
         onManualEntry: @escaping () -> Void,
         onDraftReady: @escaping OCRDraftReadyHandler,
         ocrService: any CarInputOCRService = VisionCarInputOCRService()
     ) {
+        self.draftSession = draftSession
+        self.onResume = onResume
         self.onCancel = onCancel
         self.onManualEntry = onManualEntry
         self.onDraftReady = onDraftReady
@@ -46,6 +52,10 @@ struct NewTuneStartView: View {
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
             Section("Start") {
+                if draftSession?.isMeaningful == true {
+                    Button("Resume New Tune", action: onResume)
+                        .accessibilityIdentifier("resumeNewTuneButton")
+                }
                 Button {
                     isShowingCamera = true
                 } label: {

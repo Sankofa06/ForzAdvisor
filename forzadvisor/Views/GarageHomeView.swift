@@ -13,7 +13,10 @@ struct GarageHomeView: View {
     let onNewTune: () -> Void
     let onOpenCopilot: () -> Void
     let onOpenTune: (SavedTune) -> Void
-    let onDeleteTune: (SavedTune) -> Void
+    let onDeleteTune: (
+        UUID,
+        GarageRemovalCommitCallback?
+    ) -> Void
     let betaMissionCount: Int
     let onBetaMissions: () -> Void
     let onEmptyGarageFirstWin: (() -> Void)?
@@ -176,7 +179,7 @@ struct GarageHomeView: View {
                         .buttonStyle(.plain)
                         .swipeActions {
                             Button("Delete", role: .destructive) {
-                                onDeleteTune(tune)
+                                onDeleteTune(tune.id, nil)
                             }
                         }
                         .forzAdvisorRowBackground()

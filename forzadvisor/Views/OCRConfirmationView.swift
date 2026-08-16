@@ -12,16 +12,19 @@ struct OCRConfirmationView: View {
     let onBack: () -> Void
     let onUseManualEntry: (OCRConfirmationDraft) -> Void
     let onContinue: (CarInput, OCRConfirmationDraft) -> Void
+    let onDraftChanged: (OCRConfirmationDraft) -> Void
 
     @State private var draft: OCRConfirmationDraft
 
     init(
         draft: OCRConfirmationDraft,
+        onDraftChanged: @escaping (OCRConfirmationDraft) -> Void = { _ in },
         onBack: @escaping () -> Void,
         onUseManualEntry: @escaping (OCRConfirmationDraft) -> Void,
         onContinue: @escaping (CarInput, OCRConfirmationDraft) -> Void
     ) {
         self._draft = State(initialValue: draft)
+        self.onDraftChanged = onDraftChanged
         self.onBack = onBack
         self.onUseManualEntry = onUseManualEntry
         self.onContinue = onContinue
@@ -116,6 +119,9 @@ struct OCRConfirmationView: View {
                 }
             }
             .forzAdvisorRowBackground()
+        }
+        .onChange(of: draft) { _, newDraft in
+            onDraftChanged(newDraft)
         }
         .navigationTitle("Confirm Inputs")
         .forzAdvisorScreenChrome()

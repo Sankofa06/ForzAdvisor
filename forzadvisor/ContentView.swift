@@ -18,12 +18,11 @@ struct ContentView: View {
     @State var errorMessage: String?
     @State var errorRecovery: ErrorRecovery?
     @State var rootSheet: RootSheet?
-    @State var catalogResult = BundledCarCatalog.load()
-    @State var fh5RosterResult = BundledFH5OfficialRoster.load()
-    @State var fh6RosterResult = BundledFH6OfficialRoster.load()
+    @State var newTuneSession = TuneDraftSession()
     @State var firstSavedSetupCopilotHandoff =
         FirstSavedSetupCopilotHandoffState()
     @StateObject var tuneWorkflow = TuneWorkflowController()
+    @StateObject var refinementProposals = TuneRefinementProposalStore()
 
     let keychainStore = KeychainStore()
 
@@ -39,6 +38,7 @@ struct ContentView: View {
                         savedTunes: savedTunes,
                         onNewTune: {
                             cancelActiveTuneWork()
+                            newTuneSession = TuneDraftSession()
                             step = .newTune
                         },
                         onOpenCopilot: presentCopilot,
@@ -46,139 +46,63 @@ struct ContentView: View {
                             firstSavedSetupCopilotHandoff.consume()
                             open(savedTune)
                         },
-                        onDeleteTune: delete,
+                        onDeleteTune: { savedTuneID, completion in
+                            commitGarageRemoval(
+                                savedTuneID: savedTuneID,
+                                completion: completion
+                            )
+                        },
                         betaMissionCount:
                             missionBoard.progress.availableMissionCount,
                         onBetaMissions: { rootSheet = .betaMissions },
                         onEmptyGarageFirstWin:
-                            emptyGarageFirstWinAction(for: missionBoard),
+                            emptyGarageFirstWinAction,
                         onSettings: { rootSheet = .settings }
                     )
                 case .newTune:
                     NewTuneStartView(
+                        draftSession: newTuneSession.isMeaningful
+                            ? newTuneSession
+                            : nil,
+                        onResume: resumeNewTuneDraft,
                         onCancel: { step = .home },
                         onManualEntry: {
+                            newTuneSession.stage = .manual(
+                                .empty,
+                                thumbnailData: nil
+                            )
                             step = .manualEntry(.empty, thumbnailData: nil)
                         },
                         onDraftReady: { draft in
+                            newTuneSession.stage = .ocr(draft)
                             step = .ocrReview(draft)
-                        }
-                    )
-                case .catalogPicker(let initialGame):
-                    CarCatalogPickerView(
-                        catalogResult: catalogResult,
-                        fh5RosterResult: fh5RosterResult,
-                        fh6RosterResult: fh6RosterResult,
-                        initialGame: initialGame,
-                        onBack: { step = .newTune },
-                        onManualEntry: { game in
-                            step = .manualEntry(
-                                ManualEntryDraft(game: game),
-                                thumbnailData: nil
-                            )
-                        },
-                        onSelect: { selection in
-                            step = .catalogReview(selection)
-                        },
-                        onIdentityOnly: { entry in
-                            step = .catalogIdentityEntry(entry)
-                        }
-                    )
-                case .catalogIdentityEntry(let entry):
-                    ManualEntryView(
-                        draft: ManualEntryDraft(
-                            officialRosterIdentity: entry
-                        ),
-                        stockContributionContext: .init(
-                            sourceIdentity: entry
-                        ),
-                        onCancel: {
-                            step = .catalogPicker(
-                                initialGame: entry.game
-                            )
-                        },
-                        onContinue: { input in
-                            step = .discipline(
-                                input,
-                                origin: .manual(input),
-                                thumbnailData: nil
-                            )
-                        }
-                    )
-                case .catalogReview(let selection):
-                    let reuseOffer =
-                        catalogUpgradeEvidenceReuseOffer(
-                            for: selection
-                        )
-                    CarCatalogReviewView(
-                        selection: selection,
-                        upgradeReuseOffer: reuseOffer,
-                        onBack: {
-                            step = .catalogPicker(initialGame: selection.entry.game)
-                        },
-                        onUseCar: {
-                            step = .discipline(
-                                selection.carInput,
-                                origin: .catalog(
-                                    selection,
-                                    reusedUpgradeSnapshot: nil
-                                ),
-                                thumbnailData: nil
-                            )
-                        },
-                        onReuseVerifiedParts:
-                            reuseOffer.map { displayedOffer in
-                                {
-                                    guard let currentOffer =
-                                            catalogUpgradeEvidenceReuseOffer(
-                                                for: selection
-                                            ),
-                                          currentOffer
-                                            == displayedOffer,
-                                          let snapshot =
-                                            currentOffer.makeSnapshot(
-                                                for: selection
-                                            ) else {
-                                        errorRecovery = nil
-                                        errorMessage =
-                                            "Previously verified upgrade evidence changed or is no longer eligible. Review the car again or continue without reuse."
-                                        return
-                                    }
-                                    step = .discipline(
-                                        selection.carInput,
-                                        origin: .catalog(
-                                            selection,
-                                            reusedUpgradeSnapshot:
-                                                snapshot
-                                        ),
-                                        thumbnailData: nil
-                                    )
-                                }
-                            },
-                        onEditValues: {
-                            step = .catalogEdit(selection)
-                        }
-                    )
-                case .catalogEdit(let selection):
-                    ManualEntryView(
-                        draft: ManualEntryDraft(car: selection.carInput),
-                        onCancel: { step = .catalogReview(selection) },
-                        onContinue: { input in
-                            step = .discipline(
-                                input,
-                                origin: .manual(input),
-                                thumbnailData: nil
-                            )
                         }
                     )
                 case .ocrReview(let draft):
                     OCRConfirmationView(
                         draft: draft,
+                        onDraftChanged: { changedDraft in
+                            newTuneSession.stage = .ocr(changedDraft)
+                        },
                         onBack: { step = .newTune },
                         onUseManualEntry: { draft in
-                            step = .manualEntry(draft.manualEntryFallback(), thumbnailData: draft.thumbnailData)
+                            let manualDraft = draft.manualEntryFallback()
+                            newTuneSession.stage = .manual(
+                                manualDraft,
+                                thumbnailData: draft.thumbnailData
+                            )
+                            step = .manualEntry(
+                                manualDraft,
+                                thumbnailData: draft.thumbnailData
+                            )
                         },
                         onContinue: { input, confirmedDraft in
+                            newTuneSession.stage = .discipline(
+                                car: input,
+                                origin: .ocr(confirmedDraft),
+                                thumbnailData: confirmedDraft.thumbnailData,
+                                selection: nil
+                            )
                             step = .discipline(
                                 input,
                                 origin: .ocr(confirmedDraft),
@@ -189,8 +113,20 @@ struct ContentView: View {
                 case .manualEntry(let draft, let thumbnailData):
                     ManualEntryView(
                         draft: draft,
+                        onDraftChanged: { changedDraft in
+                            newTuneSession.stage = .manual(
+                                changedDraft,
+                                thumbnailData: thumbnailData
+                            )
+                        },
                         onCancel: { step = .newTune },
                         onContinue: { input in
+                            newTuneSession.stage = .discipline(
+                                car: input,
+                                origin: .manual(input),
+                                thumbnailData: thumbnailData,
+                                selection: nil
+                            )
                             step = .discipline(
                                 input,
                                 origin: .manual(input),
@@ -201,8 +137,20 @@ struct ContentView: View {
                 case .discipline(let input, let origin, let thumbnailData):
                     DisciplinePickerView(
                         car: input,
+                        selection: newTuneSession.selectedDiscipline,
+                        providerDisclosure: makeProviderDisclosure(
+                            mode: tuneProviderMode
+                        ),
                         onBack: { step = origin.previousStep(thumbnailData: thumbnailData) },
-                        onSelect: { discipline in
+                        onSelectionChanged: { discipline in
+                            newTuneSession.stage = .discipline(
+                                car: input,
+                                origin: origin,
+                                thumbnailData: thumbnailData,
+                                selection: discipline
+                            )
+                        },
+                        onStart: { discipline in
                             generateTune(
                                 for: input,
                                 discipline: discipline,
@@ -222,7 +170,10 @@ struct ContentView: View {
                             isStreaming: true
                         )
                     } else {
-                        TuneLoadingView(request: request)
+                        TuneLoadingView(
+                            request: request,
+                            onCancel: cancelGenerationSession
+                        )
                             .overlay(alignment: .bottom) {
                                 if thumbnailData != nil {
                                     Label("Screenshot saved with this tune", systemImage: "photo")
@@ -507,6 +458,37 @@ struct ContentView: View {
                             )
                         }
                     )
+                case .editSavedTuneDraft(let retune):
+                    SavedTuneEditView(
+                        draft: retune.draft,
+                        onCancel: {
+                            step = .result(
+                                retune.baseline,
+                                savedTuneID: retune.savedTuneID,
+                                adjustmentChanges: [],
+                                thumbnailData: retune.thumbnailData,
+                                playerNotes: retune.draft.playerNotes
+                            )
+                        },
+                        onSave: { draft in
+                            saveEditedTune(
+                                originalTune: retune.baseline,
+                                savedTuneID: retune.savedTuneID,
+                                draft: draft,
+                                thumbnailData: retune.thumbnailData,
+                                shouldRetune: false
+                            )
+                        },
+                        onSaveAndRetune: { draft in
+                            saveEditedTune(
+                                originalTune: retune.baseline,
+                                savedTuneID: retune.savedTuneID,
+                                draft: draft,
+                                thumbnailData: retune.thumbnailData,
+                                shouldRetune: true
+                            )
+                        }
+                    )
                 }
             }
             .alert("Tune update failed", isPresented: Binding(
@@ -525,14 +507,17 @@ struct ContentView: View {
                 Text(errorMessage ?? "Try again from the discipline picker.")
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                if RootStepGuideEntryPolicy().presentation(for: step)
+                    == .compactToolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
                     Button(action: presentCopilot) {
                         Image(systemName: "sparkles")
                             .frame(minWidth: 44, minHeight: 44)
                     }
-                    .accessibilityLabel("Open contextual Copilot")
+                    .accessibilityLabel("Open Step Guide")
                     .accessibilityHint("Shows guidance for the current workflow step")
                     .accessibilityIdentifier("copilotButton")
+                    }
                 }
             }
             .sheet(item: $rootSheet) { sheet in
@@ -561,7 +546,7 @@ struct ContentView: View {
         return CopilotContextFactory().make(
             step: step,
             savedTuneCount: savedTunes.count,
-            catalogCarCount: catalogCarCount,
+            catalogCarCount: 0,
             fh5ResearchLabEligible: currentFH5ResearchLabEligible,
             fh5ObservationRecorded: currentFH5ObservationRecorded,
             fh5CandidateTrialAvailable:
@@ -573,15 +558,6 @@ struct ContentView: View {
             fh6CommunityReferenceTrialEligible:
                 sequence.action
                     == .openFH6CommunityReferenceTrial
-        )
-    }
-
-    private func catalogUpgradeEvidenceReuseOffer(
-        for selection: CatalogCarSelection
-    ) -> CatalogUpgradeEvidenceReuseOffer? {
-        CatalogUpgradeEvidenceReuseResolver().offer(
-            for: selection,
-            savedTunes: savedTunes.compactMap(\.tuneResult)
         )
     }
 
@@ -661,33 +637,15 @@ struct ContentView: View {
         )) != nil
     }
 
-    private var catalogCarCount: Int {
-        guard case .success(let snapshot) = catalogResult else { return 0 }
-        return CarCatalogBrowseOverlay.resolve(
-            catalog: snapshot,
-            fh5RosterResult: fh5RosterResult,
-            fh6RosterResult: fh6RosterResult
-        ).entries.count
-    }
-
     private var betaValidationMissionBoard: BetaValidationMissionBoard {
         BetaValidationMissionPlanner().makeBoard(savedTunes: savedTunes)
     }
 
-    private func emptyGarageFirstWinAction(
-        for board: BetaValidationMissionBoard
-    ) -> (() -> Void)? {
-        guard savedTunes.isEmpty,
-              board.emptyGarageFirstWinMission != nil else {
-            return nil
-        }
+    private var emptyGarageFirstWinAction: (() -> Void)? {
+        guard savedTunes.isEmpty else { return nil }
         return {
-            guard savedTunes.isEmpty,
-                  let mission =
-                    betaValidationMissionBoard.emptyGarageFirstWinMission else {
-                return
-            }
-            openBetaValidationMission(mission)
+            newTuneSession = TuneDraftSession()
+            step = .newTune
         }
     }
 
@@ -1034,6 +992,18 @@ struct ContentView: View {
             thumbnailData: resolvedThumbnailData,
             adjustmentChanges: adjustmentChanges,
             activeFeedback: tuneWorkflow.activeFeedback(for: resolvedSavedTuneID),
+            rootActions: TuneResultRootActions(
+                refinementProposal: refinementProposals.proposal.flatMap {
+                    $0.savedTuneID == resolvedSavedTuneID ? $0 : nil
+                },
+                canUndoRefinement:
+                    refinementProposals.applied?.proposal.savedTuneID
+                    == resolvedSavedTuneID,
+                onApplyRefinement: applyRefinementProposal,
+                onDiscardRefinement: discardRefinementProposal,
+                onUndoRefinement: { undoAppliedRefinement() },
+                onCancelStreaming: cancelGenerationSession
+            ),
             showsFirstSavedSetupCopilotHandoff:
                 firstSavedSetupCopilotHandoff.isPresented(
                     for: resolvedSavedTuneID

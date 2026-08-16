@@ -90,6 +90,31 @@ struct CopilotPersistedActionSnapshotResolver {
 }
 
 struct CopilotWorkflowActionRouter {
+    func route(
+        _ action: StepGuideAction,
+        from currentStep: WorkflowStep,
+        authoritativeSnapshot: CopilotPersistedActionSnapshot?
+    ) -> (result: StepGuideActionResult, destination: WorkflowStep?) {
+        guard let destination = destination(
+            for: action,
+            from: currentStep,
+            authoritativeSnapshot: authoritativeSnapshot
+        ) else {
+            let reason: StepGuideActionRejectionReason =
+                authoritativeSnapshot == nil ? .staleContext : .unavailable
+            return (
+                .rejected(StepGuideActionRejection(
+                    reason: reason,
+                    message: reason == .staleContext
+                        ? "The saved setup changed. Review the current result and choose again."
+                        : "That step is no longer available for this setup."
+                )),
+                nil
+            )
+        }
+        return (.accepted, destination)
+    }
+
     func destination(
         for action: CopilotAction,
         from currentStep: WorkflowStep,

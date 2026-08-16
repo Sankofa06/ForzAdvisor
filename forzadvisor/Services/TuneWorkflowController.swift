@@ -12,11 +12,16 @@ typealias TuneGenerationPartialHandler = @MainActor @Sendable (TuneResult) -> Vo
 typealias TuneGenerationSuccessHandler = @MainActor @Sendable (TuneResult) throws -> Void
 typealias TuneWorkflowFailureHandler = @MainActor @Sendable (Error) -> Void
 typealias TuneAdjustmentSuccessHandler = @MainActor @Sendable (TuneAdjustmentResult) throws -> Void
+typealias TuneGenerationSessionFailureHandler = @MainActor @Sendable (
+    TuneGenerationSession,
+    Error
+) -> Void
 
 @MainActor
 final class TuneWorkflowController: ObservableObject {
     @Published private(set) var isGenerating = false
     @Published private(set) var isAdjusting = false
+    @Published private(set) var activeGenerationSession: TuneGenerationSession?
 
     private var activeGenerationID: UUID?
     private var generationTask: Task<Void, Never>?
@@ -35,17 +40,55 @@ final class TuneWorkflowController: ObservableObject {
         onSuccess: @escaping TuneGenerationSuccessHandler,
         onFailure: @escaping TuneWorkflowFailureHandler
     ) {
+        let capabilities = TuneProviderCapabilities(
+            onDeviceModel: .ready,
+            anthropicAPI: .storedOnDeviceNotTested
+        )
+        let draft = TuneDraftSession(stage: .discipline(
+            car: request.car,
+            origin: .manual(request.car),
+            thumbnailData: nil,
+            selection: request.discipline
+        ))
+        let session = TuneGenerationSession(
+            request: request,
+            origin: .manual(request.car),
+            thumbnailData: nil,
+            preferredProviderMode: .offlineFormula,
+            providerDisclosure: TuneProviderDisclosure(
+                preferredMode: .offlineFormula,
+                capabilities: capabilities
+            ),
+            returnContext: .newTune(draft)
+        )
+        generateTune(
+            session: session,
+            provider: provider,
+            onPartial: onPartial,
+            onSuccess: onSuccess,
+            onFailure: { _, error in onFailure(error) }
+        )
+    }
+
+    func generateTune(
+        session: TuneGenerationSession,
+        provider: any TuneProvider,
+        onPartial: @escaping TuneGenerationPartialHandler,
+        onSuccess: @escaping TuneGenerationSuccessHandler,
+        onFailure: @escaping TuneGenerationSessionFailureHandler
+    ) {
         cancelActiveTuneWork()
 
-        let generationID = UUID()
+        let generationID = session.id
         activeGenerationID = generationID
+        activeGenerationSession = session
         isGenerating = true
 
         generationTask = Task { @MainActor [weak self] in
             guard let self else { return }
 
             do {
-                let tune = try await provider.generateTune(for: request) { partialTune in
+                let tune = try await provider.generateTune(for: session.request) { partialTune in
                     guard self.isCurrentGeneration(generationID) else { return }
                     onPartial(partialTune)
                 }
@@ -57,7 +100,7 @@ final class TuneWorkflowController: ObservableObject {
                 guard self.isCurrentGeneration(generationID) else { return }
                 self.finishGeneration(generationID)
                 guard !Self.isCancellation(error) else { return }
-                onFailure(error)
+                onFailure(session, error)
             }
         }
     }
@@ -114,6 +157,7 @@ final class TuneWorkflowController: ObservableObject {
         generationTask?.cancel()
         generationTask = nil
         activeGenerationID = nil
+        activeGenerationSession = nil
         isGenerating = false
     }
 
@@ -133,6 +177,7 @@ final class TuneWorkflowController: ObservableObject {
         guard activeGenerationID == generationID else { return }
         generationTask = nil
         activeGenerationID = nil
+        activeGenerationSession = nil
         isGenerating = false
     }
 
