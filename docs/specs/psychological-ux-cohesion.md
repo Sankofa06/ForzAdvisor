@@ -210,10 +210,10 @@ Rollback is commit-based for non-persistent view slices. Validation schema v2 is
 ## 11. Task Checklist
 
 - [x] User approves the proposed product decisions and full scope.
-- [ ] T1 Theme/Foundation lands green.
-- [ ] S1 Settings Contracts lands green.
+- [x] T1 Theme/Foundation lands green.
+- [x] S1 Settings Contracts lands green.
 - [ ] R1 Root Workflow/Foundation lands green.
-- [ ] V1 Validation Public Contract and migration fixtures land green.
+- [x] V1 Validation Public Contract and migration fixtures land green.
 - [ ] Six Sol Medium view slices land green from one immutable base.
 - [ ] Integration acceptance criteria and terminology pass.
 - [ ] Local build/test/accessibility gates are green with zero warnings.
