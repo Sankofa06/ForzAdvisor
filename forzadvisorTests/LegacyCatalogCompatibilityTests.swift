@@ -15,7 +15,7 @@ final class LegacyCatalogCompatibilityTests: XCTestCase {
 
     func testSyntheticSelectionMapsGameSpecificValuesAndCopiesLineage() {
         let expectedPerformanceIndex: [ForzaGame: Int] = [
-            .fh5: 800,
+            .fh5: 750,
             .fh6: 700
         ]
 
