@@ -12,7 +12,6 @@ struct TuneEvidenceHubSection: View {
             Label("Optional", systemImage: "flask")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(ForzAdvisorTheme.accent)
-                .accessibilityIdentifier("tuneEvidenceHubSummary")
             Text("Use Evidence Hub later if you want to record on-device observations, choose future reuse, or review shared evidence. It never changes available settings automatically.")
                 .font(.caption)
                 .foregroundStyle(.secondary)

@@ -17,7 +17,7 @@ final class TuneResultUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["tuneResultStatus"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["saveTuneButton"].exists)
         XCTAssertTrue(app.descendants(matching: .any)["availableSettingsSection"].exists)
-        XCTAssertTrue(app.descendants(matching: .any)["tuneEvidenceHubSummary"].exists)
+        XCTAssertTrue(app.staticTexts["Optional Validation & Research"].exists)
 
         app.buttons["saveTuneButton"].tap()
         XCTAssertTrue(
