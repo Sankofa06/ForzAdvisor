@@ -91,6 +91,25 @@ final class PhotoOCRImportControllerTests: XCTestCase {
         XCTAssertFalse(controller.isProcessingPhoto)
     }
 
+    func testSuccessfulImportRetainsLocalSourceThumbnail() async {
+        let ocrService = QueuedOCRService()
+        let controller = PhotoOCRImportController(ocrService: ocrService)
+        var deliveredDraft: OCRConfirmationDraft?
+
+        controller.processCapturedPhoto(
+            sampleImage(),
+            failureMessage: "failed"
+        ) { draft in
+            deliveredDraft = draft
+        }
+        await waitUntil(ocrService.startedCount == 1)
+        ocrService.complete(at: 0, with: draft(year: 2003))
+        await waitUntil(deliveredDraft != nil)
+
+        XCTAssertFalse(deliveredDraft?.thumbnailData?.isEmpty ?? true)
+        XCTAssertNil(controller.lastFailedImage)
+    }
+
     private func draft(year: Int) -> OCRConfirmationDraft {
         var draft = OCRConfirmationDraft()
         draft.year = year

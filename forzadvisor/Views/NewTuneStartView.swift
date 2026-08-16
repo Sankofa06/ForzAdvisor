@@ -21,6 +21,9 @@ struct NewTuneStartView: View {
 
     @State private var selectedItem: PhotosPickerItem?
     @State private var isShowingCamera = false
+    @State private var isShowingPhotoPicker = false
+    @State private var isShowingReplacementChoice = false
+    @State private var pendingSource: NewTuneSource?
     @StateObject private var photoImport: PhotoOCRImportController
 
     init(
@@ -51,35 +54,41 @@ struct NewTuneStartView: View {
             }
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
+            importStatusSection
+
             Section("Start") {
                 if draftSession?.isMeaningful == true {
                     Button("Resume New Tune", action: onResume)
                         .accessibilityIdentifier("resumeNewTuneButton")
                 }
                 Button {
-                    isShowingCamera = true
+                    request(.camera)
                 } label: {
-                    StartRow(
+                    PrimaryStartCard(
                         title: "Take Photo",
-                        subtitle: "Capture the performance screen and run on-device OCR.",
+                        subtitle: "Photograph the performance screen. Reading stays on this device.",
                         systemImage: "camera"
                     )
                 }
                 .buttonStyle(.plain)
                 .disabled(photoImport.isProcessingPhoto)
+                .accessibilityIdentifier("takePhotoPrimaryButton")
                 .forzAdvisorRowBackground()
 
-                PhotosPicker(selection: $selectedItem, matching: .images) {
+                Button {
+                    request(.screenshot)
+                } label: {
                     StartRow(
                         title: "Import Screenshot",
                         subtitle: "Run on-device Vision OCR, then confirm every value.",
                         systemImage: "photo.badge.plus"
                     )
                 }
+                .buttonStyle(.plain)
                 .disabled(photoImport.isProcessingPhoto)
                 .forzAdvisorRowBackground()
 
-                Button(action: startManualEntry) {
+                Button { request(.manual) } label: {
                     StartRow(
                         title: "Enter Manually",
                         subtitle: "Type weight, front %, PI, class, and drivetrain.",
@@ -92,42 +101,36 @@ struct NewTuneStartView: View {
             }
 
             CaptureGuideSection()
-
-            if photoImport.isProcessingPhoto {
-                Section {
-                    HStack(spacing: 12) {
-                        ProgressView()
-                        Text("Reading image on device")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .forzAdvisorRowBackground()
-            }
-
-            if let errorMessage = photoImport.errorMessage {
-                Section("Photo OCR") {
-                    Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(ForzAdvisorTheme.warning)
-                    if let lastFailedImage = photoImport.lastFailedImage {
-                        Button("Retry OCR") {
-                            processCapturedPhoto(lastFailedImage)
-                        }
-                    }
-                    Button("Enter manually", action: startManualEntry)
-                }
-                .forzAdvisorRowBackground()
-            }
         }
         .navigationTitle("Tune Source")
         .forzAdvisorScreenChrome()
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") {
-                    photoImport.cancelPhotoImport()
-                    selectedItem = nil
-                    onCancel()
+                if photoImport.isProcessingPhoto {
+                    Button("Cancel OCR") {
+                        photoImport.cancelPhotoImport()
+                        selectedItem = nil
+                    }
+                } else {
+                    Button("Close", action: onCancel)
                 }
             }
+        }
+        .photosPicker(
+            isPresented: $isShowingPhotoPicker,
+            selection: $selectedItem,
+            matching: .images
+        )
+        .confirmationDialog(
+            "Replace your current New Tune draft?",
+            isPresented: $isShowingReplacementChoice,
+            titleVisibility: .visible
+        ) {
+            Button("Resume Current Draft", action: onResume)
+            Button("Replace Draft", role: .destructive, action: performPendingSource)
+            Button("Cancel", role: .cancel) { pendingSource = nil }
+        } message: {
+            Text("Replacing starts from a new photo, screenshot, or manual form. Close keeps the current draft available to resume.")
         }
         .onChange(of: selectedItem) { _, newItem in
             guard let newItem else { return }
@@ -179,6 +182,82 @@ struct NewTuneStartView: View {
         photoImport.cancelPhotoImport()
         selectedItem = nil
         onManualEntry()
+    }
+
+    @ViewBuilder
+    private var importStatusSection: some View {
+        if photoImport.isProcessingPhoto {
+            Section("Photo OCR") {
+                HStack(spacing: 12) {
+                    ProgressView()
+                    Text("Reading image on this device")
+                        .foregroundStyle(.secondary)
+                }
+                Button("Cancel OCR") {
+                    photoImport.cancelPhotoImport()
+                    selectedItem = nil
+                }
+            }
+            .forzAdvisorRowBackground()
+        } else if let errorMessage = photoImport.errorMessage {
+            Section("Photo OCR needs attention") {
+                Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(ForzAdvisorTheme.warning)
+                if let lastFailedImage = photoImport.lastFailedImage {
+                    Button("Retry OCR") { processCapturedPhoto(lastFailedImage) }
+                }
+                Button("Enter Manually") { request(.manual) }
+            }
+            .forzAdvisorRowBackground()
+        }
+    }
+
+    private func request(_ source: NewTuneSource) {
+        guard draftSession?.isMeaningful == true else {
+            perform(source)
+            return
+        }
+        pendingSource = source
+        isShowingReplacementChoice = true
+    }
+
+    private func performPendingSource() {
+        guard let pendingSource else { return }
+        self.pendingSource = nil
+        perform(pendingSource)
+    }
+
+    private func perform(_ source: NewTuneSource) {
+        switch source {
+        case .camera: isShowingCamera = true
+        case .screenshot: isShowingPhotoPicker = true
+        case .manual: startManualEntry()
+        }
+    }
+}
+
+private enum NewTuneSource {
+    case camera
+    case screenshot
+    case manual
+}
+
+private struct PrimaryStartCard: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(title, systemImage: systemImage)
+                .font(.title3.weight(.bold))
+            Text(subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
     }
 }
 

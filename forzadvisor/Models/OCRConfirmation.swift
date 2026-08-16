@@ -64,12 +64,45 @@ struct OCRFieldEvidence: Equatable, Sendable {
         rawText == nil || confidence < Self.reviewThreshold
     }
 
-    var confidencePercentText: String {
-        confidence.formatted(.percent.precision(.fractionLength(0)))
-    }
-
     static var missing: OCRFieldEvidence {
         OCRFieldEvidence(rawText: nil, confidence: 0)
+    }
+}
+
+enum OCRFieldReviewState: String, Equatable, Sendable {
+    case needsCheck = "Needs Check"
+    case confirmed = "Confirmed"
+    case corrected = "Corrected"
+}
+
+enum OCRConfirmationUnresolvedField: Hashable, Sendable {
+    case identity
+    case weightPounds
+    case frontWeightPercent
+    case performanceIndex
+    case performanceClass
+    case drivetrain
+
+    var title: String {
+        switch self {
+        case .identity: "Make or model"
+        case .weightPounds: "Weight"
+        case .frontWeightPercent: "Front weight"
+        case .performanceIndex: "PI"
+        case .performanceClass: "Class"
+        case .drivetrain: "Drivetrain"
+        }
+    }
+
+    var inputField: OCRInputField? {
+        switch self {
+        case .identity: nil
+        case .weightPounds: .weightPounds
+        case .frontWeightPercent: .frontWeightPercent
+        case .performanceIndex: .performanceIndex
+        case .performanceClass: .performanceClass
+        case .drivetrain: .drivetrain
+        }
     }
 }
 
@@ -106,6 +139,7 @@ struct OCRConfirmationDraft: Equatable, Sendable {
     var thumbnailData: Data?
     var fieldCandidates: [OCRInputField: [OCRFieldCandidate]] = [:]
     var evidence: [OCRInputField: OCRFieldEvidence] = [:]
+    var reviewStates: [OCRInputField: OCRFieldReviewState] = [:]
 
     static let requiredFields: [OCRInputField] = [
         .weightPounds,
@@ -116,7 +150,31 @@ struct OCRConfirmationDraft: Equatable, Sendable {
     ]
 
     var fieldsNeedingReview: [OCRInputField] {
-        Self.requiredFields.filter { evidence(for: $0).needsReview }
+        Self.requiredFields.filter { reviewState(for: $0) == .needsCheck }
+    }
+
+    var firstUnresolvedField: OCRConfirmationUnresolvedField? {
+        if make.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+           model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return .identity
+        }
+        if weightPounds.map({ !(1500...7000).contains($0) }) ?? true { return .weightPounds }
+        if frontWeightPercent.map({ !(30...70).contains($0) }) ?? true { return .frontWeightPercent }
+        if performanceIndex.map({ !(100...999).contains($0) }) ?? true { return .performanceIndex }
+        guard let performanceClass else { return .performanceClass }
+        if game.performanceIndexRange(for: performanceClass) == nil { return .performanceClass }
+        if let performanceIndex,
+           let range = game.performanceIndexRange(for: performanceClass),
+           !range.contains(performanceIndex) { return .performanceIndex }
+        if drivetrain == nil { return .drivetrain }
+        if requiresFieldReview, let field = fieldsNeedingReview.first {
+            return field.unresolvedField
+        }
+        return nil
+    }
+
+    private var requiresFieldReview: Bool {
+        !evidence.isEmpty || thumbnailData != nil
     }
 
     func evidence(for field: OCRInputField) -> OCRFieldEvidence {
@@ -125,6 +183,18 @@ struct OCRConfirmationDraft: Equatable, Sendable {
 
     func candidates(for field: OCRInputField) -> [OCRFieldCandidate] {
         fieldCandidates[field] ?? []
+    }
+
+    func reviewState(for field: OCRInputField) -> OCRFieldReviewState {
+        reviewStates[field] ?? (evidence(for: field).needsReview ? .needsCheck : .confirmed)
+    }
+
+    mutating func confirm(_ field: OCRInputField) {
+        reviewStates[field] = .confirmed
+    }
+
+    mutating func markCorrected(_ field: OCRInputField) {
+        reviewStates[field] = .corrected
     }
 
     func manualEntryFallback() -> ManualEntryDraft {
@@ -144,6 +214,7 @@ struct OCRConfirmationDraft: Equatable, Sendable {
     }
 
     func confirmedCarInput() -> CarInput? {
+        guard firstUnresolvedField == nil else { return nil }
         guard
             let weightPounds,
             let frontWeightPercent,
@@ -169,6 +240,19 @@ struct OCRConfirmationDraft: Equatable, Sendable {
         )
 
         return car.isValid ? car : nil
+    }
+}
+
+extension OCRInputField {
+    var unresolvedField: OCRConfirmationUnresolvedField {
+        switch self {
+        case .weightPounds: .weightPounds
+        case .frontWeightPercent: .frontWeightPercent
+        case .performanceIndex: .performanceIndex
+        case .performanceClass: .performanceClass
+        case .drivetrain: .drivetrain
+        case .horsepower, .torque: .identity
+        }
     }
 }
 

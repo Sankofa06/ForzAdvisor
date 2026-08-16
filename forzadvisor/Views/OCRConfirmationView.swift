@@ -1,12 +1,5 @@
-//
-//  OCRConfirmationView.swift
-//  forzadvisor
-//
-//  Editable review screen for OCRConfirmationDraft values before they become a
-//  validated CarInput and enter the discipline picker.
-//
-
 import SwiftUI
+import UIKit
 
 struct OCRConfirmationView: View {
     let onBack: () -> Void
@@ -15,6 +8,7 @@ struct OCRConfirmationView: View {
     let onDraftChanged: (OCRConfirmationDraft) -> Void
 
     @State private var draft: OCRConfirmationDraft
+    @FocusState private var focusedField: OCRConfirmationUnresolvedField?
 
     init(
         draft: OCRConfirmationDraft,
@@ -32,97 +26,20 @@ struct OCRConfirmationView: View {
 
     var body: some View {
         Form {
-            if !draft.fieldsNeedingReview.isEmpty {
-                Section {
-                    Label("Review highlighted fields before continuing.", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(ForzAdvisorTheme.warning)
-                }
-                .forzAdvisorRowBackground()
-            }
-
-            Section("Car") {
-                ForzaGamePicker(
-                    selection: $draft.game,
-                    accessibilityPrefix: "ocrConfirmationGame"
-                )
-                TextField("Year", text: optionalNumberText($draft.year))
-                    .keyboardType(.numberPad)
-                TextField("Make", text: $draft.make)
-                    .textInputAutocapitalization(.words)
-                TextField("Model", text: $draft.model)
-                    .textInputAutocapitalization(.words)
-            }
-            .forzAdvisorRowBackground()
-
-            Section("Required Performance") {
-                ConfirmedNumberField(
-                    title: "Weight",
-                    placeholder: "lb",
-                    text: optionalNumberText($draft.weightPounds),
-                    evidence: draft.evidence(for: .weightPounds),
-                    candidates: draft.candidates(for: .weightPounds)
-                )
-
-                ConfirmedNumberField(
-                    title: "Front weight",
-                    placeholder: "%",
-                    text: optionalPercentText($draft.frontWeightPercent),
-                    evidence: draft.evidence(for: .frontWeightPercent),
-                    candidates: draft.candidates(for: .frontWeightPercent)
-                )
-
-                ConfirmedNumberField(
-                    title: "PI",
-                    placeholder: "100-999",
-                    text: optionalNumberText($draft.performanceIndex),
-                    evidence: draft.evidence(for: .performanceIndex),
-                    candidates: draft.candidates(for: .performanceIndex)
-                )
-
-                Picker("Class", selection: $draft.performanceClass) {
-                    Text("Select").tag(nil as PerformanceClass?)
-                    ForEach(draft.game.supportedPerformanceClasses) { performanceClass in
-                        Text(performanceClass.rawValue).tag(Optional(performanceClass))
-                    }
-                }
-                .reviewTint(draft.evidence(for: .performanceClass).needsReview)
-                CandidateChipRow(candidates: draft.candidates(for: .performanceClass)) { value in
-                    draft.performanceClass = PerformanceClass(rawValue: value)
-                }
-                .forzAdvisorRowBackground()
-
-                Picker("Drivetrain", selection: $draft.drivetrain) {
-                    Text("Select").tag(nil as Drivetrain?)
-                    ForEach(Drivetrain.allCases) { drivetrain in
-                        Text(drivetrain.rawValue).tag(Optional(drivetrain))
-                    }
-                }
-                .pickerStyle(.segmented)
-                .reviewTint(draft.evidence(for: .drivetrain).needsReview)
-                CandidateChipRow(candidates: draft.candidates(for: .drivetrain)) { value in
-                    draft.drivetrain = Drivetrain(rawValue: value)
-                }
-                .forzAdvisorRowBackground()
-            }
-
-            Section("Optional") {
-                TextField("Horsepower", text: optionalNumberText($draft.peakHorsepower))
-                    .keyboardType(.numberPad)
-                TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds))
-                    .keyboardType(.numberPad)
-            }
-            .forzAdvisorRowBackground()
-
+            reviewSummary
+            OCRSourceEvidenceView(
+                imageData: draft.thumbnailData,
+                region: relevantEvidenceRegion
+            )
+            carSection
+            performanceSection
+            optionalSection
             Section {
-                Button("Enter manually instead") {
-                    onUseManualEntry(draft)
-                }
+                Button("Enter manually instead") { onUseManualEntry(draft) }
             }
             .forzAdvisorRowBackground()
         }
-        .onChange(of: draft) { _, newDraft in
-            onDraftChanged(newDraft)
-        }
+        .onChange(of: draft) { _, newDraft in onDraftChanged(newDraft) }
         .navigationTitle("Confirm Inputs")
         .forzAdvisorScreenChrome()
         .toolbar {
@@ -130,113 +47,202 @@ struct OCRConfirmationView: View {
                 Button("Back", action: onBack)
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Next") {
-                    if let car = draft.confirmedCarInput() {
-                        onContinue(car, draft)
-                    }
-                }
-                .accessibilityIdentifier("ocrConfirmationNextButton")
-                .disabled(draft.confirmedCarInput() == nil)
+                Button("Next", action: submit)
+                    .accessibilityIdentifier("ocrConfirmationNextButton")
             }
         }
     }
 
-    private func optionalNumberText(_ value: Binding<Int?>) -> Binding<String> {
-        Binding {
-            value.wrappedValue.map(String.init) ?? ""
-        } set: { newValue in
-            let digits = newValue.filter(\.isNumber)
-            value.wrappedValue = digits.isEmpty ? nil : Int(digits)
+    private var reviewSummary: some View {
+        Section {
+            if let unresolved = draft.firstUnresolvedField {
+                Label(
+                    "Check \(unresolved.title) before continuing.",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .foregroundStyle(ForzAdvisorTheme.warning)
+                .accessibilityIdentifier("ocrFirstUnresolvedField")
+            } else {
+                Label("Required inputs are ready.", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(ForzAdvisorTheme.success)
+            }
+            Text("Needs Check comes from OCR uncertainty. Confirm or correct the value using the game screen.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var carSection: some View {
+        Section("Car") {
+            ForzaGamePicker(
+                selection: $draft.game,
+                accessibilityPrefix: "ocrConfirmationGame"
+            )
+            TextField("Year", text: optionalNumberText($draft.year))
+                .keyboardType(.numberPad)
+            TextField("Make", text: $draft.make)
+                .textInputAutocapitalization(.words)
+                .focused($focusedField, equals: .identity)
+                .accessibilityIdentifier("ocrConfirmationMakeField")
+            TextField("Model", text: $draft.model)
+                .textInputAutocapitalization(.words)
+                .focused($focusedField, equals: .identity)
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var performanceSection: some View {
+        Section("Required Performance") {
+            intField(.weightPounds, placeholder: "lb", value: $draft.weightPounds)
+            doubleField(.frontWeightPercent, placeholder: "%", value: $draft.frontWeightPercent)
+            intField(.performanceIndex, placeholder: "100-999", value: $draft.performanceIndex)
+            classPicker
+            drivetrainPicker
         }
     }
 
-    private func optionalPercentText(_ value: Binding<Double?>) -> Binding<String> {
+    private var classPicker: some View {
+        reviewPicker(field: .performanceClass) {
+            Picker("Class", selection: $draft.performanceClass) {
+                Text("Select").tag(nil as PerformanceClass?)
+                ForEach(draft.game.supportedPerformanceClasses) {
+                    Text($0.rawValue).tag(Optional($0))
+                }
+            }
+            .focused($focusedField, equals: .performanceClass)
+            .onChange(of: draft.performanceClass) { _, _ in
+                draft.markCorrected(.performanceClass)
+            }
+        }
+    }
+
+    private var drivetrainPicker: some View {
+        reviewPicker(field: .drivetrain) {
+            Picker("Drivetrain", selection: $draft.drivetrain) {
+                Text("Select").tag(nil as Drivetrain?)
+                ForEach(Drivetrain.allCases) {
+                    Text($0.rawValue).tag(Optional($0))
+                }
+            }
+            .pickerStyle(.segmented)
+            .focused($focusedField, equals: .drivetrain)
+            .onChange(of: draft.drivetrain) { _, _ in
+                draft.markCorrected(.drivetrain)
+            }
+        }
+    }
+
+    private var optionalSection: some View {
+        Section("Optional") {
+            TextField("Horsepower", text: optionalNumberText($draft.peakHorsepower))
+                .keyboardType(.numberPad)
+            TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds))
+                .keyboardType(.numberPad)
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var relevantEvidenceRegion: CGRect? {
+        guard let field = draft.firstUnresolvedField?.inputField else { return nil }
+        return draft.evidence(for: field).boundingBox
+    }
+
+    private func intField(
+        _ field: OCRInputField,
+        placeholder: String,
+        value: Binding<Int?>
+    ) -> some View {
+        OCRReviewNumberField(
+            title: field.title,
+            placeholder: placeholder,
+            text: optionalNumberText(value, correctedField: field),
+            evidence: draft.evidence(for: field),
+            state: draft.reviewState(for: field),
+            candidates: draft.candidates(for: field),
+            focus: $focusedField,
+            focusValue: field.unresolvedField,
+            onConfirm: { draft.confirm(field) },
+            onCandidate: {
+                value.wrappedValue = Int($0.filter(\.isNumber))
+                draft.markCorrected(field)
+            }
+        )
+    }
+
+    private func doubleField(
+        _ field: OCRInputField,
+        placeholder: String,
+        value: Binding<Double?>
+    ) -> some View {
+        OCRReviewNumberField(
+            title: field.title,
+            placeholder: placeholder,
+            text: optionalPercentText(value, correctedField: field),
+            evidence: draft.evidence(for: field),
+            state: draft.reviewState(for: field),
+            candidates: draft.candidates(for: field),
+            focus: $focusedField,
+            focusValue: field.unresolvedField,
+            onConfirm: { draft.confirm(field) },
+            onCandidate: {
+                value.wrappedValue = LocalizedNumberText.parse($0)
+                draft.markCorrected(field)
+            }
+        )
+    }
+
+    private func reviewPicker<Content: View>(
+        field: OCRInputField,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        let state = draft.reviewState(for: field)
+        return VStack(alignment: .leading, spacing: 8) {
+            content()
+            OCRReviewStatusRow(state: state) { draft.confirm(field) }
+            OCRCandidateChipRow(candidates: draft.candidates(for: field)) { value in
+                if field == .performanceClass { draft.performanceClass = PerformanceClass(rawValue: value) }
+                if field == .drivetrain { draft.drivetrain = Drivetrain(rawValue: value) }
+                draft.markCorrected(field)
+            }
+        }
+        .ocrReviewRow(state: state)
+    }
+
+    private func optionalNumberText(
+        _ value: Binding<Int?>,
+        correctedField: OCRInputField? = nil
+    ) -> Binding<String> {
+        Binding {
+            value.wrappedValue.map(String.init) ?? ""
+        } set: { newValue in
+            value.wrappedValue = Int(newValue.filter(\.isNumber))
+            if let correctedField { draft.markCorrected(correctedField) }
+        }
+    }
+
+    private func optionalPercentText(
+        _ value: Binding<Double?>,
+        correctedField: OCRInputField
+    ) -> Binding<String> {
         Binding {
             value.wrappedValue.map { LocalizedNumberText.format($0, fractionDigits: 1) } ?? ""
         } set: { newValue in
             value.wrappedValue = LocalizedNumberText.parse(newValue)
+            draft.markCorrected(correctedField)
         }
     }
-}
 
-private struct ConfirmedNumberField: View {
-    let title: String
-    let placeholder: String
-    let text: Binding<String>
-    let evidence: OCRFieldEvidence
-    let candidates: [OCRFieldCandidate]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            LabeledContent(title) {
-                TextField(placeholder, text: text)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-            }
-
-            HStack(spacing: 8) {
-                Text("Confidence \(evidence.confidencePercentText)")
-                    .font(.caption)
-                    .foregroundStyle(evidence.needsReview ? ForzAdvisorTheme.warning : .secondary)
-                if let rawText = evidence.rawText {
-                    Text(rawText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                } else {
-                    Text("No OCR value found")
-                        .font(.caption)
-                        .foregroundStyle(ForzAdvisorTheme.warning)
-                }
-            }
-
-            CandidateChipRow(candidates: candidates) { value in
-                text.wrappedValue = value
-            }
+    private func submit() {
+        if let unresolved = draft.firstUnresolvedField {
+            focusedField = unresolved
+            UIAccessibility.post(
+                notification: .announcement,
+                argument: "Check \(unresolved.title)."
+            )
+            return
         }
-        .reviewTint(evidence.needsReview)
-    }
-}
-
-private struct CandidateChipRow: View {
-    let candidates: [OCRFieldCandidate]
-    let onSelect: (String) -> Void
-
-    private var uniqueCandidates: [OCRFieldCandidate] {
-        var seen = Set<String>()
-        return candidates.filter { seen.insert($0.value).inserted }.prefix(3).map { $0 }
-    }
-
-    var body: some View {
-        if !uniqueCandidates.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(uniqueCandidates) { candidate in
-                        Button {
-                            onSelect(candidate.value)
-                        } label: {
-                            Text(candidate.value)
-                                .font(.caption.weight(.semibold))
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 5)
-                                .foregroundStyle(ForzAdvisorTheme.accent)
-                                .background(ForzAdvisorTheme.accent.opacity(0.14), in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func reviewTint(_ needsReview: Bool) -> some View {
-        if needsReview {
-            listRowBackground(ForzAdvisorTheme.warning.opacity(0.13))
-        } else {
-            self.forzAdvisorRowBackground()
-        }
+        focusedField = nil
+        if let car = draft.confirmedCarInput() { onContinue(car, draft) }
     }
 }

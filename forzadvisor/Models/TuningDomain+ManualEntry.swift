@@ -211,6 +211,53 @@ struct ManualEntryDraft: Equatable, Sendable {
     }
 }
 
+enum ManualEntryField: String, CaseIterable, Hashable, Sendable {
+    case identity
+    case weight
+    case frontWeight
+    case performanceIndex
+    case performanceClass
+    case drivetrain
+    case horsepower
+    case torque
+
+    var title: String {
+        switch self {
+        case .identity: "Make or model"
+        case .weight: "Weight"
+        case .frontWeight: "Front weight"
+        case .performanceIndex: "PI"
+        case .performanceClass: "Class"
+        case .drivetrain: "Drivetrain"
+        case .horsepower: "Horsepower"
+        case .torque: "Torque"
+        }
+    }
+}
+
+struct ManualEntryFormState: Equatable, Sendable {
+    private(set) var touchedFields: Set<ManualEntryField> = []
+    private(set) var hasAttemptedSubmission = false
+
+    mutating func markTouched(_ field: ManualEntryField) {
+        touchedFields.insert(field)
+    }
+
+    mutating func markSubmitted() {
+        hasAttemptedSubmission = true
+    }
+
+    func visibleIssues(for draft: ManualEntryDraft) -> [ManualEntryValidationIssue] {
+        draft.validationIssues.filter {
+            hasAttemptedSubmission || touchedFields.contains($0.field)
+        }
+    }
+
+    func firstUnresolvedField(in draft: ManualEntryDraft) -> ManualEntryField? {
+        draft.validationIssues.first?.field
+    }
+}
+
 enum ManualEntryValidationIssue: Identifiable, Equatable {
     case missingName
     case missingWeight
@@ -225,6 +272,18 @@ enum ManualEntryValidationIssue: Identifiable, Equatable {
     case missingDrivetrain
 
     var id: String { message }
+
+    var field: ManualEntryField {
+        switch self {
+        case .missingName: .identity
+        case .missingWeight, .invalidWeight: .weight
+        case .missingFrontWeight, .invalidFrontWeight: .frontWeight
+        case .missingPerformanceIndex, .invalidPerformanceIndex,
+             .performanceIndexOutsideClass(_, _, _): .performanceIndex
+        case .missingPerformanceClass, .unsupportedPerformanceClass(_, _): .performanceClass
+        case .missingDrivetrain: .drivetrain
+        }
+    }
 
     var message: String {
         switch self {

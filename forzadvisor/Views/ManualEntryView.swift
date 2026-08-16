@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ManualEntryView: View {
     let onCancel: () -> Void
@@ -16,6 +17,7 @@ struct ManualEntryView: View {
         ManualEntryStockContributionContext?
 
     @State private var draft: ManualEntryDraft
+    @State private var formState = ManualEntryFormState()
     @FocusState private var focusedField: ManualEntryField?
 
     init(
@@ -43,22 +45,22 @@ struct ManualEntryView: View {
                 )
                 TextField("Year", text: optionalNumberText($draft.year))
                     .keyboardType(.numberPad)
-                    .focused($focusedField, equals: .year)
+                    .focused($focusedField, equals: .identity)
                     .accessibilityIdentifier("manualEntryYearField")
-                TextField("Make", text: $draft.make)
+                TextField("Make", text: trackedText($draft.make, field: .identity))
                     .textInputAutocapitalization(.words)
-                    .focused($focusedField, equals: .make)
+                    .focused($focusedField, equals: .identity)
                     .accessibilityIdentifier("manualEntryMakeField")
-                TextField("Model", text: $draft.model)
+                TextField("Model", text: trackedText($draft.model, field: .identity))
                     .textInputAutocapitalization(.words)
-                    .focused($focusedField, equals: .model)
+                    .focused($focusedField, equals: .identity)
                     .accessibilityIdentifier("manualEntryModelField")
             }
             .forzAdvisorRowBackground()
 
             Section("Performance") {
                 LabeledContent("Weight") {
-                    TextField("lb", text: optionalNumberText($draft.weightPounds))
+                    TextField("lb", text: optionalNumberText($draft.weightPounds, field: .weight))
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .weight)
@@ -66,7 +68,7 @@ struct ManualEntryView: View {
                 }
 
                 LabeledContent("Front weight") {
-                    TextField("%", text: optionalPercentText($draft.frontWeightPercent))
+                    TextField("%", text: optionalPercentText($draft.frontWeightPercent, field: .frontWeight))
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .frontWeight)
@@ -77,7 +79,7 @@ struct ManualEntryView: View {
                     Text("PI")
                         .accessibilityHidden(true)
                     Spacer()
-                    TextField("100-999", text: optionalNumberText($draft.performanceIndex))
+                    TextField("100-999", text: optionalNumberText($draft.performanceIndex, field: .performanceIndex))
                         .frame(minWidth: 120, idealWidth: 120)
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
@@ -92,44 +94,28 @@ struct ManualEntryView: View {
             .forzAdvisorRowBackground()
 
             Section("Optional") {
-                TextField("Horsepower", text: optionalNumberText($draft.peakHorsepower))
+                TextField("Horsepower", text: optionalNumberText($draft.peakHorsepower, field: .horsepower))
                     .keyboardType(.numberPad)
                     .focused($focusedField, equals: .horsepower)
-                TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds))
+                TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds, field: .torque))
                     .keyboardType(.numberPad)
                     .focused($focusedField, equals: .torque)
             }
             .forzAdvisorRowBackground()
 
-            if let stockContributionContext {
-                Section("Catalog Verification") {
-                    NavigationLink {
-                        StockCatalogContributionView(
-                            draft:
-                                stockContributionContext
-                                .contributionDraft
-                        )
-                    } label: {
-                        Label(
-                            "Verify Stock Specs for Catalog",
-                            systemImage: "checkmark.seal"
-                        )
-                    }
-                    .accessibilityIdentifier(
-                        "verifyRosterStockSpecsForCatalog"
+            let visibleIssues = formState.visibleIssues(for: draft)
+            if visibleIssues.isEmpty {
+                Section("Before you continue") {
+                    Label(
+                        "Enter the required performance values shown in Forza. Optional power and torque can stay blank.",
+                        systemImage: "info.circle"
                     )
-                    Text(
-                        "Only the official roster identity carries over. Confirm every stock specification directly in the game; values typed in Manual Entry are never copied."
-                    )
-                    .font(.caption)
                     .foregroundStyle(.secondary)
                 }
                 .forzAdvisorRowBackground()
-            }
-
-            if !draft.validationIssues.isEmpty {
+            } else {
                 Section("Fix before tuning") {
-                    ForEach(draft.validationIssues) { issue in
+                    ForEach(visibleIssues) { issue in
                         Label(issue.message, systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(ForzAdvisorTheme.warning)
                     }
@@ -152,13 +138,9 @@ struct ManualEntryView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Next") {
-                    focusedField = nil
-                    if let car = draft.confirmedCarInput() {
-                        onContinue(car)
-                    }
+                    submit()
                 }
                 .accessibilityIdentifier("manualEntryNextButton")
-                .disabled(draft.confirmedCarInput() == nil)
             }
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -182,6 +164,7 @@ struct ManualEntryView: View {
                             isSelected: draft.performanceClass == performanceClass,
                             identifier: "manualEntryClass-\(performanceClass.rawValue)"
                         ) {
+                            formState.markTouched(.performanceClass)
                             focusedField = nil
                             draft.performanceClass = performanceClass
                         }
@@ -203,6 +186,7 @@ struct ManualEntryView: View {
                             isSelected: draft.drivetrain == drivetrain,
                             identifier: "manualEntryDrivetrain-\(drivetrain.rawValue)"
                         ) {
+                            formState.markTouched(.drivetrain)
                             focusedField = nil
                             draft.drivetrain = drivetrain
                         }
@@ -223,7 +207,7 @@ struct ManualEntryView: View {
                 .font(.subheadline.weight(.semibold))
                 .frame(minWidth: 38)
                 .padding(.horizontal, 8)
-                .padding(.vertical, 8)
+                .frame(minHeight: ForzAdvisorTheme.minimumTouchTarget)
                 .foregroundStyle(isSelected ? ForzAdvisorTheme.accent : .secondary)
                 .background(
                     isSelected ? ForzAdvisorTheme.accent.opacity(0.16) : Color.secondary.opacity(0.08),
@@ -234,31 +218,56 @@ struct ManualEntryView: View {
         .accessibilityIdentifier(identifier)
     }
 
-    private func optionalNumberText(_ value: Binding<Int?>) -> Binding<String> {
+    private func trackedText(
+        _ value: Binding<String>,
+        field: ManualEntryField
+    ) -> Binding<String> {
+        Binding {
+            value.wrappedValue
+        } set: { newValue in
+            formState.markTouched(field)
+            value.wrappedValue = newValue
+        }
+    }
+
+    private func optionalNumberText(
+        _ value: Binding<Int?>,
+        field: ManualEntryField? = nil
+    ) -> Binding<String> {
         Binding {
             value.wrappedValue.map(String.init) ?? ""
         } set: { newValue in
+            if let field { formState.markTouched(field) }
             let digits = newValue.filter(\.isNumber)
             value.wrappedValue = digits.isEmpty ? nil : Int(digits)
         }
     }
 
-    private func optionalPercentText(_ value: Binding<Double?>) -> Binding<String> {
+    private func optionalPercentText(
+        _ value: Binding<Double?>,
+        field: ManualEntryField
+    ) -> Binding<String> {
         Binding {
             value.wrappedValue.map { LocalizedNumberText.format($0, fractionDigits: 1) } ?? ""
         } set: { newValue in
+            formState.markTouched(field)
             value.wrappedValue = LocalizedNumberText.parse(newValue)
         }
     }
-}
 
-private enum ManualEntryField: Hashable {
-    case year
-    case make
-    case model
-    case weight
-    case frontWeight
-    case performanceIndex
-    case horsepower
-    case torque
+    private func submit() {
+        formState.markSubmitted()
+        if let unresolved = formState.firstUnresolvedField(in: draft) {
+            focusedField = unresolved
+            UIAccessibility.post(
+                notification: .announcement,
+                argument: "Check \(unresolved.title)."
+            )
+            return
+        }
+        focusedField = nil
+        if let car = draft.confirmedCarInput() {
+            onContinue(car)
+        }
+    }
 }
