@@ -29,6 +29,14 @@ final class LocalizedNumberTextTests: XCTestCase {
 
     func testUSFormattingAndParsingPreserveExistingBehavior() throws {
         XCTAssertEqual(LocalizedNumberText.format(29, fractionDigits: 1, locale: usLocale), "29.0")
+        XCTAssertEqual(
+            LocalizedNumberText.editableFormat(29, maximumFractionDigits: 1, locale: usLocale),
+            "29"
+        )
+        XCTAssertEqual(
+            LocalizedNumberText.editableFormat(53.5, maximumFractionDigits: 1, locale: usLocale),
+            "53.5"
+        )
         XCTAssertEqual(LocalizedNumberText.format(1_200, fractionDigits: 0, locale: usLocale), "1,200")
         XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("1,200", locale: usLocale)), 1_200, accuracy: 0.0001)
         XCTAssertEqual(try XCTUnwrap(LocalizedNumberText.parse("+1,200", locale: usLocale)), 1_200, accuracy: 0.0001)

@@ -19,6 +19,17 @@ enum LocalizedNumberText {
         return formatter.string(from: NSNumber(value: value)) ?? String(value)
     }
 
+    static func editableFormat(
+        _ value: Double,
+        maximumFractionDigits: Int,
+        locale: Locale = .current
+    ) -> String {
+        let formatter = decimalFormatter(locale: locale)
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = maximumFractionDigits
+        return formatter.string(from: NSNumber(value: value)) ?? String(value)
+    }
+
     static func parse(_ text: String, locale: Locale = .current) -> Double? {
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedText.isEmpty, hasValidSignPlacement(trimmedText) else { return nil }

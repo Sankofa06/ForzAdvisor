@@ -8,6 +8,7 @@ struct OCRConfirmationView: View {
     let onDraftChanged: (OCRConfirmationDraft) -> Void
 
     @State private var draft: OCRConfirmationDraft
+    @State private var frontWeightText: String
     @FocusState private var focusedField: OCRConfirmationUnresolvedField?
 
     init(
@@ -18,6 +19,11 @@ struct OCRConfirmationView: View {
         onContinue: @escaping (CarInput, OCRConfirmationDraft) -> Void
     ) {
         self._draft = State(initialValue: draft)
+        self._frontWeightText = State(
+            initialValue: draft.frontWeightPercent.map {
+                LocalizedNumberText.editableFormat($0, maximumFractionDigits: 1)
+            } ?? ""
+        )
         self.onDraftChanged = onDraftChanged
         self.onBack = onBack
         self.onUseManualEntry = onUseManualEntry
@@ -97,7 +103,7 @@ struct OCRConfirmationView: View {
     private var performanceSection: some View {
         Section("Required Performance") {
             intField(.weightPounds, placeholder: "lb", value: $draft.weightPounds)
-            doubleField(.frontWeightPercent, placeholder: "%", value: $draft.frontWeightPercent)
+            frontWeightField
             intField(.performanceIndex, placeholder: "100-999", value: $draft.performanceIndex)
             classPicker
             drivetrainPicker
@@ -172,15 +178,12 @@ struct OCRConfirmationView: View {
         )
     }
 
-    private func doubleField(
-        _ field: OCRInputField,
-        placeholder: String,
-        value: Binding<Double?>
-    ) -> some View {
-        OCRReviewNumberField(
+    private var frontWeightField: some View {
+        let field = OCRInputField.frontWeightPercent
+        return OCRReviewNumberField(
             title: field.title,
-            placeholder: placeholder,
-            text: optionalPercentText(value, correctedField: field),
+            placeholder: "%",
+            text: $frontWeightText,
             evidence: draft.evidence(for: field),
             state: draft.reviewState(for: field),
             candidates: draft.candidates(for: field),
@@ -188,10 +191,15 @@ struct OCRConfirmationView: View {
             focusValue: field.unresolvedField,
             onConfirm: { draft.confirm(field) },
             onCandidate: {
-                value.wrappedValue = LocalizedNumberText.parse($0)
+                frontWeightText = $0
+                draft.frontWeightPercent = LocalizedNumberText.parse($0)
                 draft.markCorrected(field)
             }
         )
+        .onChange(of: frontWeightText) { _, newValue in
+            draft.frontWeightPercent = LocalizedNumberText.parse(newValue)
+            draft.markCorrected(field)
+        }
     }
 
     private func reviewPicker<Content: View>(
@@ -220,18 +228,6 @@ struct OCRConfirmationView: View {
         } set: { newValue in
             value.wrappedValue = Int(newValue.filter(\.isNumber))
             if let correctedField { draft.markCorrected(correctedField) }
-        }
-    }
-
-    private func optionalPercentText(
-        _ value: Binding<Double?>,
-        correctedField: OCRInputField
-    ) -> Binding<String> {
-        Binding {
-            value.wrappedValue.map { LocalizedNumberText.format($0, fractionDigits: 1) } ?? ""
-        } set: { newValue in
-            value.wrappedValue = LocalizedNumberText.parse(newValue)
-            draft.markCorrected(correctedField)
         }
     }
 

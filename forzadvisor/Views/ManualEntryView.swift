@@ -18,6 +18,7 @@ struct ManualEntryView: View {
 
     @State private var draft: ManualEntryDraft
     @State private var formState = ManualEntryFormState()
+    @State private var frontWeightText: String
     @FocusState private var focusedField: ManualEntryField?
 
     init(
@@ -29,6 +30,11 @@ struct ManualEntryView: View {
         onContinue: @escaping (CarInput) -> Void
     ) {
         self._draft = State(initialValue: draft)
+        self._frontWeightText = State(
+            initialValue: draft.frontWeightPercent.map {
+                LocalizedNumberText.editableFormat($0, maximumFractionDigits: 1)
+            } ?? ""
+        )
         self.stockContributionContext =
             stockContributionContext
         self.onDraftChanged = onDraftChanged
@@ -68,11 +74,15 @@ struct ManualEntryView: View {
                 }
 
                 LabeledContent("Front weight") {
-                    TextField("%", text: optionalPercentText($draft.frontWeightPercent, field: .frontWeight))
+                    TextField("%", text: $frontWeightText)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                         .focused($focusedField, equals: .frontWeight)
                         .accessibilityIdentifier("manualEntryFrontWeightField")
+                        .onChange(of: frontWeightText) { _, newValue in
+                            formState.markTouched(.frontWeight)
+                            draft.frontWeightPercent = LocalizedNumberText.parse(newValue)
+                        }
                 }
 
                 HStack {
@@ -240,18 +250,6 @@ struct ManualEntryView: View {
             if let field { formState.markTouched(field) }
             let digits = newValue.filter(\.isNumber)
             value.wrappedValue = digits.isEmpty ? nil : Int(digits)
-        }
-    }
-
-    private func optionalPercentText(
-        _ value: Binding<Double?>,
-        field: ManualEntryField
-    ) -> Binding<String> {
-        Binding {
-            value.wrappedValue.map { LocalizedNumberText.format($0, fractionDigits: 1) } ?? ""
-        } set: { newValue in
-            formState.markTouched(field)
-            value.wrappedValue = LocalizedNumberText.parse(newValue)
         }
     }
 
