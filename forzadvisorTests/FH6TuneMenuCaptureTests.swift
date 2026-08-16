@@ -333,13 +333,11 @@ final class FH6TuneMenuCaptureTests: XCTestCase {
         game: ForzaGame = .fh6,
         drivetrain: Drivetrain
     ) throws -> VehicleBuildSnapshot {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first {
-            $0.game == game && $0.stock.drivetrain == drivetrain
-        })
-        return catalog.selection(for: entry).capabilityOnlyBuildSnapshot(
-            capturedAt: capturedAt
-        )
+        SyntheticLegacyTuneFixtureFactory.selection(
+            game: game,
+            drivetrain: drivetrain,
+            reviewedAt: capturedAt
+        ).capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
     }
 
     private func validCapture(

@@ -197,11 +197,10 @@ final class FH6ExactConstraintQuantizerTests: XCTestCase {
         stepOverrides: [TuneFieldID: Double] = [:],
         maximumOverrides: [TuneFieldID: Double] = [:]
     ) throws -> VehicleBuildSnapshot {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first {
-            $0.game == .fh6 && $0.stock.drivetrain == .rwd
-        })
-        let base = catalog.selection(for: entry).capabilityOnlyBuildSnapshot()
+        let base = SyntheticLegacyTuneFixtureFactory.selection(
+            drivetrain: .rwd,
+            reviewedAt: Date(timeIntervalSinceReferenceDate: 500)
+        ).capabilityOnlyBuildSnapshot()
         let controls = TuneFieldID.expectedFields(
             drivetrain: base.car.drivetrain,
             gearCount: 6
