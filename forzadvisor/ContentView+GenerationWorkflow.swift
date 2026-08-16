@@ -117,10 +117,13 @@ extension ContentView {
                 }
                 if let kind = session.completedValidationDraftKind,
                    let savedTuneID = session.savedTuneID {
-                    try ValidationDraftStore().deleteAfterConfirmedCommit(
-                        kind: kind,
-                        savedTuneID: savedTuneID
-                    )
+                    do {
+                        try ValidationDraftCleanupCoordinator().scheduleAndRun(
+                            .init(kind: kind, savedTuneID: savedTuneID)
+                        )
+                    } catch {
+                        errorMessage = "Tune saved. Recovery-draft cleanup is pending and will retry next launch: \(error.localizedDescription)"
+                    }
                 }
                 if session.validationMissionReturnContext != nil,
                    session.completedValidationDraftKind != nil,
@@ -139,9 +142,6 @@ extension ContentView {
                 )
             },
             onFailure: { failedSession, error in
-                if let cleanup = error as? ValidationPostCommitCleanupError {
-                    errorMessage = cleanup.localizedDescription
-                }
                 step = .generationFailed(failedSession)
             }
         )

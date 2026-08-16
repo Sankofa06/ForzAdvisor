@@ -527,6 +527,11 @@ struct ContentView: View {
                 } catch {
                     errorMessage = "Private cleanup is still pending and will retry: \(error.localizedDescription)"
                 }
+                do {
+                    try ValidationDraftCleanupCoordinator().retryPending()
+                } catch {
+                    errorMessage = "Recovery-draft cleanup is still pending and will retry: \(error.localizedDescription)"
+                }
             }
             .toolbar {
                 if RootStepGuideEntryPolicy().presentation(
