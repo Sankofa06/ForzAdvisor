@@ -1,6 +1,6 @@
 # Psychological UX Cohesion
 
-Status: Approved on 2026-08-15; implementation in progress.
+Status: Approved on 2026-08-15; implementation and local verification complete on 2026-08-16; cloud delivery pending.
 
 ## 1. Problem And Outcome
 
@@ -39,9 +39,9 @@ Canonical flow:
 - Shared light-mode accent/status colors are likely below 4.5:1 for normal text and require runtime verification.
 - `TuneResultView.swift`, root workflow files, and several evidence/review files exceed the PRD's 350-line limit.
 
-Screenshot evidence now covers empty and populated Garage, source selection, pristine and completed manual entry, discipline selection, the top and lower Tune Result states, the first-save handoff, Beta Missions, offline and API Settings, and Step Guide plus one nested response. Captures use the dedicated iPhone 17 simulator in light mode at default text size; VoiceOver, larger Dynamic Type sizes, dark mode beyond the earlier Garage baseline, and camera/OCR success and failure states remain verification requirements.
+Screenshot evidence covers empty Garage, source selection, completed manual entry, discipline/provider preflight, Tune Result states, Evidence Hub, Settings, and Step Guide on the dedicated iPhone 17 simulator. Light, true dark appearance, Accessibility XXXL, and Increase Contrast captures were exercised and visually inspected. The automated hierarchy verifies accessible labels, identifiers, enabled states, and critical navigation; a manual VoiceOver auditory-order pass and camera/OCR hardware interaction remain delivery checks where simulator automation cannot reproduce the physical interaction.
 
-The shared foundation app and test bundles compile without source warnings. In the latest canonical focused run, 36 tests passed; six router tests exposed obsolete bundled-catalog fixtures. Those fixtures were replaced with explicit catalog-free data and compile cleanly, but their runtime rerun is pending because CoreSimulator temporarily exposes no devices. This does not waive the final green runtime gate.
+At commit `02e50b2519ea83d8f889a51d500efeb758f7bead`, the shared `ReleaseVerify` plan builds the app, unit, and UI targets without source warnings. Its serial local gates passed 570 unit tests and 10 UI tests with zero failures, skips, or expected failures.
 
 ## 4. Proposed Product Decisions
 
@@ -216,9 +216,11 @@ Rollback is commit-based for non-persistent view slices. Validation schema v2 is
 - [x] S1 Settings Contracts lands green.
 - [x] R1 Root Workflow/Foundation lands compile-green; runtime rerun remains a pre-integration gate.
 - [x] V1 Validation Public Contract and migration fixtures land green.
-- [ ] Six Sol Medium view slices land green from one immutable base.
-- [ ] Integration acceptance criteria and terminology pass.
-- [ ] Local build/test/accessibility gates are green with zero warnings.
+- [x] Six Sol Medium view slices land green and are integrated.
+- [x] Behavioral integration acceptance criteria and terminology pass.
+- [x] Local build, unit/UI test, visual, Dynamic Type, dark-mode, and Increase Contrast gates are green with zero warnings.
+- [ ] Complete the manual VoiceOver auditory-order pass.
+- [ ] Satisfy SF-03 for 24 touched legacy files over 350 lines, or record an explicit release waiver that scopes this as non-behavioral refactoring debt.
 - [ ] Immutable integration commit is pushed.
 - [ ] Xcode Cloud Verify and release workflows are green.
 - [ ] Internal TestFlight build is delivered.

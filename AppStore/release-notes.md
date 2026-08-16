@@ -1,5 +1,13 @@
 # Release Notes
 
+## Version 1.41.1 (Build 77) - 2026-08-16
+
+- Makes the photo, screenshot, and manual-entry path explicit, recoverable, and accessible at large text sizes.
+- Separates discipline selection from generation and shows provider, fallback, and privacy details before work starts.
+- Adds truthful generation cancellation/failure recovery, refinement preview with Apply/Discard and Undo, staged Garage deletion with Undo, and a real optional Evidence Hub.
+- Replaces user-facing Copilot with a deterministic four-choice Step Guide that uses no model, network request, or transcript.
+- Keeps local-only validation evidence non-exportable until explicit fingerprint-bound authorization, with fail-closed grant, revoke, delete, and recovery behavior.
+
 ## Version 1.41.0 (Build 76) - 2026-08-12
 
 - Improved tune workflow reliability, provider handling, and Guided Refinement.

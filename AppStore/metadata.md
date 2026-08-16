@@ -1,6 +1,6 @@
 # ForzAdvisor App Store Metadata
 
-Last updated: 2026-08-09
+Last updated: 2026-08-16
 
 ## App Name
 
@@ -26,7 +26,7 @@ For FH6, ForzAdvisor can generate menu-order numeric settings using offline form
 
 For FH5, ForzAdvisor creates a local build plan without numeric tuning settings. Numeric FH5 tuning remains unavailable until a separately validated ruleset exists.
 
-Save setups in a local garage, search by car, filter by discipline, copy eligible settings or plans, and use Guided Refinement after a run. Contextual Copilot provides deterministic workflow guidance using allow-listed local context.
+Save setups in a local garage, search by car, filter by discipline, copy eligible settings or plans, and preview Guided Refinement changes before applying them. Step Guide provides four deterministic, on-device workflow choices without a model, network request, or transcript.
 
 ForzAdvisor runs offline by default. Camera photos and imported screenshots are processed on device with Apple Vision OCR. Optional Apple on-device model assistance can help when available. Optional API mode lets advanced users provide their own Anthropic API key; confirmed car details, the selected discipline, current tune details, and player notes are sent only when that mode is selected.
 
@@ -69,7 +69,7 @@ Suggested review path:
 6. Choose Road.
 7. Review the generated menu-order setup.
 8. Save it to the local garage.
-9. Reopen the saved setup to test copy and Guided Refinement.
+9. Reopen the saved setup to test copy and Guided Refinement preview, Apply, Discard, and Undo.
 
 A second path is New Tune -> Import Screenshot. The system photo picker is used, OCR runs on device, and every detected value must be confirmed before tuning.
 
@@ -81,16 +81,16 @@ Camera permission is optional and requested only after the reviewer chooses Take
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.40.8
-- Current project build: 75
+- Current project version: 1.41.1
+- Current project build: 77
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
 ## What's New Copy
 
-Bundled car rosters have been removed.
+Tune creation is clearer and easier to recover: confirm imported or entered car facts, choose a discipline before generation, and see provider/privacy details before starting.
 
-Start every tune from your own photo, screenshot, or manually entered car details. Empty-garage starter missions now open manual entry directly.
+Garage deletion and refinement now include Undo, optional validation is separated into Evidence Hub, and the new on-device Step Guide offers four deterministic workflow choices without chat or a transcript.
 
 ## Export Compliance Notes
 
