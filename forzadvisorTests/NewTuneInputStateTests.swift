@@ -20,8 +20,8 @@ final class NewTuneInputStateTests: XCTestCase {
         var state = ManualEntryFormState()
         state.markSubmitted()
 
-        XCTAssertEqual(state.firstUnresolvedField(in: .empty), .identity)
-        XCTAssertEqual(state.firstUnresolvedField(in: .empty)?.title, "Make or model")
+        XCTAssertEqual(state.firstUnresolvedField(in: .empty), .year)
+        XCTAssertEqual(state.firstUnresolvedField(in: .empty)?.title, "Year")
         XCTAssertEqual(state.visibleIssues(for: .empty), ManualEntryDraft.empty.validationIssues)
     }
 
@@ -63,6 +63,7 @@ final class NewTuneInputStateTests: XCTestCase {
 
     private func completeOCRDraft(confidence: Double) -> OCRConfirmationDraft {
         var draft = OCRConfirmationDraft(
+            year: 2020,
             make: "Toyota",
             model: "Supra",
             weightPounds: 3_400,

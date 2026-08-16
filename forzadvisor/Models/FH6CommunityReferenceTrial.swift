@@ -105,6 +105,20 @@ struct FH6CommunityReferenceCandidateAssociation: Codable, Equatable, Sendable {
     var confirmed: Bool
     /// Opaque binding to the exact permission-clear generated candidate.
     var candidateFingerprint: String = ""
+
+    static func confirmed(for tune: TuneResult) -> Self? {
+        guard let snapshot = tune.request.buildSnapshot,
+              snapshot.matches(car: tune.request.car),
+              let sourceIdentityID = snapshot.confirmedSourceIdentityID else {
+            return nil
+        }
+        return Self(
+            catalogID: sourceIdentityID,
+            performanceClass: tune.request.car.performanceClass,
+            performanceIndex: tune.request.car.performanceIndex,
+            confirmed: true
+        )
+    }
 }
 
 struct FH6CommunityReferenceTrialContext: Codable, Equatable, Sendable {

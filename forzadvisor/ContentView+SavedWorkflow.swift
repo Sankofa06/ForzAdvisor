@@ -316,7 +316,7 @@ extension ContentView {
                         playerNotes: savedTune.playerNotes
                     )
                 case .runFH6CommunityReferenceTrial:
-                    openFH6CommunityReferenceTrial(
+                    try routeToFH6CommunityReferenceTrial(
                         savedTuneID: savedTuneID,
                         requiresNoCurrentTrial: true
                     )
@@ -324,15 +324,19 @@ extension ContentView {
                     throw ContentWorkflowError.staleBetaMission
                 }
             }
-        } catch ContentWorkflowError.staleBetaMission {
-            validationMissionReturnContext = nil
-            validationMissionOutcomeMessage =
-                ValidationMissionReturnOutcome.stale.message
-            step = .home
-            rootSheet = .betaMissions
         } catch {
-            validationMissionReturnContext = nil
-            errorMessage = "Could not open this beta mission: \(error.localizedDescription)"
+            switch BetaMissionOpenFailurePolicy().disposition(for: error) {
+            case .refreshAsStale:
+                validationMissionReturnContext = nil
+                validationMissionOutcomeMessage =
+                    ValidationMissionReturnOutcome.stale.message
+                errorMessage = nil
+                step = .home
+                rootSheet = .betaMissions
+            case .showGlobalAlert:
+                validationMissionReturnContext = nil
+                errorMessage = "Could not open this beta mission: \(error.localizedDescription)"
+            }
         }
     }
 

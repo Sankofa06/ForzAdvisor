@@ -148,12 +148,16 @@ struct TuneResultScreen: View {
     }
 
     private var evidenceAvailabilityNote: String? {
-        guard tune.request.car.game == .fh5,
-              tune.request.buildSnapshot?.inputFactsSource
-                != .reviewedCatalog else {
-            return nil
+        if tune.request.car.game == .fh5,
+           tune.request.buildSnapshot?.inputFactsSource != .reviewedCatalog {
+            return "FH5 Research remains unavailable because photo, OCR, and manual entry do not provide reviewed stock provenance."
         }
-        return "FH5 Research remains unavailable because photo, OCR, and manual entry do not provide reviewed stock provenance."
+        if tune.request.car.game == .fh6,
+           (tune.request.car.peakHorsepower == nil
+            || tune.request.car.peakTorqueFootPounds == nil) {
+            return "Test Drive remains unavailable until optional horsepower and torque are confirmed in a new tune."
+        }
+        return nil
     }
 }
 

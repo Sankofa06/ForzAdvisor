@@ -400,8 +400,7 @@ struct FH6CommunityReferenceTrialFactory {
               let revision = validationFactory.revisionFingerprint(for: tune),
               let canonicalBuild = canonicalString(gameBuild, maximumLength: 120),
               let catalogID = canonicalString(
-                  snapshot.car.catalogReference?.entryID
-                    ?? snapshot.capabilityProfile.vehicle.catalogID,
+                  snapshot.confirmedSourceIdentityID ?? "",
                   maximumLength: 160
               ),
               let make = canonicalString(snapshot.car.make, maximumLength: 120),

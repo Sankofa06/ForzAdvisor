@@ -692,6 +692,18 @@ struct VehicleBuildSnapshot: Codable, Equatable, Sendable {
         }
     }
 
+    /// Stable identity for evidence that was confirmed at the input boundary.
+    /// The stored field is historically named `catalogID`, but manual and OCR
+    /// snapshots use their explicit input-source identity without claiming a
+    /// catalog match.
+    var confirmedSourceIdentityID: String? {
+        guard isValid, hasConfirmedInputFacts else { return nil }
+        let value = car.catalogReference?.entryID
+            ?? capabilityProfile.vehicle.catalogID
+        let normalizedValue = normalized(value)
+        return normalizedValue.isEmpty ? nil : normalizedValue
+    }
+
     func matches(car other: CarInput) -> Bool {
         car.game == other.game
             && car.year == other.year

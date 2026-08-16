@@ -107,7 +107,9 @@ enum InputOrigin: Equatable, Sendable {
     ) -> VehicleBuildSnapshot? {
         switch self {
         case .manual(let confirmedInput):
-            guard confirmedInput == input, input.isValid else {
+            guard confirmedInput == input,
+                  input.isValid,
+                  input.year.map({ $0 > 0 }) == true else {
                 return nil
             }
             return Self.userConfirmedSnapshot(
@@ -156,6 +158,9 @@ enum InputOrigin: Equatable, Sendable {
         source: VehicleInputFactsSource,
         capturedAt: Date
     ) -> VehicleBuildSnapshot {
+        guard let confirmedYear = input.year, confirmedYear > 0 else {
+            preconditionFailure("User-confirmed snapshots require a reviewed model year.")
+        }
         let resolvedSource: VehicleInputFactsSource =
             input.catalogReference == nil ? source : .reviewedCatalog
         let sourceID = input.catalogReference?.entryID
@@ -175,7 +180,7 @@ enum InputOrigin: Equatable, Sendable {
                 vehicle: TuneVehicleIdentity(
                     game: input.game,
                     catalogID: sourceID,
-                    year: input.year ?? 0,
+                    year: confirmedYear,
                     make: input.make,
                     model: input.model
                 ),

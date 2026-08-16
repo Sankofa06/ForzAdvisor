@@ -1,36 +1,38 @@
-import Foundation
 import XCTest
+@testable import forzadvisor
 
 final class StaleBetaMissionRoutingContractTests: XCTestCase {
-    func testStaleMissionRefreshesBoardInlineWithoutGlobalAlert() throws {
-        let repository = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        let source = try String(
-            contentsOf: repository.appendingPathComponent(
-                "forzadvisor/ContentView+SavedWorkflow.swift"
+    func testDeletedTuneRefreshesMissionBoardAsStale() {
+        XCTAssertEqual(
+            BetaMissionOpenFailurePolicy().disposition(
+                for: ContentWorkflowError.missingSavedTune
             ),
-            encoding: .utf8
+            .refreshAsStale
         )
-        let start = try XCTUnwrap(
-            source.range(
-                of: "catch ContentWorkflowError.staleBetaMission"
-            )
-        )
-        let end = try XCTUnwrap(
-            source.range(
-                of: "} catch {",
-                range: start.upperBound..<source.endIndex
-            )
-        )
-        let staleBranch = String(
-            source[start.lowerBound..<end.lowerBound]
-        )
+    }
 
-        XCTAssertTrue(staleBranch.contains(
-            "ValidationMissionReturnOutcome.stale.message"
-        ))
-        XCTAssertTrue(staleBranch.contains("rootSheet = .betaMissions"))
-        XCTAssertFalse(staleBranch.contains("errorMessage ="))
+    func testCommunityOpenerFailuresRefreshMissionBoardAsStale() {
+        let policy = BetaMissionOpenFailurePolicy()
+
+        XCTAssertEqual(
+            policy.disposition(
+                for: ContentWorkflowError.staleCommunityReferenceTrial
+            ),
+            .refreshAsStale
+        )
+        XCTAssertEqual(
+            policy.disposition(
+                for: ContentWorkflowError.missingFirstPartyValidation
+            ),
+            .refreshAsStale
+        )
+    }
+
+    func testUnexpectedFailureStillUsesGlobalAlert() {
+        struct Unexpected: Error {}
+        XCTAssertEqual(
+            BetaMissionOpenFailurePolicy().disposition(for: Unexpected()),
+            .showGlobalAlert
+        )
     }
 }

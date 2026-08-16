@@ -28,6 +28,24 @@ enum ContentWorkflowError: LocalizedError {
         }
     }
 }
+
+enum BetaMissionOpenFailureDisposition: Equatable {
+    case refreshAsStale
+    case showGlobalAlert
+}
+
+struct BetaMissionOpenFailurePolicy {
+    func disposition(for error: Error) -> BetaMissionOpenFailureDisposition {
+        guard let workflowError = error as? ContentWorkflowError else {
+            return .showGlobalAlert
+        }
+        switch workflowError {
+        case .staleBetaMission, .missingSavedTune,
+             .staleCommunityReferenceTrial, .missingFirstPartyValidation:
+            return .refreshAsStale
+        }
+    }
+}
 @MainActor
 struct FH6IndependentValidationReviewPacketReceiver {
     func validate(

@@ -17,15 +17,7 @@ struct FH6CommunityReferenceTrialCaptureView: View {
     @State var recoveryMessage: String?
 
     private var association: FH6CommunityReferenceCandidateAssociation? {
-        guard let catalogID = tune.request.car.catalogReference?.entryID else {
-            return nil
-        }
-        return .init(
-            catalogID: catalogID,
-            performanceClass: tune.request.car.performanceClass,
-            performanceIndex: tune.request.car.performanceIndex,
-            confirmed: true
-        )
+        .confirmed(for: tune)
     }
 
     var body: some View {

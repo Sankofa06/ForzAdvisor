@@ -111,6 +111,9 @@ struct ManualEntryDraft: Equatable, Sendable {
 
     var validationIssues: [ManualEntryValidationIssue] {
         var issues: [ManualEntryValidationIssue] = []
+        if year.map({ $0 <= 0 }) ?? true {
+            issues.append(.missingYear)
+        }
         if make.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
            model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             issues.append(.missingName)
@@ -163,6 +166,7 @@ struct ManualEntryDraft: Equatable, Sendable {
 
     func confirmedCarInput() -> CarInput? {
         guard
+            let year,
             let weightPounds,
             let frontWeightPercent,
             let performanceIndex,
@@ -212,6 +216,7 @@ struct ManualEntryDraft: Equatable, Sendable {
 }
 
 enum ManualEntryField: String, CaseIterable, Hashable, Sendable {
+    case year
     case identity
     case weight
     case frontWeight
@@ -223,6 +228,7 @@ enum ManualEntryField: String, CaseIterable, Hashable, Sendable {
 
     var title: String {
         switch self {
+        case .year: "Year"
         case .identity: "Make or model"
         case .weight: "Weight"
         case .frontWeight: "Front weight"
@@ -259,6 +265,7 @@ struct ManualEntryFormState: Equatable, Sendable {
 }
 
 enum ManualEntryValidationIssue: Identifiable, Equatable {
+    case missingYear
     case missingName
     case missingWeight
     case invalidWeight
@@ -275,6 +282,7 @@ enum ManualEntryValidationIssue: Identifiable, Equatable {
 
     var field: ManualEntryField {
         switch self {
+        case .missingYear: .year
         case .missingName: .identity
         case .missingWeight, .invalidWeight: .weight
         case .missingFrontWeight, .invalidFrontWeight: .frontWeight
@@ -287,6 +295,7 @@ enum ManualEntryValidationIssue: Identifiable, Equatable {
 
     var message: String {
         switch self {
+        case .missingYear: "Enter the model year shown in Forza."
         case .missingName: "Add at least a make or model."
         case .missingWeight: "Enter the car weight."
         case .invalidWeight: "Weight should be between 1,500 and 7,000 lb."

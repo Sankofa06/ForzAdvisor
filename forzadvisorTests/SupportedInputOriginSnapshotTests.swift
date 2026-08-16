@@ -42,6 +42,50 @@ final class SupportedInputOriginSnapshotTests: XCTestCase {
         )
     }
 
+    func testMissingYearCannotCrossManualOrOCRConfirmationBoundary() {
+        var manual = ManualEntryDraft(car: confirmedCar())
+        manual.year = nil
+        XCTAssertEqual(manual.validationIssues.first, .missingYear)
+        XCTAssertNil(manual.confirmedCarInput())
+
+        var ocr = confirmedOCRDraft()
+        ocr.year = nil
+        XCTAssertEqual(ocr.firstUnresolvedField, .year)
+        XCTAssertNil(ocr.confirmedCarInput())
+    }
+
+    func testManualSnapshotProvidesConfirmedCommunityAssociationWithoutCatalog() async throws {
+        let tune = try await supportedTune(source: .userConfirmedManual)
+        let association = try XCTUnwrap(
+            FH6CommunityReferenceCandidateAssociation.confirmed(for: tune)
+        )
+
+        XCTAssertEqual(association.catalogID, "input-source:userConfirmedManual")
+        XCTAssertTrue(association.confirmed)
+        XCTAssertNil(tune.request.car.catalogReference)
+        XCTAssertEqual(
+            try XCTUnwrap(readyCommunityDraft().capture(candidate: association))
+                .referenceCandidate,
+            association
+        )
+    }
+
+    func testOCRSnapshotProvidesConfirmedCommunityAssociationWithoutCatalog() async throws {
+        let tune = try await supportedTune(source: .userConfirmedOCR)
+        let association = try XCTUnwrap(
+            FH6CommunityReferenceCandidateAssociation.confirmed(for: tune)
+        )
+
+        XCTAssertEqual(association.catalogID, "input-source:userConfirmedOCR")
+        XCTAssertTrue(association.confirmed)
+        XCTAssertNil(tune.request.car.catalogReference)
+        XCTAssertEqual(
+            try XCTUnwrap(readyCommunityDraft().capture(candidate: association))
+                .referenceCandidate,
+            association
+        )
+    }
+
     func testLegacyCatalogSnapshotInfersReviewedCatalogBoundary() throws {
         let selection = try catalogSelection()
         let current = selection.capabilityOnlyBuildSnapshot()
@@ -106,5 +150,44 @@ final class SupportedInputOriginSnapshotTests: XCTestCase {
         let snapshot = try BundledCarCatalog.load().get()
         let entry = try XCTUnwrap(snapshot.entries.first)
         return snapshot.selection(for: entry)
+    }
+
+    private func supportedTune(
+        source: VehicleInputFactsSource
+    ) async throws -> TuneResult {
+        var tune = try await SyntheticLegacyTuneFixtureFactory
+            .eligibleValidationTune(capturedAt: Date(timeIntervalSince1970: 1_700_000_000))
+        var snapshot = try XCTUnwrap(tune.request.buildSnapshot)
+        snapshot.car.catalogReference = nil
+        snapshot.car.catalogValuesModified = false
+        snapshot.inputFactsSource = source
+        snapshot.capabilityProfile.vehicle.catalogID = "input-source:\(source.rawValue)"
+        tune.request.car = snapshot.car
+        tune.request.buildSnapshot = snapshot
+        XCTAssertTrue(snapshot.isValid)
+        XCTAssertTrue(snapshot.hasConfirmedInputFacts)
+        return tune
+    }
+
+    private func readyCommunityDraft() -> FH6CommunityReferenceTrialDraft {
+        var draft = FH6CommunityReferenceTrialDraft()
+        draft.kind = .youtube
+        draft.contentURL = "https://www.youtube.com/watch?v=supported-flow"
+        draft.publisherDisplayName = "Fixture Publisher"
+        draft.courseType = .testTrack
+        draft.surface = .dry
+        draft.input = .controller
+        draft.runs = draft.runs.map {
+            .init(role: $0.role, completed: true, correctTuneConfirmed: true)
+        }
+        draft.outcome = .generatedPreferred
+        draft.sameRouteAndConditionsConfirmed = true
+        draft.sameAssistsAndInputConfirmed = true
+        draft.candidateSettingsAppliedConfirmed = true
+        draft.communityIdentityConfirmed = true
+        draft.finalCandidateRestoredConfirmed = true
+        draft.firstPartyAuthorshipConfirmed = true
+        draft.localStoragePermitted = true
+        return draft
     }
 }

@@ -79,8 +79,10 @@ struct OCRConfirmationView: View {
                 selection: $draft.game,
                 accessibilityPrefix: "ocrConfirmationGame"
             )
-            TextField("Year", text: optionalNumberText($draft.year))
+            TextField("Year · Required", text: optionalNumberText($draft.year))
                 .keyboardType(.numberPad)
+                .focused($focusedField, equals: .year)
+                .accessibilityIdentifier("ocrConfirmationYearField")
             TextField("Make", text: $draft.make)
                 .textInputAutocapitalization(.words)
                 .focused($focusedField, equals: .identity)
@@ -134,10 +136,10 @@ struct OCRConfirmationView: View {
     }
 
     private var optionalSection: some View {
-        Section("Optional") {
-            TextField("Horsepower", text: optionalNumberText($draft.peakHorsepower))
+        Section("Optional Performance") {
+            TextField("Horsepower · Optional", text: optionalNumberText($draft.peakHorsepower))
                 .keyboardType(.numberPad)
-            TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds))
+            TextField("Torque · Optional", text: optionalNumberText($draft.peakTorqueFootPounds))
                 .keyboardType(.numberPad)
         }
         .forzAdvisorRowBackground()

@@ -76,6 +76,7 @@ enum OCRFieldReviewState: String, Equatable, Sendable {
 }
 
 enum OCRConfirmationUnresolvedField: Hashable, Sendable {
+    case year
     case identity
     case weightPounds
     case frontWeightPercent
@@ -85,6 +86,7 @@ enum OCRConfirmationUnresolvedField: Hashable, Sendable {
 
     var title: String {
         switch self {
+        case .year: "Year"
         case .identity: "Make or model"
         case .weightPounds: "Weight"
         case .frontWeightPercent: "Front weight"
@@ -96,7 +98,7 @@ enum OCRConfirmationUnresolvedField: Hashable, Sendable {
 
     var inputField: OCRInputField? {
         switch self {
-        case .identity: nil
+        case .year, .identity: nil
         case .weightPounds: .weightPounds
         case .frontWeightPercent: .frontWeightPercent
         case .performanceIndex: .performanceIndex
@@ -154,6 +156,7 @@ struct OCRConfirmationDraft: Equatable, Sendable {
     }
 
     var firstUnresolvedField: OCRConfirmationUnresolvedField? {
+        if year.map({ $0 <= 0 }) ?? true { return .year }
         if make.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
            model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return .identity
@@ -216,6 +219,7 @@ struct OCRConfirmationDraft: Equatable, Sendable {
     func confirmedCarInput() -> CarInput? {
         guard firstUnresolvedField == nil else { return nil }
         guard
+            let year,
             let weightPounds,
             let frontWeightPercent,
             let performanceIndex,

@@ -188,42 +188,49 @@ extension ContentView {
         requiresNoCurrentTrial: Bool
     ) {
         do {
-            guard let savedTune = try savedTune(for: savedTuneID),
-                  let persistedTune = savedTune.tuneResult,
-                  case .success(let exactTune) =
-                    FH6CommunityReferenceTrialFactory().eligibility(
-                        for: persistedTune,
-                        savedTune: persistedTune,
-                        isStreaming: false
-                    ) else {
-                throw ContentWorkflowError.staleCommunityReferenceTrial
-            }
-            let chain = try savedTune.fh6AccuracyEvidenceChain(
-                matching: exactTune
-            )
-            guard chain.permitsCommunityComparison else {
-                throw ContentWorkflowError
-                    .missingFirstPartyValidation
-            }
-            if requiresNoCurrentTrial {
-                guard try savedTune
-                    .fh6CommunityReferenceTrialRecords(
-                        matching: exactTune
-                    ).isEmpty else {
-                    throw ContentWorkflowError
-                        .staleCommunityReferenceTrial
-                }
-            }
-            tuneWorkflow.cancelAdjustment()
-            step = .fh6CommunityReferenceTrialCapture(
-                TuneResultBoundarySanitizer().sanitize(exactTune),
+            try routeToFH6CommunityReferenceTrial(
                 savedTuneID: savedTuneID,
-                thumbnailData: savedTune.thumbnailData,
-                playerNotes: savedTune.playerNotes
+                requiresNoCurrentTrial: requiresNoCurrentTrial
             )
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func routeToFH6CommunityReferenceTrial(
+        savedTuneID: UUID,
+        requiresNoCurrentTrial: Bool
+    ) throws {
+        guard let savedTune = try savedTune(for: savedTuneID),
+              let persistedTune = savedTune.tuneResult,
+              case .success(let exactTune) =
+                FH6CommunityReferenceTrialFactory().eligibility(
+                    for: persistedTune,
+                    savedTune: persistedTune,
+                    isStreaming: false
+                ) else {
+            throw ContentWorkflowError.staleCommunityReferenceTrial
+        }
+        let chain = try savedTune.fh6AccuracyEvidenceChain(
+            matching: exactTune
+        )
+        guard chain.permitsCommunityComparison else {
+            throw ContentWorkflowError.missingFirstPartyValidation
+        }
+        if requiresNoCurrentTrial {
+            guard try savedTune.fh6CommunityReferenceTrialRecords(
+                matching: exactTune
+            ).isEmpty else {
+                throw ContentWorkflowError.staleCommunityReferenceTrial
+            }
+        }
+        tuneWorkflow.cancelAdjustment()
+        step = .fh6CommunityReferenceTrialCapture(
+            TuneResultBoundarySanitizer().sanitize(exactTune),
+            savedTuneID: savedTuneID,
+            thumbnailData: savedTune.thumbnailData,
+            playerNotes: savedTune.playerNotes
+        )
     }
 
     func deleteFH6CommunityReferenceTrialRecord(

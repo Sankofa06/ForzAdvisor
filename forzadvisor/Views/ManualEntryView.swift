@@ -43,9 +43,9 @@ struct ManualEntryView: View {
                     selection: $draft.game,
                     accessibilityPrefix: "manualEntryGame"
                 )
-                TextField("Year", text: optionalNumberText($draft.year))
+                TextField("Year · Required", text: optionalNumberText($draft.year, field: .year))
                     .keyboardType(.numberPad)
-                    .focused($focusedField, equals: .identity)
+                    .focused($focusedField, equals: .year)
                     .accessibilityIdentifier("manualEntryYearField")
                 TextField("Make", text: trackedText($draft.make, field: .identity))
                     .textInputAutocapitalization(.words)
@@ -93,11 +93,11 @@ struct ManualEntryView: View {
             }
             .forzAdvisorRowBackground()
 
-            Section("Optional") {
-                TextField("Horsepower", text: optionalNumberText($draft.peakHorsepower, field: .horsepower))
+            Section("Optional Performance") {
+                TextField("Horsepower · Optional", text: optionalNumberText($draft.peakHorsepower, field: .horsepower))
                     .keyboardType(.numberPad)
                     .focused($focusedField, equals: .horsepower)
-                TextField("Torque", text: optionalNumberText($draft.peakTorqueFootPounds, field: .torque))
+                TextField("Torque · Optional", text: optionalNumberText($draft.peakTorqueFootPounds, field: .torque))
                     .keyboardType(.numberPad)
                     .focused($focusedField, equals: .torque)
             }
