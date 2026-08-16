@@ -39,6 +39,12 @@ struct CopilotContextFactory {
                     projectionFacts(for: $0, isSaved: savedTuneID != nil, isStreaming: true)
                 }
             )
+        case .generationFailed(let session):
+            return context(
+                .loading,
+                car: session.request.car,
+                discipline: session.request.discipline
+            )
         case .result(let tune, let savedTuneID, _, _, _):
             return resultContext(
                 tune,

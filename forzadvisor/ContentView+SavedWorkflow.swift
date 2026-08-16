@@ -120,18 +120,45 @@ extension ContentView {
         }
     }
 
-    func retry(_ recovery: ErrorRecovery) {
-        clearError()
-
-        switch recovery {
-        case .generate(let session):
-            startGeneration(session)
-        }
+    func retryGeneration(_ session: TuneGenerationSession) {
+        startGeneration(session)
     }
 
     func clearError() {
         errorMessage = nil
-        errorRecovery = nil
+    }
+
+    func changeGenerationDiscipline(
+        _ session: TuneGenerationSession
+    ) {
+        restoreGenerationReturnContext(
+            TuneGenerationFailureRecovery(session: session)
+                .changeDisciplineContext
+        )
+    }
+
+    func backFromGenerationFailure(_ session: TuneGenerationSession) {
+        if let mission = session.validationMissionReturnContext {
+            if case .newTune(let draft) = session.returnContext {
+                newTuneSession = draft
+            }
+            if returnToValidationMission(
+                .draftPreserved,
+                expected: mission
+            ) {
+                return
+            }
+        }
+        let recovery = TuneGenerationFailureRecovery(session: session)
+        switch recovery.backTarget {
+        case .source(let origin, let thumbnailData):
+            if case .newTune(let draft) = session.returnContext {
+                newTuneSession = draft
+            }
+            step = origin.previousStep(thumbnailData: thumbnailData)
+        case .savedEdit(let retune):
+            step = .editSavedTuneDraft(retune)
+        }
     }
 
     func openBetaValidationMission(_ mission: BetaValidationMission) {
@@ -145,10 +172,17 @@ extension ContentView {
             }
 
             cancelActiveTuneWork()
+            validationMissionReturnContext = .init(mission: mission)
+            validationMissionOutcomeMessage = nil
             switch mission.destination {
             case .manualEntry(let game):
+                let draft = ManualEntryDraft(game: game)
+                newTuneSession.stage = .manual(
+                    draft,
+                    thumbnailData: nil
+                )
                 step = .manualEntry(
-                    ManualEntryDraft(game: game),
+                    draft,
                     thumbnailData: nil
                 )
             case .savedTune(let savedTuneID, let kind):
@@ -237,6 +271,7 @@ extension ContentView {
                 }
             }
         } catch {
+            validationMissionReturnContext = nil
             errorMessage = "Could not open this beta mission: \(error.localizedDescription)"
         }
     }

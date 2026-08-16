@@ -115,7 +115,7 @@ struct FH5CandidateTrialCaptureView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Back") {
                     if lockedArtifact == nil {
-                        onBack()
+                        saveAndExit()
                     } else {
                         showsExitRestorationReminder = true
                     }
@@ -126,7 +126,7 @@ struct FH5CandidateTrialCaptureView: View {
             "Restore the stock A value first",
             isPresented: $showsExitRestorationReminder
         ) {
-            Button("I Restored It", action: onBack)
+            Button("I Restored It", action: saveAndExit)
             Button("Stay in Candidate Trial", role: .cancel) {}
         } message: {
             if let artifact = lockedArtifact {

@@ -32,6 +32,7 @@ struct FH6CommunityReferenceTrialFactory {
         savedTune: TuneResult?,
         isStreaming: Bool,
         validationRecords: [FirstPartyValidationRecord] = [],
+        localValidationObservations: [ValidationLocalObservation] = [],
         capture: FH6CommunityReferenceTrialCapture,
         recordID: UUID = UUID(),
         submissionID: UUID = UUID(),
@@ -48,6 +49,8 @@ struct FH6CommunityReferenceTrialFactory {
             savedTune: savedTune,
             isStreaming: isStreaming,
             validationRecords: validationRecords,
+            localValidationObservations:
+                localValidationObservations,
             communityComparisonRecords: []
         )
         guard chain.permitsCommunityComparison else {

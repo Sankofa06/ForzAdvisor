@@ -50,6 +50,7 @@ final class BetaValidationMissionTests: XCTestCase {
                 upgrades: true,
                 testDrive: true,
                 evidence: 3,
+                reusableEvidence: 1,
                 exactPaths: true
             ),
             facts(
@@ -61,6 +62,7 @@ final class BetaValidationMissionTests: XCTestCase {
                 upgrades: true,
                 testDrive: false,
                 evidence: 2,
+                reusableEvidence: 1,
                 exactPaths: false,
                 experiment: true
             )
@@ -88,6 +90,8 @@ final class BetaValidationMissionTests: XCTestCase {
             BetaValidationProgress(
                 savedSetupCount: 2,
                 evidenceRecordCount: 5,
+                localEvidenceRecordCount: 3,
+                reusableEvidenceRecordCount: 2,
                 exactUpgradePathSetupCount: 1,
                 availableMissionCount: 6
             )
@@ -643,6 +647,7 @@ final class BetaValidationMissionTests: XCTestCase {
         upgrades: Bool,
         testDrive: Bool,
         evidence: Int,
+        reusableEvidence: Int = 0,
         exactPaths: Bool,
         experiment: Bool = false,
         candidateTrial: Bool = false,
@@ -663,6 +668,7 @@ final class BetaValidationMissionTests: XCTestCase {
             canRunFH6CommunityReferenceTrial: communityTrial,
             fh6AccuracyEvidenceChainStage: accuracyChainStage,
             evidenceRecordCount: evidence,
+            reusableEvidenceRecordCount: reusableEvidence,
             hasExactUpgradePaths: exactPaths,
             fh5CandidateTrialAvailable: candidateTrial
         )

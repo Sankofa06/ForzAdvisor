@@ -11,8 +11,30 @@ final class TuneResultPresentationTests: XCTestCase {
 
         XCTAssertEqual(presentation.completion, .incomplete)
         XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
         XCTAssertEqual(presentation.statusTitle, "Incomplete result")
         XCTAssertTrue(presentation.statusDetail.contains("Copy and Save remain unavailable"))
+    }
+
+    func testStreamingSavedRetuneHidesConsequentialActionsAndProviderClaim() {
+        let tune = makeTune(hasProjection: true)
+        let presentation = TuneResultPresentation(
+            tune: tune,
+            isSaved: true,
+            isStreaming: true
+        )
+        let provider = TuneActualProviderPresentation(
+            tune: tune,
+            isComplete: false
+        )
+
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+        XCTAssertEqual(
+            provider.title,
+            "Generation method still in progress"
+        )
+        XCTAssertTrue(provider.detail.contains("only when generation completes"))
     }
 
     func testCompletedProjectedResultAllowsActionsWithoutAccuracyClaim() {

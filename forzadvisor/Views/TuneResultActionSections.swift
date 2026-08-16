@@ -29,7 +29,11 @@ struct TuneResultStatusSection: View {
                     Text(presentation.statusDetail)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    TuneActualProviderView(tune: tune)
+                    TuneActualProviderView(
+                        tune: tune,
+                        isComplete:
+                            presentation.completion != .incomplete
+                    )
                 }
             }
             .padding(.vertical, 4)
@@ -173,9 +177,13 @@ private struct TuneResultThumbnail: View {
 
 private struct TuneActualProviderView: View {
     let tune: TuneResult
+    let isComplete: Bool
 
     private var presentation: TuneActualProviderPresentation {
-        TuneActualProviderPresentation(tune: tune)
+        TuneActualProviderPresentation(
+            tune: tune,
+            isComplete: isComplete
+        )
     }
 
     var body: some View {

@@ -130,8 +130,28 @@ struct BetaValidationMission: Equatable, Identifiable, Sendable {
 struct BetaValidationProgress: Equatable, Sendable {
     let savedSetupCount: Int
     let evidenceRecordCount: Int
+    let localEvidenceRecordCount: Int
+    let reusableEvidenceRecordCount: Int
     let exactUpgradePathSetupCount: Int
     let availableMissionCount: Int
+
+    init(
+        savedSetupCount: Int,
+        evidenceRecordCount: Int,
+        localEvidenceRecordCount: Int? = nil,
+        reusableEvidenceRecordCount: Int = 0,
+        exactUpgradePathSetupCount: Int,
+        availableMissionCount: Int
+    ) {
+        self.savedSetupCount = savedSetupCount
+        self.evidenceRecordCount = evidenceRecordCount
+        self.localEvidenceRecordCount =
+            localEvidenceRecordCount ?? evidenceRecordCount
+        self.reusableEvidenceRecordCount =
+            reusableEvidenceRecordCount
+        self.exactUpgradePathSetupCount = exactUpgradePathSetupCount
+        self.availableMissionCount = availableMissionCount
+    }
 }
 
 struct BetaValidationProgressShare: Equatable, Sendable {
@@ -233,6 +253,7 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
     let fh6AccuracyEvidenceChainStage:
         FH6AccuracyEvidenceChainStage?
     let evidenceRecordCount: Int
+    let reusableEvidenceRecordCount: Int
     let hasExactUpgradePaths: Bool
     let fh5CandidateTrialAvailable: Bool
 
@@ -251,6 +272,7 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
         fh6AccuracyEvidenceChainStage:
             FH6AccuracyEvidenceChainStage? = nil,
         evidenceRecordCount: Int,
+        reusableEvidenceRecordCount: Int = 0,
         hasExactUpgradePaths: Bool,
         fh5CandidateTrialAvailable: Bool = false
     ) {
@@ -269,6 +291,8 @@ struct BetaValidationSetupFacts: Equatable, Sendable {
         self.fh6AccuracyEvidenceChainStage =
             fh6AccuracyEvidenceChainStage
         self.evidenceRecordCount = evidenceRecordCount
+        self.reusableEvidenceRecordCount =
+            reusableEvidenceRecordCount
         self.hasExactUpgradePaths = hasExactUpgradePaths
         self.fh5CandidateTrialAvailable =
             fh5CandidateTrialAvailable
@@ -325,6 +349,16 @@ struct BetaValidationMissionPlanner {
             progress: BetaValidationProgress(
                 savedSetupCount: setups.count,
                 evidenceRecordCount: setups.reduce(0) { $0 + $1.evidenceRecordCount },
+                localEvidenceRecordCount: setups.reduce(0) {
+                    $0 + max(
+                        0,
+                        $1.evidenceRecordCount
+                            - $1.reusableEvidenceRecordCount
+                    )
+                },
+                reusableEvidenceRecordCount: setups.reduce(0) {
+                    $0 + $1.reusableEvidenceRecordCount
+                },
                 exactUpgradePathSetupCount: setups.filter(\.hasExactUpgradePaths).count,
                 availableMissionCount: missions.count
             )
@@ -442,6 +476,11 @@ struct BetaValidationMissionPlanner {
             fh6AccuracyEvidenceChainStage:
                 accuracyChain?.stage,
             evidenceRecordCount: evidence.totalRecordCount,
+            reusableEvidenceRecordCount:
+                ((try? savedTune.allFirstPartyValidationRecords()) ?? [])
+                .filter(
+                    ValidationEvidenceAuthorizationStore().allowsExport
+                ).count,
             hasExactUpgradePaths:
                 !TuneControlUpgradePlanner().paths(for: tune).isEmpty,
             fh5CandidateTrialAvailable:

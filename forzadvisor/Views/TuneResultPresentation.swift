@@ -24,6 +24,9 @@ struct TuneResultPresentation: Equatable {
     }
 
     var allowsCopyOrSave: Bool { completion == .available }
+    var allowsSavedConsequentialActions: Bool {
+        isSaved && completion == .available
+    }
 
     var statusTitle: String {
         switch completion {
@@ -51,7 +54,14 @@ struct TuneActualProviderPresentation: Equatable {
     let symbolName: String
     let usedFallback: Bool
 
-    init(tune: TuneResult) {
+    init(tune: TuneResult, isComplete: Bool = true) {
+        guard isComplete else {
+            title = "Generation method still in progress"
+            detail = "The actual provider and any fallback are confirmed only when generation completes."
+            symbolName = "ellipsis"
+            usedFallback = false
+            return
+        }
         if tune.purpose == .fh5BuildPlan {
             title = "Generated with: Local FH5 build planner"
             detail = "Created locally without numeric tuning output."

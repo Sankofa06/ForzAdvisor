@@ -13,6 +13,7 @@ enum WorkflowStep {
         playerNotes: String,
         partialTune: TuneResult?
     )
+    case generationFailed(TuneGenerationSession)
     case result(
         TuneResult,
         savedTuneID: UUID?,
@@ -131,10 +132,6 @@ enum InputOrigin: Equatable, Sendable {
         }
         return buildSnapshot(matching: input, capturedAt: capturedAt)
     }
-}
-
-enum ErrorRecovery {
-    case generate(TuneGenerationSession)
 }
 
 struct ActiveTuneAdjustment {

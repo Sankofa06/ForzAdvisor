@@ -47,6 +47,32 @@ enum TuneGenerationReturnContext: Equatable, Sendable {
     case savedEdit(SavedTuneRetuneSession)
 }
 
+struct TuneGenerationFailureRecovery: Equatable, Sendable {
+    enum BackTarget: Equatable, Sendable {
+        case source(InputOrigin, thumbnailData: Data?)
+        case savedEdit(SavedTuneRetuneSession)
+    }
+
+    let session: TuneGenerationSession
+
+    var changeDisciplineContext: TuneGenerationReturnContext {
+        session.returnContext
+    }
+
+    var backTarget: BackTarget {
+        switch session.returnContext {
+        case .newTune(let draft):
+            guard case .discipline(_, let origin, let thumbnailData, _) =
+                    draft.stage else {
+                return .source(session.origin, thumbnailData: session.thumbnailData)
+            }
+            return .source(origin, thumbnailData: thumbnailData)
+        case .savedEdit(let retune):
+            return .savedEdit(retune)
+        }
+    }
+}
+
 /// Frozen at the explicit generation boundary. Later Settings changes cannot
 /// change the request, disclosure, or recovery destination for this attempt.
 struct TuneGenerationSession: Equatable, Sendable, Identifiable {
@@ -60,6 +86,7 @@ struct TuneGenerationSession: Equatable, Sendable, Identifiable {
     let providerDisclosure: TuneProviderDisclosure
     let returnContext: TuneGenerationReturnContext
     let completedValidationDraftKind: ValidationDraftKind?
+    let validationMissionReturnContext: ValidationMissionReturnContext?
 
     init(
         id: UUID = UUID(),
@@ -71,7 +98,8 @@ struct TuneGenerationSession: Equatable, Sendable, Identifiable {
         preferredProviderMode: TuneProviderMode,
         providerDisclosure: TuneProviderDisclosure,
         returnContext: TuneGenerationReturnContext,
-        completedValidationDraftKind: ValidationDraftKind? = nil
+        completedValidationDraftKind: ValidationDraftKind? = nil,
+        validationMissionReturnContext: ValidationMissionReturnContext? = nil
     ) {
         self.id = id
         self.request = request
@@ -83,5 +111,7 @@ struct TuneGenerationSession: Equatable, Sendable, Identifiable {
         self.providerDisclosure = providerDisclosure
         self.returnContext = returnContext
         self.completedValidationDraftKind = completedValidationDraftKind
+        self.validationMissionReturnContext =
+            validationMissionReturnContext
     }
 }

@@ -255,7 +255,7 @@ struct FH5ControlledExperimentCaptureView: View {
             isPresented: $showsExitRestorationReminder
         ) {
             Button("I Restored It") {
-                onBack()
+                saveAndExit()
             }
             Button("Stay in Outcome Lab", role: .cancel) {}
         } message: {

@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BetaValidationMissionsView: View {
     let board: BetaValidationMissionBoard
+    var outcomeMessage: String? = nil
     let onSelect: (BetaValidationMission) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -27,14 +28,34 @@ struct BetaValidationMissionsView: View {
                 }
                 .listRowBackground(ForzAdvisorTheme.heroRowBackground)
 
+                if let outcomeMessage {
+                    Section("Latest outcome") {
+                        Text(outcomeMessage)
+                            .accessibilityIdentifier(
+                                "validationMissionOutcome"
+                            )
+                    }
+                    .forzAdvisorRowBackground()
+                }
+
                 Section("Local Progress") {
                     LabeledContent(
                         "Saved setups",
                         value: "\(board.progress.savedSetupCount)"
                     )
                     LabeledContent(
-                        "Permission-bound evidence records",
+                        "Evidence records on this device",
                         value: "\(board.progress.evidenceRecordCount)"
+                    )
+                    LabeledContent(
+                        "Local-only records",
+                        value:
+                            "\(board.progress.localEvidenceRecordCount)"
+                    )
+                    LabeledContent(
+                        "Reusable records",
+                        value:
+                            "\(board.progress.reusableEvidenceRecordCount)"
                     )
                     LabeledContent(
                         "Setups with exact upgrade paths",

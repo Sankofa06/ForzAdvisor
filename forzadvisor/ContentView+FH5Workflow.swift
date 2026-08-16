@@ -30,6 +30,9 @@ extension ContentView {
                 kind: .fh5ResearchObservation,
                 savedTuneID: savedTuneID
             )
+            if returnToValidationMission(.completedOnDevice) {
+                return
+            }
             step = .result(
                 TuneResultBoundarySanitizer().sanitize(tune),
                 savedTuneID: savedTuneID,
@@ -116,6 +119,9 @@ extension ContentView {
                 kind: .fh5ControlledExperiment,
                 savedTuneID: savedTuneID
             )
+            if returnToValidationMission(.completedOnDevice) {
+                return
+            }
             step = .result(
                 TuneResultBoundarySanitizer().sanitize(tune),
                 savedTuneID: savedTuneID,
@@ -185,6 +191,9 @@ extension ContentView {
                 kind: .fh5CandidateTrial,
                 savedTuneID: savedTuneID
             )
+            if returnToValidationMission(.completedOnDevice) {
+                return
+            }
             step = .result(
                 TuneResultBoundarySanitizer().sanitize(tune),
                 savedTuneID: savedTuneID,

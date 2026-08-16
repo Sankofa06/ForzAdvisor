@@ -17,11 +17,16 @@ enum TuneResultSaveOutcome: Equatable, Sendable {
 enum RootStepGuideEntryPresentation: Equatable, Sendable {
     case garageBody
     case compactToolbar
+    case firstSaveHandoff
 }
 
 struct RootStepGuideEntryPolicy {
-    func presentation(for step: WorkflowStep) -> RootStepGuideEntryPresentation {
+    func presentation(
+        for step: WorkflowStep,
+        firstSaveHandoffPresented: Bool = false
+    ) -> RootStepGuideEntryPresentation {
         if case .home = step { return .garageBody }
+        if firstSaveHandoffPresented { return .firstSaveHandoff }
         return .compactToolbar
     }
 }

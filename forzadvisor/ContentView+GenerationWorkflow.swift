@@ -73,7 +73,9 @@ extension ContentView {
             preferredProviderMode: tuneProviderMode,
             providerDisclosure: disclosure,
             returnContext: returnContext,
-            completedValidationDraftKind: completedValidationDraftKind
+            completedValidationDraftKind: completedValidationDraftKind,
+            validationMissionReturnContext:
+                validationMissionReturnContext
         )
         startGeneration(session)
     }
@@ -120,6 +122,14 @@ extension ContentView {
                         savedTuneID: savedTuneID
                     )
                 }
+                if session.validationMissionReturnContext != nil,
+                   session.completedValidationDraftKind != nil,
+                   returnToValidationMission(
+                    .completedOnDevice,
+                    expected: session.validationMissionReturnContext
+                   ) {
+                    return
+                }
                 step = .result(
                     resultTune,
                     savedTuneID: session.savedTuneID,
@@ -128,10 +138,8 @@ extension ContentView {
                     playerNotes: session.playerNotes
                 )
             },
-            onFailure: { failedSession, error in
-                errorMessage = error.localizedDescription
-                errorRecovery = .generate(failedSession)
-                restoreGenerationReturnContext(failedSession.returnContext)
+            onFailure: { failedSession, _ in
+                step = .generationFailed(failedSession)
             }
         )
     }

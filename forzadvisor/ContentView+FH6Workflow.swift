@@ -32,6 +32,9 @@ extension ContentView {
                 kind: .firstPartyTestDrive,
                 savedTuneID: savedTuneID
             )
+            if returnToValidationMission(.completedLocalOnly) {
+                return
+            }
             step = .result(
                 tune,
                 savedTuneID: savedTuneID,
@@ -154,6 +157,9 @@ extension ContentView {
                     try savedTune.validValidationRecords(
                         matching: persistedTune
                     ),
+                localValidationObservations:
+                    try ValidationLocalObservationStore()
+                        .observations(savedTuneID: savedTuneID),
                 capture: capture
             )
             try savedTune.appendFH6CommunityReferenceTrialRecord(record)
@@ -162,6 +168,9 @@ extension ContentView {
                 kind: .fh6CommunityReferenceTrial,
                 savedTuneID: savedTuneID
             )
+            if returnToValidationMission(.completedOnDevice) {
+                return
+            }
             step = .result(
                 TuneResultBoundarySanitizer().sanitize(persistedTune),
                 savedTuneID: savedTuneID,

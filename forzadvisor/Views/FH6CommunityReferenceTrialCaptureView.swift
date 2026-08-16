@@ -186,7 +186,7 @@ struct FH6CommunityReferenceTrialCaptureView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Back") {
                     if draft.finalCandidateRestoredConfirmed {
-                        onBack()
+                        saveAndExit()
                     } else {
                         showsRestoreAlert = true
                     }
@@ -200,7 +200,7 @@ struct FH6CommunityReferenceTrialCaptureView: View {
         ) {
             Button("I Restored It") {
                 draft.finalCandidateRestoredConfirmed = true
-                onBack()
+                saveAndExit()
             }
             Button("Keep Testing", role: .cancel) {}
         } message: {

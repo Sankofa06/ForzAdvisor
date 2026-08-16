@@ -64,7 +64,7 @@ struct TuneResultScreen: View {
                 copiedLineID: $copiedLineID
             )
 
-            if isSaved {
+            if presentation.allowsSavedConsequentialActions {
                 TuneRefinementSection(
                     tune: tune,
                     proposal: rootActions.refinementProposal,
@@ -101,7 +101,7 @@ struct TuneResultScreen: View {
                 Button("Done", action: onDone)
                     .accessibilityIdentifier("doneTuneButton")
             }
-            if isSaved {
+            if presentation.allowsSavedConsequentialActions {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Edit", action: onEdit)
                         .disabled(activeFeedback != nil || isStreaming)

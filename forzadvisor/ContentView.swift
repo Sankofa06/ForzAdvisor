@@ -16,11 +16,13 @@ struct ContentView: View {
 
     @State var step: WorkflowStep = .home
     @State var errorMessage: String?
-    @State var errorRecovery: ErrorRecovery?
     @State var rootSheet: RootSheet?
     @State var newTuneSession = TuneDraftSession()
     @State var firstSavedSetupCopilotHandoff =
         FirstSavedSetupCopilotHandoffState()
+    @State var validationMissionReturnContext:
+        ValidationMissionReturnContext?
+    @State var validationMissionOutcomeMessage: String?
     @StateObject var tuneWorkflow = TuneWorkflowController()
     @StateObject var refinementProposals = TuneRefinementProposalStore()
 
@@ -119,7 +121,9 @@ struct ContentView: View {
                                 thumbnailData: thumbnailData
                             )
                         },
-                        onCancel: { step = .newTune },
+                        onCancel: {
+                            validationMissionBack { step = .newTune }
+                        },
                         onContinue: { input in
                             newTuneSession.stage = .discipline(
                                 car: input,
@@ -141,7 +145,13 @@ struct ContentView: View {
                         providerDisclosure: makeProviderDisclosure(
                             mode: tuneProviderMode
                         ),
-                        onBack: { step = origin.previousStep(thumbnailData: thumbnailData) },
+                        onBack: {
+                            validationMissionBack {
+                                step = origin.previousStep(
+                                    thumbnailData: thumbnailData
+                                )
+                            }
+                        },
                         onSelectionChanged: { discipline in
                             newTuneSession.stage = .discipline(
                                 car: input,
@@ -183,6 +193,16 @@ struct ContentView: View {
                                 }
                             }
                     }
+                case .generationFailed(let session):
+                    TuneGenerationStatusView(
+                        request: session.request,
+                        phase: .failed,
+                        onRetry: { retryGeneration(session) },
+                        onChangeDiscipline: {
+                            changeGenerationDiscipline(session)
+                        },
+                        onBack: { backFromGenerationFailure(session) }
+                    )
                 case .result(let tune, let savedTuneID, let adjustmentChanges, let thumbnailData, let playerNotes):
                     resultView(
                         tune: tune,
@@ -197,13 +217,13 @@ struct ContentView: View {
                             tune: tune,
                             snapshot: snapshot,
                             onBack: {
-                                step = .result(
+                                validationMissionBack { step = .result(
                                     tune,
                                     savedTuneID: savedTuneID,
                                     adjustmentChanges: [],
                                     thumbnailData: thumbnailData,
                                     playerNotes: playerNotes
-                                )
+                                ) }
                             },
                             onSubmit: { capture in
                                 applyFH6TuneMenuCapture(
@@ -228,13 +248,13 @@ struct ContentView: View {
                             tune: tune,
                             snapshot: snapshot,
                             onBack: {
-                                step = .result(
+                                validationMissionBack { step = .result(
                                     tune,
                                     savedTuneID: savedTuneID,
                                     adjustmentChanges: [],
                                     thumbnailData: thumbnailData,
                                     playerNotes: playerNotes
-                                )
+                                ) }
                             },
                             onSubmit: { capture in
                                 applyTirePressureCapture(
@@ -259,13 +279,13 @@ struct ContentView: View {
                             tune: tune,
                             snapshot: snapshot,
                             onBack: {
-                                step = .result(
+                                validationMissionBack { step = .result(
                                     tune,
                                     savedTuneID: savedTuneID,
                                     adjustmentChanges: [],
                                     thumbnailData: thumbnailData,
                                     playerNotes: playerNotes
-                                )
+                                ) }
                             },
                             onSubmit: { capture in
                                 applyUpgradePartCapture(
@@ -290,13 +310,13 @@ struct ContentView: View {
                             tune: tune,
                             snapshot: snapshot,
                             onBack: {
-                                step = .result(
+                                validationMissionBack { step = .result(
                                     tune,
                                     savedTuneID: savedTuneID,
                                     adjustmentChanges: [],
                                     thumbnailData: thumbnailData,
                                     playerNotes: playerNotes
-                                )
+                                ) }
                             },
                             onSubmit: { capture in
                                 recordFH5ResearchObservation(
@@ -328,13 +348,13 @@ struct ContentView: View {
                             tune: tune,
                             researchRecord: researchRecord,
                             onBack: {
-                                step = .result(
+                                validationMissionBack { step = .result(
                                     tune,
                                     savedTuneID: savedTuneID,
                                     adjustmentChanges: [],
                                     thumbnailData: thumbnailData,
                                     playerNotes: playerNotes
-                                )
+                                ) }
                             },
                             onLockCandidate: { input, surface in
                                 try makeFH5CandidateTrialArtifact(
@@ -359,13 +379,13 @@ struct ContentView: View {
                             tune: tune,
                             researchRecord: researchRecord,
                             onBack: {
-                                step = .result(
+                                validationMissionBack { step = .result(
                                     tune,
                                     savedTuneID: savedTuneID,
                                     adjustmentChanges: [],
                                     thumbnailData: thumbnailData,
                                     playerNotes: playerNotes
-                                )
+                                ) }
                             },
                             onSubmit: { capture in
                                 recordFH5ControlledExperiment(
@@ -382,13 +402,13 @@ struct ContentView: View {
                     FirstPartyValidationCaptureView(
                         tune: tune,
                         onBack: {
-                            step = .result(
+                            validationMissionBack { step = .result(
                                 tune,
                                 savedTuneID: savedTuneID,
                                 adjustmentChanges: [],
                                 thumbnailData: thumbnailData,
                                 playerNotes: playerNotes
-                            )
+                            ) }
                         },
                         onSubmit: { capture in
                             recordTestDrive(
@@ -409,13 +429,13 @@ struct ContentView: View {
                     FH6CommunityReferenceTrialCaptureView(
                         tune: tune,
                         onBack: {
-                            step = .result(
+                            validationMissionBack { step = .result(
                                 tune,
                                 savedTuneID: savedTuneID,
                                 adjustmentChanges: [],
                                 thumbnailData: thumbnailData,
                                 playerNotes: playerNotes
-                            )
+                            ) }
                         },
                         onSubmit: { capture in
                             recordFH6CommunityReferenceTrial(
@@ -495,11 +515,6 @@ struct ContentView: View {
                 get: { errorMessage != nil },
                 set: { if !$0 { clearError() } }
             )) {
-                if let errorRecovery {
-                    Button("Retry") {
-                        retry(errorRecovery)
-                    }
-                }
                 Button("OK", role: .cancel) {
                     clearError()
                 }
@@ -507,7 +522,11 @@ struct ContentView: View {
                 Text(errorMessage ?? "Try again from the discipline picker.")
             }
             .toolbar {
-                if RootStepGuideEntryPolicy().presentation(for: step)
+                if RootStepGuideEntryPolicy().presentation(
+                    for: step,
+                    firstSaveHandoffPresented:
+                        isFirstSaveStepGuideHandoffPresented
+                )
                     == .compactToolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                     Button(action: presentCopilot) {
@@ -533,6 +552,8 @@ struct ContentView: View {
                 case .betaMissions:
                     BetaValidationMissionsView(
                         board: betaValidationMissionBoard,
+                        outcomeMessage:
+                            validationMissionOutcomeMessage,
                         onSelect: openBetaValidationMission
                     )
                 }
@@ -1064,6 +1085,9 @@ struct ContentView: View {
                         savedTuneID: savedTuneID,
                         wasGarageEmpty: wasGarageEmpty
                     )
+                    if returnToValidationMission(.setupSaved) {
+                        return outcome
+                    }
                     step = .result(
                         tune,
                         savedTuneID: savedTuneID,
