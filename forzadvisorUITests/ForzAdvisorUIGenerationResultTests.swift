@@ -68,7 +68,9 @@ extension ForzAdvisorUITests {
         XCTAssertFalse(app.descendants(matching: .any)["availableSettingsSection"].exists)
 
         let startButton = app.buttons["startTuneGenerationButton"]
-        for _ in 0..<8 where !startButton.exists { app.swipeUp() }
+        let disciplineList = app.collectionViews.firstMatch
+        XCTAssertTrue(disciplineList.exists)
+        for _ in 0..<8 where !startButton.exists { disciplineList.swipeUp() }
         XCTAssertTrue(startButton.waitForExistence(timeout: 5))
         XCTAssertTrue(startButton.isHittable)
         startButton.tap()
