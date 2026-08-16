@@ -221,7 +221,7 @@ Rollback is commit-based for non-persistent view slices. Validation schema v2 is
 - [x] Local build, unit/UI test, visual, Dynamic Type, dark-mode, and Increase Contrast gates are green with zero warnings.
 - [ ] Complete the manual VoiceOver auditory-order pass.
 - [ ] Satisfy SF-03 for 24 touched legacy files over 350 lines, or record an explicit release waiver that scopes this as non-behavioral refactoring debt.
-- [ ] Immutable integration commit is pushed.
+- [x] Immutable integration branch is pushed and draft PR #1 targets `main`.
 - [ ] Xcode Cloud Verify and release workflows are green.
 - [ ] Internal TestFlight build is delivered.
 

@@ -26,6 +26,7 @@ The current release removes the bundled FH5/FH6 car rosters and reviewed stock c
 - App Store metadata, release notes, privacy policy, support copy, screenshot specifications, and six accepted-size marketing screenshots are present.
 - `ReleaseVerify.xctestplan` runs the complete supported unit and UI targets serially without skips or expected failures.
 - Latest local ReleaseVerify evidence: 573 unit tests and 10 UI tests passed with zero failures, skips, or expected failures; dark mode, Accessibility XXXL, and Increase Contrast captures were inspected. The exact remote commit is recorded after immutable push.
+- A local Release archive and App Store Connect export succeeded for version 1.41.1 build 77. The exported IPA is Apple Distribution signed with `get-task-allow=false` and `beta-reports-active=true`; it has not been uploaded.
 
 ## Local Package Verification
 
