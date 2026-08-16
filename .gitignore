@@ -1,4 +1,5 @@
 DerivedData/
 Screenshots/Simulator/
 *.xcresult
+**/xcuserdata/
 forzadvisorTests/Fixtures/*.private.json
