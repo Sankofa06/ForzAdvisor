@@ -1,11 +1,3 @@
-//
-//  SavedTuneEditView.swift
-//  forzadvisor
-//
-//  Garage edit screen for car metadata, performance inputs, notes, and the
-//  PRD re-tune nudge when weight or front distribution shifts materially.
-//
-
 import SwiftUI
 
 struct SavedTuneEditView: View {
@@ -14,6 +6,7 @@ struct SavedTuneEditView: View {
     let onSaveAndRetune: (SavedTuneEditDraft) -> Void
 
     @State private var draft: SavedTuneEditDraft
+    private let originalDraft: SavedTuneEditDraft
 
     init(
         draft: SavedTuneEditDraft,
@@ -21,75 +14,45 @@ struct SavedTuneEditView: View {
         onSave: @escaping (SavedTuneEditDraft) -> Void,
         onSaveAndRetune: @escaping (SavedTuneEditDraft) -> Void
     ) {
-        self._draft = State(initialValue: draft)
+        _draft = State(initialValue: draft)
+        originalDraft = draft
         self.onCancel = onCancel
         self.onSave = onSave
         self.onSaveAndRetune = onSaveAndRetune
     }
 
+    private var action: SavedTuneEditAction {
+        SavedTuneEditAction.resolve(original: originalDraft, current: draft)
+    }
+
     var body: some View {
         Form {
-            Section("Car") {
-                TextField("Year", text: optionalNumberText($draft.car.year))
-                    .keyboardType(.numberPad)
-                TextField("Make", text: $draft.car.make)
-                    .textInputAutocapitalization(.words)
-                TextField("Model", text: $draft.car.model)
-                    .textInputAutocapitalization(.words)
-            }
-            .forzAdvisorRowBackground()
-
-            Section("Performance") {
-                LabeledContent("Weight") {
-                    TextField("lb", value: $draft.car.weightPounds, format: .number)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    LabeledContent("Front weight", value: "\(draft.car.frontWeightPercent.formatted(.number.precision(.fractionLength(1))))%")
-                    Slider(value: $draft.car.frontWeightPercent, in: 30...70, step: 0.5)
-                }
-
-                LabeledContent("PI") {
-                    TextField("100-999", value: $draft.car.performanceIndex, format: .number)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                }
-
-                Picker("Class", selection: $draft.car.performanceClass) {
-                    ForEach(draft.car.game.supportedPerformanceClasses) { performanceClass in
-                        Text(performanceClass.rawValue).tag(performanceClass)
-                    }
-                }
-                .pickerStyle(.menu)
-
-                Picker("Drivetrain", selection: $draft.car.drivetrain) {
-                    ForEach(Drivetrain.allCases) { drivetrain in
-                        Text(drivetrain.rawValue).tag(drivetrain)
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
-            .forzAdvisorRowBackground()
+            SavedTuneIdentityFields(car: $draft.car)
+            SavedTunePerformanceFields(car: $draft.car)
 
             Section("Notes") {
                 TextEditor(text: $draft.playerNotes)
                     .frame(minHeight: 100)
+                    .accessibilityIdentifier("savedTuneNotesField")
             }
             .forzAdvisorRowBackground()
 
-            if draft.needsRetune {
-                Section("Re-tune recommended") {
-                    Label("Weight or front distribution changed by more than 2%.", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(ForzAdvisorTheme.warning)
-                    Button("Save & Re-tune") {
+            Section {
+                Label(action.explanation, systemImage: action.symbolName)
+                    .font(.subheadline)
+                    .foregroundStyle(action.requiresRetune ? ForzAdvisorTheme.warning : .secondary)
+                Button(action.title) {
+                    if action.requiresRetune {
                         onSaveAndRetune(draft)
+                    } else {
+                        onSave(draft)
                     }
-                    .disabled(!draft.isValid)
                 }
-                .listRowBackground(ForzAdvisorTheme.warning.opacity(0.13))
+                .buttonStyle(.borderedProminent)
+                .disabled(!draft.isValid || action == .noChanges)
+                .accessibilityIdentifier("savedTuneEditPrimaryAction")
             }
+            .forzAdvisorRowBackground()
 
             if !draft.validationIssues.isEmpty {
                 Section("Fix before saving") {
@@ -107,21 +70,50 @@ struct SavedTuneEditView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Cancel", action: onCancel)
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Save") {
-                    onSave(draft)
-                }
-                .disabled(!draft.isValid)
-            }
+        }
+    }
+}
+
+enum SavedTuneEditAction: Equatable {
+    case noChanges
+    case saveChanges
+    case retuneAndSave
+
+    static func resolve(
+        original: SavedTuneEditDraft,
+        current: SavedTuneEditDraft
+    ) -> Self {
+        guard original != current else { return .noChanges }
+        let old = original.car
+        let new = current.car
+        let generationInputsChanged = old.weightPounds != new.weightPounds
+            || old.frontWeightPercent != new.frontWeightPercent
+            || old.performanceIndex != new.performanceIndex
+            || old.performanceClass != new.performanceClass
+            || old.drivetrain != new.drivetrain
+        return generationInputsChanged ? .retuneAndSave : .saveChanges
+    }
+
+    var requiresRetune: Bool { self == .retuneAndSave }
+
+    var title: String {
+        switch self {
+        case .noChanges: "No Changes"
+        case .saveChanges: "Save Changes"
+        case .retuneAndSave: "Re-tune & Save"
         }
     }
 
-    private func optionalNumberText(_ value: Binding<Int?>) -> Binding<String> {
-        Binding {
-            value.wrappedValue.map(String.init) ?? ""
-        } set: { newValue in
-            let digits = newValue.filter(\.isNumber)
-            value.wrappedValue = digits.isEmpty ? nil : Int(digits)
+    var explanation: String {
+        switch self {
+        case .noChanges: "Edit identity, notes, or performance details to continue."
+        case .saveChanges: "Identity and notes can be saved without changing the tune."
+        case .retuneAndSave:
+            "Performance inputs changed. The existing tune stays saved unless re-tuning finishes successfully."
         }
+    }
+
+    var symbolName: String {
+        requiresRetune ? "arrow.triangle.2.circlepath" : "square.and.arrow.down"
     }
 }
