@@ -15,6 +15,12 @@ protocol APIKeyStoring {
     func deleteAPIKey() throws
 }
 
+protocol APIKeySettingsStoring {
+    func containsAPIKey() throws -> Bool
+    func saveAPIKey(_ key: String) throws
+    func deleteAPIKey() throws
+}
+
 extension APIKeyStoring {
     func apiKeyStatus() -> APIKeyStatus {
         do {
@@ -70,6 +76,18 @@ struct KeychainStore {
         return String(data: data, encoding: .utf8)
     }
 
+    func containsAPIKey() throws -> Bool {
+        var query = baseQuery()
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+
+        let status = SecItemCopyMatching(query as CFDictionary, nil)
+        if status == errSecItemNotFound { return false }
+        guard status == errSecSuccess else {
+            throw KeychainError.unhandledStatus(status)
+        }
+        return true
+    }
+
     func saveAPIKey(_ key: String) throws {
         let trimmedKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedKey.isEmpty else {
@@ -120,3 +138,4 @@ enum KeychainError: LocalizedError, Equatable {
 }
 
 extension KeychainStore: APIKeyStoring {}
+extension KeychainStore: APIKeySettingsStoring {}

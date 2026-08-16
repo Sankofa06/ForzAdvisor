@@ -1,139 +1,200 @@
-//
-//  SettingsView.swift
-//  forzadvisor
-//
-//  Tune provider settings. Offline formulas are always available; on-device
-//  Foundation Models and remote API generation fall back to those formulas.
-//
-
 import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("tuneProviderMode") private var tuneProviderMode = TuneProviderMode.offlineFormula
     @AppStorage("prefersRemoteTuneProvider") private var legacyPrefersRemoteTuneProvider = false
 
-    let keychainStore: any APIKeyStoring
-
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var keyController: APIKeySettingsController
     @State private var apiKey = ""
-    @State private var apiKeyStatus: APIKeyStatus = .missing
     @State private var onDeviceAvailability = OnDeviceModelAvailability.current()
-    @State private var statusMessage: String?
+
+    init(keychainStore: any APIKeySettingsStoring) {
+        _keyController = StateObject(
+            wrappedValue: APIKeySettingsController(store: keychainStore)
+        )
+    }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Tune Generation") {
-                    Picker("Provider", selection: $tuneProviderMode) {
-                        ForEach(TuneProviderMode.allCases) { mode in
-                            Text(mode.title)
-                                .tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    Text(tuneProviderMode.detail)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    ProviderStatusRow(
-                        mode: tuneProviderMode,
-                        onDeviceAvailability: onDeviceAvailability,
-                        apiKeyStatus: apiKeyStatus
-                    )
-                }
-                .forzAdvisorRowBackground()
+                providerSection
+                fh5OverrideSection
 
                 if tuneProviderMode == .onDeviceFoundationModel {
-                    Section("On-Device Status") {
-                        Label(onDeviceAvailability.title, systemImage: onDeviceAvailability.isAvailable ? "checkmark.circle" : "exclamationmark.triangle")
-                            .foregroundStyle(onDeviceAvailability.isAvailable ? ForzAdvisorTheme.success : ForzAdvisorTheme.warning)
-                        Text(onDeviceAvailability.detail)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Button("Refresh Status") {
-                            onDeviceAvailability = OnDeviceModelAvailability.current()
-                        }
-                    }
-                    .forzAdvisorRowBackground()
+                    onDeviceSection
                 }
-
                 if tuneProviderMode == .anthropicAPI {
-                    Section("Anthropic API Key") {
-                        SecureField("Paste API key", text: $apiKey)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-
-                        Button("Save Key") {
-                            saveKey()
-                        }
-                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-
-                        Button("Clear Key", role: .destructive) {
-                            clearKey()
-                        }
-                        .disabled(!apiKeyStatus.hasConfiguredKey && apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    .forzAdvisorRowBackground()
+                    apiKeySection
+                }
+                if let message = keyController.message {
+                    statusSection(message)
                 }
 
-                if let statusMessage {
-                    Section {
-                        Text(statusMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    .forzAdvisorRowBackground()
-                }
-
-                Section("Privacy") {
-                    Label("Offline by default", systemImage: "lock.shield")
-                        .foregroundStyle(ForzAdvisorTheme.success)
-                    Text("Screenshots are processed on device. For FH6, API mode sends confirmed car details and notes to Anthropic using your saved key; screenshots are not uploaded. FH5 build plans stay local.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .forzAdvisorRowBackground()
-
-                Section("About") {
-                    LabeledContent("Version", value: appVersion)
-                    Text("ForzAdvisor is an unofficial tuning tool and is not affiliated with or endorsed by Microsoft, Xbox, Turn 10, Playground Games, or the Forza franchise.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .forzAdvisorRowBackground()
+                privacySection
+                aboutSection
             }
             .navigationTitle("Settings")
             .forzAdvisorScreenChrome()
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     ModalCopilotToolbarLink(destination: .settings)
-                    Button("Done") {
-                        dismiss()
-                    }
+                    Button("Done") { dismiss() }
                 }
             }
             .task {
                 migrateLegacyRemotePreference()
-                onDeviceAvailability = OnDeviceModelAvailability.current()
-                loadAPIKeyStatus()
+                refreshCapabilities()
+            }
+            .confirmationDialog(
+                confirmationTitle,
+                isPresented: confirmationBinding,
+                titleVisibility: .visible
+            ) {
+                Button(confirmationButtonTitle, role: confirmationRole) {
+                    keyController.confirmPendingAction()
+                    apiKey = ""
+                }
+                Button("Cancel", role: .cancel) {
+                    keyController.cancelPendingAction()
+                    apiKey = ""
+                }
+            } message: {
+                Text("The current credential stays in place unless this change succeeds.")
             }
         }
     }
 
-    private func loadAPIKeyStatus() {
-        do {
-            if let savedKey = try keychainStore.readAPIKey() {
-                apiKey = savedKey
-                apiKeyStatus = savedKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .missing : .configured
-            } else {
-                apiKey = ""
-                apiKeyStatus = .missing
+    private var providerSection: some View {
+        Section("Preferred generation method") {
+            ForEach(TuneProviderMode.allCases) { mode in
+                ProviderPreferenceCard(
+                    mode: mode,
+                    disclosure: disclosure(for: mode),
+                    isSelected: tuneProviderMode == mode,
+                    onSelect: { tuneProviderMode = mode }
+                )
             }
-        } catch {
-            apiKeyStatus = .readFailed(error.localizedDescription)
-            statusMessage = "Could not read API key: \(error.localizedDescription)"
         }
+        .forzAdvisorRowBackground()
+    }
+
+    private var fh5OverrideSection: some View {
+        Section("Forza Horizon 5") {
+            Label("FH5 always uses the local build planner", systemImage: "lock.shield")
+                .font(.subheadline.weight(.semibold))
+            Text("Your preferred generation method applies to FH6 only. FH5 remains local and plan-only.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var onDeviceSection: some View {
+        Section("On-device status") {
+            Label(
+                onDeviceAvailability.title,
+                systemImage: onDeviceAvailability.isAvailable
+                    ? "checkmark.circle" : "exclamationmark.triangle"
+            )
+            Text(onDeviceAvailability.detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Button("Refresh status") { refreshCapabilities() }
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var apiKeySection: some View {
+        APIKeySettingsSection(
+            apiKey: $apiKey,
+            status: keyController.status,
+            onSave: {
+                let awaitsConfirmation = keyController.requestSave(apiKey)
+                if !awaitsConfirmation { apiKey = "" }
+            },
+            onClear: keyController.requestClear
+        )
+    }
+
+    private func statusSection(_ message: String) -> some View {
+        Section {
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("apiKeyStatusMessage")
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var privacySection: some View {
+        let providerDisclosure = disclosure(for: tuneProviderMode)
+        return Section("Privacy") {
+            Label(
+                providerDisclosure.dataBoundary == .localOnly
+                    ? "Local-only route expected" : "Remote attempt may occur",
+                systemImage: "lock.shield"
+            )
+            .foregroundStyle(ForzAdvisorTheme.success)
+            Text(providerDisclosure.dataBoundary.summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if providerDisclosure.route.fallbackMode != nil {
+                Text("If the preferred attempt cannot start or finish, FH6 falls back to offline formulas on this device.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var aboutSection: some View {
+        Section("About") {
+            LabeledContent("Version", value: appVersion)
+            Text("ForzAdvisor is an unofficial tuning tool and is not affiliated with or endorsed by Microsoft, Xbox, Turn 10, Playground Games, or the Forza franchise.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .forzAdvisorRowBackground()
+    }
+
+    private var capabilities: TuneProviderCapabilities {
+        SettingsProviderCapabilities(
+            onDeviceAvailability: onDeviceAvailability,
+            apiKeyStatus: keyController.status
+        ).value
+    }
+
+    private func disclosure(for mode: TuneProviderMode) -> TuneProviderDisclosure {
+        TuneProviderDisclosure(preferredMode: mode, capabilities: capabilities)
+    }
+
+    private func refreshCapabilities() {
+        onDeviceAvailability = OnDeviceModelAvailability.current()
+        keyController.refresh()
+    }
+
+    private var confirmationBinding: Binding<Bool> {
+        Binding(
+            get: { keyController.pendingAction != nil },
+            set: { if !$0 { keyController.cancelPendingAction() } }
+        )
+    }
+
+    private var confirmationTitle: String {
+        switch keyController.pendingAction {
+        case .replace: "Replace the stored API key?"
+        case .clear: "Clear the stored API key?"
+        case nil: "Confirm credential change"
+        }
+    }
+
+    private var confirmationButtonTitle: String {
+        if case .clear = keyController.pendingAction { "Clear Key" } else { "Replace Key" }
+    }
+
+    private var confirmationRole: ButtonRole? {
+        if case .clear = keyController.pendingAction { .destructive } else { nil }
     }
 
     private var appVersion: String {
@@ -142,86 +203,9 @@ struct SettingsView: View {
         return "\(version) (\(build))"
     }
 
-    private func saveKey() {
-        do {
-            let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-            try keychainStore.saveAPIKey(trimmedKey)
-            apiKey = trimmedKey
-            apiKeyStatus = .configured
-            statusMessage = "API key saved."
-        } catch {
-            statusMessage = "Could not save key: \(error.localizedDescription)"
-        }
-    }
-
-    private func clearKey() {
-        do {
-            try keychainStore.deleteAPIKey()
-            apiKey = ""
-            apiKeyStatus = .missing
-            statusMessage = "API key cleared."
-        } catch {
-            statusMessage = "Could not clear key: \(error.localizedDescription)"
-        }
-    }
-
     private func migrateLegacyRemotePreference() {
         guard legacyPrefersRemoteTuneProvider else { return }
-        if tuneProviderMode == .offlineFormula {
-            tuneProviderMode = .anthropicAPI
-        }
+        if tuneProviderMode == .offlineFormula { tuneProviderMode = .anthropicAPI }
         legacyPrefersRemoteTuneProvider = false
-    }
-}
-
-private struct ProviderStatusRow: View {
-    let mode: TuneProviderMode
-    let onDeviceAvailability: OnDeviceModelAvailability
-    let apiKeyStatus: APIKeyStatus
-
-    var body: some View {
-        Label(statusText, systemImage: systemImage)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(tint)
-            .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var statusText: String {
-        switch mode {
-        case .offlineFormula:
-            "FH6 offline formulas ready; FH5 local build planner ready."
-        case .onDeviceFoundationModel:
-            onDeviceAvailability.isAvailable
-                ? "FH6 on-device model ready; FH5 remains local and plan-only."
-                : "\(onDeviceAvailability.title); FH6 uses offline formulas and FH5 remains local and plan-only."
-        case .anthropicAPI:
-            switch apiKeyStatus {
-            case .configured:
-                "API key saved for FH6; FH5 remains local and plan-only."
-            case .missing:
-                "No API key saved; FH6 uses offline formulas and FH5 remains local and plan-only."
-            case .readFailed:
-                "Could not read API key; FH6 uses offline formulas and FH5 remains local and plan-only."
-            }
-        }
-    }
-
-    private var systemImage: String {
-        isReady ? "checkmark.circle.fill" : "exclamationmark.triangle.fill"
-    }
-
-    private var tint: Color {
-        isReady ? ForzAdvisorTheme.success : ForzAdvisorTheme.warning
-    }
-
-    private var isReady: Bool {
-        switch mode {
-        case .offlineFormula:
-            true
-        case .onDeviceFoundationModel:
-            onDeviceAvailability.isAvailable
-        case .anthropicAPI:
-            apiKeyStatus.hasConfiguredKey
-        }
     }
 }
