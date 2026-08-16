@@ -38,6 +38,7 @@ struct FH6AccuracyEvidenceChainPolicy {
         savedTune: TuneResult?,
         isStreaming: Bool,
         validationRecords: [FirstPartyValidationRecord],
+        localValidationObservations: [ValidationLocalObservation] = [],
         communityComparisonRecords:
             [FH6CommunityReferenceTrialRecord]
     ) -> FH6AccuracyEvidenceChainAssessment {
@@ -68,6 +69,13 @@ struct FH6AccuracyEvidenceChainPolicy {
             count, record in
             if validationFactory.isValid(record),
                record.tuneRevisionFingerprint == revision {
+                count += 1
+            }
+        }
+        + localValidationObservations.reduce(into: 0) { count, observation in
+            if observation.schemaVersion
+                == ValidationLocalObservation.currentSchemaVersion,
+               observation.tuneRevisionFingerprint == revision {
                 count += 1
             }
         }

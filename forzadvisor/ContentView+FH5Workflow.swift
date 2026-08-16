@@ -26,6 +26,10 @@ extension ContentView {
             )
             try savedTune.appendFH5ResearchObservationRecord(record)
             try modelContext.save()
+            try? ValidationDraftStore().delete(
+                kind: .fh5ResearchObservation,
+                savedTuneID: savedTuneID
+            )
             step = .result(
                 TuneResultBoundarySanitizer().sanitize(tune),
                 savedTuneID: savedTuneID,
@@ -108,6 +112,10 @@ extension ContentView {
             )
             try savedTune.appendFH5ControlledExperimentRecord(record)
             try modelContext.save()
+            try? ValidationDraftStore().delete(
+                kind: .fh5ControlledExperiment,
+                savedTuneID: savedTuneID
+            )
             step = .result(
                 TuneResultBoundarySanitizer().sanitize(tune),
                 savedTuneID: savedTuneID,
@@ -173,6 +181,10 @@ extension ContentView {
             )
             try savedTune.appendFH5ControlledExperimentRecord(record)
             try modelContext.save()
+            try? ValidationDraftStore().delete(
+                kind: .fh5CandidateTrial,
+                savedTuneID: savedTuneID
+            )
             step = .result(
                 TuneResultBoundarySanitizer().sanitize(tune),
                 savedTuneID: savedTuneID,

@@ -8,6 +8,10 @@ import SwiftData
 extension ContentView {
     func open(_ savedTune: SavedTune) {
         cancelActiveTuneWork()
+        _ = try? reusableAuthorizedValidationRecords(
+            savedTune: savedTune,
+            savedTuneID: savedTune.id
+        )
         if let tune = savedTune.tuneResult {
             let displayTune = TuneResultBoundarySanitizer().sanitize(tune)
             step = .result(
@@ -78,6 +82,12 @@ extension ContentView {
 
         do {
             try modelContext.save()
+            _ = try? ValidationDraftStore().purge(
+                savedTuneID: savedTuneID
+            )
+            _ = try? ValidationLocalObservationStore().purge(
+                savedTuneID: savedTuneID
+            )
             completion?(.committed(savedTuneID: savedTuneID))
         } catch {
             modelContext.rollback()

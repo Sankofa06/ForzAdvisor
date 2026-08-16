@@ -73,6 +73,17 @@ struct ValidationLocalObservationStore {
         return true
     }
 
+    @discardableResult
+    func purge(savedTuneID: UUID) throws -> Int {
+        var entries = try readAll()
+        let count = entries.count
+        entries.removeAll { $0.savedTuneID == savedTuneID }
+        let removed = count - entries.count
+        guard removed > 0 else { return 0 }
+        try write(entries)
+        return removed
+    }
+
     func mergedRecords(
         savedTuneID: UUID,
         legacyReusable: [FirstPartyValidationRecord]

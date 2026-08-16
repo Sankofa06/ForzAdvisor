@@ -9,6 +9,7 @@ struct ValidationEvidenceTransitionCoordinator {
     struct GrantPlan: Equatable, Sendable {
         let savedTuneID: UUID
         let fingerprint: String
+        let authorization: ValidationEvidenceAuthorizationEnvelope
         let legacyReusableRecord: FirstPartyValidationRecord
     }
 
@@ -41,13 +42,19 @@ struct ValidationEvidenceTransitionCoordinator {
         ) else {
             throw ValidationEvidenceExportError.localOnly
         }
-        let authorization = try authorizationStore.grant(
-            fingerprint: fingerprint,
-            version: authorizationVersion
+        let authorization = ValidationEvidenceAuthorizationEnvelope.reusable(
+            observationFingerprint: fingerprint,
+            authorizationID: UUID(),
+            authorizationVersion: authorizationVersion,
+            authorizedAt: .now
         )
+        guard authorization.isValid else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
         return GrantPlan(
             savedTuneID: savedTuneID,
             fingerprint: fingerprint,
+            authorization: authorization,
             legacyReusableRecord: try local.reusableRecord(
                 authorization: authorization
             )
@@ -60,6 +67,18 @@ struct ValidationEvidenceTransitionCoordinator {
             savedTuneID: plan.savedTuneID,
             fingerprint: plan.fingerprint
         )
+    }
+
+    func activateGrant(_ plan: GrantPlan) throws {
+        try authorizationStore.persist(plan.authorization)
+    }
+
+    func compensateGrant(_ plan: GrantPlan) throws {
+        try saveLocal(
+            record: plan.legacyReusableRecord,
+            savedTuneID: plan.savedTuneID
+        )
+        _ = try? authorizationStore.remove(fingerprint: plan.fingerprint)
     }
 
     func prepareRevoke(
@@ -80,5 +99,12 @@ struct ValidationEvidenceTransitionCoordinator {
     /// Call only after the reusable record is absent from the saved legacy blob.
     func finalizeRevoke(_ plan: RevokePlan) throws {
         _ = try authorizationStore.revoke(fingerprint: plan.fingerprint)
+    }
+
+    func rollbackRevoke(_ plan: RevokePlan) throws {
+        _ = try localStore.delete(
+            savedTuneID: plan.savedTuneID,
+            fingerprint: plan.fingerprint
+        )
     }
 }

@@ -59,6 +59,7 @@ struct TuneGenerationSession: Equatable, Sendable, Identifiable {
     let preferredProviderMode: TuneProviderMode
     let providerDisclosure: TuneProviderDisclosure
     let returnContext: TuneGenerationReturnContext
+    let completedValidationDraftKind: ValidationDraftKind?
 
     init(
         id: UUID = UUID(),
@@ -69,7 +70,8 @@ struct TuneGenerationSession: Equatable, Sendable, Identifiable {
         playerNotes: String = "",
         preferredProviderMode: TuneProviderMode,
         providerDisclosure: TuneProviderDisclosure,
-        returnContext: TuneGenerationReturnContext
+        returnContext: TuneGenerationReturnContext,
+        completedValidationDraftKind: ValidationDraftKind? = nil
     ) {
         self.id = id
         self.request = request
@@ -80,5 +82,6 @@ struct TuneGenerationSession: Equatable, Sendable, Identifiable {
         self.preferredProviderMode = preferredProviderMode
         self.providerDisclosure = providerDisclosure
         self.returnContext = returnContext
+        self.completedValidationDraftKind = completedValidationDraftKind
     }
 }

@@ -27,6 +27,13 @@ struct ValidationEvidenceAuthorizationStore {
         (try? readAll())?[fingerprint]
     }
 
+    func allowsExport(of record: FirstPartyValidationRecord) -> Bool {
+        guard let envelope = authorization(for: record.contentFingerprint)
+        else { return false }
+        return envelope.allowsReuse(of: record.contentFingerprint)
+            && envelope.authorizationID == record.permissionReceiptID
+    }
+
     func grant(
         fingerprint: String,
         version: String,
@@ -46,6 +53,25 @@ struct ValidationEvidenceAuthorizationStore {
         values[fingerprint] = envelope
         try write(values)
         return envelope
+    }
+
+    func persist(_ envelope: ValidationEvidenceAuthorizationEnvelope) throws {
+        guard envelope.isValid else {
+            throw ValidationEvidenceExportError.invalidAuthorization
+        }
+        var values = try readAll()
+        values[envelope.observationFingerprint] = envelope
+        try write(values)
+    }
+
+    @discardableResult
+    func remove(fingerprint: String) throws -> Bool {
+        var values = try readAll()
+        guard values.removeValue(forKey: fingerprint) != nil else {
+            return false
+        }
+        try write(values)
+        return true
     }
 
     @discardableResult
@@ -100,13 +126,16 @@ struct FirstPartyValidationExportGate {
             .isValidLocalObservation(record) else {
             throw FirstPartyValidationError.invalidStoredRecord
         }
-        if record.deidentifiedReusePermitted {
-            return try record.deterministicJSON()
-        }
         guard let authorization,
               authorization.allowsReuse(of: record.contentFingerprint),
               let permissionID = authorization.authorizationID else {
             throw ValidationEvidenceExportError.localOnly
+        }
+        if record.deidentifiedReusePermitted {
+            guard record.permissionReceiptID == permissionID else {
+                throw ValidationEvidenceExportError.invalidAuthorization
+            }
+            return try record.deterministicJSON()
         }
         var reusable = record
         reusable.deidentifiedReusePermitted = true

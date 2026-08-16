@@ -43,7 +43,8 @@ extension ContentView {
                 thumbnailData: thumbnailData,
                 saveTo: savedTuneID,
                 playerNotes: playerNotes,
-                preserving: exactSnapshot
+                preserving: exactSnapshot,
+                completedValidationDraftKind: .fh6TuneMenuCapture
             )
         } catch {
             errorMessage = error.localizedDescription
@@ -71,7 +72,8 @@ extension ContentView {
                 thumbnailData: thumbnailData,
                 saveTo: savedTuneID,
                 playerNotes: playerNotes,
-                preserving: exactSnapshot
+                preserving: exactSnapshot,
+                completedValidationDraftKind: .tirePressureCapture
             )
         } catch {
             errorMessage = error.localizedDescription
@@ -99,7 +101,8 @@ extension ContentView {
                 thumbnailData: thumbnailData,
                 saveTo: savedTuneID,
                 playerNotes: playerNotes,
-                preserving: verifiedSnapshot
+                preserving: verifiedSnapshot,
+                completedValidationDraftKind: .upgradePartCapture
             )
         } catch {
             errorMessage = error.localizedDescription

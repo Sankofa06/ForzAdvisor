@@ -58,6 +58,12 @@ extension FirstPartyValidationRecordTests {
 
         XCTAssertEqual(oldRecords, [reusable])
         XCTAssertTrue(oldRecords.allSatisfy(\.deidentifiedReusePermitted))
+        XCTAssertThrowsError(
+            try FirstPartyValidationExportGate().deterministicJSON(
+                for: reusable,
+                authorization: nil
+            )
+        )
     }
 
     func testRevokedRecordIsAbsentFromOldExportPath() async throws {
@@ -116,14 +122,71 @@ extension FirstPartyValidationRecordTests {
             savedTuneID: tune.id,
             fingerprint: local.contentFingerprint
         )
+        XCTAssertNil(
+            fixture.coordinator.authorizationStore.authorization(
+                for: local.contentFingerprint
+            ),
+            "Preparing a transaction must not persist authorization"
+        )
         let data = try LegacyValidationBlobCompatibility()
             .encodeReusableRecords([plan.legacyReusableRecord])
         XCTAssertNotNil(
             LegacyValidationBlobCompatibility().decodeAsOlderBinary(data)
         )
 
+        try fixture.coordinator.activateGrant(plan)
         try fixture.coordinator.finalizeGrant(plan)
         XCTAssertNil(try fixture.coordinator.localStore.observation(
+            savedTuneID: tune.id,
+            fingerprint: local.contentFingerprint
+        ))
+    }
+
+    func testLocalSidecarAdvancesLocalEvidenceChain() async throws {
+        let tune = try await eligibleTune()
+        var capture = validCapture()
+        capture.deidentifiedReusePermitted = false
+        let local = try FirstPartyValidationRecordFactory().make(
+            tune: tune, savedTune: tune, isStreaming: false,
+            capture: capture, createdAt: date
+        )
+        let observation = try ValidationLocalObservation(record: local)
+        let chain = FH6AccuracyEvidenceChainPolicy().assess(
+            tune: tune,
+            savedTune: tune,
+            isStreaming: false,
+            validationRecords: [],
+            localValidationObservations: [observation],
+            communityComparisonRecords: []
+        )
+
+        XCTAssertEqual(chain.matchingValidationCount, 1)
+        XCTAssertTrue(chain.permitsCommunityComparison)
+        XCTAssertThrowsError(try local.deterministicJSON())
+    }
+
+    func testFailedGrantActivationRetainsLocalSidecar() async throws {
+        let tune = try await eligibleTune()
+        var capture = validCapture()
+        capture.deidentifiedReusePermitted = false
+        let local = try FirstPartyValidationRecordFactory().make(
+            tune: tune, savedTune: tune, isStreaming: false,
+            capture: capture, createdAt: date
+        )
+        let fixture = transitionFixture()
+        try fixture.coordinator.saveLocal(record: local, savedTuneID: tune.id)
+        let plan = try fixture.coordinator.prepareGrant(
+            savedTuneID: tune.id,
+            fingerprint: local.contentFingerprint
+        )
+        try FileManager.default.createDirectory(
+            at: fixture.authURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try Data("corrupt".utf8).write(to: fixture.authURL)
+
+        XCTAssertThrowsError(try fixture.coordinator.activateGrant(plan))
+        XCTAssertNotNil(try fixture.coordinator.localStore.observation(
             savedTuneID: tune.id,
             fingerprint: local.contentFingerprint
         ))

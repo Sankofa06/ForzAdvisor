@@ -9,6 +9,11 @@ typealias GarageRemovalCommitCallback = @MainActor @Sendable (
     GarageRemovalCommitResult
 ) -> Void
 
+enum TuneResultSaveOutcome: Equatable, Sendable {
+    case saved(savedTuneID: UUID)
+    case failed(message: String)
+}
+
 enum RootStepGuideEntryPresentation: Equatable, Sendable {
     case garageBody
     case compactToolbar

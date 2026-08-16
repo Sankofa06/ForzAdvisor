@@ -11,14 +11,16 @@ struct TuneResultScreen: View {
     let rootActions: TuneResultRootActions
     let showsFirstSavedSetupStepGuideHandoff: Bool
     let evidenceSummary: TuneEvidenceSummary
+    let evidenceHubDestination: AnyView?
     let onContinueFirstSavedSetupWithStepGuide: () -> Void
     let onDismissFirstSavedSetupStepGuideHandoff: () -> Void
     let onDone: () -> Void
-    let onSave: () -> Void
+    let onSave: () -> TuneResultSaveOutcome
     let onEdit: () -> Void
     let onFeedback: (TuneFeedback) -> Void
 
     @State private var copiedLineID: TuneLine.ID?
+    @State private var saveMessage: String?
     @State private var expandedSectionTitles = Set(
         TuneSection.menuOrder.map(\.title)
     )
@@ -43,8 +45,17 @@ struct TuneResultScreen: View {
             TuneResultActionSection(
                 tune: tune,
                 presentation: presentation,
-                onSave: onSave
+                onSave: save
             )
+
+            if let saveMessage {
+                Section {
+                    Label(saveMessage, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(ForzAdvisorTheme.warning)
+                        .accessibilityIdentifier("saveTuneInlineError")
+                }
+                .forzAdvisorRowBackground()
+            }
 
             TuneAvailableSettingsSection(
                 tune: tune,
@@ -72,7 +83,8 @@ struct TuneResultScreen: View {
             TuneEvidenceHubSection(
                 summary: evidenceSummary,
                 isSaved: isSaved,
-                isStreaming: isStreaming
+                isStreaming: isStreaming,
+                destination: evidenceHubDestination
             )
 
             if showsFirstSavedSetupStepGuideHandoff {
@@ -101,6 +113,23 @@ struct TuneResultScreen: View {
             if showsFirstSavedSetupStepGuideHandoff {
                 onDismissFirstSavedSetupStepGuideHandoff()
             }
+        }
+    }
+
+    private func save() {
+        switch onSave() {
+        case .saved:
+            saveMessage = nil
+            UIAccessibility.post(
+                notification: .announcement,
+                argument: "Saved"
+            )
+        case .failed(let message):
+            saveMessage = message
+            UIAccessibility.post(
+                notification: .announcement,
+                argument: message
+            )
         }
     }
 }

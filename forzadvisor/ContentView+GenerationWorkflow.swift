@@ -48,7 +48,8 @@ extension ContentView {
         saveTo savedTuneID: UUID? = nil,
         playerNotes: String = "",
         preserving buildSnapshot: VehicleBuildSnapshot? = nil,
-        retuneSession: SavedTuneRetuneSession? = nil
+        retuneSession: SavedTuneRetuneSession? = nil,
+        completedValidationDraftKind: ValidationDraftKind? = nil
     ) {
         let resolvedBuildSnapshot = origin.resolvedBuildSnapshot(
             matching: input,
@@ -71,7 +72,8 @@ extension ContentView {
             playerNotes: playerNotes,
             preferredProviderMode: tuneProviderMode,
             providerDisclosure: disclosure,
-            returnContext: returnContext
+            returnContext: returnContext,
+            completedValidationDraftKind: completedValidationDraftKind
         )
         startGeneration(session)
     }
@@ -111,6 +113,13 @@ extension ContentView {
                 } else {
                     resultTune = TuneResultBoundarySanitizer().sanitize(tune)
                 }
+                if let kind = session.completedValidationDraftKind,
+                   let savedTuneID = session.savedTuneID {
+                    try? ValidationDraftStore().delete(
+                        kind: kind,
+                        savedTuneID: savedTuneID
+                    )
+                }
                 step = .result(
                     resultTune,
                     savedTuneID: session.savedTuneID,
@@ -127,9 +136,13 @@ extension ContentView {
         )
     }
 
-    func save(_ tune: TuneResult, playerNotes: String, thumbnailData: Data?) -> UUID? {
+    func save(
+        _ tune: TuneResult,
+        playerNotes: String,
+        thumbnailData: Data?
+    ) -> TuneResultSaveOutcome {
         if savedTunes.contains(where: { $0.id == tune.id }) {
-            return tune.id
+            return .saved(savedTuneID: tune.id)
         }
 
         do {
@@ -140,10 +153,12 @@ extension ContentView {
                 thumbnailData: thumbnailData
             ))
             try modelContext.save()
-            return tune.id
+            return .saved(savedTuneID: tune.id)
         } catch {
-            errorMessage = "Could not save this tune: \(error.localizedDescription)"
-            return nil
+            modelContext.rollback()
+            return .failed(
+                message: "Could not save this tune. Your result is still here; try again."
+            )
         }
     }
 

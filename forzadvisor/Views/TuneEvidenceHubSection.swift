@@ -4,6 +4,7 @@ struct TuneEvidenceHubSection: View {
     let summary: TuneEvidenceSummary
     let isSaved: Bool
     let isStreaming: Bool
+    let destination: AnyView?
 
     var body: some View {
         Section("Optional Validation & Research") {
@@ -18,9 +19,10 @@ struct TuneEvidenceHubSection: View {
                 LabeledContent("Local records", value: "\(summary.localRecordCount)")
                 LabeledContent("Reusable records", value: "\(summary.exportableRecordCount)")
                 LabeledContent("Reviewed records", value: "\(summary.reviewedRecordCount)")
-                Text("Open Evidence Hub from the saved setup to capture, authorize, import, or review details.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if let destination {
+                    NavigationLink("Open Evidence Hub", destination: destination)
+                        .accessibilityIdentifier("openTuneEvidenceHubButton")
+                }
             } else {
                 Text("Save the complete result before adding optional evidence.")
                     .font(.caption)

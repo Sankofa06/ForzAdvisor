@@ -24,8 +24,14 @@ extension ContentView {
                 isStreaming: false,
                 capture: capture
             )
-            try savedTune.appendValidationRecord(record)
-            try modelContext.save()
+            try ValidationEvidenceTransitionCoordinator(
+                localStore: .init(),
+                authorizationStore: .init()
+            ).saveLocal(record: record, savedTuneID: savedTuneID)
+            try? ValidationDraftStore().delete(
+                kind: .firstPartyTestDrive,
+                savedTuneID: savedTuneID
+            )
             step = .result(
                 tune,
                 savedTuneID: savedTuneID,
@@ -100,8 +106,10 @@ extension ContentView {
                     persistedCandidate: persistedTune,
                     isStreaming: false,
                     firstPartyTestDrives:
-                        try savedTune
-                            .allFirstPartyValidationRecords(),
+                        try reusableAuthorizedValidationRecords(
+                            savedTune: savedTune,
+                            savedTuneID: savedTuneID
+                        ),
                     localCommunityOutcomes:
                         try savedTune
                             .allFH6CommunityReferenceTrialRecords(),
@@ -150,6 +158,10 @@ extension ContentView {
             )
             try savedTune.appendFH6CommunityReferenceTrialRecord(record)
             try modelContext.save()
+            try? ValidationDraftStore().delete(
+                kind: .fh6CommunityReferenceTrial,
+                savedTuneID: savedTuneID
+            )
             step = .result(
                 TuneResultBoundarySanitizer().sanitize(persistedTune),
                 savedTuneID: savedTuneID,

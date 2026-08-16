@@ -671,6 +671,18 @@ struct ContentView: View {
         let latestValidationRecord = resolvedSavedTune?
             .validationRecords(matching: tune)
             .last
+        let validationEvidenceRecords: [ValidationEvidenceRecord] = {
+            guard let resolvedSavedTune,
+                  let resolvedSavedTuneID,
+                  let stored = try? resolvedSavedTune
+                    .allFirstPartyValidationRecords() else { return [] }
+            let authorizationStore = ValidationEvidenceAuthorizationStore()
+            let reusable = stored.filter(authorizationStore.allowsExport)
+            return (try? ValidationLocalObservationStore().mergedRecords(
+                savedTuneID: resolvedSavedTuneID,
+                legacyReusable: reusable
+            )) ?? reusable.map(ValidationEvidenceRecord.reusable)
+        }()
         let validationReviewState: (
             entries: [FH6ValidationReviewEntry],
             loadError: String?
@@ -756,7 +768,7 @@ struct ContentView: View {
             guard let resolvedSavedTune,
                   let persistedTune,
                   validationEligibility.isSuccess,
-                  let firstPartyTestDrives =
+                  let storedFirstPartyTestDrives =
                     try? resolvedSavedTune
                         .allFirstPartyValidationRecords(),
                   let localCommunityOutcomes =
@@ -767,6 +779,10 @@ struct ContentView: View {
                         .allFH6CommunityOutcomeReviewEntries() else {
                 return (false, nil)
             }
+            let authorizationStore = ValidationEvidenceAuthorizationStore()
+            let firstPartyTestDrives = storedFirstPartyTestDrives.filter(
+                authorizationStore.allowsExport
+            )
             let exporter =
                 FH6IndependentValidationReviewPacketExporter()
             let preparedInputStateFingerprint =
@@ -983,6 +999,24 @@ struct ContentView: View {
                 controlledOutcomeReport: controlledOutcomeReport
             )
             : nil
+        let evidenceSummary = TuneEvidenceSummary(
+            savedTuneID: resolvedSavedTuneID ?? tune.id,
+            localOnlyRecordCount: validationEvidenceRecords.filter {
+                if case .localOnly = $0 { return true }
+                return false
+            }.count + [
+                latestResearchRecord != nil,
+                latestExperimentRecord != nil
+            ].filter { $0 }.count + communityTrialState.records.count,
+            reusableRecordCount: validationEvidenceRecords.filter {
+                if case .reusable = $0 { return true }
+                return false
+            }.count,
+            reviewedRecordCount: researchReviewEntries.count
+                + candidateOutcomeReviewState.entries.count
+                + validationReviewState.entries.count
+                + communityOutcomeReviewState.entries.count
+        )
 
         TuneResultView(
             tune: tune,
@@ -1004,6 +1038,7 @@ struct ContentView: View {
                 onUndoRefinement: { undoAppliedRefinement() },
                 onCancelStreaming: cancelGenerationSession
             ),
+            evidenceSummary: evidenceSummary,
             showsFirstSavedSetupCopilotHandoff:
                 firstSavedSetupCopilotHandoff.isPresented(
                     for: resolvedSavedTuneID
@@ -1019,11 +1054,12 @@ struct ContentView: View {
             },
             onSave: {
                 let wasGarageEmpty = savedTunes.isEmpty
-                if let savedTuneID = save(
+                let outcome = save(
                     tune,
                     playerNotes: resolvedPlayerNotes,
                     thumbnailData: resolvedThumbnailData
-                ) {
+                )
+                if case .saved(let savedTuneID) = outcome {
                     firstSavedSetupCopilotHandoff.recordSaveResult(
                         savedTuneID: savedTuneID,
                         wasGarageEmpty: wasGarageEmpty
@@ -1036,6 +1072,7 @@ struct ContentView: View {
                         playerNotes: resolvedPlayerNotes
                     )
                 }
+                return outcome
             },
             onEdit: {
                 guard let resolvedSavedTuneID else { return }
@@ -1181,6 +1218,39 @@ struct ContentView: View {
                 )
             },
             latestValidationRecord: latestValidationRecord,
+            validationEvidenceRecords: validationEvidenceRecords,
+            evidenceAuthorization: { fingerprint in
+                ValidationEvidenceAuthorizationStore().authorization(
+                    for: fingerprint
+                )
+            },
+            onGrantEvidenceReuse: { fingerprint in
+                guard let resolvedSavedTuneID else {
+                    throw ContentWorkflowError.missingSavedTune
+                }
+                return try grantEvidenceReuse(
+                    savedTuneID: resolvedSavedTuneID,
+                    fingerprint: fingerprint
+                )
+            },
+            onRevokeEvidenceReuse: { record in
+                guard let resolvedSavedTuneID else {
+                    throw ContentWorkflowError.missingSavedTune
+                }
+                return try revokeEvidenceReuse(
+                    savedTuneID: resolvedSavedTuneID,
+                    reusableRecord: record
+                )
+            },
+            onDeleteValidationEvidence: { evidence in
+                guard let resolvedSavedTuneID else {
+                    throw ContentWorkflowError.missingSavedTune
+                }
+                try deleteValidationEvidence(
+                    evidence,
+                    savedTuneID: resolvedSavedTuneID
+                )
+            },
             onRecordTestDrive: validationEligibility.isSuccess && resolvedSavedTuneID != nil ? {
                 guard let resolvedSavedTuneID else { return }
                 tuneWorkflow.cancelAdjustment()

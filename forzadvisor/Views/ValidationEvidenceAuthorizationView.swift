@@ -6,12 +6,14 @@ struct ValidationEvidenceAuthorizationView: View {
     let initialAuthorization: ValidationEvidenceAuthorizationEnvelope?
     let onGrant: () throws -> ValidationEvidenceAuthorizationEnvelope
     let onRevoke: () throws -> ValidationEvidenceAuthorizationEnvelope?
+    let onDelete: () throws -> Void
 
     @State private var authorization:
         ValidationEvidenceAuthorizationEnvelope?
     @State private var message: String?
     @State private var confirmingGrant = false
     @State private var confirmingRevoke = false
+    @State private var confirmingDelete = false
 
     init(
         observationFingerprint: String,
@@ -20,13 +22,15 @@ struct ValidationEvidenceAuthorizationView: View {
         onGrant: @escaping () throws
             -> ValidationEvidenceAuthorizationEnvelope,
         onRevoke: @escaping () throws
-            -> ValidationEvidenceAuthorizationEnvelope?
+            -> ValidationEvidenceAuthorizationEnvelope?,
+        onDelete: @escaping () throws -> Void
     ) {
         self.observationFingerprint = observationFingerprint
         self.allowedFields = allowedFields
         initialAuthorization = authorization
         self.onGrant = onGrant
         self.onRevoke = onRevoke
+        self.onDelete = onDelete
     }
 
     var body: some View {
@@ -61,6 +65,11 @@ struct ValidationEvidenceAuthorizationView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            Section("On This Device") {
+                Button("Delete Evidence Record", role: .destructive) {
+                    confirmingDelete = true
+                }
+            }
             ValidationRecoveryMessageSection(message: message)
         }
         .navigationTitle("Evidence Reuse")
@@ -71,6 +80,22 @@ struct ValidationEvidenceAuthorizationView: View {
             titleVisibility: .visible
         ) {
             Button("Allow Future Reuse", action: grant)
+            Button("Cancel", role: .cancel) {}
+        }
+        .confirmationDialog(
+            "Delete this evidence record from this device?",
+            isPresented: $confirmingDelete,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Evidence Record", role: .destructive) {
+                do {
+                    try onDelete()
+                    authorization = nil
+                    message = "Evidence record deleted from this device."
+                } catch {
+                    message = "Evidence could not be deleted. Nothing was changed."
+                }
+            }
             Button("Cancel", role: .cancel) {}
         }
         .confirmationDialog(

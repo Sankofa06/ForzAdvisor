@@ -9,11 +9,12 @@ struct TuneResultView: View {
     let adjustmentChanges: [TuneAdjustmentChange]
     let activeFeedback: TuneFeedback?
     let rootActions: TuneResultRootActions
+    let evidenceSummary: TuneEvidenceSummary
     let showsFirstSavedSetupCopilotHandoff: Bool
     let onContinueFirstSavedSetupWithCopilot: () -> Void
     let onDismissFirstSavedSetupCopilotHandoff: () -> Void
     let onDone: () -> Void
-    let onSave: () -> Void
+    let onSave: () -> TuneResultSaveOutcome
     let onEdit: () -> Void
     let onVerifyTuneMenu: (() -> Void)?
     let onVerifyTirePressures: (() -> Void)?
@@ -41,6 +42,16 @@ struct TuneResultView: View {
     let onOpenFH5ControlledExperiment: (() -> Void)?
     let onDeleteFH5ControlledExperimentRecord: (FH5ControlledExperimentRecord) -> Void
     let latestValidationRecord: FirstPartyValidationRecord?
+    let validationEvidenceRecords: [ValidationEvidenceRecord]
+    let evidenceAuthorization:
+        (String) -> ValidationEvidenceAuthorizationEnvelope?
+    let onGrantEvidenceReuse:
+        (String) throws -> ValidationEvidenceAuthorizationEnvelope
+    let onRevokeEvidenceReuse:
+        (FirstPartyValidationRecord) throws
+            -> ValidationEvidenceAuthorizationEnvelope?
+    let onDeleteValidationEvidence:
+        (ValidationEvidenceRecord) throws -> Void
     let onRecordTestDrive: (() -> Void)?
     let onDeleteValidationRecord: (FirstPartyValidationRecord) -> Void
     let fh6ValidationReviewEntries: [FH6ValidationReviewEntry]
@@ -64,22 +75,23 @@ struct TuneResultView: View {
     let onDeleteFH6CommunityOutcomeReviewEntry: (FH6CommunityOutcomeReviewEntry) -> Void
     let onFeedback: (TuneFeedback) -> Void
 
-    private var evidenceSummary: TuneEvidenceSummary {
-        let localCount = [
-            latestFH5ResearchRecord != nil,
-            latestFH5ControlledExperimentRecord != nil,
-            latestValidationRecord != nil
-        ].filter { $0 }.count + fh6CommunityReferenceTrialRecords.count
-        let reviewedCount = fh5ResearchReviewEntries.count
-            + fh5CandidateOutcomeReviewEntries.count
-            + fh6ValidationReviewEntries.count
-            + fh6CommunityOutcomeReviewEntries.count
-        return TuneEvidenceSummary(
-            savedTuneID: tune.id,
-            localOnlyRecordCount: localCount,
-            reusableRecordCount: 0,
-            reviewedRecordCount: reviewedCount
-        )
+    private var evidenceHubDestination: AnyView {
+        AnyView(TuneEvidenceHubView(adapter: .init(
+            summary: evidenceSummary,
+            evidenceRecords: validationEvidenceRecords,
+            onRecordTestDrive: onRecordTestDrive,
+            onOpenFH5Research: onOpenFH5Research,
+            onOpenFH5Experiment: onOpenFH5ControlledExperiment,
+            onRunFH6CommunityTrial: onRunFH6CommunityReferenceTrial,
+            fh5ResearchReview: fh5ResearchReviewDestination,
+            fh5CandidateReview: fh5CandidateReviewDestination,
+            fh6ValidationReview: fh6ValidationReviewDestination,
+            fh6CommunityReview: fh6CommunityReviewDestination,
+            authorization: evidenceAuthorization,
+            onGrant: onGrantEvidenceReuse,
+            onRevoke: onRevokeEvidenceReuse,
+            onDelete: onDeleteValidationEvidence
+        )))
     }
 
     var body: some View {
@@ -95,6 +107,8 @@ struct TuneResultView: View {
             showsFirstSavedSetupStepGuideHandoff:
                 showsFirstSavedSetupCopilotHandoff,
             evidenceSummary: evidenceSummary,
+            evidenceHubDestination:
+                isSaved && !isStreaming ? evidenceHubDestination : nil,
             onContinueFirstSavedSetupWithStepGuide:
                 onContinueFirstSavedSetupWithCopilot,
             onDismissFirstSavedSetupStepGuideHandoff:
@@ -104,5 +118,77 @@ struct TuneResultView: View {
             onEdit: onEdit,
             onFeedback: onFeedback
         )
+    }
+
+    private var fh5ResearchReviewDestination: AnyView? {
+        guard let onImportFH5ResearchReviewEntry else { return nil }
+        return AnyView(FH5ResearchReviewView(
+            tune: tune,
+            entries: fh5ResearchReviewEntries,
+            onImport: onImportFH5ResearchReviewEntry,
+            onDelete: onDeleteFH5ResearchReviewEntry
+        ))
+    }
+
+    private var fh5CandidateReviewDestination: AnyView? {
+        guard let artifact = fh5CandidateTrialArtifact,
+              let onImportFH5CandidateOutcomeReviewEntry else { return nil }
+        return AnyView(FH5CandidateOutcomeReviewView(
+            artifact: artifact,
+            entries: fh5CandidateOutcomeReviewEntries,
+            report: fh5CandidateOutcomeCollectionReport,
+            storageError: fh5CandidateOutcomeReviewLoadError,
+            onImport: onImportFH5CandidateOutcomeReviewEntry,
+            onDelete: onDeleteFH5CandidateOutcomeReviewEntry,
+            onPrepareNumericPromotionReviewPacket:
+                onPrepareFH5NumericPromotionReviewPacket,
+            preparedInputStateFingerprint:
+                fh5NumericPromotionPreparedInputStateFingerprint,
+            onValidateNumericPromotionReviewPacket:
+                onValidateFH5NumericPromotionReviewPacket,
+            receiverCandidateFingerprint:
+                fh5NumericPromotionReceiverCandidateFingerprint
+        ))
+    }
+
+    private var fh6ValidationReviewDestination: AnyView? {
+        guard let onImportFH6ValidationReviewEntry,
+              let fh6AccuracyEvidenceChain else { return nil }
+        return AnyView(FH6ValidationReviewView(
+            tune: tune,
+            entries: fh6ValidationReviewEntries,
+            storageError: fh6ValidationReviewLoadError,
+            onImport: onImportFH6ValidationReviewEntry,
+            onDelete: onDeleteFH6ValidationReviewEntry,
+            onPrepareIndependentReviewPacket:
+                onPrepareFH6IndependentValidationReviewPacket,
+            preparedInputStateFingerprint:
+                fh6IndependentValidationPreparedInputStateFingerprint,
+            onValidateIndependentReviewPacket:
+                onValidateFH6IndependentValidationReviewPacket,
+            receiverCandidateRevisionFingerprint:
+                fh6IndependentValidationReceiverCandidateFingerprint,
+            communityReferenceRecords: fh6CommunityReferenceTrialRecords,
+            accuracyEvidenceChain: fh6AccuracyEvidenceChain,
+            onRunCommunityReferenceTrial:
+                onRunFH6CommunityReferenceTrial,
+            onOpenCommunityOutcomeReview: nil
+        ))
+    }
+
+    private var fh6CommunityReviewDestination: AnyView? {
+        guard let onImportFH6CommunityOutcomeReviewEntry,
+              let onValidateFH6CommunityOutcomeReviewJSON else { return nil }
+        return AnyView(FH6CommunityOutcomeReviewView(
+            tune: tune,
+            localRecords: fh6CommunityReferenceTrialRecords,
+            entries: fh6CommunityOutcomeReviewEntries,
+            report: fh6CommunityOutcomeCollectionReport,
+            storageError: fh6CommunityOutcomeReviewLoadError,
+            onImport: onImportFH6CommunityOutcomeReviewEntry,
+            onValidateCurrentCandidate:
+                onValidateFH6CommunityOutcomeReviewJSON,
+            onDelete: onDeleteFH6CommunityOutcomeReviewEntry
+        ))
     }
 }

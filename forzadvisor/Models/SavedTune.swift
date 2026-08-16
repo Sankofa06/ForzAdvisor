@@ -212,6 +212,9 @@ final class SavedTune {
             savedTune: currentTune,
             isStreaming: false,
             validationRecords: try decodedValidationRecords(),
+            localValidationObservations:
+                try ValidationLocalObservationStore()
+                    .observations(savedTuneID: id),
             communityComparisonRecords:
                 try decodedFH6CommunityReferenceTrialRecords()
         )
@@ -229,13 +232,21 @@ final class SavedTune {
                     && $0.tuneRevisionFingerprint == validationFingerprint
             }
             .sorted { $0.createdAt < $1.createdAt }
+        let localValidationCount = try ValidationLocalObservationStore()
+            .observations(savedTuneID: id)
+            .filter {
+                validationFingerprint != nil
+                    && $0.tuneRevisionFingerprint
+                        == validationFingerprint
+            }.count
 
         let researchFactory = FH5ResearchObservationFactory()
         guard let currentTune = tuneResult,
               researchFactory.planRevisionFingerprint(for: currentTune)
                 == researchFactory.planRevisionFingerprint(for: tune) else {
             return SavedTuneBetaValidationEvidenceSnapshot(
-                validationRecordCount: validationRecords.count,
+                validationRecordCount:
+                    validationRecords.count + localValidationCount,
                 fh5ResearchObservationCount: 0,
                 fh5ResearchReviewCount: 0,
                 fh5ControlledExperimentCount: 0,
@@ -269,7 +280,8 @@ final class SavedTune {
             }
 
         return SavedTuneBetaValidationEvidenceSnapshot(
-            validationRecordCount: validationRecords.count,
+            validationRecordCount:
+                validationRecords.count + localValidationCount,
             fh5ResearchObservationCount: researchRecords.count,
             fh5ResearchReviewCount: reviewEntries.count,
             fh5ControlledExperimentCount: experimentRecords.count,

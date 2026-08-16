@@ -105,6 +105,22 @@ struct ValidationDraftStore {
         }
     }
 
+    @discardableResult
+    func purge(savedTuneID: UUID) throws -> Int {
+        guard FileManager.default.fileExists(atPath: directory.path) else {
+            return 0
+        }
+        let suffix = "-\(savedTuneID.uuidString.lowercased()).json"
+        let files = try FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil
+        ).filter { $0.lastPathComponent.hasSuffix(suffix) }
+        for file in files {
+            try FileManager.default.removeItem(at: file)
+        }
+        return files.count
+    }
+
     private func loadLegacy(
         expected: ValidationDraftRestoreContext
     ) throws -> ValidationDraftDocument {

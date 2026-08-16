@@ -108,7 +108,6 @@ struct TuneResultActionSection: View {
                         identifier: "saveTuneButton"
                     ) {
                         onSave()
-                        announce("Save requested")
                     }
                 }
             } else {

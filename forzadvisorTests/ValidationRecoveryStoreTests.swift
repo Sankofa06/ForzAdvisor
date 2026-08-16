@@ -152,6 +152,19 @@ final class ValidationRecoveryStoreTests: XCTestCase {
         ))
     }
 
+    func testPurgeRemovesOnlyMatchingTuneDrafts() throws {
+        let store = ValidationDraftStore(directory: directory)
+        let matching = restoreContext()
+        var other = matching
+        other.savedTuneID = UUID()
+        try store.save(try makeDocument(context: matching))
+        try store.save(try makeDocument(context: other))
+
+        XCTAssertEqual(try store.purge(savedTuneID: savedTuneID), 1)
+        XCTAssertNil(try store.load(expected: matching))
+        XCTAssertNotNil(try store.load(expected: other))
+    }
+
     private func restoreContext() -> ValidationDraftRestoreContext {
         .init(
             kind: .firstPartyTestDrive,
