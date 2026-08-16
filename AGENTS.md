@@ -1,5 +1,9 @@
 # Repository Guidelines
 
+## Required Swift App Workflow
+
+For any task that plans, builds, changes, audits, tests, runs, or delivers this Xcode app, invoke the global `develop-swift-app` skill first. Follow its spec-driven lifecycle and verification/delivery gates. This file supplies repository-specific constraints and takes precedence where it is more specific.
+
 ## Project Structure & Module Organization
 
 This repository is a small SwiftUI iOS app. The app source lives in `forzadvisor/`, with `forzadvisorApp.swift` as the app entry point and `ContentView.swift` as the initial root view. App icons, accent colors, and future image assets belong in `forzadvisor/Assets.xcassets/`. Planning and product notes live in `forzadvisorDocs/`, currently including the tuning app PRD. The Xcode project is `forzadvisor.xcodeproj/`; avoid hand-editing it unless you are adding files, targets, signing settings, or build configuration intentionally.
