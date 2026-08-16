@@ -492,9 +492,10 @@ final class FH5BuildPlanTests: XCTestCase {
     }
 
     private func catalogRequest() throws -> TuneRequest {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.game == .fh5 })
-        let selection = catalog.selection(for: entry)
+        let selection = SyntheticLegacyTuneFixtureFactory.selection(
+            game: .fh5,
+            reviewedAt: Date(timeIntervalSinceReferenceDate: 500)
+        )
         return TuneRequest(
             car: selection.carInput,
             discipline: .road,

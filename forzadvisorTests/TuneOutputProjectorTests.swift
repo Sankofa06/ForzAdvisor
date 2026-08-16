@@ -327,9 +327,9 @@ final class TuneOutputProjectorTests: XCTestCase {
     }
 
     private func catalogSelection() throws -> CatalogCarSelection {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.id == "fh6-2020-toyota-gr-supra" })
-        return catalog.selection(for: entry)
+        SyntheticLegacyTuneFixtureFactory.selection(
+            reviewedAt: Date(timeIntervalSinceReferenceDate: 1)
+        )
     }
 
     private func rawTune(request: TuneRequest, lines: [TuneLine]) -> TuneResult {

@@ -441,9 +441,10 @@ final class UpgradeLabTests: XCTestCase {
     }
 
     private func capabilitySnapshot(game: ForzaGame = .fh6) throws -> VehicleBuildSnapshot {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.game == game })
-        return catalog.selection(for: entry).capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
+        SyntheticLegacyTuneFixtureFactory.selection(
+            game: game,
+            reviewedAt: capturedAt
+        ).capabilityOnlyBuildSnapshot(capturedAt: capturedAt)
     }
 
     private func tireSnapshot() throws -> VehicleBuildSnapshot {

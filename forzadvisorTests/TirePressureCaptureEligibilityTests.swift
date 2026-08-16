@@ -45,15 +45,10 @@ final class TirePressureCaptureEligibilityTests: XCTestCase {
     }
 
     private func eligibleTune(game: ForzaGame) throws -> TuneResult {
-        let catalog: CarCatalogSnapshot
-        switch BundledCarCatalog.load() {
-        case .success(let loaded):
-            catalog = loaded
-        case .failure(let error):
-            throw error
-        }
-        let entry = try XCTUnwrap(catalog.entries.first { $0.game == game })
-        let selection = catalog.selection(for: entry)
+        let selection = SyntheticLegacyTuneFixtureFactory.selection(
+            game: game,
+            reviewedAt: Date(timeIntervalSinceReferenceDate: 42)
+        )
         let snapshot = selection.capabilityOnlyBuildSnapshot(
             capturedAt: Date(timeIntervalSinceReferenceDate: 42)
         )

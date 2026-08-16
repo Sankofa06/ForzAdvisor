@@ -141,15 +141,10 @@ extension CopilotTests {
     }
 
     func catalogSelection(game: ForzaGame? = nil) throws -> CatalogCarSelection {
-        let catalog: CarCatalogSnapshot
-        switch BundledCarCatalog.load() {
-        case .success(let loaded):
-            catalog = loaded
-        case .failure(let error):
-            throw error
-        }
-        let entry = try XCTUnwrap(catalog.entries.first { game == nil || $0.game == game })
-        return catalog.selection(for: entry)
+        SyntheticLegacyTuneFixtureFactory.selection(
+            game: game ?? .fh6,
+            reviewedAt: Date(timeIntervalSinceReferenceDate: 42)
+        )
     }
 
     private var emptyNotes: TuneNotes {

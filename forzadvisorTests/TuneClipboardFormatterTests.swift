@@ -87,9 +87,9 @@ final class TuneClipboardFormatterTests: XCTestCase {
     }
 
     func testVerifiedExportReprojectsAndDropsInjectedLines() throws {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.id == "fh6-2020-toyota-gr-supra" })
-        let selection = catalog.selection(for: entry)
+        let selection = SyntheticLegacyTuneFixtureFactory.selection(
+            reviewedAt: Date(timeIntervalSinceReferenceDate: 1)
+        )
         var snapshot = selection.capabilityOnlyBuildSnapshot()
         let evidence = TuneDataProvenance(
             id: "rules.fh6.clipboard-fixture",

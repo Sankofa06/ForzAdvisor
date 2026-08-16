@@ -207,11 +207,10 @@ final class TuneControlUpgradePathClipboardFormatterTests:
         game: ForzaGame = .fh6,
         status: UpgradePartCaptureStatus = .offered
     ) throws -> TuneResult {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(
-            catalog.entries.first { $0.game == game }
+        let selection = SyntheticLegacyTuneFixtureFactory.selection(
+            game: game,
+            reviewedAt: capturedAt
         )
-        let selection = catalog.selection(for: entry)
         let snapshot = try UpgradePartCapture(
             gameBuildVersion: "selected-path-build",
             parts: TunePartID.allCases.map {

@@ -140,7 +140,7 @@ final class TirePressureCaptureTests: XCTestCase {
         XCTAssertTrue(exact.isValid, "Unexpected issues: \(exact.validationIssues)")
     }
 
-    func testValidationRejectsUnsupportedOrNonCatalogBaseSnapshots() throws {
+    func testValidationRejectsUnsupportedOrUnconfirmedBaseSnapshots() throws {
         let fh6 = try capabilitySnapshot()
         var fh5 = try capabilitySnapshot(game: .fh5)
         XCTAssertEqual(validCapture().validationIssues(upgrading: fh5), [.unsupportedGame(.fh5)])
@@ -160,7 +160,7 @@ final class TirePressureCaptureTests: XCTestCase {
         modified.car.weightPounds += 1
         XCTAssertTrue(modified.car.catalogValuesModified)
         XCTAssertTrue(modified.isValid, "Unexpected issues: \(modified.validationIssues)")
-        XCTAssertEqual(validCapture().validationIssues(upgrading: modified), [.modifiedCatalogIdentity])
+        XCTAssertEqual(validCapture().validationIssues(upgrading: modified), [.missingCatalogIdentity])
     }
 
     func testValidationRejectsMissingMetadataAndAttestationsInStableOrder() throws {
@@ -481,9 +481,10 @@ final class TirePressureCaptureTests: XCTestCase {
     }
 
     private func catalogSelection(game: ForzaGame) throws -> CatalogCarSelection {
-        let catalog = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(catalog.entries.first { $0.game == game })
-        return catalog.selection(for: entry)
+        SyntheticLegacyTuneFixtureFactory.selection(
+            game: game,
+            reviewedAt: capturedAt
+        )
     }
 
     private func rawTune(request: TuneRequest, lines: [TuneLine]) -> TuneResult {

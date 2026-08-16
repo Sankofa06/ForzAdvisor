@@ -147,9 +147,9 @@ final class SupportedInputOriginSnapshotTests: XCTestCase {
     }
 
     private func catalogSelection() throws -> CatalogCarSelection {
-        let snapshot = try BundledCarCatalog.load().get()
-        let entry = try XCTUnwrap(snapshot.entries.first)
-        return snapshot.selection(for: entry)
+        SyntheticLegacyTuneFixtureFactory.selection(
+            reviewedAt: Date(timeIntervalSinceReferenceDate: 42)
+        )
     }
 
     private func supportedTune(
