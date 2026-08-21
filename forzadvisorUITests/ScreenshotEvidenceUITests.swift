@@ -56,9 +56,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
                 "Use Evidence Hub later if you want to record on-device observations, choose future reuse, or review shared evidence. It never changes available settings automatically."
             )
         ).firstMatch
-        XCTAssertTrue(
-            evidenceExplanation.waitForExistence(timeout: 5)
-        )
+        scrollToHittable(evidenceExplanation, in: app)
         capture("07-result-evidence-summary-light", in: app)
 
         saveResult(in: app)
