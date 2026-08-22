@@ -13,7 +13,7 @@ The canonical checkout is `/Users/blacbook-pro/Agents/ForzAdvisor`; the authorit
 - Prefer XcodeBuildMCP for local build, test, simulator, signing, and archive operations when it is available.
 - `open forzadvisor.xcodeproj` opens the app in Xcode for simulator development.
 - `xcodebuild -list -project forzadvisor.xcodeproj` is the fallback discovery command. The shared `forzadvisor` and `forzadvisor Cloud` schemes are committed.
-- `ReleaseVerify.xctestplan` is the complete local release gate. Do not distribute a commit until this gate and Xcode Cloud Verify are green.
+- `ReleaseVerify.xctestplan` is the complete local release gate. Do not distribute a commit until this gate and GitHub Actions Release Verify are green.
 - `scripts/release preflight` validates release configuration and local App Store assets without App Store Connect credentials. See `AppStore/release-automation.md` for the full workflow.
 
 ## Coding Style & Naming Conventions
@@ -22,7 +22,7 @@ Use Swift 5 and SwiftUI conventions. Indent with 4 spaces, keep views small, and
 
 ## Testing Guidelines
 
-Use the existing XCTest conventions. Prefer focused tests for tuning calculations, validation rules, persistence, release contracts, and critical setup flows. Source-contract tests must not depend on host-checkout paths from a simulator process; use behavior assertions or test-bundle fixtures so the same suite runs locally and in Xcode Cloud. Long-form UI tests must scroll controls into a hittable state instead of assuming a particular viewport.
+Use the existing XCTest conventions. Prefer focused tests for tuning calculations, validation rules, persistence, release contracts, and critical setup flows. Source-contract tests must not depend on host-checkout paths from a simulator process; use behavior assertions or test-bundle fixtures so the same suite runs locally and in GitHub Actions. Long-form UI tests must scroll controls into a hittable state instead of assuming a particular viewport.
 
 ## Commit & Pull Request Guidelines
 
@@ -39,9 +39,9 @@ Use the release configuration and coordinator documented in `AppStore/release-au
 1. Complete the non-secret release configuration, privacy attestation, price, content-rights declaration, age-rating status, review contact status, and release policy.
 2. Run focused tests, a clean local build, and the complete local `ReleaseVerify` gate with no failures, skips, or source warnings.
 3. Review the diff and secret scan, then commit and push an immutable release commit or tag.
-4. Require Xcode Cloud Verify to pass for that exact revision.
-5. Only then start Release Candidate archive/upload and wait for a `VALID`, App Store-eligible build.
+4. Require GitHub Actions Release Verify to pass for that exact revision.
+5. Only then archive/upload the exact revision locally through Xcode and wait for a `VALID`, App Store-eligible build.
 6. Run the App Store Connect candidate preflight, attach the exact ASC build, and stage a review draft.
 7. Report the ASC build number and obtain explicit human approval before App Review submission. Submission and public release are never implicit.
 
-Credentials remain in environment variables or the external App Store Connect secrets file; never commit or print them. Treat TestFlight as reversible beta delivery. If local simulator infrastructure fails after one owned retry, preserve diagnostics and use the immutable Xcode Cloud run as the fresh-machine authority; do not weaken assertions or upload an unverified commit.
+Credentials remain in environment variables or the external App Store Connect secrets file; never commit or print them. Treat TestFlight as reversible beta delivery. If local simulator infrastructure fails after one owned retry, preserve diagnostics and use the immutable GitHub Actions run as the fresh-machine authority; do not weaken assertions or upload an unverified commit.

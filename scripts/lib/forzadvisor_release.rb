@@ -42,7 +42,7 @@ module ForzAdvisorRelease
 
   class Config
     EXACT_KEYS = {
-      "" => %w[schema_version app repository release public_urls xcode xcode_cloud app_store testflight metadata screenshots],
+      "" => %w[schema_version app repository release public_urls xcode xcode_cloud ci app_store testflight metadata screenshots],
       "app" => %w[id name bundle_id team_id],
       "repository" => %w[canonical_root remote_name remote_url release_ref],
       "release" => %w[marketing_version source_build_number current_app_store_build_number price submission_policy app_store_release_type content_rights age_rating review_contact privacy export_compliance expected_build_audience],
@@ -57,6 +57,7 @@ module ForzAdvisorRelease
       "xcode_cloud.workflows" => %w[verify release_candidate],
       "xcode_cloud.workflows.verify" => %w[id name],
       "xcode_cloud.workflows.release_candidate" => %w[id name],
+      "ci" => %w[provider verify_workflow runner xcode_version release_candidate_mode],
       "app_store" => %w[version_id review_submission_id review_submission_item_id],
       "testflight" => %w[internal_group], "testflight.internal_group" => %w[id name],
       "metadata" => %w[path required_sections],
@@ -78,6 +79,7 @@ module ForzAdvisorRelease
       xcode.project xcode.app_target xcode.local_scheme xcode.cloud_scheme xcode.test_plan xcode.privacy_manifest
       xcode_cloud.workflows.verify.id xcode_cloud.workflows.verify.name
       xcode_cloud.workflows.release_candidate.id xcode_cloud.workflows.release_candidate.name
+      ci.provider ci.verify_workflow ci.runner ci.xcode_version ci.release_candidate_mode
       app_store.version_id app_store.review_submission_id app_store.review_submission_item_id
       xcode_cloud.product_id xcode_cloud.repository_id testflight.internal_group.id testflight.internal_group.name
       metadata.path metadata.required_sections screenshots.directory screenshots.width screenshots.height
@@ -142,6 +144,11 @@ module ForzAdvisorRelease
       raise ConfigurationError, "invalid app name" unless fetch("app", "name").is_a?(String) && !fetch("app", "name").strip.empty?
       raise ConfigurationError, "invalid repository remote" unless fetch("repository", "remote_name") == "origin" && fetch("repository", "remote_url").match?(%r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?\z})
       raise ConfigurationError, "invalid local preflight ref" unless fetch("repository", "release_ref").match?(/\A[A-Za-z0-9._\/-]+\z/)
+      raise ConfigurationError, "unsupported CI provider" unless fetch("ci", "provider") == "GITHUB_ACTIONS"
+      raise ConfigurationError, "invalid GitHub verify workflow" unless fetch("ci", "verify_workflow") == ".github/workflows/release-verify.yml"
+      raise ConfigurationError, "unsupported GitHub runner" unless fetch("ci", "runner") == "macos-26"
+      raise ConfigurationError, "unsupported CI Xcode version" unless fetch("ci", "xcode_version") == "26.6"
+      raise ConfigurationError, "unsupported release candidate mode" unless fetch("ci", "release_candidate_mode") == "LOCAL_XCODE"
       raise ConfigurationError, "invalid marketing version" unless fetch("release", "marketing_version").match?(/\A\d+\.\d+\.\d+\z/)
       %w[source_build_number current_app_store_build_number].each { |key| raise ConfigurationError, "invalid #{key}" unless fetch("release", key).match?(/\A[1-9]\d*\z/) }
       raise ConfigurationError, "unsupported content rights" unless %w[DOES_NOT_USE_THIRD_PARTY_CONTENT USES_THIRD_PARTY_CONTENT].include?(fetch("release", "content_rights"))

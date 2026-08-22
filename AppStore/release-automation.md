@@ -4,8 +4,11 @@
 `AppStore/release-config.json` into deterministic checks without storing signing
 keys, API keys, JWTs, or personal review-contact details in the repository.
 
-Distribution remains owned by the two locked Xcode Cloud workflows. App Review
-submission remains a separate human-approved, double-acknowledged action.
+Fresh-machine verification now runs on GitHub Actions. Because this repository
+is public, the standard GitHub-hosted macOS runner does not consume paid Actions
+minutes. Archive and upload remain local Xcode actions so signing credentials do
+not need to be exported to GitHub. App Review submission remains a separate
+human-approved, double-acknowledged action.
 
 ## Source of Truth
 
@@ -23,7 +26,7 @@ submission remains a separate human-approved, double-acknowledged action.
 - content-rights, age-rating, and review-contact completion attestations
 - public marketing, privacy, and support URLs
 - Xcode project, schemes, test plan, and privacy manifest
-- Verify and Release Candidate workflow identifiers
+- the GitHub Actions Verify workflow and retained legacy Xcode Cloud identifiers
 - exact App Store version, review-draft, and review-item identifiers
 - metadata limits and the exact screenshot order
 
@@ -118,7 +121,7 @@ are HTTP status codes. Every configured URL must be present and successful:
 This is an injectable test mechanism, not proof that a deployment is currently
 healthy. Use the default live checks for a real release.
 
-## Local and Cloud Gates
+## Local and Hosted Gates
 
 Passing `scripts/release preflight` does not run or replace app tests. The release
 sequence is:
@@ -127,24 +130,41 @@ sequence is:
    supported Xcode verification tooling.
 2. Commit and push the exact release state, create and push an immutable release
    tag at `HEAD`, then rerun `scripts/release preflight --ref TAG`.
-3. Start the configured Xcode Cloud Verify workflow for that exact ref.
-4. Confirm Verify reports the expected commit and succeeds.
-5. Start Release Candidate for the same immutable ref.
-6. Wait for tests, archive, upload, processing, and a `VALID` App Store build.
+3. Dispatch GitHub Actions Release Verify for that exact tag.
+4. Confirm the workflow proves the expected commit and succeeds.
+5. Archive and upload that same immutable revision locally through Xcode.
+6. Wait for upload, processing, and a `VALID` App Store build.
 7. Confirm the Apple state with `scripts/release asc-preflight --json`.
 8. Attach and stage the build only after that read-only Apple preflight passes.
 9. Report the exact App Store build and ask for explicit approval.
 10. Submit only after that approval, confirm `WAITING_FOR_REVIEW`, and write the
     permanent release record.
 
-The durable cloud and staging commands are:
+Dispatch and monitor GitHub verification with:
 
 ```sh
-scripts/release cloud-start --ref release-1.41.1
-scripts/release cloud-status
-scripts/release cloud-resume
+gh workflow run .github/workflows/release-verify.yml \
+  --ref main -f release_ref=release-1.41.1
+gh run list --workflow .github/workflows/release-verify.yml
+gh run watch RUN_ID --exit-status
+```
+
+After GitHub Verify succeeds, archive and upload the exact tagged revision from
+this Mac using Xcode's Organizer distribution flow. Then run:
+
+```sh
+scripts/release asc-preflight --json
 scripts/release stage
 ```
+
+The old `cloud-start`, `cloud-status`, and `cloud-resume` commands are retained
+only for historical Xcode Cloud runs. Do not use them while the account has no
+Xcode Cloud compute balance.
+
+### Legacy Xcode Cloud coordinator
+
+The following state-machine details describe the retained Xcode Cloud commands,
+not the active GitHub Actions/local-Xcode delivery route.
 
 State is written outside the repository at
 `~/.codex/state/forzadvisor-release/active.json` with owner-only permissions.

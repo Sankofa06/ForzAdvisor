@@ -81,6 +81,22 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
     assert_equal false, @config.fetch("release", "privacy", "tracking")
+    assert_equal "GITHUB_ACTIONS", @config.fetch("ci", "provider")
+    assert_equal ".github/workflows/release-verify.yml", @config.fetch("ci", "verify_workflow")
+    assert_equal "LOCAL_XCODE", @config.fetch("ci", "release_candidate_mode")
+  end
+
+  def test_config_rejects_unapproved_ci_or_hosted_distribution_mode
+    with_config do |data, path|
+      data["ci"]["provider"] = "UNTRUSTED_CI"
+      File.write(path, JSON.generate(data))
+      assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
+    end
+    with_config do |data, path|
+      data["ci"]["release_candidate_mode"] = "GITHUB_HOSTED_UPLOAD"
+      File.write(path, JSON.generate(data))
+      assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
+    end
   end
 
   def test_config_rejects_release_policy_that_can_publish_without_approval

@@ -76,6 +76,13 @@
       }
     }
   },
+  "ci": {
+    "provider": "GITHUB_ACTIONS",
+    "verify_workflow": ".github/workflows/release-verify.yml",
+    "runner": "macos-26",
+    "xcode_version": "26.6",
+    "release_candidate_mode": "LOCAL_XCODE"
+  },
   "app_store": {
     "version_id": "0af3abb8-de19-49a0-ac54-54e5fbc805bd",
     "review_submission_id": "fbc5882a-983e-427b-bd90-a7d96b224a20",

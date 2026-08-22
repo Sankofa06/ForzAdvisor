@@ -17,7 +17,7 @@ Current evidence: `AppStore/releases/1.41.1.md`
 - [x] Source build setting is `77`.
 - [x] App Store Connect processed build is `5`; it is intentionally tracked separately from source build 77.
 - [x] Bundle ID is `com.michaelwilliams.forzadvisor` and team is `5RGU344VJR`.
-- [x] GitHub `origin` is the authoritative source for Xcode Cloud.
+- [x] GitHub `origin` is the authoritative source for GitHub Actions and release tags.
 - [x] Price is **Free**.
 - [x] Release policy is **manual submission, automatic release after Apple approval**.
 - [x] Content rights declares use of third-party content/references.
@@ -34,14 +34,14 @@ Current evidence: `AppStore/releases/1.41.1.md`
 - [x] Inspect the intended diff and run `git diff --check` plus a credential/secret scan.
 - [ ] Commit the viable state and push an immutable release commit or annotated tag.
 
-## 3. Xcode Cloud gate
+## 3. GitHub Actions and local candidate gate
 
-- [ ] Start **Verify** for the immutable revision and require build plus tests to succeed.
-- [ ] Confirm Xcode Cloud reports the same source commit.
-- [ ] Only after Verify succeeds, start **Release Candidate** for that same revision.
-- [ ] Require tests and archive to succeed.
+- [ ] Dispatch `.github/workflows/release-verify.yml` for the immutable tag and require build plus tests to succeed.
+- [ ] Confirm GitHub Actions reports the same tagged source commit.
+- [ ] Only after Verify succeeds, archive and upload that exact revision locally through Xcode.
+- [ ] Require archive and upload to succeed.
 - [ ] Wait for App Store Connect processing state `VALID` and App Store eligibility.
-- [ ] Record the workflow run IDs, source commit, source build, and resulting ASC build in the release record.
+- [ ] Record the GitHub run ID, source commit, source build, and resulting ASC build in the release record.
 
 ## 4. Candidate gate
 
