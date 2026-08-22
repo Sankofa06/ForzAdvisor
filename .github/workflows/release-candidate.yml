@@ -1,0 +1,196 @@
+name: Release Candidate
+run-name: Upload ${{ inputs.release_ref }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_ref:
+        description: Immutable release tag to archive and upload
+        required: true
+        type: string
+      release_sha:
+        description: Exact 40-character commit SHA the release tag must resolve to
+        required: true
+        type: string
+      upload_confirmation:
+        description: Type UPLOAD_BUILD_78 to authorize the App Store Connect upload
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate-${{ inputs.release_ref }}
+  cancel-in-progress: false
+
+jobs:
+  archive-and-upload:
+    name: Xcode 26.6 App Store build 78
+    runs-on: macos-26
+    timeout-minutes: 75
+    environment: app-store-release
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      RELEASE_REF: ${{ inputs.release_ref }}
+      RELEASE_SHA: ${{ inputs.release_sha }}
+      UPLOAD_CONFIRMATION: ${{ inputs.upload_confirmation }}
+    steps:
+      - name: Validate immutable release intent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$UPLOAD_CONFIRMATION" = "UPLOAD_BUILD_78"
+          if [[ ! "$RELEASE_REF" =~ ^release-[A-Za-z0-9._-]+$ ]]; then
+            echo "release_ref must be an immutable release-* tag" >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "release_sha must be an exact lowercase 40-character commit SHA" >&2
+            exit 1
+          fi
+
+      - name: Check out exact tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.release_sha }}
+          persist-credentials: false
+
+      - name: Prove tag, revision, and stable build host
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show-ref --verify --quiet "refs/tags/$RELEASE_REF"
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          test "$(git rev-list -n 1 "$RELEASE_REF")" = "$RELEASE_SHA"
+          test -z "$(git status --porcelain)"
+          test "$(sw_vers -productVersion)" = "26.5.2"
+          test "$(sw_vers -buildVersion)" = "25F84"
+          test "$(xcodebuild -version | head -1)" = "Xcode 26.6"
+          test "$(xcodebuild -version | tail -1)" = "Build version 17F113"
+          test "$(xcrun --sdk iphoneos --show-sdk-version)" = "26.5"
+          git log -1 --format='Candidate revision: %H'
+          sw_vers
+          xcodebuild -version
+
+      - name: Repository release preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/Agents"
+          ln -s "$GITHUB_WORKSPACE" "$HOME/Agents/ForzAdvisor"
+          scripts/release preflight --ref "$RELEASE_REF"
+
+      - name: Release automation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby scripts/tests/forzadvisor_release_test.rb
+
+      - name: Complete ReleaseVerify test plan
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project forzadvisor.xcodeproj \
+            -scheme forzadvisor \
+            -testPlan ReleaseVerify \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -parallel-testing-enabled NO \
+            -collect-test-diagnostics never \
+            -resultBundlePath "$RUNNER_TEMP/ForzAdvisor-ReleaseCandidate.xcresult" \
+            | tee "$RUNNER_TEMP/forzadvisor-release-candidate-tests.log"
+
+      - name: Prepare App Store Connect authentication
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$ASC_KEY_ID"
+          test -n "$ASC_ISSUER_ID"
+          test -n "$ASC_PRIVATE_KEY"
+          key_directory="$RUNNER_TEMP/private_keys"
+          mkdir -p "$key_directory"
+          chmod 700 "$key_directory"
+          key_path="$key_directory/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$key_path"
+          chmod 600 "$key_path"
+          printf 'ASC_KEY_ID=%s\n' "$ASC_KEY_ID" >> "$GITHUB_ENV"
+          printf 'ASC_ISSUER_ID=%s\n' "$ASC_ISSUER_ID" >> "$GITHUB_ENV"
+          printf 'ASC_KEY_PATH=%s\n' "$key_path" >> "$GITHUB_ENV"
+          printf 'API_PRIVATE_KEYS_DIR=%s\n' "$key_directory" >> "$GITHUB_ENV"
+
+      - name: Archive exact candidate
+        shell: bash
+        run: |
+          set -o pipefail
+          archive_path="$RUNNER_TEMP/ForzAdvisor.xcarchive"
+          xcodebuild archive \
+            -project forzadvisor.xcodeproj \
+            -scheme forzadvisor \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$archive_path" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            | tee "$RUNNER_TEMP/forzadvisor-archive.log"
+
+          app_info="$archive_path/Products/Applications/forzadvisor.app/Info.plist"
+          executable="$archive_path/Products/Applications/forzadvisor.app/forzadvisor"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app_info")" = "com.michaelwilliams.forzadvisor"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_info")" = "1.41.1"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_info")" = "78"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :DTXcodeBuild' "$app_info")" = "17F113"
+          build_machine="$(/usr/libexec/PlistBuddy -c 'Print :BuildMachineOSBuild' "$app_info")"
+          test "$build_machine" = "25F84"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$app_info")" = "17.0"
+          lipo "$executable" -verify_arch arm64
+          printf 'Archive build machine: %s\n' "$build_machine"
+
+      - name: Upload build 78 to App Store Connect
+        shell: bash
+        run: |
+          set -o pipefail
+          export_options="$RUNNER_TEMP/ExportOptions.plist"
+          plutil -create xml1 "$export_options"
+          plutil -insert method -string app-store-connect "$export_options"
+          plutil -insert destination -string upload "$export_options"
+          plutil -insert signingStyle -string automatic "$export_options"
+          plutil -insert teamID -string 5RGU344VJR "$export_options"
+          plutil -insert manageAppVersionAndBuildNumber -bool NO "$export_options"
+          plutil -insert stripSwiftSymbols -bool YES "$export_options"
+          plutil -insert uploadSymbols -bool YES "$export_options"
+
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/ForzAdvisor.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$export_options" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            | tee "$RUNNER_TEMP/forzadvisor-upload.log"
+
+      - name: Remove temporary authentication key
+        if: always()
+        shell: bash
+        run: rm -f "${ASC_KEY_PATH:-$RUNNER_TEMP/private_keys/unknown}"
+
+      - name: Upload diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-candidate-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/forzadvisor-archive.log
+            ${{ runner.temp }}/forzadvisor-upload.log
+            ${{ runner.temp }}/forzadvisor-release-candidate-tests.log
+            ${{ runner.temp }}/ForzAdvisor-ReleaseCandidate.xcresult
+          if-no-files-found: warn
+          retention-days: 14

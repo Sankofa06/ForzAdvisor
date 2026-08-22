@@ -75,15 +75,42 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_repository_release_config_records_source_and_current_app_store_builds
-    assert_equal "77", @config.fetch("release", "source_build_number")
-    assert_equal "77", @config.fetch("release", "current_app_store_build_number")
+    assert_equal "78", @config.fetch("release", "source_build_number")
+    assert_equal "78", @config.fetch("release", "current_app_store_build_number")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
     assert_equal false, @config.fetch("release", "privacy", "tracking")
     assert_equal "GITHUB_ACTIONS", @config.fetch("ci", "provider")
     assert_equal ".github/workflows/release-verify.yml", @config.fetch("ci", "verify_workflow")
-    assert_equal "LOCAL_XCODE", @config.fetch("ci", "release_candidate_mode")
+    assert_equal ".github/workflows/release-candidate.yml", @config.fetch("ci", "release_candidate_workflow")
+    assert_equal "GITHUB_HOSTED_UPLOAD", @config.fetch("ci", "release_candidate_mode")
+  end
+
+  def test_hosted_candidate_workflow_rejects_beta_hosts_and_wrong_builds
+    workflow = File.read(File.join(ROOT, ".github", "workflows", "release-candidate.yml"))
+
+    assert_includes workflow, "runs-on: macos-26"
+    assert_includes workflow, "DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer"
+    assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.5.2"'
+    assert_includes workflow, 'test "$(sw_vers -buildVersion)" = "25F84"'
+    assert_includes workflow, 'test "$build_machine" = "25F84"'
+    assert_includes workflow, 'CFBundleVersion\' "$app_info")" = "78"'
+    assert_includes workflow, 'DTXcodeBuild\' "$app_info")" = "17F113"'
+    assert_includes workflow, "environment: app-store-release"
+    assert_includes workflow, "ASC_PRIVATE_KEY: \u0024{{ secrets.ASC_PRIVATE_KEY }}"
+    assert_includes workflow, "destination -string upload"
+    refute_includes workflow, "AuthKey_US3X9C5DR5"
+  end
+
+  def test_verify_workflow_pins_exact_commit_and_stable_toolchain
+    workflow = File.read(File.join(ROOT, ".github", "workflows", "release-verify.yml"))
+
+    assert_includes workflow, 'RELEASE_SHA: ${{ inputs.release_sha }}'
+    assert_includes workflow, 'test "$(git rev-parse HEAD)" = "$RELEASE_SHA"'
+    assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.5.2"'
+    assert_includes workflow, 'test "$(sw_vers -buildVersion)" = "25F84"'
+    assert_includes workflow, 'test "$(xcodebuild -version | tail -1)" = "Build version 17F113"'
   end
 
   def test_config_rejects_unapproved_ci_or_hosted_distribution_mode
@@ -93,7 +120,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
     end
     with_config do |data, path|
-      data["ci"]["release_candidate_mode"] = "GITHUB_HOSTED_UPLOAD"
+      data["ci"]["release_candidate_mode"] = "UNSUPPORTED"
       File.write(path, JSON.generate(data))
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
     end
@@ -149,7 +176,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal ForzAdvisorRelease::Preflight::CHECKS.sort, result["checks"].keys.sort
     assert result["checks"].values.all? { |check| check["passed"] }
     assert_equal @config.fetch("public_urls").values.sort, urls.urls.sort
-    assert_equal "77", result.dig("checks", "project", "evidence", "source_build_number")
+    assert_equal "78", result.dig("checks", "project", "evidence", "source_build_number")
     assert_equal 6, result.dig("checks", "screenshots", "evidence", "count")
   end
 
@@ -176,7 +203,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call
 
     assert_equal "1.41.1", result["marketing_version"]
-    assert_equal "77", result["source_build_number"]
+    assert_equal "78", result["source_build_number"]
     assert_equal %w[forzadvisorTests forzadvisorUITests], result["test_targets"]
     assert_equal ["forzadvisor.xcscheme", "forzadvisor Cloud.xcscheme"], result["schemes"]
   end
@@ -281,7 +308,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
       coordinator = ForzAdvisorRelease::CloudCoordinator.new(config: @config, api: api, git: git, store: ForzAdvisorRelease::StateStore.new(directory: directory))
       started = coordinator.start(ref: "release-1.41.1")
       assert_equal "verify_running", started["phase"]
-      assert_equal "77", started["source_build_number"]
+      assert_equal "78", started["source_build_number"]
       assert_equal "FREE", started.dig("price", "model")
       assert_equal "candidate_running", coordinator.resume["phase"]
       assert_equal 2, api.requests.count { |item| item[0] == "POST" }
@@ -551,15 +578,15 @@ class ForzAdvisorReleaseTest < Minitest::Test
     responses = {
       "/v1/apps/#{app_id}" => { "data" => { "id" => app_id, "attributes" => { "name" => "ForzAdvisor", "bundleId" => "com.michaelwilliams.forzadvisor" } } },
       "/v1/apps/#{app_id}/appStoreVersions" => { "data" => [{ "id" => "version-id", "attributes" => { "appStoreState" => "READY_FOR_REVIEW" } }] },
-      "/v1/apps/#{app_id}/builds" => { "data" => [{ "id" => "build-id", "attributes" => { "version" => "77", "processingState" => "VALID" } }] },
+      "/v1/apps/#{app_id}/builds" => { "data" => [{ "id" => "build-id", "attributes" => { "version" => "78", "processingState" => "VALID" } }] },
       "/v1/apps/#{app_id}/reviewSubmissions" => { "data" => [{ "id" => "submission-id", "attributes" => { "state" => "READY_FOR_REVIEW" } }] }
     }
     api = FakeAPI.new(responses)
     result = ForzAdvisorRelease::AppStoreStatus.new(config: @config, api: api).call
 
     assert_equal true, result["read_only"]
-    assert_equal "77", result["source_build_number"]
-    assert_equal "77", result.dig("build", "number")
+    assert_equal "78", result["source_build_number"]
+    assert_equal "78", result.dig("build", "number")
     assert_equal "READY_FOR_REVIEW", result.dig("version", "state")
     assert_equal 4, api.requests.length
   end
@@ -657,6 +684,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def config_for_root(root)
     data = JSON.parse(File.read(CONFIG_PATH))
     data["repository"]["canonical_root"] = root
+    data["repository"]["release_ref"] = "main"
     path = File.join(root, "config.json")
     File.write(path, JSON.generate(data))
     ForzAdvisorRelease::Config.new(path)
@@ -681,7 +709,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     item = @config.fetch("app_store", "review_submission_item_id")
     version_attrs = { "platform" => "IOS", "versionString" => "1.41.1", "appStoreState" => "READY_FOR_REVIEW", "releaseType" => "AFTER_APPROVAL" }
     build_attrs = { "version" => "6", "processingState" => "VALID", "buildAudienceType" => "APP_STORE_ELIGIBLE", "usesNonExemptEncryption" => false }
-    selected_attrs = build_attrs.merge("version" => "77")
+    selected_attrs = build_attrs.merge("version" => "78")
     screenshot_names = @config.fetch("screenshots", "ordered_files")
     {
       "/v1/apps/#{app}" => { "data" => { "id" => app, "attributes" => { "name" => "ForzAdvisor", "bundleId" => "com.michaelwilliams.forzadvisor", "contentRightsDeclaration" => "USES_THIRD_PARTY_CONTENT" } } },

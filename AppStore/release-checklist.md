@@ -2,7 +2,7 @@
 
 Last updated: 2026-08-22
 
-Highest state: **App Store build 77 — VALID, READY_FOR_REVIEW, not submitted**
+Highest state: **App Store build 77 — INVALID_BINARY; build 78 repair in progress**
 
 Canonical release configuration: `AppStore/release-config.json`
 
@@ -14,8 +14,8 @@ Current evidence: `AppStore/releases/1.41.1.md`
 ## 1. Release definition
 
 - [x] Marketing version is `1.41.1`.
-- [x] Source build setting is `77`.
-- [x] App Store Connect processed build is `77`; it is tracked independently from source build 77 even though the observed values match.
+- [x] Source build setting is `78`.
+- [ ] App Store Connect processed build is `78`; build 77 was rejected with `ITMS-90111` after submission.
 - [x] Bundle ID is `com.michaelwilliams.forzadvisor` and team is `5RGU344VJR`.
 - [x] GitHub `origin` is the authoritative source for GitHub Actions and release tags.
 - [x] Price is **Free**.
@@ -36,13 +36,13 @@ Current evidence: `AppStore/releases/1.41.1.md`
 
 ## 3. GitHub Actions and local candidate gate
 
-- [x] Dispatch `.github/workflows/release-verify.yml` for immutable tag `release-1.41.1-github-verify-4`; run `32553715007` passed the build and complete test plan.
-- [x] Confirm GitHub Actions reports tagged source commit `798a5736a122cf52e494e46b09dd8316943b61a8`.
-- [x] Only after Verify succeeds, archive and upload that exact revision locally through Xcode.
-- [x] Require archive and upload to succeed.
-- [x] Wait for App Store Connect processing state `VALID` and App Store eligibility.
-- [x] Record the GitHub run ID, source tag, source commit, and source build in the release record.
-- [x] Record resulting App Store Connect build `77` after local upload and processing.
+- [ ] Dispatch `.github/workflows/release-verify.yml` for immutable tag `release-1.41.1-appstore-78` and require the complete plan to pass.
+- [ ] Confirm GitHub Actions reports the exact tagged build-78 source commit.
+- [ ] Only after Verify succeeds, run the guarded GitHub Release Candidate workflow on stable `macos-26`.
+- [ ] Require archive and upload to succeed and prove `BuildMachineOSBuild` is a macOS 26 build.
+- [ ] Wait for App Store Connect processing state `VALID` and App Store eligibility.
+- [ ] Record the GitHub run IDs, source tag, source commit, and source build in the release record.
+- [ ] Record resulting App Store Connect build `78` after hosted upload and processing.
 
 ## 4. Candidate gate
 
@@ -52,8 +52,8 @@ Current evidence: `AppStore/releases/1.41.1.md`
 - [x] No login or test account is required.
 - [x] The privacy manifest exists at `forzadvisor/PrivacyInfo.xcprivacy`.
 - [x] `ITSAppUsesNonExemptEncryption` is `NO` for the app target.
-- [x] Build 77 is attached to App Store version 1.41.1.
-- [x] Review submission draft and item are `READY_FOR_REVIEW`.
+- [ ] Build 78 is attached to App Store version 1.41.1.
+- [ ] A replacement review submission draft and item are `READY_FOR_REVIEW`.
 
 Run the online App Store candidate preflight immediately before submission. It must verify the exact selected build, metadata, price schedule, public URLs, privacy attestation, content rights, age rating, review contact, export compliance, and release policy.
 

@@ -10,12 +10,12 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-    "release_ref": "main"
+    "release_ref": "release-1.41.1-appstore-78"
   },
   "release": {
     "marketing_version": "1.41.1",
-    "source_build_number": "77",
-    "current_app_store_build_number": "77",
+    "source_build_number": "78",
+    "current_app_store_build_number": "78",
     "price": {
       "model": "FREE",
       "base_territory": "USA",
@@ -79,9 +79,13 @@
   "ci": {
     "provider": "GITHUB_ACTIONS",
     "verify_workflow": ".github/workflows/release-verify.yml",
+    "release_candidate_workflow": ".github/workflows/release-candidate.yml",
     "runner": "macos-26",
+    "runner_os_version": "26.5.2",
+    "runner_os_build": "25F84",
     "xcode_version": "26.6",
-    "release_candidate_mode": "LOCAL_XCODE"
+    "xcode_build": "17F113",
+    "release_candidate_mode": "GITHUB_HOSTED_UPLOAD"
   },
   "app_store": {
     "version_id": "0af3abb8-de19-49a0-ac54-54e5fbc805bd",

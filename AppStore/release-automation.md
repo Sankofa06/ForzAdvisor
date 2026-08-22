@@ -131,7 +131,8 @@ sequence is:
    tag at `HEAD`, then rerun `scripts/release preflight --ref TAG`.
 3. Dispatch GitHub Actions Release Verify for that exact tag.
 4. Confirm the workflow proves the expected commit and succeeds.
-5. Archive and upload that same immutable revision locally through Xcode.
+5. Archive and upload that same immutable revision with the guarded GitHub
+   Release Candidate workflow on stable `macos-26` and Xcode 26.6.
 6. Wait for upload, processing, and a `VALID` App Store build.
 7. Confirm the Apple state with `scripts/release asc-preflight --json`.
 8. Attach and stage the build only after that read-only Apple preflight passes.
@@ -143,13 +144,27 @@ Dispatch and monitor GitHub verification with:
 
 ```sh
 gh workflow run .github/workflows/release-verify.yml \
-  --ref main -f release_ref=release-1.41.1
+  --ref main \
+  -f release_ref=release-1.41.1 \
+  -f release_sha=EXACT_40_CHARACTER_COMMIT_SHA
 gh run list --workflow .github/workflows/release-verify.yml
 gh run watch RUN_ID --exit-status
 ```
 
-After GitHub Verify succeeds, archive and upload the exact tagged revision from
-this Mac using Xcode's Organizer distribution flow. Then run:
+After GitHub Verify succeeds, dispatch the guarded hosted candidate for the
+exact tagged revision. The protected `app-store-release` environment requires
+`ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_PRIVATE_KEY` encrypted secrets and
+refuses any host other than macOS 26.5.2 (`25F84`):
+
+```sh
+gh workflow run .github/workflows/release-candidate.yml \
+  --ref main \
+  -f release_ref=release-1.41.1-appstore-78 \
+  -f release_sha=EXACT_40_CHARACTER_COMMIT_SHA \
+  -f upload_confirmation=UPLOAD_BUILD_78
+```
+
+After its upload succeeds and App Store Connect finishes processing, run:
 
 ```sh
 scripts/release asc-preflight --json

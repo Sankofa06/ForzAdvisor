@@ -57,7 +57,7 @@ module ForzAdvisorRelease
       "xcode_cloud.workflows" => %w[verify release_candidate],
       "xcode_cloud.workflows.verify" => %w[id name],
       "xcode_cloud.workflows.release_candidate" => %w[id name],
-      "ci" => %w[provider verify_workflow runner xcode_version release_candidate_mode],
+      "ci" => %w[provider verify_workflow release_candidate_workflow runner runner_os_version runner_os_build xcode_version xcode_build release_candidate_mode],
       "app_store" => %w[version_id review_submission_id review_submission_item_id],
       "testflight" => %w[internal_group], "testflight.internal_group" => %w[id name],
       "metadata" => %w[path required_sections],
@@ -79,7 +79,7 @@ module ForzAdvisorRelease
       xcode.project xcode.app_target xcode.local_scheme xcode.cloud_scheme xcode.test_plan xcode.privacy_manifest
       xcode_cloud.workflows.verify.id xcode_cloud.workflows.verify.name
       xcode_cloud.workflows.release_candidate.id xcode_cloud.workflows.release_candidate.name
-      ci.provider ci.verify_workflow ci.runner ci.xcode_version ci.release_candidate_mode
+      ci.provider ci.verify_workflow ci.release_candidate_workflow ci.runner ci.runner_os_version ci.runner_os_build ci.xcode_version ci.xcode_build ci.release_candidate_mode
       app_store.version_id app_store.review_submission_id app_store.review_submission_item_id
       xcode_cloud.product_id xcode_cloud.repository_id testflight.internal_group.id testflight.internal_group.name
       metadata.path metadata.required_sections screenshots.directory screenshots.width screenshots.height
@@ -146,9 +146,13 @@ module ForzAdvisorRelease
       raise ConfigurationError, "invalid local preflight ref" unless fetch("repository", "release_ref").match?(/\A[A-Za-z0-9._\/-]+\z/)
       raise ConfigurationError, "unsupported CI provider" unless fetch("ci", "provider") == "GITHUB_ACTIONS"
       raise ConfigurationError, "invalid GitHub verify workflow" unless fetch("ci", "verify_workflow") == ".github/workflows/release-verify.yml"
+      raise ConfigurationError, "invalid GitHub release candidate workflow" unless fetch("ci", "release_candidate_workflow") == ".github/workflows/release-candidate.yml"
       raise ConfigurationError, "unsupported GitHub runner" unless fetch("ci", "runner") == "macos-26"
+      raise ConfigurationError, "unsupported CI macOS version" unless fetch("ci", "runner_os_version") == "26.5.2"
+      raise ConfigurationError, "unsupported CI macOS build" unless fetch("ci", "runner_os_build") == "25F84"
       raise ConfigurationError, "unsupported CI Xcode version" unless fetch("ci", "xcode_version") == "26.6"
-      raise ConfigurationError, "unsupported release candidate mode" unless fetch("ci", "release_candidate_mode") == "LOCAL_XCODE"
+      raise ConfigurationError, "unsupported CI Xcode build" unless fetch("ci", "xcode_build") == "17F113"
+      raise ConfigurationError, "unsupported release candidate mode" unless %w[LOCAL_XCODE GITHUB_HOSTED_UPLOAD].include?(fetch("ci", "release_candidate_mode"))
       raise ConfigurationError, "invalid marketing version" unless fetch("release", "marketing_version").match?(/\A\d+\.\d+\.\d+\z/)
       %w[source_build_number current_app_store_build_number].each { |key| raise ConfigurationError, "invalid #{key}" unless fetch("release", key).match?(/\A[1-9]\d*\z/) }
       raise ConfigurationError, "unsupported content rights" unless %w[DOES_NOT_USE_THIRD_PARTY_CONTENT USES_THIRD_PARTY_CONTENT].include?(fetch("release", "content_rights"))

@@ -8,6 +8,10 @@ on:
         description: Immutable release tag to verify
         required: true
         type: string
+      release_sha:
+        description: Exact 40-character commit SHA the release tag must resolve to
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -24,6 +28,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       RELEASE_REF: ${{ inputs.release_ref }}
+      RELEASE_SHA: ${{ inputs.release_sha }}
     steps:
       - name: Validate immutable release ref
         shell: bash
@@ -33,12 +38,16 @@ jobs:
             echo "release_ref must be an immutable release-* tag" >&2
             exit 1
           fi
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "release_sha must be an exact lowercase 40-character commit SHA" >&2
+            exit 1
+          fi
 
       - name: Check out exact tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          ref: ${{ inputs.release_ref }}
+          ref: ${{ inputs.release_sha }}
           persist-credentials: false
 
       - name: Prove tag and revision
@@ -46,7 +55,8 @@ jobs:
         run: |
           set -euo pipefail
           git show-ref --verify --quiet "refs/tags/$RELEASE_REF"
-          test "$(git rev-parse HEAD)" = "$(git rev-list -n 1 "$RELEASE_REF")"
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          test "$(git rev-list -n 1 "$RELEASE_REF")" = "$RELEASE_SHA"
           test -z "$(git status --porcelain)"
           git log -1 --format='Verified revision: %H'
 
@@ -68,8 +78,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "$(sw_vers -productVersion)" = "26.5.2"
+          test "$(sw_vers -buildVersion)" = "25F84"
           xcodebuild -version
           test "$(xcodebuild -version | head -1)" = "Xcode 26.6"
+          test "$(xcodebuild -version | tail -1)" = "Build version 17F113"
+          sw_vers
 
       - name: Run complete ReleaseVerify plan
         shell: bash
