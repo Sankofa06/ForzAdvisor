@@ -3,14 +3,19 @@
 //  forzadvisorTests
 //
 
-import Foundation
 import XCTest
+@testable import forzadvisor
 
-final class NewTuneStartViewCatalogEntryContractTests:
-    XCTestCase
-{
-    func testNewTuneStartHasNoBundledCatalogOrRosterEntry() throws {
-        let source = try viewSource()
+final class NewTuneStartViewCatalogEntryContractTests: XCTestCase {
+    @MainActor
+    func testNewTuneStartHasOnlySupportedEntryPoints() {
+        let view = NewTuneStartView(
+            onCancel: {},
+            onManualEntry: {},
+            onDraftReady: { _ in }
+        )
+        let renderedContract = reflectedStrings(in: view.body)
+
         for removedRosterSurface in [
             "onCatalog",
             "catalogEntryButton",
@@ -20,27 +25,50 @@ final class NewTuneStartViewCatalogEntryContractTests:
             "roster-only"
         ] {
             XCTAssertFalse(
-                source.localizedCaseInsensitiveContains(
+                renderedContract.localizedCaseInsensitiveContains(
                     removedRosterSurface
                 ),
                 removedRosterSurface
             )
         }
 
-        XCTAssertTrue(source.contains("title: \"Take Photo\""))
-        XCTAssertTrue(source.contains("title: \"Import Screenshot\""))
-        XCTAssertTrue(source.contains("title: \"Enter Manually\""))
+        for supportedEntry in [
+            "Take Photo",
+            "Import Screenshot",
+            "Enter Manually",
+            "takePhotoPrimaryButton",
+            "importScreenshotButton",
+            "manualEntryButton"
+        ] {
+            XCTAssertTrue(
+                renderedContract.contains(supportedEntry),
+                supportedEntry
+            )
+        }
     }
 
-    private func viewSource() throws -> String {
-        let repository = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        return try String(
-            contentsOf: repository.appendingPathComponent(
-                "forzadvisor/Views/NewTuneStartView.swift"
-            ),
-            encoding: .utf8
-        )
+    private func reflectedStrings(in value: Any) -> String {
+        var strings: [String] = []
+        collectStrings(from: value, depth: 0, into: &strings)
+        return strings.joined(separator: "\n")
+    }
+
+    private func collectStrings(
+        from value: Any,
+        depth: Int,
+        into strings: inout [String]
+    ) {
+        guard depth < 40 else { return }
+        if let string = value as? String {
+            strings.append(string)
+            return
+        }
+        for child in Mirror(reflecting: value).children {
+            collectStrings(
+                from: child.value,
+                depth: depth + 1,
+                into: &strings
+            )
+        }
     }
 }

@@ -2,76 +2,116 @@
 //  TuneControlUpgradePathCopyViewContractTests.swift
 //  forzadvisorTests
 //
-//  Static wiring boundaries for one copy action per rendered path.
-//
 
-import Foundation
 import XCTest
+@testable import forzadvisor
 
-final class TuneControlUpgradePathCopyViewContractTests:
-    XCTestCase {
-    func testOneCopyActionLivesInsidePathLoopAndUsesFreshFormatter()
-        throws {
-        let pathView = try source(
-            "forzadvisor/Views/TuneControlUpgradePathsView.swift"
+final class TuneControlUpgradePathCopyViewContractTests: XCTestCase {
+    @MainActor
+    func testEachRenderedPathOwnsOneIsolatedActionAndResolvesFreshText() {
+        let paths = makePaths()
+        var requestedPathIDs: [String] = []
+        var clipboardWrites: [String] = []
+        var announcements: [String] = []
+        let view = TuneControlUpgradePathsView(
+            paths: paths,
+            resolveClipboardText: { pathID in
+                requestedPathIDs.append(pathID)
+                return "fresh-\(requestedPathIDs.count):\(pathID)"
+            },
+            writeClipboard: { clipboardWrites.append($0) },
+            announce: { announcements.append($0) }
         )
-        let resultView = try source(
-            "forzadvisor/Views/TuneResultView.swift"
-        )
+        let actions = view.copyActions
 
+        XCTAssertEqual(actions.count, paths.count)
+        XCTAssertEqual(actions.map(\.id), paths.map(\.id))
+        XCTAssertEqual(Set(actions.map(\.id)).count, paths.count)
+        XCTAssertTrue(requestedPathIDs.isEmpty)
+
+        for (index, action) in actions.enumerated() {
+            XCTAssertEqual(
+                action.perform(),
+                .copied(
+                    pathID: paths[index].id,
+                    message: "Path \(index + 1) copied as a separate checklist."
+                )
+            )
+        }
+
+        XCTAssertEqual(requestedPathIDs, paths.map(\.id))
+        XCTAssertEqual(clipboardWrites, paths.enumerated().map {
+            "fresh-\($0.offset + 1):\($0.element.id)"
+        })
+        XCTAssertEqual(announcements, [
+            "Path 1 copied as a separate checklist.",
+            "Path 2 copied as a separate checklist."
+        ])
+
+        let repeatedOutcome = actions[0].perform()
+        XCTAssertEqual(requestedPathIDs.last, paths[0].id)
+        XCTAssertEqual(clipboardWrites.last, "fresh-3:\(paths[0].id)")
         XCTAssertEqual(
-            pathView.components(
-                separatedBy: "copyTuningControlUpgradePath-"
-            ).count,
-            2
+            repeatedOutcome,
+            .copied(
+                pathID: paths[0].id,
+                message: "Path 1 copied as a separate checklist."
+            )
         )
-        let loop = try XCTUnwrap(
-            pathView.range(of: "ForEach(Array(paths.enumerated())")
-        )
-        let copy = try XCTUnwrap(
-            pathView.range(of: "copy(path: path, number: index + 1)")
-        )
-        XCTAssertLessThan(loop.lowerBound, copy.lowerBound)
-        XCTAssertTrue(pathView.contains("\"Copy This Path\""))
-        XCTAssertTrue(pathView.contains("\"Copied Path \\(index + 1)\""))
-        XCTAssertTrue(pathView.contains("Nothing was copied"))
-        XCTAssertTrue(resultView.contains(
-            "TuneControlUpgradePathClipboardFormatter.text("
-        ))
+        XCTAssertFalse(clipboardWrites.last?.contains(paths[1].id) == true)
     }
 
-    func testCopyFunctionHasOnlyPasteboardAndLocalFeedbackEffects()
-        throws {
-        let pathView = try source(
-            "forzadvisor/Views/TuneControlUpgradePathsView.swift"
+    @MainActor
+    func testRejectedFreshResolutionOnlyAnnouncesLocalFeedback() {
+        let paths = makePaths()
+        var requestedPathIDs: [String] = []
+        var clipboardWrites: [String] = []
+        var announcements: [String] = []
+        let view = TuneControlUpgradePathsView(
+            paths: paths,
+            resolveClipboardText: {
+                requestedPathIDs.append($0)
+                return nil
+            },
+            writeClipboard: { clipboardWrites.append($0) },
+            announce: { announcements.append($0) }
         )
-        let start = try XCTUnwrap(
-            pathView.range(of: "private func copy(")
-        )
-        let function = String(pathView[start.lowerBound...])
 
-        XCTAssertTrue(function.contains("UIPasteboard.general.string"))
-        XCTAssertTrue(function.contains("copiedPathID"))
-        XCTAssertTrue(function.contains("feedbackMessage"))
-        for forbidden in [
-            "save", "persist", "delete", "URLSession", "provider",
-            "generateTune", "adjustTune", "snapshot =", "tune ="
-        ] {
-            XCTAssertFalse(
-                function.localizedCaseInsensitiveContains(forbidden),
-                forbidden
+        let outcome = view.copyActions[1].perform()
+        let expectedMessage =
+            "Path 2 could not be freshly verified. Nothing was copied; "
+                + "reopen Upgrade Lab if its evidence changed."
+
+        XCTAssertEqual(requestedPathIDs, [paths[1].id])
+        XCTAssertTrue(clipboardWrites.isEmpty)
+        XCTAssertEqual(announcements, [expectedMessage])
+        XCTAssertEqual(outcome, .rejected(message: expectedMessage))
+    }
+
+    private func makePaths() -> [TuneControlUpgradePath] {
+        let provenance = TuneControlUpgradePathProvenance(
+            game: .fh6,
+            gameBuildVersion: "test-build",
+            snapshotID: UUID(
+                uuidString: "11111111-2222-3333-4444-555555555555"
+            )!,
+            capturedAt: Date(timeIntervalSince1970: 1_784_900_123),
+            source: "test"
+        )
+        return [
+            (TunePartID.sportTransmission, TuneSetting.finalDrive),
+            (TunePartID.raceSuspension, TuneSetting.alignment)
+        ].map { partID, setting in
+            TuneControlUpgradePath(
+                items: [
+                    .init(
+                        part: TunePartCatalog.definition(for: partID),
+                        unlocks: [setting]
+                    )
+                ],
+                provenance: provenance
             )
         }
     }
 
-    private func source(_ path: String) throws -> String {
-        let repository = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        return try String(
-            contentsOf:
-                repository.appendingPathComponent(path),
-            encoding: .utf8
-        )
-    }
 }

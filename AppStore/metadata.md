@@ -86,7 +86,9 @@ Camera permission is optional and requested only after the reviewer chooses Take
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 
-## What's New Copy
+## What's New Copy (updates only)
+
+App Store Connect does not accept What's New copy for an initial release. Use the following only after version 1.41.1 has been released and the next version is an update.
 
 Tune creation is clearer and easier to recover: confirm imported or entered car facts, choose a discipline before generation, and see provider/privacy details before starting.
 

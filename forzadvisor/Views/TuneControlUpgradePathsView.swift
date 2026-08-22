@@ -7,12 +7,70 @@
 
 import SwiftUI
 
+struct TuneControlUpgradePathCopyAction: Identifiable {
+    enum Outcome: Equatable {
+        case copied(pathID: String, message: String)
+        case rejected(message: String)
+    }
+
+    let path: TuneControlUpgradePath
+    let number: Int
+    let resolveClipboardText: (String) -> String?
+    let writeClipboard: (String) -> Void
+    let announce: (String) -> Void
+
+    var id: String { path.id }
+
+    func perform() -> Outcome {
+        guard let text = resolveClipboardText(path.id) else {
+            let message =
+                "Path \(number) could not be freshly verified. Nothing was copied; reopen Upgrade Lab if its evidence changed."
+            announce(message)
+            return .rejected(message: message)
+        }
+        writeClipboard(text)
+        let message = "Path \(number) copied as a separate checklist."
+        announce(message)
+        return .copied(pathID: path.id, message: message)
+    }
+}
+
 struct TuneControlUpgradePathsView: View {
     let paths: [TuneControlUpgradePath]
     let resolveClipboardText: (String) -> String?
+    let writeClipboard: (String) -> Void
+    let announce: (String) -> Void
 
     @State private var copiedPathID: String?
     @State private var feedbackMessage: String?
+
+    init(
+        paths: [TuneControlUpgradePath],
+        resolveClipboardText: @escaping (String) -> String?,
+        writeClipboard: @escaping (String) -> Void = {
+            UIPasteboard.general.string = $0
+        },
+        announce: @escaping (String) -> Void = {
+            UIAccessibility.post(notification: .announcement, argument: $0)
+        }
+    ) {
+        self.paths = paths
+        self.resolveClipboardText = resolveClipboardText
+        self.writeClipboard = writeClipboard
+        self.announce = announce
+    }
+
+    var copyActions: [TuneControlUpgradePathCopyAction] {
+        paths.enumerated().map { index, path in
+            TuneControlUpgradePathCopyAction(
+                path: path,
+                number: index + 1,
+                resolveClipboardText: resolveClipboardText,
+                writeClipboard: writeClipboard,
+                announce: announce
+            )
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -26,7 +84,9 @@ struct TuneControlUpgradePathsView: View {
                     .accessibilityIdentifier("tuningControlUpgradePathsProvenance")
             }
 
-            ForEach(Array(paths.enumerated()), id: \.element.id) { index, path in
+            ForEach(copyActions) { action in
+                let index = action.number - 1
+                let path = action.path
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Path \(index + 1)")
                         .font(.subheadline.weight(.bold))
@@ -40,7 +100,7 @@ struct TuneControlUpgradePathsView: View {
                         }
                     }
                     Button {
-                        copy(path: path, number: index + 1)
+                        apply(action.perform())
                     } label: {
                         Label(
                             copiedPathID == path.id
@@ -91,26 +151,14 @@ struct TuneControlUpgradePathsView: View {
         return first
     }
 
-    private func copy(
-        path: TuneControlUpgradePath,
-        number: Int
-    ) {
-        guard let text = resolveClipboardText(path.id) else {
+    private func apply(_ outcome: TuneControlUpgradePathCopyAction.Outcome) {
+        switch outcome {
+        case .rejected(let message):
             copiedPathID = nil
-            feedbackMessage =
-                "Path \(number) could not be freshly verified. Nothing was copied; reopen Upgrade Lab if its evidence changed."
-            UIAccessibility.post(
-                notification: .announcement,
-                argument: feedbackMessage
-            )
-            return
+            feedbackMessage = message
+        case .copied(let pathID, let message):
+            copiedPathID = pathID
+            feedbackMessage = message
         }
-        UIPasteboard.general.string = text
-        copiedPathID = path.id
-        feedbackMessage = "Path \(number) copied as a separate checklist."
-        UIAccessibility.post(
-            notification: .announcement,
-            argument: feedbackMessage
-        )
     }
 }

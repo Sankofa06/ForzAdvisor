@@ -117,12 +117,12 @@ extension ContentView {
                 }
                 if let kind = session.completedValidationDraftKind,
                    let savedTuneID = session.savedTuneID {
-                    do {
-                        try ValidationDraftCleanupCoordinator().scheduleAndRun(
+                    let cleanupOutcome = ValidationDraftCleanupCoordinator()
+                        .runAfterConfirmedGenerationCommit(
                             .init(kind: kind, savedTuneID: savedTuneID)
                         )
-                    } catch {
-                        errorMessage = "Tune saved. Recovery-draft cleanup is pending and will retry next launch: \(error.localizedDescription)"
+                    if case .pendingWarning(let message) = cleanupOutcome {
+                        errorMessage = message
                     }
                 }
                 if session.validationMissionReturnContext != nil,

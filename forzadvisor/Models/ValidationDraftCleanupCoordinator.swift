@@ -6,6 +6,11 @@ struct ValidationDraftCleanupTask: Codable, Equatable {
 }
 
 struct ValidationDraftCleanupCoordinator {
+    enum PostcommitOutcome: Equatable {
+        case completed
+        case pendingWarning(String)
+    }
+
     let pendingURL: URL
     let deleteDraft: (ValidationDraftKind, UUID) throws -> Void
 
@@ -37,6 +42,20 @@ struct ValidationDraftCleanupCoordinator {
         try writePending(pending)
         try execute(task)
         try removePending(task)
+    }
+
+    func runAfterConfirmedGenerationCommit(
+        _ task: ValidationDraftCleanupTask
+    ) -> PostcommitOutcome {
+        do {
+            try scheduleAndRun(task)
+            return .completed
+        } catch {
+            return .pendingWarning(
+                "Tune saved. Recovery-draft cleanup is pending "
+                    + "and will retry next launch: \(error.localizedDescription)"
+            )
+        }
     }
 
     func retryPending() throws {

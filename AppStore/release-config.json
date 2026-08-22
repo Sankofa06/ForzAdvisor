@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "app": {
+    "id": "6775224250",
+    "name": "ForzAdvisor",
+    "bundle_id": "com.michaelwilliams.forzadvisor",
+    "team_id": "5RGU344VJR"
+  },
+  "repository": {
+    "canonical_root": "~/Agents/ForzAdvisor",
+    "remote_name": "origin",
+    "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
+    "release_ref": "main"
+  },
+  "release": {
+    "marketing_version": "1.41.1",
+    "source_build_number": "77",
+    "current_app_store_build_number": "5",
+    "price": {
+      "model": "FREE",
+      "base_territory": "USA",
+      "amount": "0.0",
+      "price_point_id": "eyJzIjoiNjc3NTIyNDI1MCIsInQiOiJVU0EiLCJwIjoiMTAwMDAifQ",
+      "manual_price_id": "eyJzIjoiNjc3NTIyNDI1MCIsInQiOiJVU0EiLCJwIjoiMTAwMDAiLCJzZCI6MC4wLCJlZCI6MC4wfQ"
+    },
+    "submission_policy": "EXPLICIT_HUMAN_APPROVAL",
+    "app_store_release_type": "AFTER_APPROVAL",
+    "content_rights": "USES_THIRD_PARTY_CONTENT",
+    "age_rating": {
+      "completed_in_app_store_connect": true,
+      "expected_app_store_rating": "FOUR_PLUS"
+    },
+    "review_contact": {
+      "recorded_in_app_store_connect": true
+    },
+    "privacy": {
+      "published_in_app_store_connect": true,
+      "collected_data": [
+        "GAMEPLAY_CONTENT",
+        "OTHER_USER_CONTENT"
+      ],
+      "purpose": "APP_FUNCTIONALITY",
+      "linked_to_user": true,
+      "tracking": false,
+      "human_attestation_date": "2026-08-21"
+    },
+    "export_compliance": {
+      "uses_non_exempt_encryption": false
+    },
+    "expected_build_audience": "APP_STORE_ELIGIBLE"
+  },
+  "public_urls": {
+    "marketing": "https://Sankofa06.github.io/ForzAdvisor/",
+    "privacy": "https://Sankofa06.github.io/ForzAdvisor/privacy/",
+    "support": "https://Sankofa06.github.io/ForzAdvisor/support/"
+  },
+  "xcode": {
+    "project": "forzadvisor.xcodeproj",
+    "app_target": "forzadvisor",
+    "local_scheme": "forzadvisor",
+    "cloud_scheme": "forzadvisor Cloud",
+    "test_plan": "ReleaseVerify.xctestplan",
+    "privacy_manifest": "forzadvisor/PrivacyInfo.xcprivacy"
+  },
+  "xcode_cloud": {
+    "product_id": "677a6ae7-8cf2-4f35-aeef-a35faa5580e8",
+    "repository_id": "8967d135-e6fd-49af-a83e-3b03241a5fa1",
+    "workflows": {
+      "verify": {
+        "id": "334c9f03-b283-4c89-8c05-8fdb018710d0",
+        "name": "Verify"
+      },
+      "release_candidate": {
+        "id": "f22df00c-9272-4d12-9bb0-f5be9c0c3028",
+        "name": "Release Candidate"
+      }
+    }
+  },
+  "app_store": {
+    "version_id": "0af3abb8-de19-49a0-ac54-54e5fbc805bd",
+    "review_submission_id": "fbc5882a-983e-427b-bd90-a7d96b224a20",
+    "review_submission_item_id": "ZmJjNTg4MmEtOTgzZS00MjdiLWJkOTAtYTdkOTZiMjI0YTIwfDZ8ODg2MzUwNDA1"
+  },
+  "testflight": {
+    "internal_group": {
+      "id": "914040ee-a642-4a67-8339-36d4af66b3d3",
+      "name": "Internal"
+    }
+  },
+  "metadata": {
+    "path": "AppStore/metadata.md",
+    "required_sections": [
+      "App Name",
+      "Subtitle",
+      "Promotional Text",
+      "Description",
+      "Keywords",
+      "Privacy Policy",
+      "Support URL",
+      "App Review Notes"
+    ]
+  },
+  "screenshots": {
+    "directory": "AppStore/screenshots",
+    "width": 1320,
+    "height": 2868,
+    "require_opaque": true,
+    "ordered_files": [
+      "01-build-a-tune-fast.png",
+      "02-photo-screenshot-or-manual.png",
+      "03-confirm-every-stat.png",
+      "04-tune-for-road-drift-drag.png",
+      "05-copy-complete-settings.png",
+      "06-refine-after-every-run.png"
+    ]
+  }
+}

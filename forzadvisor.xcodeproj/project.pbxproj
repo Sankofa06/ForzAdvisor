@@ -155,6 +155,7 @@
 				849462D72FBDAB12004B8D9D /* Sources */,
 				849462D62FBDAB12004B8D9D /* Frameworks */,
 				849462D52FBDAB12004B8D9D /* Resources */,
+				FA2026082200000000000001 /* Bundle Exact Source Contracts */,
 			);
 			buildRules = (
 			);
@@ -261,6 +262,32 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		FA2026082200000000000001 /* Bundle Exact Source Contracts */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/forzadvisorTests/AccuracyBenchmark/CommunityTuneBenchmark.swift",
+				"$(SRCROOT)/forzadvisor/ContentView+GenerationWorkflow.swift",
+			);
+			name = "Bundle Exact Source Contracts";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SourceContracts/CommunityTuneBenchmark.swift",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/SourceContracts/ContentView+GenerationWorkflow.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\ncontract_dir=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SourceContracts\"\n/bin/mkdir -p \"${contract_dir}\"\n/bin/cp \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n/bin/cp \"${SCRIPT_INPUT_FILE_1}\" \"${SCRIPT_OUTPUT_FILE_1}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		849462BD2FBD93A6004B8D9D /* Sources */ = {

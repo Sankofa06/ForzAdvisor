@@ -1062,11 +1062,61 @@ final class CommunityTuneBenchmarkTests: XCTestCase {
         XCTAssertFalse(String(decoding: firstJSON, as: UTF8.self).lowercased().contains("accuracyscore"))
     }
 
+    func testHarnessMetadataFixtureDoesNotEvaluateOrPersistATune() async throws {
+        let fixture = metadataFixture(
+            id: "metadata-only",
+            sourceID: "source.metadata-only",
+            game: .fh6
+        )
+
+        let candidate = await RawLocalBenchmarkCandidateAdapter.candidate(
+            for: fixture
+        )
+        let report = try await CommunityTuneBenchmark.run(
+            document: .init(schemaVersion: 1, fixtures: [fixture]),
+            mode: .bundledFixture
+        )
+
+        XCTAssertEqual(candidate.status, .notEvaluatedMetadataOnly)
+        XCTAssertTrue(candidate.values.isEmpty)
+        XCTAssertTrue(candidate.diagnostics.isEmpty)
+        XCTAssertEqual(report.fixtures.count, 1)
+        XCTAssertEqual(
+            report.fixtures[0].candidate.status,
+            .notEvaluatedMetadataOnly
+        )
+        XCTAssertTrue(report.fixtures[0].candidate.values.isEmpty)
+        XCTAssertTrue(report.fixtures[0].fieldComparisons.isEmpty)
+        XCTAssertTrue(report.fixtures[0].groupedMetrics.isEmpty)
+    }
+
+    func testHarnessAndCommunityFixtureAreCompileTimeTestTargetOnly() throws {
+        let testBundle = Bundle(for: Self.self)
+        let hostedAppBundle = Bundle.main
+        let reportTypeModule = String(
+            reflecting: CommunityTuneBenchmarkReport.self
+        )
+        let adapterTypeModule = String(
+            reflecting: RawLocalBenchmarkCandidateAdapter.self
+        )
+
+        XCTAssertNotEqual(testBundle.bundleURL, hostedAppBundle.bundleURL)
+        XCTAssertTrue(reportTypeModule.hasPrefix("forzadvisorTests."))
+        XCTAssertTrue(adapterTypeModule.hasPrefix("forzadvisorTests."))
+        XCTAssertNotNil(testBundle.url(
+            forResource: "CommunityTuneBenchmarks.v1",
+            withExtension: "json"
+        ))
+        XCTAssertNil(hostedAppBundle.url(
+            forResource: "CommunityTuneBenchmarks.v1",
+            withExtension: "json"
+        ))
+    }
+
     func testHarnessSourceHasNoProductionProjectionSnapshotOrPersistenceDependency() throws {
-        let implementationURL = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .appendingPathComponent("CommunityTuneBenchmark.swift")
-        let source = try String(contentsOf: implementationURL, encoding: .utf8)
+        let source = try bundledSourceContract(
+            named: "CommunityTuneBenchmark"
+        )
         let forbidden = [
             ["Tune", "Output", "Projector"].joined(),
             ["Capability", "Projecting", "Tune", "Provider"].joined(),
@@ -1076,7 +1126,10 @@ final class CommunityTuneBenchmarkTests: XCTestCase {
         ]
 
         for symbol in forbidden {
-            XCTAssertFalse(source.contains(symbol), "Test harness must not depend on \(symbol)")
+            XCTAssertFalse(
+                source.contains(symbol),
+                "Test harness must not depend on \(symbol)"
+            )
         }
     }
 
@@ -1085,6 +1138,15 @@ final class CommunityTuneBenchmarkTests: XCTestCase {
         let url = bundle.url(forResource: "CommunityTuneBenchmarks.v1", withExtension: "json")
             ?? bundle.url(forResource: "CommunityTuneBenchmarks.v1", withExtension: "json", subdirectory: "Fixtures")
         return try Data(contentsOf: XCTUnwrap(url))
+    }
+
+    private func bundledSourceContract(named name: String) throws -> String {
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: name,
+            withExtension: "swift",
+            subdirectory: "SourceContracts"
+        ))
+        return try String(contentsOf: url, encoding: .utf8)
     }
 
     private func makeFixture(

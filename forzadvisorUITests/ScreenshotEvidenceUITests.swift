@@ -183,6 +183,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         let manualEntry = app.buttons["manualEntryButton"]
         for _ in 0..<6 where !manualEntry.exists { sourceList.swipeUp() }
         XCTAssertTrue(manualEntry.waitForExistence(timeout: 5))
+        scrollToHittable(manualEntry, in: app)
         XCTAssertFalse(app.buttons["catalogEntryButton"].exists)
     }
 
@@ -257,8 +258,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
     @MainActor
     private func saveResult(in app: XCUIApplication) {
         let save = app.buttons["saveTuneButton"]
-        for _ in 0..<10 where !save.isHittable { app.swipeDown() }
-        XCTAssertTrue(save.isHittable)
+        scrollToHittable(save, in: app)
         save.tap()
         XCTAssertTrue(
             app.descendants(matching: .any)["savedTuneStatus"]
@@ -281,7 +281,47 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         for _ in 0..<12 where !element.exists { list.swipeUp(velocity: .slow) }
         XCTAssertTrue(element.waitForExistence(timeout: 5))
         for _ in 0..<12 where !element.isHittable { list.swipeUp(velocity: .slow) }
+        centerInInteractionViewport(element, using: list, in: app)
         XCTAssertTrue(element.isHittable)
+    }
+
+    @MainActor
+    private func centerInInteractionViewport(
+        _ element: XCUIElement,
+        using scrollView: XCUIElement,
+        in app: XCUIApplication
+    ) {
+        let upperBound = app.frame.minY + app.frame.height * 0.22
+        let lowerBound = app.frame.minY + app.frame.height * 0.65
+        let upwardStart = scrollView.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.68)
+        )
+        let upwardEnd = scrollView.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48)
+        )
+        let downwardStart = scrollView.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.32)
+        )
+        let downwardEnd = scrollView.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.52)
+        )
+
+        for _ in 0..<6 {
+            let midpoint = element.frame.midY
+            if midpoint > lowerBound {
+                upwardStart.press(
+                    forDuration: 0.05,
+                    thenDragTo: upwardEnd
+                )
+            } else if midpoint < upperBound {
+                downwardStart.press(
+                    forDuration: 0.05,
+                    thenDragTo: downwardEnd
+                )
+            } else {
+                break
+            }
+        }
     }
 
     @MainActor

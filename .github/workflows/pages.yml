@@ -32,3 +32,15 @@ jobs:
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+      - name: Verify public release pages
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          for route in "" privacy/ support/; do
+            url="${PAGE_URL%/}/${route}"
+            curl --fail --silent --show-error \
+              --retry 5 --retry-all-errors --retry-delay 3 \
+              --max-time 20 "$url" >/dev/null
+          done

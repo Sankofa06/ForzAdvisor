@@ -1,72 +1,73 @@
 # ForzAdvisor Release Checklist
 
-Last updated: 2026-08-16
+Last updated: 2026-08-21
 
-Readiness: TestFlight candidate
+Highest state: **App Store candidate — READY_FOR_REVIEW, not submitted**
 
-The current release removes the bundled FH5/FH6 car rosters and reviewed stock catalog. New tunes start from a user-selected photo, screenshot, or manual entry.
+Canonical release configuration: `AppStore/release-config.json`
 
-## Completed In Repository
+Automation guide: `AppStore/release-automation.md`
 
-- Bundle identifier is `com.michaelwilliams.forzadvisor`.
-- Development team is set to `5RGU344VJR`.
-- Installed display name is `ForzAdvisor`.
-- Current project version is `1.41.1`.
-- Current project build is `77`.
-- Target device family is iPhone.
-- The three bundled roster/catalog JSON resources are removed.
-- The two roster-generation scripts are removed.
-- New Tune no longer presents a catalog or roster.
-- Settings no longer exposes catalog-contribution tooling.
-- Empty-garage validation missions route to manual entry.
-- Photo, screenshot OCR, and manual entry remain available.
-- App icon assets contain default, dark, and tinted 1024px icons without alpha.
-- Camera usage description is present.
-- Privacy manifest is present at `forzadvisor/PrivacyInfo.xcprivacy`.
-- App Store metadata, release notes, privacy policy, support copy, screenshot specifications, and six accepted-size marketing screenshots are present.
-- `ReleaseVerify.xctestplan` runs the complete supported unit and UI targets serially without skips or expected failures.
-- Latest local ReleaseVerify evidence: 573 unit tests and 10 UI tests passed with zero failures, skips, or expected failures; dark mode, Accessibility XXXL, and Increase Contrast captures were inspected. The exact remote commit is recorded after immutable push.
-- A local Release archive and App Store Connect export succeeded for version 1.41.1 build 77. The exported IPA is Apple Distribution signed with `get-task-allow=false` and `beta-reports-active=true`; it has not been uploaded.
+Privacy attestation: `AppStore/privacy-label.md`
+Current evidence: `AppStore/releases/1.41.1.md`
 
-## Local Package Verification
+## 1. Release definition
 
-- Run a clean `ReleaseVerify` simulator build with zero source warnings and zero errors.
-- Run the complete `ReleaseVerify` unit and UI targets serially with zero failures, skips, or expected failures.
-- Archive and export with App Store signing.
-- Push the immutable release commit and require Xcode Cloud Verify to pass before distribution.
-- Upload build 77 through the release workflow and wait for App Store Connect processing.
+- [x] Marketing version is `1.41.1`.
+- [x] Source build setting is `77`.
+- [x] App Store Connect processed build is `5`; it is intentionally tracked separately from source build 77.
+- [x] Bundle ID is `com.michaelwilliams.forzadvisor` and team is `5RGU344VJR`.
+- [x] GitHub `origin` is the authoritative source for Xcode Cloud.
+- [x] Price is **Free**.
+- [x] Release policy is **manual submission, automatic release after Apple approval**.
+- [x] Content rights declares use of third-party content/references.
+- [x] App Privacy answers were published and recorded in `AppStore/privacy-label.md`.
+- [x] Age rating, export compliance, and review contact are complete in App Store Connect.
+- [x] Submission remains a separate explicit human action.
 
-## Screenshots
+## 2. Local package gate
 
-- Six 1320x2868 marketing screenshots are stored in `AppStore/screenshots/`.
-- They show photo, screenshot, manual-entry, discipline, result, and refinement workflows.
-- They do not show the removed catalog or claim access to a bundled roster.
+- [ ] Run `scripts/release preflight` from the canonical checkout after the release revision is committed and pushed.
+- [x] Run focused tests for every release-automation or app change.
+- [x] Run a clean Release build with zero source warnings and errors.
+- [ ] Run `ReleaseVerify.xctestplan` with zero failures, skips, or expected failures.
+- [x] Inspect the intended diff and run `git diff --check` plus a credential/secret scan.
+- [ ] Commit the viable state and push an immutable release commit or annotated tag.
 
-## Required App Store Connect Values
+## 3. Xcode Cloud gate
 
-- Attach processed build 77 to App Store version 1.41.1.
-- Replace the prior roster-oriented description, promotional text, What's New copy, and review notes with `AppStore/metadata.md`.
-- Keep the six marketing screenshots in their existing order; they show photo, screenshot, and manual-entry workflows rather than the removed catalog.
-- Verify the public privacy URL resolves: https://Sankofa06.github.io/ForzAdvisor/privacy/
-- Verify the public support URL resolves: https://Sankofa06.github.io/ForzAdvisor/support/
-- Complete App Privacy answers in App Store Connect.
-- Review the Content Rights declaration for the remaining compatibility references and user-imported screenshots. Do not claim rights to the removed roster.
-- Confirm age rating and export compliance answers.
-- Submit for App Review only after explicit human approval.
+- [ ] Start **Verify** for the immutable revision and require build plus tests to succeed.
+- [ ] Confirm Xcode Cloud reports the same source commit.
+- [ ] Only after Verify succeeds, start **Release Candidate** for that same revision.
+- [ ] Require tests and archive to succeed.
+- [ ] Wait for App Store Connect processing state `VALID` and App Store eligibility.
+- [ ] Record the workflow run IDs, source commit, source build, and resulting ASC build in the release record.
 
-## App Review Notes
+## 4. Candidate gate
 
-- No login, test account, or API key is required.
-- The binary contains no bundled car roster, reviewed stock catalog, official game logos, vehicle artwork, or copied game screenshots.
-- Users supply car details manually or choose their own photo/screenshot for on-device OCR.
-- Reviewers can test the complete FH6 flow with fictional manual-entry data.
-- FH5 manual entry produces a local build plan without numeric tuning values.
-- Optional API mode requires the user's own Anthropic API key; offline mode is the default.
+- [x] Six 1320x2868 screenshots exist in `AppStore/screenshots/`, have no alpha, and remain in the approved order.
+- [x] Marketing, privacy, and support URLs are public.
+- [x] Metadata and review notes reflect photo, screenshot, and manual entry rather than a bundled roster.
+- [x] No login or test account is required.
+- [x] The privacy manifest exists at `forzadvisor/PrivacyInfo.xcprivacy`.
+- [x] `ITSAppUsesNonExemptEncryption` is `NO` for the app target.
+- [x] Build 5 is attached to App Store version 1.41.1.
+- [x] Review submission draft and item are `READY_FOR_REVIEW`.
 
-## Release Safety
+Run the online App Store candidate preflight immediately before submission. It must verify the exact selected build, metadata, price schedule, public URLs, privacy attestation, content rights, age rating, review contact, export compliance, and release policy.
 
-- Do not upload any build that still contains the deleted roster resources or obsolete catalog claims.
-- Keep App Review submission as a separate explicit human action.
-- Do not re-add roster resources, generators, or catalog claims without documented redistribution rights and a new legal review.
-- Keep signing keys and App Store Connect credentials out of the repository.
-- Leave the previously approved untracked `.agent/` and `docs/refs/` folders untouched.
+## 5. Explicit submission gate
+
+- [ ] Report the exact App Store build and candidate state to the user.
+- [ ] Obtain explicit approval to submit this build to App Review.
+- [ ] Invoke the guarded submission command only with both submission flags documented in `AppStore/release-automation.md`.
+- [ ] Confirm App Store Connect transitions to `WAITING_FOR_REVIEW` or report the exact returned state.
+- [ ] Update `AppStore/releases/1.41.1.md`, commit the final evidence, and remove temporary state that is no longer needed.
+
+## Safety invariants
+
+- Never store credentials, JWTs, private keys, provisioning profiles, or secret values in the repository or release state.
+- Never start Release Candidate before Verify succeeds for the same immutable revision.
+- Never infer App Review approval from requests to build, test, upload, stage, or prepare.
+- Never hardcode the uploaded App Store build from `CURRENT_PROJECT_VERSION`; observe and record it after processing.
+- Never re-add roster resources, generators, or catalog claims without documented redistribution rights and a new legal review.

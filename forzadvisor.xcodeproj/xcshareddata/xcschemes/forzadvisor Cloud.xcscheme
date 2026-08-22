@@ -48,15 +48,6 @@
                BlueprintName = "forzadvisorTests"
                ReferencedContainer = "container:forzadvisor.xcodeproj">
             </BuildableReference>
-            <!-- These inspect repository source paths that are unavailable
-                 inside Xcode Cloud's simulator test process. They remain in
-                 the local ReleaseVerify plan. -->
-            <SkippedTests>
-               <Test Identifier = "NewTuneStartViewCatalogEntryContractTests" />
-               <Test Identifier = "TuneControlUpgradePathCopyViewContractTests" />
-               <Test Identifier = "ValidationDraftCleanupCoordinatorTests/testGenerationTreatsPostcommitCleanupAsWarningNotFailure" />
-               <Test Identifier = "CommunityTuneBenchmarkTests/testHarnessSourceHasNoProductionProjectionSnapshotOrPersistenceDependency" />
-            </SkippedTests>
          </TestableReference>
          <TestableReference
             skipped = "NO"
