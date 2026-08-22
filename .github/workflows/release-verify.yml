@@ -24,7 +24,6 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
       RELEASE_REF: ${{ inputs.release_ref }}
-      RESULT_BUNDLE: ${{ runner.temp }}/ForzAdvisor-ReleaseVerify.xcresult
     steps:
       - name: Validate immutable release ref
         shell: bash
@@ -83,7 +82,7 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
             -parallel-testing-enabled NO \
             -collect-test-diagnostics never \
-            -resultBundlePath "$RESULT_BUNDLE" \
+            -resultBundlePath "$RUNNER_TEMP/ForzAdvisor-ReleaseVerify.xcresult" \
             | tee "$RUNNER_TEMP/forzadvisor-release-verify.log"
 
       - name: Upload verification evidence on failure
