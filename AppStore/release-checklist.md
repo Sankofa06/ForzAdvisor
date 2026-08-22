@@ -36,7 +36,7 @@ Current evidence: `AppStore/releases/1.41.1.md`
 
 ## 3. GitHub Actions and local candidate gate
 
-- [ ] Dispatch `.github/workflows/release-verify.yml` for immutable tag `release-1.41.1-appstore-78` and require the complete plan to pass.
+- [ ] Dispatch `.github/workflows/release-verify.yml` for immutable tag `release-1.41.1-appstore-78-2` and require the complete plan to pass.
 - [ ] Confirm GitHub Actions reports the exact tagged build-78 source commit.
 - [ ] Only after Verify succeeds, run the guarded GitHub Release Candidate workflow on stable `macos-26`.
 - [ ] Require archive and upload to succeed and prove `BuildMachineOSBuild` is a macOS 26 build.

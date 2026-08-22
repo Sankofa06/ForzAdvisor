@@ -159,7 +159,7 @@ refuses any host other than macOS 26.5.2 (`25F84`):
 ```sh
 gh workflow run .github/workflows/release-candidate.yml \
   --ref main \
-  -f release_ref=release-1.41.1-appstore-78 \
+  -f release_ref=release-1.41.1-appstore-78-2 \
   -f release_sha=EXACT_40_CHARACTER_COMMIT_SHA \
   -f upload_confirmation=UPLOAD_BUILD_78
 ```

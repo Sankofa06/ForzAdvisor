@@ -42,20 +42,32 @@ extension ForzAdvisorUITests {
         XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
         keyboardDoneButton.tap()
         app.swipeUp()
-        app.textFields["manualEntryWeightField"].enterText("2345")
+        let weightField = app.textFields["manualEntryWeightField"]
+        weightField.scrollToInteractionViewport(in: app)
+        weightField.enterText("2345")
         XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
         keyboardDoneButton.tap()
         app.swipeUp()
-        app.textFields["manualEntryFrontWeightField"].enterText("55")
+        let frontWeightField = app.textFields["manualEntryFrontWeightField"]
+        frontWeightField.scrollToInteractionViewport(in: app)
+        frontWeightField.enterText("55")
         XCTAssertTrue(keyboardDoneButton.waitForExistence(timeout: 2))
         keyboardDoneButton.tap()
         app.swipeUp()
-        app.textFields["manualEntryPerformanceIndexField"].enterText("789")
+        let performanceIndexField = app.textFields[
+            "manualEntryPerformanceIndexField"
+        ]
+        performanceIndexField.scrollToInteractionViewport(in: app)
+        performanceIndexField.enterText("789")
         if keyboardDoneButton.waitForExistence(timeout: 2) {
             keyboardDoneButton.tap()
         }
-        app.buttons["manualEntryClass-A"].tap()
-        app.buttons["manualEntryDrivetrain-RWD"].tap()
+        let performanceClass = app.buttons["manualEntryClass-A"]
+        performanceClass.scrollToInteractionViewport(in: app)
+        performanceClass.tap()
+        let drivetrain = app.buttons["manualEntryDrivetrain-RWD"]
+        drivetrain.scrollToInteractionViewport(in: app)
+        drivetrain.tap()
 
         let nextButton = app.buttons["manualEntryNextButton"]
         XCTAssertTrue(nextButton.waitUntilEnabled(timeout: 3))
