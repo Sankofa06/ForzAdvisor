@@ -1,6 +1,6 @@
 # ForzAdvisor Release Checklist
 
-Last updated: 2026-08-21
+Last updated: 2026-08-22
 
 Highest state: **App Store candidate — READY_FOR_REVIEW, not submitted**
 
@@ -27,21 +27,22 @@ Current evidence: `AppStore/releases/1.41.1.md`
 
 ## 2. Local package gate
 
-- [ ] Run `scripts/release preflight` from the canonical checkout after the release revision is committed and pushed.
+- [x] Run `scripts/release preflight` from the canonical checkout after the release revision is committed and pushed.
 - [x] Run focused tests for every release-automation or app change.
 - [x] Run a clean Release build with zero source warnings and errors.
 - [ ] Run `ReleaseVerify.xctestplan` with zero failures, skips, or expected failures.
 - [x] Inspect the intended diff and run `git diff --check` plus a credential/secret scan.
-- [ ] Commit the viable state and push an immutable release commit or annotated tag.
+- [x] Commit the viable state and push an immutable release commit or annotated tag.
 
 ## 3. GitHub Actions and local candidate gate
 
-- [ ] Dispatch `.github/workflows/release-verify.yml` for the immutable tag and require build plus tests to succeed.
-- [ ] Confirm GitHub Actions reports the same tagged source commit.
+- [x] Dispatch `.github/workflows/release-verify.yml` for immutable tag `release-1.41.1-github-verify-4`; run `32553715007` passed the build and complete test plan.
+- [x] Confirm GitHub Actions reports tagged source commit `798a5736a122cf52e494e46b09dd8316943b61a8`.
 - [ ] Only after Verify succeeds, archive and upload that exact revision locally through Xcode.
 - [ ] Require archive and upload to succeed.
 - [ ] Wait for App Store Connect processing state `VALID` and App Store eligibility.
-- [ ] Record the GitHub run ID, source commit, source build, and resulting ASC build in the release record.
+- [x] Record the GitHub run ID, source tag, source commit, and source build in the release record.
+- [ ] Record the resulting App Store Connect build after local upload and processing.
 
 ## 4. Candidate gate
 
