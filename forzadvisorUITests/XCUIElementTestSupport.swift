@@ -43,27 +43,60 @@ extension XCUIElement {
     }
 
     func enterText(_ text: String, focusTimeout: TimeInterval = 2) {
-        tap()
-
-        if !waitForKeyboardFocus(timeout: 0.4) {
-            for offset in [
-                CGVector(dx: 0.8, dy: 0.5),
-                CGVector(dx: 0.95, dy: 0.5),
-                CGVector(dx: 0.8, dy: 0.75),
-                CGVector(dx: 0.95, dy: 0.75),
-                CGVector(dx: 0.5, dy: 0.5)
-            ] {
-                coordinate(withNormalizedOffset: offset).tap()
-                if waitForKeyboardFocus(timeout: 0.6) { break }
-            }
-        }
-
-        guard waitForKeyboardFocus(timeout: focusTimeout) else {
+        guard focusForTyping(timeout: focusTimeout) else {
             XCTFail("\(identifier) did not receive keyboard focus before typing.")
             return
         }
 
         typeText(text)
+    }
+
+    @MainActor
+    func enterText(
+        _ text: String,
+        in app: XCUIApplication,
+        focusTimeout: TimeInterval = 2
+    ) {
+        let scrollView = app.collectionViews.firstMatch
+
+        for attempt in 0..<3 {
+            scrollToInteractionViewport(in: app)
+            if focusForTyping(timeout: focusTimeout) {
+                typeText(text)
+                return
+            }
+
+            guard attempt < 2 else { break }
+            let startY = attempt == 0 ? 0.58 : 0.42
+            let endY = attempt == 0 ? 0.48 : 0.52
+            scrollView.coordinate(
+                withNormalizedOffset: CGVector(dx: 0.5, dy: startY)
+            ).press(
+                forDuration: 0.05,
+                thenDragTo: scrollView.coordinate(
+                    withNormalizedOffset: CGVector(dx: 0.5, dy: endY)
+                )
+            )
+        }
+
+        XCTFail("\(identifier) did not receive keyboard focus before typing.")
+    }
+
+    private func focusForTyping(timeout: TimeInterval) -> Bool {
+        if waitForKeyboardFocus(timeout: 0.1) { return true }
+
+        for offset in [
+            CGVector(dx: 0.5, dy: 0.5),
+            CGVector(dx: 0.8, dy: 0.5),
+            CGVector(dx: 0.95, dy: 0.5),
+            CGVector(dx: 0.8, dy: 0.75),
+            CGVector(dx: 0.95, dy: 0.75)
+        ] {
+            coordinate(withNormalizedOffset: offset).press(forDuration: 0.12)
+            if waitForKeyboardFocus(timeout: timeout) { return true }
+        }
+
+        return false
     }
 
     private func waitForKeyboardFocus(timeout: TimeInterval) -> Bool {

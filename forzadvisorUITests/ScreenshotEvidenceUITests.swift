@@ -193,28 +193,22 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Manual Entry"].waitForExistence(timeout: 5))
 
         let year = app.textFields["manualEntryYearField"]
-        scrollToHittable(year, in: app)
-        year.enterText("1997")
+        year.enterText("1997", in: app)
         dismissKeyboard(in: app)
         let make = app.textFields["manualEntryMakeField"]
-        scrollToHittable(make, in: app)
-        make.enterText("Mazda")
+        make.enterText("Mazda", in: app)
         dismissKeyboard(in: app)
         let model = app.textFields["manualEntryModelField"]
-        scrollToHittable(model, in: app)
-        model.enterText("Miata")
+        model.enterText("Miata", in: app)
         dismissKeyboard(in: app)
         let weight = app.textFields["manualEntryWeightField"]
-        scrollToHittable(weight, in: app)
-        weight.enterText("2345")
+        weight.enterText("2345", in: app)
         dismissKeyboard(in: app)
         let frontWeight = app.textFields["manualEntryFrontWeightField"]
-        scrollToHittable(frontWeight, in: app)
-        frontWeight.enterText("55")
+        frontWeight.enterText("55", in: app)
         dismissKeyboard(in: app)
         let performanceIndex = app.textFields["manualEntryPerformanceIndexField"]
-        scrollToHittable(performanceIndex, in: app)
-        performanceIndex.enterText("750")
+        performanceIndex.enterText("750", in: app)
         dismissKeyboard(in: app)
 
         let performanceClass = app.buttons["manualEntryClass-S1"]

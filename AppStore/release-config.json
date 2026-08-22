@@ -10,7 +10,7 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-    "release_ref": "release-1.41.1-appstore-78-2"
+    "release_ref": "release-1.41.1-appstore-78-3"
   },
   "release": {
     "marketing_version": "1.41.1",
