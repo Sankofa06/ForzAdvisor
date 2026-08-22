@@ -74,9 +74,9 @@ class ForzAdvisorReleaseTest < Minitest::Test
     @config = ForzAdvisorRelease::Config.new(CONFIG_PATH)
   end
 
-  def test_repository_release_config_records_distinct_source_and_app_store_builds
+  def test_repository_release_config_records_source_and_current_app_store_builds
     assert_equal "77", @config.fetch("release", "source_build_number")
-    assert_equal "5", @config.fetch("release", "current_app_store_build_number")
+    assert_equal "77", @config.fetch("release", "current_app_store_build_number")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
@@ -546,12 +546,12 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
-  def test_app_store_status_is_read_only_and_preserves_build_number_distinction
+  def test_app_store_status_is_read_only_and_reports_source_and_current_builds
     app_id = @config.fetch("app", "id")
     responses = {
       "/v1/apps/#{app_id}" => { "data" => { "id" => app_id, "attributes" => { "name" => "ForzAdvisor", "bundleId" => "com.michaelwilliams.forzadvisor" } } },
       "/v1/apps/#{app_id}/appStoreVersions" => { "data" => [{ "id" => "version-id", "attributes" => { "appStoreState" => "READY_FOR_REVIEW" } }] },
-      "/v1/apps/#{app_id}/builds" => { "data" => [{ "id" => "build-id", "attributes" => { "version" => "5", "processingState" => "VALID" } }] },
+      "/v1/apps/#{app_id}/builds" => { "data" => [{ "id" => "build-id", "attributes" => { "version" => "77", "processingState" => "VALID" } }] },
       "/v1/apps/#{app_id}/reviewSubmissions" => { "data" => [{ "id" => "submission-id", "attributes" => { "state" => "READY_FOR_REVIEW" } }] }
     }
     api = FakeAPI.new(responses)
@@ -559,7 +559,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
     assert_equal true, result["read_only"]
     assert_equal "77", result["source_build_number"]
-    assert_equal "5", result.dig("build", "number")
+    assert_equal "77", result.dig("build", "number")
     assert_equal "READY_FOR_REVIEW", result.dig("version", "state")
     assert_equal 4, api.requests.length
   end
@@ -681,7 +681,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     item = @config.fetch("app_store", "review_submission_item_id")
     version_attrs = { "platform" => "IOS", "versionString" => "1.41.1", "appStoreState" => "READY_FOR_REVIEW", "releaseType" => "AFTER_APPROVAL" }
     build_attrs = { "version" => "6", "processingState" => "VALID", "buildAudienceType" => "APP_STORE_ELIGIBLE", "usesNonExemptEncryption" => false }
-    selected_attrs = build_attrs.merge("version" => "5")
+    selected_attrs = build_attrs.merge("version" => "77")
     screenshot_names = @config.fetch("screenshots", "ordered_files")
     {
       "/v1/apps/#{app}" => { "data" => { "id" => app, "attributes" => { "name" => "ForzAdvisor", "bundleId" => "com.michaelwilliams.forzadvisor", "contentRightsDeclaration" => "USES_THIRD_PARTY_CONTENT" } } },

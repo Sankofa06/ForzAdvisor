@@ -18,8 +18,7 @@ human-approved, double-acknowledged action.
 - canonical GitHub checkout, remote, and release ref
 - marketing version `1.41.1`
 - source project build `77`
-- currently staged App Store Connect build `5` (a new Release Candidate records
-  its observed build number; it is not required to remain `5`)
+- currently staged App Store Connect build `77`
 - Free pricing, explicit-human-approval submission policy, and App Store
   `AFTER_APPROVAL` release timing
 - the published privacy-label declaration and human attestation date
@@ -30,18 +29,18 @@ human-approved, double-acknowledged action.
 - exact App Store version, review-draft, and review-item identifiers
 - metadata limits and the exact screenshot order
 
-The two build numbers intentionally describe different systems. `77` is
-`CURRENT_PROJECT_VERSION` in the source project. Xcode Cloud assigned build `5`
-to the processed App Store Connect binary. Do not replace one with the other in
-release evidence.
+The two build-number fields intentionally describe different systems even when
+their values happen to match. Source build `77` is `CURRENT_PROJECT_VERSION` in
+the project; App Store Connect build `77` is the locally uploaded and processed
+binary. Historical Xcode Cloud build `5` remains recorded separately in the
+release audit. Do not infer one field from the other.
 
-`current_app_store_build_number` is a read-only baseline for standalone status
-and preflight. Release Candidate monitoring selects exactly one build produced by
-that exact cloud run for this app, iOS marketing version, and App Store audience,
-then records whatever build number Apple assigned (for example, `6`). Pre-stage
-validation checks that candidate directly even if the version still selects the
-older build; post-stage validation requires the relationship to select the new
-candidate.
+`current_app_store_build_number` is the currently staged build used by
+standalone status and preflight. Candidate monitoring selects exactly one build
+for this app, iOS marketing version, and App Store audience, then records the
+observed build number. Pre-stage validation checks that candidate directly even
+if the version still selects an older baseline; post-stage validation requires
+the relationship to select the new candidate.
 
 Review-contact values remain only in App Store Connect; the repository records
 that the required contact is complete. App Store Connect credentials remain in
