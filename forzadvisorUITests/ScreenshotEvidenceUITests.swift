@@ -192,9 +192,17 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         app.buttons["manualEntryButton"].tap()
         XCTAssertTrue(app.navigationBars["Manual Entry"].waitForExistence(timeout: 5))
 
-        app.textFields["manualEntryYearField"].enterText("1997")
-        app.textFields["manualEntryMakeField"].enterText("Mazda")
-        app.textFields["manualEntryModelField"].enterText("Miata")
+        let year = app.textFields["manualEntryYearField"]
+        scrollToHittable(year, in: app)
+        year.enterText("1997")
+        dismissKeyboard(in: app)
+        let make = app.textFields["manualEntryMakeField"]
+        scrollToHittable(make, in: app)
+        make.enterText("Mazda")
+        dismissKeyboard(in: app)
+        let model = app.textFields["manualEntryModelField"]
+        scrollToHittable(model, in: app)
+        model.enterText("Miata")
         dismissKeyboard(in: app)
         let weight = app.textFields["manualEntryWeightField"]
         scrollToHittable(weight, in: app)
