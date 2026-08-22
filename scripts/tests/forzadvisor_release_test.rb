@@ -495,6 +495,24 @@ class ForzAdvisorReleaseTest < Minitest::Test
     refute api.requests.any? { |item| item[0] == "PATCH" }
   end
 
+  def test_submission_resubmits_unresolved_issues_after_item_is_resolved
+    reads = 0
+    api = FakeAPI.new(
+      "/v1/reviewSubmissions/draft" => proc do
+        reads += 1
+        { "data" => { "attributes" => { "state" => reads == 1 ? "UNRESOLVED_ISSUES" : "WAITING_FOR_REVIEW" } } }
+      end,
+      ["PATCH", "/v1/reviewSubmissions/draft"] => {}
+    )
+
+    result = ForzAdvisorRelease::CandidateStager.new(config: @config, api: api)
+      .submit(submission_id: "draft", submit: true, acknowledge: true)
+
+    assert_equal "app_review_submitted", result["phase"]
+    assert_equal "WAITING_FOR_REVIEW", result["submission_state"]
+    assert api.requests.any? { |item| item[0] == "PATCH" }
+  end
+
   def test_submission_refuses_terminal_or_ambiguous_state_without_patch
     failed_api = FakeAPI.new("/v1/reviewSubmissions/draft" => { "data" => { "attributes" => { "state" => "CANCELED" } } })
     assert_equal "submission_failed", ForzAdvisorRelease::CandidateStager.new(config: @config, api: failed_api).submit(submission_id: "draft", submit: true, acknowledge: true)["phase"]

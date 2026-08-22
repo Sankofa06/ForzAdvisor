@@ -940,7 +940,8 @@ module ForzAdvisorRelease
       current_state = current.dig("attributes", "state")
       return { "phase" => "app_review_submitted", "review_submission_id" => submission_id, "submission_state" => current_state } if %w[WAITING_FOR_REVIEW IN_REVIEW ACCEPTED PENDING_APPLE_RELEASE PROCESSING_FOR_DISTRIBUTION READY_FOR_SALE].include?(current_state)
       return { "phase" => "submission_failed", "review_submission_id" => submission_id, "submission_state" => current_state } if %w[CANCELED REJECTED FAILED].include?(current_state)
-      raise PreflightError, "review submission is not in READY_FOR_REVIEW; refusing PATCH from #{current_state || 'unknown'}" unless current_state == "READY_FOR_REVIEW"
+      submit_ready_states = %w[READY_FOR_REVIEW UNRESOLVED_ISSUES]
+      raise PreflightError, "review submission is not ready for submission; refusing PATCH from #{current_state || 'unknown'}" unless submit_ready_states.include?(current_state)
       @checkpoint.call("submission_intent", { "review_submission_id" => submission_id })
       @api.patch("/v1/reviewSubmissions/#{submission_id}", { data: { type: "reviewSubmissions", id: submission_id, attributes: { submitted: true } } })
       observed = @api.get("/v1/reviewSubmissions/#{submission_id}").fetch("data")
@@ -986,7 +987,7 @@ module ForzAdvisorRelease
   end
 
   class AppStorePreflight
-    READY_SUBMISSION_STATES = %w[DRAFT READY_FOR_REVIEW].freeze
+    READY_SUBMISSION_STATES = %w[DRAFT READY_FOR_REVIEW UNRESOLVED_ISSUES].freeze
     def initialize(config:, api:, today: Date.today)
       @config, @api, @today = config, api, today
     end
@@ -1001,7 +1002,7 @@ module ForzAdvisorRelease
       version = @api.get("/v1/appStoreVersions/#{versions.first.fetch('id')}").fetch("data")
       assert!(version.dig("attributes", "versionString") == @config.fetch("release", "marketing_version"), "version mismatch")
       assert!(version.dig("attributes", "releaseType") == @config.fetch("release", "app_store_release_type"), "release type mismatch")
-      assert!(%w[READY_FOR_REVIEW WAITING_FOR_REVIEW IN_REVIEW PENDING_APPLE_RELEASE PROCESSING_FOR_DISTRIBUTION READY_FOR_SALE].include?(version.dig("attributes", "appStoreState")), "App Store version has not passed required-field validation")
+      assert!(%w[PREPARE_FOR_SUBMISSION READY_FOR_REVIEW WAITING_FOR_REVIEW IN_REVIEW PENDING_APPLE_RELEASE PROCESSING_FOR_DISTRIBUTION READY_FOR_SALE].include?(version.dig("attributes", "appStoreState")), "App Store version has not passed required-field validation")
       selected_build = @api.get("/v1/appStoreVersions/#{version.fetch('id')}/build").fetch("data", nil)
       build = expected_build_id ? @api.get("/v1/builds/#{expected_build_id}").fetch("data") : selected_build
       assert!(build, "candidate build is missing")
@@ -1073,8 +1074,8 @@ module ForzAdvisorRelease
       end
       assert!(!draft || items.empty? || (items.length == 1 && matching_item), "review draft is mixed or targets a different version")
       if require_stageable
-        assert!(version.dig("attributes", "appStoreState") == "READY_FOR_REVIEW", "version is not stageable")
-        assert!(draft && draft.dig("attributes", "state") == "READY_FOR_REVIEW" && items.length == 1 && matching_item, "review draft is not stageable")
+        assert!(%w[PREPARE_FOR_SUBMISSION READY_FOR_REVIEW].include?(version.dig("attributes", "appStoreState")), "version is not stageable")
+        assert!(draft && %w[READY_FOR_REVIEW UNRESOLVED_ISSUES].include?(draft.dig("attributes", "state")) && items.length == 1 && matching_item, "review draft is not stageable")
       end
       { "schema_version" => 1, "checked_at" => Time.now.utc.iso8601, "app_id" => app_id, "version_id" => version["id"], "version_state" => version.dig("attributes", "appStoreState"), "build_id" => build["id"], "app_store_build_number" => build.dig("attributes", "version"), "build_processing_state" => "VALID", "build_audience" => build.dig("attributes", "buildAudienceType"), "localization_id" => localization["id"], "screenshot_count" => screenshots.length, "price_model" => "FREE", "manual_price_id" => manual_price["id"], "price_point_id" => configured_price_point_id, "price_effective_on" => @today.iso8601, "privacy_attested_on" => @config.fetch("release", "privacy", "human_attestation_date"), "content_rights" => app.dig("attributes", "contentRightsDeclaration"), "age_rating" => @config.fetch("release", "age_rating", "expected_app_store_rating"), "review_contact_complete" => true, "uses_non_exempt_encryption" => build.dig("attributes", "usesNonExemptEncryption"), "release_type" => version.dig("attributes", "releaseType"), "review_submission_id" => draft&.fetch("id", nil), "ready" => true }
     end

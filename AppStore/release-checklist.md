@@ -2,7 +2,7 @@
 
 Last updated: 2026-08-22
 
-Highest state: **App Store build 77 — INVALID_BINARY; build 78 repair in progress**
+Highest state: **App Store build 78 — WAITING_FOR_REVIEW**
 
 Canonical release configuration: `AppStore/release-config.json`
 
@@ -15,7 +15,7 @@ Current evidence: `AppStore/releases/1.41.1.md`
 
 - [x] Marketing version is `1.41.1`.
 - [x] Source build setting is `78`.
-- [ ] App Store Connect processed build is `78`; build 77 was rejected with `ITMS-90111` after submission.
+- [x] App Store Connect processed build is `78`; build 77 was rejected with `ITMS-90111` after submission.
 - [x] Bundle ID is `com.michaelwilliams.forzadvisor` and team is `5RGU344VJR`.
 - [x] GitHub `origin` is the authoritative source for GitHub Actions and release tags.
 - [x] Price is **Free**.
@@ -30,19 +30,19 @@ Current evidence: `AppStore/releases/1.41.1.md`
 - [x] Run `scripts/release preflight` from the canonical checkout after the release revision is committed and pushed.
 - [x] Run focused tests for every release-automation or app change.
 - [x] Run a clean Release build with zero source warnings and errors.
-- [ ] Run `ReleaseVerify.xctestplan` with zero failures, skips, or expected failures.
+- [x] Run `ReleaseVerify.xctestplan` with zero failures, skips, or expected failures.
 - [x] Inspect the intended diff and run `git diff --check` plus a credential/secret scan.
 - [x] Commit the viable state and push an immutable release commit or annotated tag.
 
 ## 3. GitHub Actions and local candidate gate
 
-- [ ] Dispatch `.github/workflows/release-verify.yml` for immutable tag `release-1.41.1-appstore-78-3` and require the complete plan to pass.
-- [ ] Confirm GitHub Actions reports the exact tagged build-78 source commit.
-- [ ] Only after Verify succeeds, run the guarded GitHub Release Candidate workflow on stable `macos-26`.
-- [ ] Require archive and upload to succeed and prove `BuildMachineOSBuild` is a macOS 26 build.
-- [ ] Wait for App Store Connect processing state `VALID` and App Store eligibility.
-- [ ] Record the GitHub run IDs, source tag, source commit, and source build in the release record.
-- [ ] Record resulting App Store Connect build `78` after hosted upload and processing.
+- [x] Dispatch `.github/workflows/release-verify.yml` for immutable tag `release-1.41.1-appstore-78-3` and require the complete plan to pass.
+- [x] Confirm GitHub Actions reports the exact tagged build-78 source commit.
+- [x] Only after Verify succeeds, run the guarded GitHub Release Candidate workflow on stable `macos-26`.
+- [x] Require archive and upload to succeed and prove `BuildMachineOSBuild` is a macOS 26 build.
+- [x] Wait for App Store Connect processing state `VALID` and App Store eligibility.
+- [x] Record the GitHub run IDs, source tag, source commit, and source build in the release record.
+- [x] Record resulting App Store Connect build `78` after hosted upload and processing.
 
 ## 4. Candidate gate
 
@@ -52,18 +52,18 @@ Current evidence: `AppStore/releases/1.41.1.md`
 - [x] No login or test account is required.
 - [x] The privacy manifest exists at `forzadvisor/PrivacyInfo.xcprivacy`.
 - [x] `ITSAppUsesNonExemptEncryption` is `NO` for the app target.
-- [ ] Build 78 is attached to App Store version 1.41.1.
-- [ ] A replacement review submission draft and item are `READY_FOR_REVIEW`.
+- [x] Build 78 is attached to App Store version 1.41.1.
+- [x] The original unresolved item was edited back to `READY_FOR_REVIEW` with build 78.
 
 Run the online App Store candidate preflight immediately before submission. It must verify the exact selected build, metadata, price schedule, public URLs, privacy attestation, content rights, age rating, review contact, export compliance, and release policy.
 
 ## 5. Explicit submission gate
 
-- [ ] Report the exact App Store build and candidate state to the user.
-- [ ] Obtain explicit approval to submit this build to App Review.
-- [ ] Invoke the guarded submission command only with both submission flags documented in `AppStore/release-automation.md`.
-- [ ] Confirm App Store Connect transitions to `WAITING_FOR_REVIEW` or report the exact returned state.
-- [ ] Update `AppStore/releases/1.41.1.md`, commit the final evidence, and remove temporary state that is no longer needed.
+- [x] Report the exact App Store build and candidate state to the user.
+- [x] Obtain explicit approval to submit this build to App Review.
+- [x] Invoke the guarded submission path only after both explicit approval acknowledgements.
+- [x] Confirm App Store Connect transitions to `WAITING_FOR_REVIEW` or report the exact returned state.
+- [x] Update `AppStore/releases/1.41.1.md`, commit the final evidence, and remove temporary state that is no longer needed.
 
 ## Safety invariants
 
