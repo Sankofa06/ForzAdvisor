@@ -258,7 +258,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
     @MainActor
     private func saveResult(in app: XCUIApplication) {
         let save = app.buttons["saveTuneButton"]
-        scrollToHittable(save, in: app)
+        scrollBackwardToHittable(save, in: app)
         save.tap()
         XCTAssertTrue(
             app.descendants(matching: .any)["savedTuneStatus"]
@@ -281,6 +281,19 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         for _ in 0..<12 where !element.exists { list.swipeUp(velocity: .slow) }
         XCTAssertTrue(element.waitForExistence(timeout: 5))
         for _ in 0..<12 where !element.isHittable { list.swipeUp(velocity: .slow) }
+        centerInInteractionViewport(element, using: list, in: app)
+        XCTAssertTrue(element.isHittable)
+    }
+
+    @MainActor
+    private func scrollBackwardToHittable(
+        _ element: XCUIElement,
+        in app: XCUIApplication
+    ) {
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<12 where !element.exists { list.swipeDown(velocity: .slow) }
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+        for _ in 0..<12 where !element.isHittable { list.swipeDown(velocity: .slow) }
         centerInInteractionViewport(element, using: list, in: app)
         XCTAssertTrue(element.isHittable)
     }
