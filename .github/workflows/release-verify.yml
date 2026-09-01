@@ -97,7 +97,24 @@ jobs:
             -parallel-testing-enabled NO \
             -collect-test-diagnostics never \
             -resultBundlePath "$RUNNER_TEMP/ForzAdvisor-ReleaseVerify.xcresult" \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
+            GCC_TREAT_WARNINGS_AS_ERRORS=YES \
             | tee "$RUNNER_TEMP/forzadvisor-release-verify.log"
+
+      - name: Require complete passing test summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          summary="$RUNNER_TEMP/forzadvisor-release-verify-summary.json"
+          xcrun xcresulttool get test-results summary \
+            --path "$RUNNER_TEMP/ForzAdvisor-ReleaseVerify.xcresult" > "$summary"
+          jq -e '
+            (.totalTestCount | type) == "number" and
+            .totalTestCount > 0 and
+            .failedTests == 0 and
+            .skippedTests == 0 and
+            .expectedFailures == 0
+          ' "$summary" >/dev/null
 
       - name: Upload verification evidence on failure
         if: failure()
@@ -107,5 +124,6 @@ jobs:
           path: |
             ${{ runner.temp }}/ForzAdvisor-ReleaseVerify.xcresult
             ${{ runner.temp }}/forzadvisor-release-verify.log
+            ${{ runner.temp }}/forzadvisor-release-verify-summary.json
           if-no-files-found: warn
           retention-days: 14

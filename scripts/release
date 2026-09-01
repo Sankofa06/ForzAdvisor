@@ -12,7 +12,9 @@ options = {
   config: ENV.fetch("FORZADVISOR_RELEASE_CONFIG", DEFAULT_CONFIG),
   ref: nil,
   url_fixture: nil,
-  json: false, submit: false, acknowledge: false
+  verify_run_id: nil,
+  json: false, submit: false, acknowledge: false, upload: false,
+  confirm_upload: nil, confirm_submit: nil, human_result: nil, notes: nil, evidence: nil
 }
 
 parser = OptionParser.new do |opts|
@@ -20,13 +22,17 @@ parser = OptionParser.new do |opts|
     Usage:
       scripts/release preflight [--ref BRANCH_OR_TAG] [--url-fixture PATH] [--json]
       scripts/release asc-status|asc-preflight [--json]
-      scripts/release cloud-start --ref RELEASE_TAG [--json]
-      scripts/release cloud-status|cloud-resume [--json]
+      scripts/release candidate-start --ref RELEASE_TAG --verify-run-id RUN_ID --upload --confirm-upload TOKEN [--json]
+      scripts/release candidate-status|candidate-reconcile [--json]
+      scripts/release candidate-resume --upload --confirm-upload TOKEN [--json]
+      scripts/release candidate-block --notes TEXT [--json]
+      scripts/release human-result --result ACCEPT|NEEDS_FIXES|BLOCKED --notes TEXT --evidence TEXT [--json]
       scripts/release stage [--json]
-      scripts/release submit --submit --acknowledge-irreversible-app-review-submission
+      scripts/release submit --submit --acknowledge-irreversible-app-review-submission --confirm-submit TOKEN
 
-    preflight is read-only and may validate a branch. Cloud delivery requires a
-    clean, pushed immutable tag. asc-preflight is read-only.
+    preflight is read-only and may validate a branch. Stable-runner delivery
+    requires a clean, pushed immutable tag and exact successful GitHub Verify run.
+    candidate-status and asc-preflight are read-only.
     asc-status is read-only. Submission is separate and requires both explicit
     acknowledgement flags shown above.
   USAGE
@@ -34,6 +40,13 @@ parser = OptionParser.new do |opts|
   opts.on("--url-fixture PATH", "Use deterministic JSON URL responses instead of the network") { |value| options[:url_fixture] = value }
   opts.on("--config PATH", "Release configuration path") { |value| options[:config] = value }
   opts.on("--json", "Print machine-readable output") { options[:json] = true }
+  opts.on("--verify-run-id ID", "Exact successful GitHub Release Verify run id") { |value| options[:verify_run_id] = value }
+  opts.on("--upload", "Explicitly authorize stable-runner archive/export/upload") { options[:upload] = true }
+  opts.on("--confirm-upload TOKEN", "Identity-bound upload confirmation token") { |value| options[:confirm_upload] = value }
+  opts.on("--confirm-submit TOKEN", "Identity-bound App Review submission confirmation token") { |value| options[:confirm_submit] = value }
+  opts.on("--result RESULT", "Human result: ACCEPT, NEEDS_FIXES, or BLOCKED") { |value| options[:human_result] = value }
+  opts.on("--notes TEXT", "Human verification notes") { |value| options[:notes] = value }
+  opts.on("--evidence TEXT", "Human verification evidence reference") { |value| options[:evidence] = value }
   opts.on("--submit", "Explicitly authorize App Review submission") { options[:submit] = true }
   opts.on("--acknowledge-irreversible-app-review-submission", "Second submission acknowledgement") { options[:acknowledge] = true }
 end
@@ -63,45 +76,86 @@ begin
              credentials = ForzAdvisorRelease::Credentials.new
              client = ForzAdvisorRelease::APIClient.new(credentials: credentials)
              evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call
-             store = ForzAdvisorRelease::StateStore.new
+             store = ForzAdvisorRelease::StableStateStore.new
              store.save_evidence(evidence)
              store.save(store.load.merge("app_store_preflight" => evidence)) if store.active?
              evidence
-           when "cloud-start", "cloud-status", "cloud-resume", "stage", "submit"
+           when "candidate-start", "candidate-status", "candidate-resume", "candidate-reconcile", "candidate-block", "human-result"
+             store = ForzAdvisorRelease::StableStateStore.new
+             git = ForzAdvisorRelease::GitRepository.new(ROOT)
+             if %w[human-result candidate-block].include?(command)
+               coordinator = ForzAdvisorRelease::StableRunnerCoordinator.new(
+                 config: config,
+                 git: git,
+                 store: store,
+                 github_verification: nil,
+                 helper: nil,
+                 api: nil
+               )
+               if command == "human-result"
+                 coordinator.record_human_result(result: options[:human_result], notes: options[:notes], evidence: options[:evidence])
+               else
+                 coordinator.block_candidate(notes: options[:notes])
+               end
+             else
+               credentials = ForzAdvisorRelease::Credentials.new
+               client = ForzAdvisorRelease::APIClient.new(credentials: credentials)
+               repository = URI(config.fetch("repository", "remote_url")).path.delete_prefix("/").sub(/\.git\z/, "")
+               github_client = ForzAdvisorRelease::GitHubClient.new(root: ROOT, repository: repository)
+               verification = ForzAdvisorRelease::GitHubVerificationEvidence.new(config: config, client: github_client)
+               helper = ForzAdvisorRelease::StableRunnerHelper.new(root: ROOT)
+               coordinator = ForzAdvisorRelease::StableRunnerCoordinator.new(
+                 config: config,
+                 git: git,
+                 store: store,
+                 github_verification: verification,
+                 helper: helper,
+                 api: client
+               )
+               if command == "candidate-start"
+                 ForzAdvisorRelease::Preflight.new(root: ROOT, config: config, url_checker: ForzAdvisorRelease::HTTPURLChecker.new, git: git).run(ref: options[:ref])
+                 coordinator.start(
+                   ref: options[:ref],
+                   verify_run_id: options[:verify_run_id],
+                   upload: options[:upload],
+                   confirmation: options[:confirm_upload]
+                 )
+               elsif command == "candidate-status"
+                 coordinator.status
+               elsif command == "candidate-reconcile"
+                 coordinator.reconcile
+               else
+                 coordinator.resume(upload: options[:upload], confirmation: options[:confirm_upload])
+               end
+             end
+           when "stage", "submit"
              credentials = ForzAdvisorRelease::Credentials.new
              client = ForzAdvisorRelease::APIClient.new(credentials: credentials)
-             store = ForzAdvisorRelease::StateStore.new
-             git = ForzAdvisorRelease::GitRepository.new(ROOT)
-             coordinator = ForzAdvisorRelease::CloudCoordinator.new(config: config, api: client, git: git, store: store)
-             if command == "cloud-start"
-               ForzAdvisorRelease::Preflight.new(root: ROOT, config: config, url_checker: ForzAdvisorRelease::HTTPURLChecker.new, git: git).run(ref: options[:ref])
-               coordinator.start(ref: options[:ref])
-             elsif command == "cloud-status"
-               coordinator.status
-             elsif command == "cloud-resume"
-               coordinator.resume
+             store = ForzAdvisorRelease::StableStateStore.new
+             state = store.load
+             coordinator = ForzAdvisorRelease::StableRunnerCoordinator.new(config: config, git: nil, store: store, github_verification: nil, helper: nil, api: client)
+             coordinator.validate_state_identity!(state)
+             stager = ForzAdvisorRelease::CandidateStager.new(config: config, api: client)
+             if command == "stage"
+               raise ForzAdvisorRelease::PreflightError, "human ACCEPT is required before staging" unless %w[human_accepted staged].include?(state["phase"])
+               evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call(expected_build_id: state.fetch("build_id"), require_stageable: true, require_testflight_association: true)
+               state = store.save(state.merge("stage_intent" => { "recorded_at" => Time.now.utc.iso8601, "build_id" => state.fetch("build_id") }, "app_store_preflight" => evidence))
+               checkpoint = proc { |event, observed| state = store.save(state.merge("stage_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => observed })) }
+               stager = ForzAdvisorRelease::CandidateStager.new(config: config, api: client, checkpoint: checkpoint)
+               staged = stager.call(build_id: state.fetch("build_id"))
+               final_evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call(expected_build_id: state.fetch("build_id"), require_stageable: true, require_selected_build: true, require_testflight_association: true)
+               store.save(state.merge(staged).merge("app_store_preflight" => final_evidence))
              else
-               state = store.load
-               stager = ForzAdvisorRelease::CandidateStager.new(config: config, api: client)
-               if command == "stage"
-                 raise ForzAdvisorRelease::PreflightError, "candidate is not ready" unless %w[candidate_ready staged].include?(state["phase"])
-                 evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call(expected_build_id: state.fetch("build_id"), require_stageable: true)
-                 state = store.save(state.merge("stage_intent" => { "recorded_at" => Time.now.utc.iso8601, "build_id" => state.fetch("build_id") }, "app_store_preflight" => evidence))
-                 checkpoint = proc { |event, observed| state = store.save(state.merge("stage_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => observed })) }
-                 stager = ForzAdvisorRelease::CandidateStager.new(config: config, api: client, checkpoint: checkpoint)
-                 staged = stager.call(build_id: state.fetch("build_id"))
-                 final_evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call(expected_build_id: state.fetch("build_id"), require_stageable: true, require_selected_build: true)
-                 store.save(state.merge(staged).merge("app_store_preflight" => final_evidence))
-               else
-                 raise ForzAdvisorRelease::PreflightError, "candidate must be staged before submission" unless %w[staged submission_intent].include?(state["phase"])
-                 ForzAdvisorRelease::SubmissionGuard.authorize!(submit: options[:submit], acknowledge_irreversible_app_review_submission: options[:acknowledge])
-                 state = store.save(state.merge("phase" => "submission_intent", "submission_intent_at" => Time.now.utc.iso8601))
-                 checkpoint = proc { |event, observed| state = store.save(state.merge("submission_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => observed })) }
-                 result = ForzAdvisorRelease::CandidateStager.new(config: config, api: client, checkpoint: checkpoint).submit(submission_id: state.fetch("review_submission_id"), submit: options[:submit], acknowledge: options[:acknowledge])
-                 final = store.save(state.merge(result))
-                 raise ForzAdvisorRelease::PreflightError, "App Review submission ended in #{final['submission_state']}" if final["phase"] == "submission_failed"
-                 final
-               end
+               raise ForzAdvisorRelease::PreflightError, "candidate must be staged before submission" unless %w[staged submission_intent].include?(state["phase"])
+               evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call(expected_build_id: state.fetch("build_id"), require_stageable: true, require_selected_build: true, require_testflight_association: true)
+               expected_confirmation = coordinator.submission_confirmation_token(state)
+               ForzAdvisorRelease::SubmissionGuard.authorize!(submit: options[:submit], acknowledge_irreversible_app_review_submission: options[:acknowledge], confirmation: options[:confirm_submit], expected_confirmation: expected_confirmation)
+               state = store.save(state.merge("phase" => "submission_intent", "submission_intent_at" => Time.now.utc.iso8601, "app_store_preflight" => evidence))
+               checkpoint = proc { |event, observed| state = store.save(state.merge("submission_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => observed })) }
+               result = ForzAdvisorRelease::CandidateStager.new(config: config, api: client, checkpoint: checkpoint).submit(submission_id: state.fetch("review_submission_id"), submit: options[:submit], acknowledge: options[:acknowledge], confirmation: options[:confirm_submit], expected_confirmation: expected_confirmation)
+               final = store.save(state.merge(result))
+               raise ForzAdvisorRelease::PreflightError, "App Review submission ended in #{final['submission_state']}" if final["phase"] == "submission_failed"
+               final
              end
            when "help", "--help", "-h", nil
              puts parser

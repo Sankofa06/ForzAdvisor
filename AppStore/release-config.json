@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "app": {
     "id": "6775224250",
     "name": "ForzAdvisor",
@@ -62,7 +62,7 @@
     "test_plan": "ReleaseVerify.xctestplan",
     "privacy_manifest": "forzadvisor/PrivacyInfo.xcprivacy"
   },
-  "xcode_cloud": {
+  "legacy_xcode_cloud": {
     "product_id": "677a6ae7-8cf2-4f35-aeef-a35faa5580e8",
     "repository_id": "8967d135-e6fd-49af-a83e-3b03241a5fa1",
     "workflows": {
@@ -78,14 +78,45 @@
   },
   "ci": {
     "provider": "GITHUB_ACTIONS",
+    "authority": "VERIFICATION_ONLY",
     "verify_workflow": ".github/workflows/release-verify.yml",
-    "release_candidate_workflow": ".github/workflows/release-candidate.yml",
+    "verify_job": "Xcode 26.6 ReleaseVerify",
     "runner": "macos-26",
     "runner_os_version": "26.5.2",
     "runner_os_build": "25F84",
     "xcode_version": "26.6",
-    "xcode_build": "17F113",
-    "release_candidate_mode": "GITHUB_HOSTED_UPLOAD"
+    "xcode_build": "17F113"
+  },
+  "stable_runner": {
+    "profile": "stable-xcode-26.3-intel",
+    "project": "forzadvisor.xcodeproj",
+    "scheme": "forzadvisor",
+    "configuration": "Release",
+    "destinations": {
+      "iOS": "generic/platform=iOS"
+    },
+    "xcode_build": "17C529",
+    "macos_build": "24G720",
+    "sdk_versions": {
+      "iOS": "26.2"
+    },
+    "minimum_os": {
+      "iOS": "17.0"
+    },
+    "architectures": {
+      "iOS": [
+        "arm64"
+      ]
+    },
+    "warning_policy": "global",
+    "signing": {
+      "mode": "automatic"
+    },
+    "export": {
+      "manage_app_version_and_build_number": false,
+      "strip_swift_symbols": true,
+      "upload_symbols": true
+    }
   },
   "app_store": {
     "version_id": "0af3abb8-de19-49a0-ac54-54e5fbc805bd",

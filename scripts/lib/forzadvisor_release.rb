@@ -2,6 +2,7 @@
 
 require "base64"
 require "date"
+require "digest"
 require "fileutils"
 require "json"
 require "net/http"
@@ -42,7 +43,7 @@ module ForzAdvisorRelease
 
   class Config
     EXACT_KEYS = {
-      "" => %w[schema_version app repository release public_urls xcode xcode_cloud ci app_store testflight metadata screenshots],
+      "" => %w[schema_version app repository release public_urls xcode legacy_xcode_cloud ci stable_runner app_store testflight metadata screenshots],
       "app" => %w[id name bundle_id team_id],
       "repository" => %w[canonical_root remote_name remote_url release_ref],
       "release" => %w[marketing_version source_build_number current_app_store_build_number price submission_policy app_store_release_type content_rights age_rating review_contact privacy export_compliance expected_build_audience],
@@ -53,11 +54,14 @@ module ForzAdvisorRelease
       "release.export_compliance" => %w[uses_non_exempt_encryption],
       "public_urls" => %w[marketing privacy support],
       "xcode" => %w[project app_target local_scheme cloud_scheme test_plan privacy_manifest],
-      "xcode_cloud" => %w[product_id repository_id workflows],
-      "xcode_cloud.workflows" => %w[verify release_candidate],
-      "xcode_cloud.workflows.verify" => %w[id name],
-      "xcode_cloud.workflows.release_candidate" => %w[id name],
-      "ci" => %w[provider verify_workflow release_candidate_workflow runner runner_os_version runner_os_build xcode_version xcode_build release_candidate_mode],
+      "legacy_xcode_cloud" => %w[product_id repository_id workflows],
+      "legacy_xcode_cloud.workflows" => %w[verify release_candidate],
+      "legacy_xcode_cloud.workflows.verify" => %w[id name],
+      "legacy_xcode_cloud.workflows.release_candidate" => %w[id name],
+      "ci" => %w[provider authority verify_workflow verify_job runner runner_os_version runner_os_build xcode_version xcode_build],
+      "stable_runner" => %w[profile project scheme configuration destinations xcode_build macos_build sdk_versions minimum_os architectures warning_policy signing export],
+      "stable_runner.signing" => %w[mode],
+      "stable_runner.export" => %w[manage_app_version_and_build_number strip_swift_symbols upload_symbols],
       "app_store" => %w[version_id review_submission_id review_submission_item_id],
       "testflight" => %w[internal_group], "testflight.internal_group" => %w[id name],
       "metadata" => %w[path required_sections],
@@ -77,11 +81,14 @@ module ForzAdvisorRelease
       release.privacy.human_attestation_date
       public_urls.marketing public_urls.privacy public_urls.support
       xcode.project xcode.app_target xcode.local_scheme xcode.cloud_scheme xcode.test_plan xcode.privacy_manifest
-      xcode_cloud.workflows.verify.id xcode_cloud.workflows.verify.name
-      xcode_cloud.workflows.release_candidate.id xcode_cloud.workflows.release_candidate.name
-      ci.provider ci.verify_workflow ci.release_candidate_workflow ci.runner ci.runner_os_version ci.runner_os_build ci.xcode_version ci.xcode_build ci.release_candidate_mode
+      legacy_xcode_cloud.workflows.verify.id legacy_xcode_cloud.workflows.verify.name
+      legacy_xcode_cloud.workflows.release_candidate.id legacy_xcode_cloud.workflows.release_candidate.name
+      ci.provider ci.authority ci.verify_workflow ci.verify_job ci.runner ci.runner_os_version ci.runner_os_build ci.xcode_version ci.xcode_build
+      stable_runner.profile stable_runner.project stable_runner.scheme stable_runner.configuration
+      stable_runner.xcode_build stable_runner.macos_build stable_runner.warning_policy stable_runner.signing.mode
+      stable_runner.export.manage_app_version_and_build_number stable_runner.export.strip_swift_symbols stable_runner.export.upload_symbols
       app_store.version_id app_store.review_submission_id app_store.review_submission_item_id
-      xcode_cloud.product_id xcode_cloud.repository_id testflight.internal_group.id testflight.internal_group.name
+      legacy_xcode_cloud.product_id legacy_xcode_cloud.repository_id testflight.internal_group.id testflight.internal_group.name
       metadata.path metadata.required_sections screenshots.directory screenshots.width screenshots.height
       screenshots.require_opaque screenshots.ordered_files
     ].freeze
@@ -104,10 +111,14 @@ module ForzAdvisorRelease
       raise ConfigurationError, "missing release config value: #{keys.join('.')}"
     end
 
+    def fingerprint
+      Digest::SHA256.hexdigest(JSON.generate(deep_sort(data)))
+    end
+
     private
 
     def validate!
-      raise ConfigurationError, "unsupported release config schema" unless data["schema_version"] == 1
+      raise ConfigurationError, "unsupported release config schema" unless data["schema_version"] == 2
 
       REQUIRED_PATHS.each do |path|
         value = path.split(".").reduce(data) { |item, key| item.is_a?(Hash) ? item[key] : nil }
@@ -133,10 +144,10 @@ module ForzAdvisorRelease
         raise ConfigurationError, "unexpected or missing config keys at #{path.empty? ? 'root' : path}" unless value.is_a?(Hash) && value.keys.sort == expected.sort
       end
       uuid = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
-      %w[product_id repository_id].each { |key| raise ConfigurationError, "invalid xcode_cloud.#{key}" unless fetch("xcode_cloud", key).match?(uuid) }
+      %w[product_id repository_id].each { |key| raise ConfigurationError, "invalid legacy_xcode_cloud.#{key}" unless fetch("legacy_xcode_cloud", key).match?(uuid) }
       %w[version_id review_submission_id].each { |key| raise ConfigurationError, "invalid app_store.#{key}" unless fetch("app_store", key).match?(uuid) }
       raise ConfigurationError, "invalid review submission item id" unless fetch("app_store", "review_submission_item_id").match?(/\A[A-Za-z0-9_-]{40,}\z/)
-      %w[verify release_candidate].each { |key| raise ConfigurationError, "invalid workflow id: #{key}" unless fetch("xcode_cloud", "workflows", key, "id").match?(uuid) }
+      %w[verify release_candidate].each { |key| raise ConfigurationError, "invalid legacy workflow id: #{key}" unless fetch("legacy_xcode_cloud", "workflows", key, "id").match?(uuid) }
       raise ConfigurationError, "invalid TestFlight group id" unless fetch("testflight", "internal_group", "id").match?(uuid)
       raise ConfigurationError, "invalid App Store app id" unless fetch("app", "id").match?(/\A\d+\z/)
       raise ConfigurationError, "invalid team id" unless fetch("app", "team_id").match?(/\A[A-Z0-9]{10}\z/)
@@ -145,14 +156,15 @@ module ForzAdvisorRelease
       raise ConfigurationError, "invalid repository remote" unless fetch("repository", "remote_name") == "origin" && fetch("repository", "remote_url").match?(%r{\Ahttps://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?\z})
       raise ConfigurationError, "invalid local preflight ref" unless fetch("repository", "release_ref").match?(/\A[A-Za-z0-9._\/-]+\z/)
       raise ConfigurationError, "unsupported CI provider" unless fetch("ci", "provider") == "GITHUB_ACTIONS"
+      raise ConfigurationError, "CI authority must be verification-only" unless fetch("ci", "authority") == "VERIFICATION_ONLY"
       raise ConfigurationError, "invalid GitHub verify workflow" unless fetch("ci", "verify_workflow") == ".github/workflows/release-verify.yml"
-      raise ConfigurationError, "invalid GitHub release candidate workflow" unless fetch("ci", "release_candidate_workflow") == ".github/workflows/release-candidate.yml"
+      raise ConfigurationError, "invalid GitHub verify job" unless fetch("ci", "verify_job") == "Xcode 26.6 ReleaseVerify"
       raise ConfigurationError, "unsupported GitHub runner" unless fetch("ci", "runner") == "macos-26"
       raise ConfigurationError, "unsupported CI macOS version" unless fetch("ci", "runner_os_version") == "26.5.2"
       raise ConfigurationError, "unsupported CI macOS build" unless fetch("ci", "runner_os_build") == "25F84"
       raise ConfigurationError, "unsupported CI Xcode version" unless fetch("ci", "xcode_version") == "26.6"
       raise ConfigurationError, "unsupported CI Xcode build" unless fetch("ci", "xcode_build") == "17F113"
-      raise ConfigurationError, "unsupported release candidate mode" unless %w[LOCAL_XCODE GITHUB_HOSTED_UPLOAD].include?(fetch("ci", "release_candidate_mode"))
+      validate_stable_runner!
       raise ConfigurationError, "invalid marketing version" unless fetch("release", "marketing_version").match?(/\A\d+\.\d+\.\d+\z/)
       %w[source_build_number current_app_store_build_number].each { |key| raise ConfigurationError, "invalid #{key}" unless fetch("release", key).match?(/\A[1-9]\d*\z/) }
       raise ConfigurationError, "unsupported content rights" unless %w[DOES_NOT_USE_THIRD_PARTY_CONTENT USES_THIRD_PARTY_CONTENT].include?(fetch("release", "content_rights"))
@@ -180,6 +192,53 @@ module ForzAdvisorRelease
       raise ConfigurationError, "invalid screenshot file list" unless files.is_a?(Array) && !files.empty? && files.uniq.length == files.length && files.all? { |name| name.match?(/\A\d{2}-[a-z0-9-]+\.png\z/) }
       sections = fetch("metadata", "required_sections")
       raise ConfigurationError, "invalid metadata section list" unless sections.is_a?(Array) && !sections.empty? && sections.uniq.length == sections.length && sections.all? { |item| item.is_a?(String) && !item.empty? }
+    end
+
+    def validate_stable_runner!
+      runner = fetch("stable_runner")
+      raise ConfigurationError, "unsupported stable runner profile" unless runner["profile"] == "stable-xcode-26.3-intel"
+      raise ConfigurationError, "stable runner project mismatch" unless runner["project"] == fetch("xcode", "project")
+      raise ConfigurationError, "stable runner scheme mismatch" unless runner["scheme"] == fetch("xcode", "local_scheme")
+      raise ConfigurationError, "stable runner configuration must be Release" unless runner["configuration"] == "Release"
+      raise ConfigurationError, "stable runner Xcode build mismatch" unless runner["xcode_build"] == "17C529"
+      raise ConfigurationError, "stable runner macOS build mismatch" unless runner["macos_build"] == "24G720"
+      raise ConfigurationError, "stable runner warning policy must be global" unless runner["warning_policy"] == "global"
+      raise ConfigurationError, "stable runner signing must be automatic" unless runner.dig("signing", "mode") == "automatic"
+      raise ConfigurationError, "stable runner export policy mismatch" unless runner["export"] == {
+        "manage_app_version_and_build_number" => false,
+        "strip_swift_symbols" => true,
+        "upload_symbols" => true
+      }
+      platforms = runner.fetch("destinations").keys
+      raise ConfigurationError, "stable runner must declare only supported platforms" unless !platforms.empty? && (platforms - %w[iOS macOS]).empty?
+      %w[sdk_versions minimum_os architectures].each do |key|
+        values = runner.fetch(key)
+        raise ConfigurationError, "stable runner #{key} platforms mismatch" unless values.is_a?(Hash) && values.keys.sort == platforms.sort
+      end
+      platforms.each do |platform|
+        destination = runner.dig("destinations", platform)
+        sdk = runner.dig("sdk_versions", platform)
+        minimum = runner.dig("minimum_os", platform)
+        architectures = runner.dig("architectures", platform)
+        raise ConfigurationError, "invalid stable runner destination: #{platform}" unless destination.is_a?(String) && !destination.empty?
+        raise ConfigurationError, "invalid stable runner SDK: #{platform}" unless sdk.to_s.match?(/\A\d+(?:\.\d+)+\z/)
+        raise ConfigurationError, "invalid stable runner minimum OS: #{platform}" unless minimum.to_s.match?(/\A\d+(?:\.\d+)+\z/)
+        raise ConfigurationError, "invalid stable runner architectures: #{platform}" unless architectures.is_a?(Array) && !architectures.empty? && architectures.uniq.length == architectures.length && architectures.all? { |item| item.match?(/\A[a-zA-Z0-9_]+\z/) }
+      end
+      raise ConfigurationError, "ForzAdvisor requires the generic iOS destination" unless runner.dig("destinations", "iOS") == "generic/platform=iOS"
+      raise ConfigurationError, "ForzAdvisor requires the iOS 26.2 SDK" unless runner.dig("sdk_versions", "iOS") == "26.2"
+      raise ConfigurationError, "ForzAdvisor minimum iOS mismatch" unless runner.dig("minimum_os", "iOS") == "17.0"
+      raise ConfigurationError, "ForzAdvisor archive architecture mismatch" unless runner.dig("architectures", "iOS") == ["arm64"]
+    rescue KeyError => error
+      raise ConfigurationError, "missing stable runner value: #{error.message}"
+    end
+
+    def deep_sort(value)
+      case value
+      when Hash then value.keys.sort.to_h { |key| [key, deep_sort(value.fetch(key))] }
+      when Array then value.map { |item| deep_sort(item) }
+      else value
+      end
     end
   end
 
@@ -553,10 +612,11 @@ module ForzAdvisorRelease
   module SubmissionGuard
     module_function
 
-    def authorize!(submit:, acknowledge_irreversible_app_review_submission:)
+    def authorize!(submit:, acknowledge_irreversible_app_review_submission:, confirmation:, expected_confirmation:)
       unless submit && acknowledge_irreversible_app_review_submission
         raise PreflightError, "submission requires --submit and --acknowledge-irreversible-app-review-submission"
       end
+      raise PreflightError, "submission confirmation does not match the exact release identity" unless confirmation == expected_confirmation
       true
     end
   end
@@ -727,6 +787,509 @@ module ForzAdvisorRelease
     end
   end
 
+  class GitHubClient
+    def initialize(root:, repository:, runner: CommandRunner.new)
+      @root = root
+      @repository = repository
+      @runner = runner
+    end
+
+    def run(run_id)
+      request("repos/#{@repository}/actions/runs/#{run_id}")
+    end
+
+    def jobs(run_id)
+      request("repos/#{@repository}/actions/runs/#{run_id}/jobs").fetch("jobs", [])
+    end
+
+    private
+
+    def request(path)
+      JSON.parse(@runner.call("gh", "api", path, chdir: @root))
+    rescue JSON::ParserError => error
+      raise APIError, "GitHub returned invalid JSON: #{error.message}"
+    end
+  end
+
+  class GitHubVerificationEvidence
+    def initialize(config:, client:)
+      @config = config
+      @client = client
+    end
+
+    def call(run_id:, ref:, commit:)
+      raise PreflightError, "GitHub Verify run id must be numeric" unless run_id.to_s.match?(/\A[1-9]\d*\z/)
+      run = @client.run(run_id.to_s)
+      expected_repository = repository_name
+      assertions = {
+        "repository" => run.dig("repository", "full_name") == expected_repository,
+        "workflow path" => run["path"] == @config.fetch("ci", "verify_workflow"),
+        "event" => run["event"] == "workflow_dispatch",
+        "release input" => run["display_title"] == "Verify #{ref}",
+        "tag" => run["head_branch"] == ref,
+        "commit" => run["head_sha"] == commit,
+        "status" => run["status"] == "completed",
+        "conclusion" => run["conclusion"] == "success"
+      }
+      failed = assertions.find { |_, passed| !passed }
+      raise PreflightError, "GitHub Verify evidence mismatch: #{failed.first}" if failed
+      matching_jobs = @client.jobs(run_id.to_s).select { |job| job["name"] == @config.fetch("ci", "verify_job") }
+      unless matching_jobs.length == 1 && matching_jobs.first["status"] == "completed" && matching_jobs.first["conclusion"] == "success"
+        raise PreflightError, "GitHub Verify job was not uniquely observed as successful"
+      end
+      {
+        "provider" => "GITHUB_ACTIONS",
+        "run_id" => run_id.to_s,
+        "workflow_path" => run["path"],
+        "ref" => ref,
+        "commit" => commit,
+        "status" => "completed",
+        "conclusion" => "success",
+        "job" => matching_jobs.first["name"],
+        "job_id" => matching_jobs.first["id"].to_s
+      }
+    end
+
+    private
+
+    def repository_name
+      URI(@config.fetch("repository", "remote_url")).path.delete_prefix("/").sub(/\.git\z/, "")
+    end
+  end
+
+  class StableRunnerHelper
+    RECEIPT_PREFIX = "RELEASE_RECEIPT "
+
+    def initialize(root:, runner: CommandRunner.new, script: File.expand_path("~/.codex/skills/release-apple-app/scripts/ssh_runner_build.sh"))
+      @root = root
+      @runner = runner
+      @script = script
+    end
+
+    def upload(commit:, app_id:, bundle_id:, version:, build:, confirmation:)
+      output = @runner.call(
+        @script,
+        "--platform", "iOS",
+        "--archive",
+        "--upload",
+        "--expected-version", version,
+        "--expected-build", build,
+        "--confirm-upload", confirmation,
+        @root,
+        commit,
+        chdir: @root
+      )
+      receipt_lines = output.lines.select { |line| line.start_with?(RECEIPT_PREFIX) }
+      raise PreflightError, "stable runner returned no unique release receipt" unless receipt_lines.length == 1
+      JSON.parse(receipt_lines.first.delete_prefix(RECEIPT_PREFIX))
+    rescue JSON::ParserError => error
+      raise PreflightError, "stable runner returned an invalid release receipt: #{error.message}"
+    end
+  end
+
+  class StableStateStore
+    SCHEMA_VERSION = 2
+
+    def initialize(directory: ENV.fetch("FORZADVISOR_STABLE_RELEASE_STATE_DIR", File.expand_path("~/.codex/state/forzadvisor-stable-release-v2")))
+      @directory = File.expand_path(directory)
+    end
+
+    def active?
+      File.file?(path)
+    end
+
+    def load
+      raise Error, "no active stable-runner release; run candidate-start first" unless active?
+      state = JSON.parse(File.read(path))
+      raise Error, "stable-runner release state schema mismatch" unless state["schema_version"] == SCHEMA_VERSION
+      state
+    end
+
+    def save(state)
+      raise Error, "refusing to save non-v2 stable-runner state" unless state["schema_version"] == SCHEMA_VERSION
+      FileUtils.mkdir_p(@directory)
+      temporary = "#{path}.#{Process.pid}.tmp"
+      File.write(temporary, JSON.pretty_generate(state.merge("updated_at" => Time.now.utc.iso8601)) + "\n", perm: 0o600)
+      File.rename(temporary, path)
+      JSON.parse(File.read(path))
+    ensure
+      File.delete(temporary) if defined?(temporary) && temporary && File.file?(temporary)
+    end
+
+    def save_evidence(evidence)
+      FileUtils.mkdir_p(@directory)
+      temporary = "#{evidence_path}.#{Process.pid}.tmp"
+      File.write(temporary, JSON.pretty_generate(evidence) + "\n", perm: 0o600)
+      File.rename(temporary, evidence_path)
+      evidence
+    ensure
+      File.delete(temporary) if defined?(temporary) && File.file?(temporary)
+    end
+
+    def archive(state)
+      raise Error, "refusing to archive non-v2 stable-runner state" unless state["schema_version"] == SCHEMA_VERSION
+      FileUtils.mkdir_p(history_directory)
+      identity = %w[app_id bundle_id marketing_version source_build_number commit phase].map { |key| state.fetch(key).to_s }.join("\0")
+      digest = Digest::SHA256.hexdigest(identity)[0, 20]
+      archive_path = File.join(history_directory, "#{digest}.json")
+      payload = JSON.pretty_generate(state) + "\n"
+      if File.file?(archive_path)
+        raise Error, "stable-runner history collision" unless File.read(archive_path) == payload
+        File.chmod(0o600, archive_path)
+        return archive_path
+      end
+      temporary = "#{archive_path}.#{Process.pid}.tmp"
+      File.write(temporary, payload, perm: 0o600)
+      File.rename(temporary, archive_path)
+      File.chmod(0o600, archive_path)
+      archive_path
+    ensure
+      File.delete(temporary) if defined?(temporary) && temporary && File.file?(temporary)
+    end
+
+    private
+
+    def path
+      File.join(@directory, "active-v2.json")
+    end
+
+
+    def evidence_path
+      File.join(@directory, "app-store-preflight-v2.json")
+    end
+
+    def history_directory
+      File.join(@directory, "history")
+    end
+  end
+
+  class CandidateBuildValidator
+    def initialize(config:, api:)
+      @config = config
+      @api = api
+    end
+
+    def call(build_id:, require_testflight_association: false)
+      app_id = @config.fetch("app", "id")
+      group_id = @config.fetch("testflight", "internal_group", "id")
+      build = @api.get("/v1/builds/#{build_id}").fetch("data")
+      owner = @api.get("/v1/builds/#{build_id}/app").fetch("data")
+      prerelease = @api.get("/v1/builds/#{build_id}/preReleaseVersion").fetch("data")
+      group = @api.get("/v1/betaGroups/#{group_id}").fetch("data")
+      group_owner = @api.get("/v1/betaGroups/#{group_id}/app").fetch("data")
+      attributes = build.fetch("attributes")
+      expected_encryption = @config.fetch("release", "export_compliance", "uses_non_exempt_encryption")
+      valid = build["id"] == build_id && owner["id"] == app_id && group_owner["id"] == app_id &&
+        group["id"] == group_id && group.dig("attributes", "name") == @config.fetch("testflight", "internal_group", "name") &&
+        group.dig("attributes", "isInternalGroup") == true &&
+        attributes["version"] == @config.fetch("release", "source_build_number") && attributes["processingState"] == "VALID" &&
+        attributes["buildAudienceType"] == @config.fetch("release", "expected_build_audience") &&
+        attributes.key?("usesNonExemptEncryption") && attributes["usesNonExemptEncryption"] == expected_encryption &&
+        prerelease.dig("attributes", "version") == @config.fetch("release", "marketing_version") &&
+        prerelease.dig("attributes", "platform") == "IOS"
+      raise APIError, "candidate build or internal TestFlight group identity mismatch" unless valid
+      associated = @api.get("/v1/betaGroups/#{group_id}/builds", "limit" => 200).fetch("data", []).any? { |item| item["id"] == build_id }
+      raise APIError, "candidate build is no longer associated with the configured internal TestFlight group" if require_testflight_association && !associated
+      {
+        "build_id" => build_id,
+        "build_number" => attributes["version"],
+        "marketing_version" => prerelease.dig("attributes", "version"),
+        "platform" => prerelease.dig("attributes", "platform"),
+        "processing_state" => attributes["processingState"],
+        "uses_non_exempt_encryption" => attributes["usesNonExemptEncryption"],
+        "testflight_group_id" => group_id,
+        "testflight_associated" => associated
+      }
+    end
+  end
+
+  class CandidateReconciler
+    def initialize(config:, api:)
+      @config = config
+      @api = api
+    end
+
+    def call
+      app_id = @config.fetch("app", "id")
+      build_number = @config.fetch("release", "source_build_number")
+      candidates = @api.get("/v1/apps/#{app_id}/builds", "limit" => 200).fetch("data", []).each_with_object([]) do |build, matches|
+        next unless build.dig("attributes", "version") == build_number
+        prerelease = @api.get("/v1/builds/#{build.fetch('id')}/preReleaseVersion").fetch("data")
+        next unless prerelease.dig("attributes", "version") == @config.fetch("release", "marketing_version") && prerelease.dig("attributes", "platform") == "IOS"
+        attrs = build.fetch("attributes")
+        matches << {
+          "build_id" => build["id"], "build_number" => attrs["version"],
+          "processing_state" => attrs["processingState"], "audience" => attrs["buildAudienceType"],
+          "uses_non_exempt_encryption_present" => attrs.key?("usesNonExemptEncryption"),
+          "uses_non_exempt_encryption" => attrs["usesNonExemptEncryption"]
+        }
+      end
+      { "read_only" => true, "app_id" => app_id, "marketing_version" => @config.fetch("release", "marketing_version"), "build_number" => build_number, "matching_build_count" => candidates.length, "builds" => candidates }
+    end
+  end
+
+  class UploadedBuildResolver
+    def initialize(config:, api:)
+      @config = config
+      @api = api
+    end
+
+    def call(receipt:)
+      app_id = @config.fetch("app", "id")
+      build_number = @config.fetch("release", "source_build_number")
+      records = @api.get("/v1/apps/#{app_id}/builds", "limit" => 200).fetch("data", [])
+      candidates = records.select do |record|
+        next false unless record.dig("attributes", "version") == build_number
+        prerelease = @api.get("/v1/builds/#{record.fetch('id')}/preReleaseVersion").fetch("data")
+        prerelease.dig("attributes", "version") == @config.fetch("release", "marketing_version") && prerelease.dig("attributes", "platform") == "IOS"
+      end
+      raise APIError, "uploaded build was not uniquely resolved" unless candidates.length == 1
+      build = candidates.first
+      raise APIError, "uploaded build receipt identity mismatch" unless build["id"] == receipt["asc_build_id"]
+      owner = @api.get("/v1/builds/#{build.fetch('id')}/app").fetch("data")
+      attrs = build.fetch("attributes")
+      unless owner["id"] == app_id && attrs["processingState"] == "VALID" && attrs["buildAudienceType"] == @config.fetch("release", "expected_build_audience")
+        raise APIError, "uploaded build identity or eligibility mismatch"
+      end
+      unless attrs.key?("usesNonExemptEncryption") && attrs["usesNonExemptEncryption"] == @config.fetch("release", "export_compliance", "uses_non_exempt_encryption")
+        raise APIError, "uploaded build export compliance mismatch"
+      end
+      {
+        "build_id" => build["id"],
+        "app_store_build_number" => attrs["version"],
+        "build_processing_state" => attrs["processingState"],
+        "build_audience" => attrs["buildAudienceType"]
+      }
+    end
+  end
+
+  class TestFlightDistributor
+    def initialize(config:, api:, checkpoint: nil)
+      @config = config
+      @api = api
+      @checkpoint = checkpoint || proc { |_event, _evidence| }
+    end
+
+    def call(build_id:)
+      group_id = @config.fetch("testflight", "internal_group", "id")
+      validation = CandidateBuildValidator.new(config: @config, api: @api).call(build_id: build_id)
+      unless validation["testflight_associated"]
+        @checkpoint.call("testflight_attach_intent", { "build_id" => build_id, "group_id" => group_id })
+        @api.post("/v1/betaGroups/#{group_id}/relationships/builds", { data: [{ type: "builds", id: build_id }] })
+        observed = @api.get("/v1/betaGroups/#{group_id}/builds", "limit" => 200).fetch("data", [])
+        raise APIError, "TestFlight build attachment was not observed" unless observed.any? { |item| item["id"] == build_id }
+        @checkpoint.call("testflight_attached", { "build_id" => build_id, "group_id" => group_id })
+      end
+      { "phase" => "human_verification_pending", "build_id" => build_id, "testflight_group_id" => group_id }
+    end
+  end
+
+  class StableRunnerCoordinator
+    HUMAN_RESULTS = %w[ACCEPT NEEDS_FIXES BLOCKED].freeze
+    ROLLOVER_PHASES = %w[human_needs_fixes human_blocked app_review_submitted submission_failed].freeze
+
+    def initialize(config:, git:, store:, github_verification:, helper:, api:)
+      @config = config
+      @git = git
+      @store = store
+      @github_verification = github_verification
+      @helper = helper
+      @api = api
+    end
+
+    def start(ref:, verify_run_id:, upload:, confirmation:)
+      proof = @git.assert_release_state!(@config, ref: ref, require_tag: true)
+      identity = release_identity(proof)
+      if @store.active?
+        existing = @store.load
+        if same_identity?(existing, identity)
+          validate_state_identity!(existing)
+          raise PreflightError, "a failed human result requires a new build identity" if %w[human_needs_fixes human_blocked].include?(existing["phase"])
+          return resume(upload: upload, confirmation: confirmation) if existing["phase"] == "github_verified"
+          raise PreflightError, "upload outcome is ambiguous; use candidate-reconcile or candidate-block, never retransmit" if existing["phase"] == "upload_start_intent"
+          return existing
+        end
+        raise PreflightError, "another stable-runner release state is active" unless ROLLOVER_PHASES.include?(existing["phase"])
+        raise PreflightError, "terminal rollover requires a new version/build identity" if same_build_identity?(existing, identity)
+      end
+      verification = @github_verification.call(run_id: verify_run_id, ref: proof.fetch("ref"), commit: proof.fetch("commit"))
+      @store.archive(@store.load) if @store.active?
+      state = @store.save(identity.merge(
+        "schema_version" => StableStateStore::SCHEMA_VERSION,
+        "phase" => "github_verified",
+        "github_verification" => verification
+      ))
+      perform_upload(state, upload: upload, confirmation: confirmation)
+    end
+
+    def perform_upload(state, upload:, confirmation:)
+      raise PreflightError, "candidate upload requires --upload" unless upload
+      expected_confirmation = confirmation_token(state.fetch("commit"))
+      raise PreflightError, "upload confirmation does not match the exact release identity" unless confirmation == expected_confirmation
+      state = @store.save(state.merge(
+        "phase" => "upload_start_intent",
+        "upload_intent_at" => Time.now.utc.iso8601,
+        "confirmation_sha256" => Digest::SHA256.hexdigest(confirmation)
+      ))
+      receipt = @helper.upload(
+        commit: state.fetch("commit"),
+        app_id: @config.fetch("app", "id"),
+        bundle_id: @config.fetch("app", "bundle_id"),
+        version: @config.fetch("release", "marketing_version"),
+        build: @config.fetch("release", "source_build_number"),
+        confirmation: confirmation
+      )
+      validate_receipt!(receipt, state.fetch("commit"))
+      state = @store.save(state.merge("phase" => "upload_valid", "release_receipt" => receipt))
+      finalize(state)
+    end
+
+    def status
+      state = @store.load
+      validate_state_identity!(state)
+      return state unless state["release_receipt"]
+      state.merge("observed_build" => UploadedBuildResolver.new(config: @config, api: @api).call(receipt: state.fetch("release_receipt")))
+    end
+
+    def resume(upload: false, confirmation: nil)
+      state = @store.load
+      validate_state_identity!(state)
+      case state["phase"]
+      when "github_verified"
+        perform_upload(state, upload: upload, confirmation: confirmation)
+      when "upload_start_intent"
+        raise PreflightError, "upload outcome is ambiguous; do not repeat transport without reconciling the exact App Store build"
+      when "upload_valid", "candidate_ready", "testflight_attach_intent"
+        finalize(state)
+      else
+        state
+      end
+    end
+
+    def reconcile
+      state = @store.load
+      validate_state_identity!(state)
+      state.merge("reconciliation" => CandidateReconciler.new(config: @config, api: @api).call)
+    end
+
+    def block_candidate(notes:)
+      raise PreflightError, "candidate-block requires nonempty notes" if notes.to_s.strip.empty?
+      state = @store.load
+      validate_state_identity!(state)
+      raise PreflightError, "candidate-block is only allowed from ambiguous upload intent" unless state["phase"] == "upload_start_intent"
+      @store.save(state.merge(
+        "phase" => "human_blocked",
+        "candidate_block" => { "kind" => "AMBIGUOUS_UPLOAD", "notes" => notes.to_s.strip, "recorded_at" => Time.now.utc.iso8601 }
+      ))
+    end
+
+    def record_human_result(result:, notes:, evidence:)
+      normalized = result.to_s.upcase
+      raise PreflightError, "human result must be ACCEPT, NEEDS_FIXES, or BLOCKED" unless HUMAN_RESULTS.include?(normalized)
+      raise PreflightError, "human result requires nonempty notes" if notes.to_s.strip.empty?
+      raise PreflightError, "human result requires nonempty evidence" if evidence.to_s.strip.empty?
+      state = @store.load
+      validate_state_identity!(state)
+      record = { "result" => normalized, "notes" => notes.to_s.strip, "evidence" => evidence.to_s.strip }
+      unless state["phase"] == "human_verification_pending"
+        existing = state["human_verification"]
+        return state if existing && record.all? { |key, value| existing[key] == value }
+        raise PreflightError, "human verification result cannot overwrite #{state['phase']}"
+      end
+      phase = { "ACCEPT" => "human_accepted", "NEEDS_FIXES" => "human_needs_fixes", "BLOCKED" => "human_blocked" }.fetch(normalized)
+      @store.save(state.merge(
+        "phase" => phase,
+        "human_verification" => record.merge("recorded_at" => Time.now.utc.iso8601)
+      ))
+    end
+
+    def confirmation_token(commit)
+      [
+        "UPLOAD", "IOS", @config.fetch("app", "id"), @config.fetch("app", "bundle_id"),
+        @config.fetch("release", "marketing_version"), @config.fetch("release", "source_build_number"), commit
+      ].join(":")
+    end
+
+    def submission_confirmation_token(state = @store.load)
+      validate_state_identity!(state)
+      [
+        "SUBMIT", "IOS", state.fetch("app_id"), state.fetch("bundle_id"),
+        state.fetch("marketing_version"), state.fetch("source_build_number"), state.fetch("commit"),
+        state.fetch("review_submission_id")
+      ].join(":")
+    end
+
+    def validate_state_identity!(state = @store.load)
+      expected = {
+        "app_id" => @config.fetch("app", "id"),
+        "bundle_id" => @config.fetch("app", "bundle_id"),
+        "marketing_version" => @config.fetch("release", "marketing_version"),
+        "source_build_number" => @config.fetch("release", "source_build_number"),
+        "stable_runner_profile" => @config.fetch("stable_runner", "profile"),
+        "config_fingerprint" => @config.fingerprint
+      }
+      mismatch = expected.find { |key, value| state[key] != value }
+      raise PreflightError, "stable-runner state identity mismatch: #{mismatch.first}" if mismatch
+      true
+    end
+
+    private
+
+    def same_identity?(left, right)
+      %w[app_id bundle_id marketing_version source_build_number stable_runner_profile config_fingerprint ref commit].all? { |key| left[key] == right[key] }
+    end
+
+    def same_build_identity?(left, right)
+      %w[app_id bundle_id marketing_version source_build_number].all? { |key| left[key] == right[key] }
+    end
+
+    def finalize(state)
+      build = UploadedBuildResolver.new(config: @config, api: @api).call(receipt: state.fetch("release_receipt"))
+      state = @store.save(state.merge(build).merge("phase" => "candidate_ready"))
+      checkpoint = proc do |event, evidence|
+        phase = event == "testflight_attach_intent" ? "testflight_attach_intent" : state["phase"]
+        state = @store.save(state.merge("phase" => phase, "testflight_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => evidence }))
+      end
+      distribution = TestFlightDistributor.new(config: @config, api: @api, checkpoint: checkpoint).call(build_id: build.fetch("build_id"))
+      @store.save(state.merge(distribution))
+    end
+
+    def release_identity(proof)
+      {
+        "app_id" => @config.fetch("app", "id"),
+        "bundle_id" => @config.fetch("app", "bundle_id"),
+        "marketing_version" => @config.fetch("release", "marketing_version"),
+        "source_build_number" => @config.fetch("release", "source_build_number"),
+        "stable_runner_profile" => @config.fetch("stable_runner", "profile"),
+        "config_fingerprint" => @config.fingerprint,
+        "ref" => proof.fetch("ref"),
+        "commit" => proof.fetch("commit")
+      }
+    end
+
+    def validate_receipt!(receipt, commit)
+      expected = {
+        "schema_version" => 1,
+        "state" => "VALID",
+        "app_id" => @config.fetch("app", "id"),
+        "platform" => "IOS",
+        "bundle_id" => @config.fetch("app", "bundle_id"),
+        "marketing_version" => @config.fetch("release", "marketing_version"),
+        "build" => @config.fetch("release", "source_build_number"),
+        "commit" => commit,
+        "runner_profile" => @config.fetch("stable_runner", "profile"),
+        "xcode_build" => @config.fetch("stable_runner", "xcode_build"),
+        "macos_build" => @config.fetch("stable_runner", "macos_build"),
+        "sdk_version" => @config.fetch("stable_runner", "sdk_versions", "iOS")
+      }
+      mismatch = expected.find { |key, value| receipt[key] != value }
+      raise PreflightError, "stable runner receipt mismatch: #{mismatch.first}" if mismatch
+      raise PreflightError, "stable runner receipt package hash is invalid" unless receipt["package_sha256"].to_s.match?(/\A[0-9a-f]{64}\z/)
+      raise PreflightError, "stable runner receipt App Store build id is missing" if receipt["asc_build_id"].to_s.empty?
+      true
+    end
+  end
+
   class StateStore
     def initialize(directory: ENV.fetch("FORZADVISOR_RELEASE_STATE_DIR", File.expand_path("~/.codex/state/forzadvisor-release")))
       @directory = File.expand_path(directory)
@@ -800,7 +1363,7 @@ module ForzAdvisorRelease
       rechecked = @git.assert_release_state!(@config, ref: proof.fetch("ref"), require_tag: true)
       raise PreflightError, "release tag moved before Verify start" unless rechecked["peeled_tag_commit"] == proof["peeled_tag_commit"]
       evidence = { "source_build_number" => @config.fetch("release", "source_build_number"), "current_app_store_build_number" => @config.fetch("release", "current_app_store_build_number"), "marketing_version" => @config.fetch("release", "marketing_version"), "price" => @config.fetch("release", "price"), "privacy" => @config.fetch("release", "privacy"), "content_rights" => @config.fetch("release", "content_rights"), "submission_policy" => @config.fetch("release", "submission_policy"), "app_store_release_type" => @config.fetch("release", "app_store_release_type") }
-      intent = previous || @store.save(proof.merge(evidence).merge("phase" => "verify_start_intent", "verify_start_intent_at" => Time.now.utc.iso8601, "verify_start_request" => { "workflow_id" => @config.fetch("xcode_cloud", "workflows", "verify", "id"), "reference_id" => reference.fetch("id"), "ref_kind" => "tag", "peeled_tag_commit" => proof.fetch("peeled_tag_commit"), "clean" => true }))
+      intent = previous || @store.save(proof.merge(evidence).merge("phase" => "verify_start_intent", "verify_start_intent_at" => Time.now.utc.iso8601, "verify_start_request" => { "workflow_id" => @config.fetch("legacy_xcode_cloud", "workflows", "verify", "id"), "reference_id" => reference.fetch("id"), "ref_kind" => "tag", "peeled_tag_commit" => proof.fetch("peeled_tag_commit"), "clean" => true }))
       run = start_run("verify", reference, proof.fetch("commit"), not_before: intent.fetch("verify_start_intent_at"), expected_reference_id: intent.dig("verify_start_request", "reference_id"))
       @store.save(intent.merge("phase" => "verify_running", "verify_run_id" => run.fetch("id")))
     end
@@ -851,17 +1414,17 @@ module ForzAdvisorRelease
       reference = git_reference(state)
       immediate = @git.assert_release_state!(@config, ref: state.fetch("ref"), require_tag: true)
       raise PreflightError, "release tag moved before Release Candidate start" unless immediate["peeled_tag_commit"] == state["peeled_tag_commit"]
-      intent = state["phase"] == "candidate_start_intent" ? state : @store.save(state.merge("phase" => "candidate_start_intent", "candidate_start_intent_at" => Time.now.utc.iso8601, "candidate_start_request" => { "workflow_id" => @config.fetch("xcode_cloud", "workflows", "release_candidate", "id"), "reference_id" => reference.fetch("id"), "ref_kind" => "tag", "peeled_tag_commit" => state.fetch("peeled_tag_commit"), "clean" => true }))
+      intent = state["phase"] == "candidate_start_intent" ? state : @store.save(state.merge("phase" => "candidate_start_intent", "candidate_start_intent_at" => Time.now.utc.iso8601, "candidate_start_request" => { "workflow_id" => @config.fetch("legacy_xcode_cloud", "workflows", "release_candidate", "id"), "reference_id" => reference.fetch("id"), "ref_kind" => "tag", "peeled_tag_commit" => state.fetch("peeled_tag_commit"), "clean" => true }))
       run = start_run("release_candidate", reference, state.fetch("commit"), not_before: intent.fetch("candidate_start_intent_at"), expected_reference_id: intent.dig("candidate_start_request", "reference_id"))
       @store.save(intent.merge("phase" => "candidate_running", "candidate_run_id" => run.fetch("id")))
     end
     def git_reference(state)
       kind = state["ref_kind"] == "tag" ? "TAG" : "BRANCH"
-      @api.get("/v1/scmRepositories/#{@config.fetch('xcode_cloud', 'repository_id')}/gitReferences", "limit" => 200).fetch("data").find { |item| item.dig("attributes", "kind") == kind && item.dig("attributes", "canonicalName") == "refs/#{state['ref_kind'] == 'tag' ? 'tags' : 'heads'}/#{state['ref']}" } || raise(APIError, "Xcode Cloud ref not found")
+      @api.get("/v1/scmRepositories/#{@config.fetch('legacy_xcode_cloud', 'repository_id')}/gitReferences", "limit" => 200).fetch("data").find { |item| item.dig("attributes", "kind") == kind && item.dig("attributes", "canonicalName") == "refs/#{state['ref_kind'] == 'tag' ? 'tags' : 'heads'}/#{state['ref']}" } || raise(APIError, "Xcode Cloud ref not found")
     end
     def start_run(key, reference, commit, not_before:, expected_reference_id:)
       raise APIError, "persisted Xcode Cloud start intent lacks a tag reference" if expected_reference_id.to_s.empty?
-      workflow = @config.fetch("xcode_cloud", "workflows", key, "id")
+      workflow = @config.fetch("legacy_xcode_cloud", "workflows", key, "id")
       matches = @api.get("/v1/ciWorkflows/#{workflow}/buildRuns", "limit" => 50).fetch("data", []).select do |run|
         source = run.dig("attributes", "sourceCommit")
         source = source["commitSha"] if source.is_a?(Hash)
@@ -893,15 +1456,10 @@ module ForzAdvisorRelease
     end
     def call(build_id:)
       app = @config.fetch("app", "id")
-      group = @config.fetch("testflight", "internal_group", "id")
+      CandidateBuildValidator.new(config: @config, api: @api).call(build_id: build_id, require_testflight_association: true)
       versions = @api.get("/v1/apps/#{app}/appStoreVersions", "filter[platform]" => "IOS", "filter[versionString]" => @config.fetch("release", "marketing_version"), "limit" => 10).fetch("data", [])
       raise APIError, "configured App Store version was not uniquely observed" unless versions.length == 1 && versions.first["id"] == @config.fetch("app_store", "version_id")
       version = versions.first
-      candidate = @api.get("/v1/builds/#{build_id}").fetch("data")
-      owner = @api.get("/v1/builds/#{build_id}/app").fetch("data")
-      unless owner["id"] == app && candidate.dig("attributes", "processingState") == "VALID" && candidate.dig("attributes", "buildAudienceType") == @config.fetch("release", "expected_build_audience")
-        raise APIError, "candidate build identity or eligibility changed before staging"
-      end
       submissions = @api.get("/v1/apps/#{app}/reviewSubmissions", "limit" => 20).fetch("data", [])
       configured_submission = @config.fetch("app_store", "review_submission_id")
       submission = submissions.find { |item| item["id"] == configured_submission && item.dig("attributes", "platform") == "IOS" && item.dig("attributes", "state") == "READY_FOR_REVIEW" }
@@ -915,15 +1473,7 @@ module ForzAdvisorRelease
       raise APIError, "review draft is mixed or does not contain the configured item" unless items.length == 1 && item_targets_version.call(items.first)
       attached = @api.get("/v1/appStoreVersions/#{version['id']}/build").fetch("data", nil)
       if attached && attached["id"] != build_id && attached.dig("attributes", "version") != @config.fetch("release", "current_app_store_build_number")
-        raise APIError, "selected build is neither the configured baseline nor the cloud candidate"
-      end
-      group_builds = @api.get("/v1/betaGroups/#{group}/builds", "limit" => 200).fetch("data", [])
-      unless group_builds.any? { |item| item["id"] == build_id }
-        @checkpoint.call("testflight_attach_intent", { "build_id" => build_id, "group_id" => group })
-        @api.post("/v1/betaGroups/#{group}/relationships/builds", { data: [{ type: "builds", id: build_id }] })
-        observed = @api.get("/v1/betaGroups/#{group}/builds", "limit" => 200).fetch("data", [])
-        raise APIError, "TestFlight build attachment was not observed" unless observed.any? { |item| item["id"] == build_id }
-        @checkpoint.call("testflight_attached", { "build_id" => build_id, "group_id" => group })
+        raise APIError, "selected build is neither the configured baseline nor the exact candidate"
       end
       if attached&.fetch("id", nil) != build_id
         @checkpoint.call("build_attach_intent", { "build_id" => build_id, "version_id" => version["id"] })
@@ -934,8 +1484,8 @@ module ForzAdvisorRelease
       end
       { "phase" => "staged", "version_id" => version["id"], "build_id" => build_id, "review_submission_id" => submission["id"] }
     end
-    def submit(submission_id:, submit:, acknowledge:)
-      SubmissionGuard.authorize!(submit: submit, acknowledge_irreversible_app_review_submission: acknowledge)
+    def submit(submission_id:, submit:, acknowledge:, confirmation:, expected_confirmation:)
+      SubmissionGuard.authorize!(submit: submit, acknowledge_irreversible_app_review_submission: acknowledge, confirmation: confirmation, expected_confirmation: expected_confirmation)
       current = @api.get("/v1/reviewSubmissions/#{submission_id}").fetch("data")
       current_state = current.dig("attributes", "state")
       return { "phase" => "app_review_submitted", "review_submission_id" => submission_id, "submission_state" => current_state } if %w[WAITING_FOR_REVIEW IN_REVIEW ACCEPTED PENDING_APPLE_RELEASE PROCESSING_FOR_DISTRIBUTION READY_FOR_SALE].include?(current_state)
@@ -991,8 +1541,15 @@ module ForzAdvisorRelease
     def initialize(config:, api:, today: Date.today)
       @config, @api, @today = config, api, today
     end
-    def call(expected_build_id: nil, require_stageable: false, require_selected_build: false)
+    def call(expected_build_id: nil, require_stageable: false, require_selected_build: false, require_testflight_association: false)
       app_id = @config.fetch("app", "id")
+      if expected_build_id
+        begin
+          CandidateBuildValidator.new(config: @config, api: @api).call(build_id: expected_build_id, require_testflight_association: require_testflight_association)
+        rescue APIError => error
+          raise PreflightError, "App Store preflight: #{error.message}"
+        end
+      end
       app = @api.get("/v1/apps/#{app_id}").fetch("data")
       assert!(app.dig("attributes", "name") == @config.fetch("app", "name") && app.dig("attributes", "bundleId") == @config.fetch("app", "bundle_id"), "app identity mismatch")
       assert!(app.dig("attributes", "contentRightsDeclaration") == @config.fetch("release", "content_rights"), "content rights mismatch")
@@ -1007,16 +1564,22 @@ module ForzAdvisorRelease
       build = expected_build_id ? @api.get("/v1/builds/#{expected_build_id}").fetch("data") : selected_build
       assert!(build, "candidate build is missing")
       assert!(build["id"] == expected_build_id, "candidate build identity mismatch") if expected_build_id
-      assert!(selected_build && selected_build["id"] == expected_build_id, "selected build differs from cloud candidate") if require_selected_build
+      assert!(selected_build && selected_build["id"] == expected_build_id, "selected build differs from exact candidate") if require_selected_build
       if expected_build_id && selected_build && selected_build["id"] != expected_build_id
-        assert!(selected_build.dig("attributes", "version") == @config.fetch("release", "current_app_store_build_number"), "selected build is neither the configured baseline nor the cloud candidate")
+        assert!(selected_build.dig("attributes", "version") == @config.fetch("release", "current_app_store_build_number"), "selected build is neither the configured baseline nor the exact candidate")
       end
       assert!(build.dig("attributes", "version") == @config.fetch("release", "current_app_store_build_number"), "current App Store build number mismatch") unless expected_build_id
       assert!(build.dig("attributes", "processingState") == "VALID", "selected build is not VALID")
       assert!(build.dig("attributes", "buildAudienceType") == @config.fetch("release", "expected_build_audience"), "selected build is not App Store eligible")
-      assert!(build.dig("attributes", "usesNonExemptEncryption") == @config.fetch("release", "export_compliance", "uses_non_exempt_encryption"), "export compliance mismatch")
+      assert!(build.fetch("attributes").key?("usesNonExemptEncryption") && build.dig("attributes", "usesNonExemptEncryption") == @config.fetch("release", "export_compliance", "uses_non_exempt_encryption"), "export compliance mismatch")
       owner = @api.get("/v1/builds/#{build.fetch('id')}/app").fetch("data")
       assert!(owner["id"] == app_id, "build belongs to another app")
+      if expected_build_id
+        assert!(build.dig("attributes", "version") == @config.fetch("release", "source_build_number"), "candidate build number mismatch")
+        prerelease = @api.get("/v1/builds/#{build.fetch('id')}/preReleaseVersion").fetch("data")
+        assert!(prerelease.dig("attributes", "version") == @config.fetch("release", "marketing_version"), "candidate prerelease version mismatch")
+        assert!(prerelease.dig("attributes", "platform") == "IOS", "candidate prerelease platform mismatch")
+      end
       localizations = @api.get("/v1/appStoreVersions/#{version.fetch('id')}/appStoreVersionLocalizations", "limit" => 50).fetch("data", [])
       localization = localizations.find { |item| item.dig("attributes", "locale") == "en-US" }
       assert!(localization, "en-US localization is missing")
@@ -1095,12 +1658,31 @@ module ForzAdvisorRelease
     module_function
 
     def text(result)
-      if result["app_id"] && result.key?("ready")
+      if result["reconciliation"]
+        reconciliation = result.fetch("reconciliation")
+        lines = [
+          "Candidate reconciliation (read-only)",
+          "Version/build: #{reconciliation['marketing_version']} (#{reconciliation['build_number']})",
+          "Exact matches: #{reconciliation['matching_build_count']}"
+        ]
+        reconciliation.fetch("builds", []).each do |build|
+          lines << "Build #{build['build_id']}: #{build['processing_state'] || 'unknown'} (#{build['audience'] || 'unknown'})"
+        end
+        lines.join("\n")
+      elsif result["app_id"] && result.key?("ready")
         ["App Store preflight: #{result['ready'] ? 'PASS' : 'FAIL'}", "Version: #{result['version_id']}", "App Store build: #{result['app_store_build_number']} (#{result['build_processing_state']}, #{result['build_audience']})", "Screenshots: #{result['screenshot_count']}", "Review draft: #{result['review_submission_id'] || 'none'}"].join("\n")
       elsif result.key?("ready")
         lines = ["Release preflight: #{result['ready'] ? 'PASS' : 'FAIL'}"]
         result.fetch("checks", {}).each { |name, check| lines << "#{check['passed'] ? 'PASS' : 'FAIL'} #{name}" }
         lines.join("\n")
+      elsif result["phase"]
+        [
+          "Stable release: #{result['phase']}",
+          "Ref: #{result['ref'] || 'unknown'}",
+          "Commit: #{result['commit'] || 'unknown'}",
+          "Version/build: #{result['marketing_version'] || 'unknown'} (#{result['source_build_number'] || 'unknown'})",
+          "TestFlight build: #{result['build_id'] || 'not ready'}"
+        ].join("\n")
       else
         [
           "App Store Connect status (read-only)",
