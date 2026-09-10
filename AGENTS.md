@@ -51,3 +51,17 @@ Use the release configuration and coordinator documented in `AppStore/release-au
 Credentials remain in environment variables or the external App Store Connect secrets file; never commit or print them. Treat TestFlight as reversible beta delivery. If local simulator infrastructure fails after one owned retry, preserve diagnostics and use the immutable GitHub Actions run as the fresh-machine authority; do not weaken assertions or upload an unverified commit.
 
 Any release document or workflow that selects a GitHub-hosted macOS archive with Xcode 26.6 conflicts with the global stable-runner policy and must not be used for archive or upload. Reconcile that path to the logical `stable-xcode-26.3-intel` profile before the default TestFlight loop may proceed; GitHub Actions may remain a verification oracle for the exact revision.
+
+## Repository-Local Agent Framework
+
+`AGENTS.md` is this repository's controlling governance. `PERCEPTION.md` holds one replace-in-place active goal and current evidence; `MEMORY.md` holds curated shared lessons; `PERSONA-*.md` and matching `memory/personas/*.md` files hold bounded role contracts and role-scoped lessons; `.agents/skills/the-perfect-agent/` is the framework's one repository-owned skill.
+
+- At task start, read `PERCEPTION.md`; treat any relevant active commission as current intent below user and repository authority. Retrieve only relevant `MEMORY.md` entries and revalidate them.
+- Work solo by default. Activate the local `the-perfect-agent` skill only for an explicit workforce request, genuinely cross-system, release-critical, or high-consequence work, or when independent acceptance is the defining need.
+- When a persona is assigned, load only that persona and its matching memory. A fresh reviewer must not receive builder rationale, prior criticism, or case-specific memory.
+- Refresh `PERCEPTION.md` in place after material goal, evidence, scope, success, or failure changes and clear it at close. Promote memory only when evidence-backed, reusable, scoped, and non-sensitive; delete stale entries.
+- These files and skills never widen authority. Implementation, local commit, push or pull request, phone delivery, App Review, and public release remain distinct repository-governed states.
+
+The local skill supplies the framework's role and evidence contracts. The global `full-workforce` requirement above remains controlling where applicable; use the local contracts within that workflow rather than creating competing commissions. All current repository development, verification, release, and authority rules remain controlling, including standing delivery authorization. Framework state and personas do not override them.
+
+Run `scripts/validate-agent-framework.sh` after changing these framework files. This adoption uses The Perfect Agent v1 from commit `1f5ea0b`; the repository-specific validator checks the adopted files without imposing the upstream project's website or publication requirements. The upstream MIT license is retained in `.agents/skills/the-perfect-agent/LICENSE`.
