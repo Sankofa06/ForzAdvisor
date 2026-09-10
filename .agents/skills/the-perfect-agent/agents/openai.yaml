@@ -1,0 +1,6 @@
+interface:
+  display_name: "The Perfect Agent"
+  short_description: "Right-sized teams with independent acceptance"
+  default_prompt: "Use $the-perfect-agent to coordinate this outcome with the smallest accountable crew and fresh evidence-based acceptance."
+policy:
+  allow_implicit_invocation: true
