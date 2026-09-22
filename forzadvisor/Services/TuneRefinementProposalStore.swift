@@ -73,6 +73,7 @@ final class TuneRefinementProposalStore: ObservableObject {
 
     func discard() {
         proposal = nil
+        applied = nil
     }
 
     func apply(

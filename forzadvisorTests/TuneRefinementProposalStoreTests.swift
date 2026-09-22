@@ -3,6 +3,10 @@ import XCTest
 
 @MainActor
 final class TuneRefinementProposalStoreTests: XCTestCase {
+    private enum PersistenceError: Error {
+        case failed
+    }
+
     func testProviderCompletionStoresProposalWithoutPersistence() {
         let fixture = makeProposal()
         let store = TuneRefinementProposalStore()
@@ -27,6 +31,55 @@ final class TuneRefinementProposalStoreTests: XCTestCase {
             XCTAssertEqual(error as? TuneRefinementProposalError, .staleBaseline)
         }
         XCTAssertEqual(store.proposal, fixture)
+    }
+
+    func testApplyPersistenceFailureLeavesPreviewAndNoUndoHistory() {
+        let fixture = makeProposal()
+        let store = TuneRefinementProposalStore()
+        store.store(fixture)
+
+        XCTAssertThrowsError(try store.apply(
+            currentPersistedTune: fixture.baseline,
+            persist: { _ in throw PersistenceError.failed }
+        ))
+
+        XCTAssertEqual(store.proposal, fixture)
+        XCTAssertNil(store.applied)
+    }
+
+    func testDiscardClearsPreviewAndAppliedHistory() throws {
+        let fixture = makeProposal()
+        let store = TuneRefinementProposalStore()
+        store.store(fixture)
+        _ = try store.apply(
+            currentPersistedTune: fixture.baseline,
+            persist: { _ in }
+        )
+
+        store.discard()
+
+        XCTAssertNil(store.proposal)
+        XCTAssertNil(store.applied)
+    }
+
+    func testUndoPersistenceFailureKeepsSuccessfulApplyUndoable() throws {
+        let fixture = makeProposal()
+        let store = TuneRefinementProposalStore()
+        let start = Date(timeIntervalSince1970: 100)
+        store.store(fixture)
+        _ = try store.apply(
+            currentPersistedTune: fixture.baseline,
+            now: start,
+            persist: { _ in }
+        )
+
+        XCTAssertThrowsError(try store.undo(
+            currentPersistedTune: fixture.candidate,
+            now: start.addingTimeInterval(1),
+            persist: { _ in throw PersistenceError.failed }
+        ))
+
+        XCTAssertNotNil(store.applied)
     }
 
     func testApplyThenUndoBeforeSixSecondsPersistsExactValues() throws {

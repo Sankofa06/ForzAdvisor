@@ -88,18 +88,23 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertTrue(provider.detail.contains("only when generation completes"))
     }
 
-    func testCompletedResultWithNoReadySettingsBecomesEvidenceState() {
+    func testCompletedFH6ResultWithNoReadySettingsUsesWithheldPlanState() {
         let presentation = TuneResultPresentation(
             tune: makeTune(hasProjection: true),
             isSaved: false,
             isStreaming: false
         )
 
-        XCTAssertEqual(presentation.completion, .needsEvidence)
+        XCTAssertEqual(presentation.completion, .plan)
         XCTAssertFalse(presentation.allowsCopyOrSave)
         XCTAssertFalse(presentation.allowsCopy)
         XCTAssertTrue(presentation.allowsSave)
-        XCTAssertTrue(presentation.statusDetail.contains("No numeric settings passed"))
+        XCTAssertTrue(presentation.isFH6EvidenceWithheld)
+        XCTAssertEqual(
+            presentation.statusTitle,
+            "Settings withheld — more game evidence needed"
+        )
+        XCTAssertTrue(presentation.statusDetail.contains("more game evidence"))
     }
 
     func testSavedEvidenceStateAllowsMetadataEditButNotConsequentialActions() {
@@ -113,7 +118,7 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.allowsSavedConsequentialActions)
     }
 
-    func testReadyMetadataWithoutUsableNumericOutputStaysEvidenceGated() {
+    func testReadyMetadataWithoutUsableNumericOutputRemainsWithheldForFH6() {
         var tune = makeTune(hasProjection: true)
         tune.projectionReport?.fields = [
             TuneFieldProjection(
@@ -142,9 +147,10 @@ final class TuneResultPresentationTests: XCTestCase {
             isStreaming: false
         )
 
-        XCTAssertEqual(presentation.completion, .needsEvidence)
+        XCTAssertEqual(presentation.completion, .plan)
         XCTAssertEqual(presentation.availableSettingCount, 0)
         XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertTrue(presentation.isFH6EvidenceWithheld)
         XCTAssertNotEqual(presentation.statusTitle, "Ready to use")
     }
 

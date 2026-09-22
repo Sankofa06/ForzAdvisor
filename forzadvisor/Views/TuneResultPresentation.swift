@@ -12,6 +12,7 @@ struct TuneResultPresentation: Equatable {
     let completion: Completion
     let isSaved: Bool
     let availableSettingCount: Int
+    let isFH6EvidenceWithheld: Bool
 
     init(tune: TuneResult, isSaved: Bool, isStreaming: Bool) {
         self.isSaved = isSaved
@@ -22,7 +23,7 @@ struct TuneResultPresentation: Equatable {
         let projectedLineCount = projectedTune.sections.flatMap(\.lines).count
         let hasUsableNumericOutput = readyCount > 0
             && projectedLineCount == readyCount
-
+        let isFH6 = tune.request.car.game == .fh6
         if isStreaming {
             completion = .incomplete
         } else if tune.purpose == .fh5BuildPlan || tune.request.car.game == .fh5 {
@@ -31,6 +32,8 @@ struct TuneResultPresentation: Equatable {
             completion = .plan
         } else if hasProjectionReport, hasUsableNumericOutput {
             completion = .available
+        } else if isFH6 && hasProjectionReport {
+            completion = .plan
         } else if TuneClipboardFormatter.buildPlanText(for: projectedTune) != nil {
             completion = .plan
         } else if hasProjectionReport {
@@ -39,6 +42,11 @@ struct TuneResultPresentation: Equatable {
             completion = .legacyUnavailable
         }
         availableSettingCount = completion == .available ? readyCount : 0
+        isFH6EvidenceWithheld = isFH6
+            && tune.purpose != .fh5BuildPlan
+            && hasProjectionReport
+            && completion != .available
+            && completion != .incomplete
     }
 
     var hasAvailableSettings: Bool { availableSettingCount > 0 }
@@ -75,8 +83,14 @@ struct TuneResultPresentation: Equatable {
         switch completion {
         case .incomplete: "Incomplete result"
         case .available: isSaved ? "Saved locally" : "Ready to use"
-        case .plan: isSaved ? "Plan saved locally" : "Setup plan ready"
-        case .needsEvidence: "Settings withheld"
+        case .plan:
+            isFH6EvidenceWithheld
+                ? "Settings withheld — more game evidence needed"
+                : (isSaved ? "Plan saved locally" : "Setup plan ready")
+        case .needsEvidence:
+            isFH6EvidenceWithheld
+                ? "Settings withheld — more game evidence needed"
+                : "Settings withheld"
         case .legacyUnavailable: "Legacy result needs review"
         }
     }
@@ -88,9 +102,13 @@ struct TuneResultPresentation: Equatable {
         case .available:
             "\(availableSettingCount) available setting\(availableSettingCount == 1 ? "" : "s"). Availability does not mean accuracy has been validated."
         case .plan:
-            "No numeric settings are ready to enter. Save this setup and follow the in-game confirmations before generating again."
+            isFH6EvidenceWithheld
+                ? "Numeric settings are withheld until more game evidence is confirmed. Use the setup plan when one is available, then generate again."
+                : "No numeric settings are ready to enter. Save this setup and follow the in-game confirmations before generating again."
         case .needsEvidence:
-            "No numeric settings passed the current evidence and constraint checks. Capture the missing build evidence before applying values."
+            isFH6EvidenceWithheld
+                ? "Numeric settings are withheld until more game evidence is confirmed. Capture the missing build evidence before applying values."
+                : "No numeric settings passed the current evidence and constraint checks. Capture the missing build evidence before applying values."
         case .legacyUnavailable:
             return "This saved result predates availability checks. Its values cannot be copied or refined."
         }

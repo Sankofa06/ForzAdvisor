@@ -15,7 +15,9 @@ struct TuneAvailableSettingsSection: View {
 
             if presentation.completion == .plan {
                 ContentUnavailableView(
-                    "No numeric settings yet",
+                    presentation.isFH6EvidenceWithheld
+                        ? "Settings withheld — more game evidence needed"
+                        : "No numeric settings yet",
                     systemImage: "list.bullet.clipboard",
                     description: Text("Use the setup plan and confirm the missing parts or tuning-menu ranges in game. Then generate again when the evidence is ready.")
                 )
@@ -92,7 +94,9 @@ private extension TuneResultPresentation {
         case .available:
             "Availability means these values can be entered in game. It is not an accuracy or validation score."
         case .plan:
-            "No numeric values are being presented yet. This plan keeps the next in-game step explicit."
+            isFH6EvidenceWithheld
+                ? "Numeric values are withheld until more game evidence is confirmed. This plan keeps the next in-game step explicit."
+                : "No numeric values are being presented yet. This plan keeps the next in-game step explicit."
         case .needsEvidence:
             "Numeric values stay hidden until the required build and tuning-menu evidence is trustworthy."
         case .incomplete:
