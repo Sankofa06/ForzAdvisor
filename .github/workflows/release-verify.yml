@@ -23,7 +23,7 @@ concurrency:
 jobs:
   verify:
     name: Xcode 26.6 ReleaseVerify
-    runs-on: macos-26-intel
+    runs-on: macos-26
     timeout-minutes: 60
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
@@ -78,8 +78,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(sw_vers -productVersion)" = "26.6.1"
-          test "$(sw_vers -buildVersion)" = "25G76"
+          test "$(sw_vers -productVersion)" = "26.6.2"
+          test "$(sw_vers -buildVersion)" = "25G83"
           xcodebuild -version
           test "$(xcodebuild -version | head -1)" = "Xcode 26.6"
           test "$(xcodebuild -version | tail -1)" = "Build version 17F113"

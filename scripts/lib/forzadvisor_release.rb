@@ -159,9 +159,9 @@ module ForzAdvisorRelease
       raise ConfigurationError, "CI authority must be verification-only" unless fetch("ci", "authority") == "VERIFICATION_ONLY"
       raise ConfigurationError, "invalid GitHub verify workflow" unless fetch("ci", "verify_workflow") == ".github/workflows/release-verify.yml"
       raise ConfigurationError, "invalid GitHub verify job" unless fetch("ci", "verify_job") == "Xcode 26.6 ReleaseVerify"
-      raise ConfigurationError, "unsupported GitHub runner" unless fetch("ci", "runner") == "macos-26-intel"
-      raise ConfigurationError, "unsupported CI macOS version" unless fetch("ci", "runner_os_version") == "26.6.1"
-      raise ConfigurationError, "unsupported CI macOS build" unless fetch("ci", "runner_os_build") == "25G76"
+      raise ConfigurationError, "unsupported GitHub runner" unless fetch("ci", "runner") == "macos-26"
+      raise ConfigurationError, "unsupported CI macOS version" unless fetch("ci", "runner_os_version") == "26.6.2"
+      raise ConfigurationError, "unsupported CI macOS build" unless fetch("ci", "runner_os_build") == "25G83"
       raise ConfigurationError, "unsupported CI Xcode version" unless fetch("ci", "xcode_version") == "26.6"
       raise ConfigurationError, "unsupported CI Xcode build" unless fetch("ci", "xcode_build") == "17F113"
       validate_stable_runner!
