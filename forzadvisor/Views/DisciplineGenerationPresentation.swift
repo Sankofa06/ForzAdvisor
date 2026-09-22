@@ -37,6 +37,16 @@ enum DisciplineGenerationCopy {
     }
 
     static func routeSummary(_ disclosure: TuneProviderDisclosure) -> String {
+        routeSummary(for: .fh6, disclosure: disclosure)
+    }
+
+    static func routeSummary(
+        for game: ForzaGame,
+        disclosure: TuneProviderDisclosure
+    ) -> String {
+        if game == .fh5 {
+            return "This FH5 build plan is created locally. Your preferred generation method is not used for FH5."
+        }
         let route = disclosure.route
         if !route.preferredModeWillBeAttempted {
             return "Uses \(route.expectedFirstMode.resultTitle). The preferred method is not ready."

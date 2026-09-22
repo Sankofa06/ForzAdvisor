@@ -4,6 +4,8 @@ struct TuneResultPresentation: Equatable {
     enum Completion: Equatable {
         case incomplete
         case available
+        case plan
+        case needsEvidence
         case legacyUnavailable
     }
 
@@ -15,8 +17,15 @@ struct TuneResultPresentation: Equatable {
         self.isSaved = isSaved
         if isStreaming {
             completion = .incomplete
-        } else if tune.projectionReport != nil {
+        } else if tune.purpose == .fh5BuildPlan {
+            completion = .plan
+        } else if tune.projectionReport?.readyCount ?? 0 > 0 {
             completion = .available
+        } else if TuneClipboardFormatter.buildPlanText(for: tune) != nil
+                    || tune.projectionReport?.requiresInGameConfirmation == true {
+            completion = .plan
+        } else if tune.projectionReport != nil {
+            completion = .needsEvidence
         } else {
             completion = .legacyUnavailable
         }
@@ -24,6 +33,14 @@ struct TuneResultPresentation: Equatable {
     }
 
     var allowsCopyOrSave: Bool { completion == .available }
+    var allowsSave: Bool {
+        switch completion {
+        case .available, .plan, .needsEvidence:
+            true
+        case .incomplete, .legacyUnavailable:
+            false
+        }
+    }
     var allowsSavedConsequentialActions: Bool {
         isSaved && completion == .available
     }
@@ -32,6 +49,8 @@ struct TuneResultPresentation: Equatable {
         switch completion {
         case .incomplete: "Incomplete result"
         case .available: isSaved ? "Saved locally" : "Ready to use"
+        case .plan: isSaved ? "Plan saved locally" : "Setup plan ready"
+        case .needsEvidence: "Settings withheld"
         case .legacyUnavailable: "Legacy result needs review"
         }
     }
@@ -42,6 +61,10 @@ struct TuneResultPresentation: Equatable {
             "Generation is still in progress. Copy and Save remain unavailable until the complete result arrives."
         case .available:
             "\(availableSettingCount) available setting\(availableSettingCount == 1 ? "" : "s"). Availability does not mean accuracy has been validated."
+        case .plan:
+            "No numeric settings are ready to enter. Save this setup and follow the in-game confirmations before generating again."
+        case .needsEvidence:
+            "No numeric settings passed the current evidence and constraint checks. Capture the missing build evidence before applying values."
         case .legacyUnavailable:
             "This saved result predates availability checks. Its values cannot be copied or refined."
         }

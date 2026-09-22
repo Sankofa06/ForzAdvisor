@@ -37,9 +37,32 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertTrue(provider.detail.contains("only when generation completes"))
     }
 
-    func testCompletedProjectedResultAllowsActionsWithoutAccuracyClaim() {
+    func testCompletedResultWithNoReadySettingsBecomesPlanOrEvidenceState() {
         let presentation = TuneResultPresentation(
             tune: makeTune(hasProjection: true),
+            isSaved: false,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(presentation.completion, .needsEvidence)
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertTrue(presentation.allowsSave)
+        XCTAssertTrue(presentation.statusDetail.contains("No numeric settings passed"))
+    }
+
+    func testCompletedProjectedResultWithReadySettingsAllowsActionsWithoutAccuracyClaim() {
+        var tune = makeTune(hasProjection: true)
+        tune.projectionReport?.fields = [
+            TuneFieldProjection(
+                field: .frontTirePressure,
+                status: .ready,
+                requiredPurchaseIDs: [],
+                unresolvedPartIDs: [],
+                reason: nil
+            )
+        ]
+        let presentation = TuneResultPresentation(
+            tune: tune,
             isSaved: false,
             isStreaming: false
         )
