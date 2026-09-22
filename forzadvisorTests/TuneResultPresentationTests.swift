@@ -50,6 +50,17 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.statusDetail.contains("No numeric settings passed"))
     }
 
+    func testSavedEvidenceStateAllowsMetadataEditButNotConsequentialActions() {
+        let presentation = TuneResultPresentation(
+            tune: makeTune(hasProjection: true),
+            isSaved: true,
+            isStreaming: false
+        )
+
+        XCTAssertTrue(presentation.allowsSavedMetadataEdit)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+    }
+
     func testCompletedProjectedResultWithReadySettingsAllowsActionsWithoutAccuracyClaim() {
         var tune = makeTune(hasProjection: true)
         tune.projectionReport?.fields = [

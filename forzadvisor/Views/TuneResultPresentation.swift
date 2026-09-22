@@ -45,6 +45,16 @@ struct TuneResultPresentation: Equatable {
         isSaved && completion == .available
     }
 
+    var allowsSavedMetadataEdit: Bool {
+        guard isSaved else { return false }
+        switch completion {
+        case .incomplete, .legacyUnavailable:
+            return false
+        case .available, .plan, .needsEvidence:
+            return true
+        }
+    }
+
     var statusTitle: String {
         switch completion {
         case .incomplete: "Incomplete result"

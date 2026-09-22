@@ -38,7 +38,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         )
         XCTAssertTrue(
             app.staticTexts[
-                "Availability means these values can be entered in game. It is not an accuracy or validation score."
+                "No numeric values are being presented yet. This plan keeps the next in-game step explicit."
             ].exists
         )
         capture("06-result-available-settings-light", in: app)
