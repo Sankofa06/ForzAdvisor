@@ -120,8 +120,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
-    assert_equal "78", @config.fetch("release", "source_build_number")
-    assert_equal "78", @config.fetch("release", "current_app_store_build_number")
+    assert_equal "79", @config.fetch("release", "source_build_number")
+    assert_equal "79", @config.fetch("release", "current_app_store_build_number")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
@@ -231,7 +231,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal ForzAdvisorRelease::Preflight::CHECKS.sort, result["checks"].keys.sort
     assert result["checks"].values.all? { |check| check["passed"] }
     assert_equal @config.fetch("public_urls").values.sort, urls.urls.sort
-    assert_equal "78", result.dig("checks", "project", "evidence", "source_build_number")
+    assert_equal "79", result.dig("checks", "project", "evidence", "source_build_number")
     assert_equal 6, result.dig("checks", "screenshots", "evidence", "count")
   end
 
@@ -258,7 +258,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call
 
     assert_equal "1.41.1", result["marketing_version"]
-    assert_equal "78", result["source_build_number"]
+    assert_equal "79", result["source_build_number"]
     assert_equal %w[forzadvisorTests forzadvisorUITests], result["test_targets"]
     assert_equal ["forzadvisor.xcscheme", "forzadvisor Cloud.xcscheme"], result["schemes"]
   end
@@ -351,7 +351,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_github_verification_evidence_requires_exact_tag_sha_workflow_and_job
-    tag = "release-1.41.1-appstore-78"
+    tag = "release-1.41.1-appstore-79"
     commit = "a" * 40
     run = github_run(tag: tag, commit: commit)
     client = FakeGitHubClient.new(run: run, jobs: [github_job])
@@ -409,7 +409,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_stable_runner_coordinator_persists_intent_before_exact_upload_and_attaches_only_testflight
-    tag = "release-1.41.1-appstore-78"
+    tag = "release-1.41.1-appstore-79"
     commit = "a" * 40
     Dir.mktmpdir do |directory|
       store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
@@ -424,7 +424,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
       confirmation = coordinator.confirmation_token(commit)
       state = coordinator.start(ref: tag, verify_run_id: "42", upload: true, confirmation: confirmation)
       assert_equal "human_verification_pending", state["phase"]
-      assert_equal "build-78", state["build_id"]
+      assert_equal "build-79", state["build_id"]
       assert_equal 1, helper.calls.length
       assert_equal confirmation, helper.calls.first[:confirmation]
       assert_equal commit, helper.calls.first[:commit]
@@ -436,7 +436,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_stable_runner_coordinator_rejects_wrong_receipt_and_ambiguous_builds
-    tag = "release-1.41.1-appstore-78"
+    tag = "release-1.41.1-appstore-79"
     commit = "a" * 40
     Dir.mktmpdir do |directory|
       store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
@@ -452,7 +452,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
     responses = stable_candidate_responses
     responses["/v1/apps/#{@config.fetch('app', 'id')}/builds"] = { "data" => [candidate_build, candidate_build.merge("id" => "other")] }
-    responses["/v1/builds/other/preReleaseVersion"] = responses["/v1/builds/build-78/preReleaseVersion"]
+    responses["/v1/builds/other/preReleaseVersion"] = responses["/v1/builds/build-79/preReleaseVersion"]
     assert_raises(ForzAdvisorRelease::APIError) do
       ForzAdvisorRelease::UploadedBuildResolver.new(config: @config, api: FakeAPI.new(responses)).call(receipt: release_receipt(commit: commit))
     end
@@ -462,7 +462,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     external_group_responses["/v1/betaGroups/#{group}"]["data"]["attributes"]["isInternalGroup"] = false
     external_api = FakeAPI.new(external_group_responses)
     assert_raises(ForzAdvisorRelease::APIError) do
-      ForzAdvisorRelease::TestFlightDistributor.new(config: @config, api: external_api).call(build_id: "build-78")
+      ForzAdvisorRelease::TestFlightDistributor.new(config: @config, api: external_api).call(build_id: "build-79")
     end
     refute external_api.requests.any? { |request| request[0] == "POST" }
   end
@@ -508,7 +508,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
       reconciled = coordinator.reconcile
       assert_equal true, reconciled.dig("reconciliation", "read_only")
       assert_equal 1, reconciled.dig("reconciliation", "matching_build_count")
-      assert_includes ForzAdvisorRelease::Reporter.text(reconciled), "Build build-78: VALID"
+      assert_includes ForzAdvisorRelease::Reporter.text(reconciled), "Build build-79: VALID"
       refute api.requests.any? { |request| %w[POST PATCH].include?(request[0]) }
       assert_empty helper.calls
       assert_equal "upload_start_intent", store.load["phase"]
@@ -538,7 +538,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_terminal_rollover_archives_once_and_establishes_new_github_verified_identity
     Dir.mktmpdir do |directory|
       store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
-      store.save(stable_identity.merge("schema_version" => 2, "phase" => "human_blocked"))
+      store.save(stable_identity.merge("source_build_number" => "78", "schema_version" => 2, "phase" => "human_blocked"))
       data = JSON.parse(File.read(CONFIG_PATH))
       data["release"]["source_build_number"] = "79"
       path = File.join(directory, "config.json")
@@ -576,7 +576,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_human_result_records_accept_and_rejects_premature_or_unknown_results
     Dir.mktmpdir do |directory|
       store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
-      store.save(stable_identity.merge("schema_version" => 2, "phase" => "human_verification_pending", "build_id" => "build-78"))
+      store.save(stable_identity.merge("schema_version" => 2, "phase" => "human_verification_pending", "build_id" => "build-79"))
       coordinator = ForzAdvisorRelease::StableRunnerCoordinator.new(config: @config, git: nil, store: store, github_verification: nil, helper: nil, api: nil)
       state = coordinator.record_human_result(result: "ACCEPT", notes: "Matches expected results", evidence: "screenshot-1.png")
       assert_equal "human_accepted", state["phase"]
@@ -693,7 +693,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_candidate_validation_rejects_removed_group_wrong_build_prerelease_platform_and_export_value
     group = @config.fetch("testflight", "internal_group", "id")
     mutations = {
-      "wrong build" => proc { |responses| responses["/v1/builds/build"]["data"]["attributes"]["version"] = "79" },
+      "wrong build" => proc { |responses| responses["/v1/builds/build"]["data"]["attributes"]["version"] = "78" },
       "wrong prerelease" => proc { |responses| responses["/v1/builds/build/preReleaseVersion"]["data"]["attributes"]["version"] = "1.41.2" },
       "wrong platform" => proc { |responses| responses["/v1/builds/build/preReleaseVersion"]["data"]["attributes"]["platform"] = "MAC_OS" },
       "missing export compliance" => proc { |responses| responses["/v1/builds/build"]["data"]["attributes"].delete("usesNonExemptEncryption") },
@@ -818,15 +818,15 @@ class ForzAdvisorReleaseTest < Minitest::Test
     responses = {
       "/v1/apps/#{app_id}" => { "data" => { "id" => app_id, "attributes" => { "name" => "ForzAdvisor", "bundleId" => "com.michaelwilliams.forzadvisor" } } },
       "/v1/apps/#{app_id}/appStoreVersions" => { "data" => [{ "id" => "version-id", "attributes" => { "appStoreState" => "READY_FOR_REVIEW" } }] },
-      "/v1/apps/#{app_id}/builds" => { "data" => [{ "id" => "build-id", "attributes" => { "version" => "78", "processingState" => "VALID" } }] },
+      "/v1/apps/#{app_id}/builds" => { "data" => [{ "id" => "build-id", "attributes" => { "version" => "79", "processingState" => "VALID" } }] },
       "/v1/apps/#{app_id}/reviewSubmissions" => { "data" => [{ "id" => "submission-id", "attributes" => { "state" => "READY_FOR_REVIEW" } }] }
     }
     api = FakeAPI.new(responses)
     result = ForzAdvisorRelease::AppStoreStatus.new(config: @config, api: api).call
 
     assert_equal true, result["read_only"]
-    assert_equal "78", result["source_build_number"]
-    assert_equal "78", result.dig("build", "number")
+    assert_equal "79", result["source_build_number"]
+    assert_equal "79", result.dig("build", "number")
     assert_equal "READY_FOR_REVIEW", result.dig("version", "state")
     assert_equal 4, api.requests.length
   end
@@ -907,12 +907,12 @@ class ForzAdvisorReleaseTest < Minitest::Test
     receipt = release_receipt(commit: commit)
     runner = RecordingRunner.new("PASS archive validated\nRELEASE_RECEIPT #{JSON.generate(receipt)}\n")
     helper = ForzAdvisorRelease::StableRunnerHelper.new(root: ROOT, runner: runner, script: "/shared/ssh_runner_build.sh")
-    confirmation = "UPLOAD:IOS:#{@config.fetch('app', 'id')}:#{@config.fetch('app', 'bundle_id')}:1.41.1:78:#{commit}"
-    observed = helper.upload(commit: commit, app_id: @config.fetch("app", "id"), bundle_id: @config.fetch("app", "bundle_id"), version: "1.41.1", build: "78", confirmation: confirmation)
+    confirmation = "UPLOAD:IOS:#{@config.fetch('app', 'id')}:#{@config.fetch('app', 'bundle_id')}:1.41.1:79:#{commit}"
+    observed = helper.upload(commit: commit, app_id: @config.fetch("app", "id"), bundle_id: @config.fetch("app", "bundle_id"), version: "1.41.1", build: "79", confirmation: confirmation)
     assert_equal receipt, observed
     command = runner.calls.first.fetch(:command)
     assert_equal "/shared/ssh_runner_build.sh", command.first
-    %w[--platform iOS --archive --upload --expected-version 1.41.1 --expected-build 78 --confirm-upload].each do |argument|
+    %w[--platform iOS --archive --upload --expected-version 1.41.1 --expected-build 79 --confirm-upload].each do |argument|
       assert_includes command, argument
     end
     assert_includes command, confirmation
@@ -983,15 +983,15 @@ class ForzAdvisorReleaseTest < Minitest::Test
       "macos_build" => @config.fetch("stable_runner", "macos_build"),
       "sdk_version" => @config.fetch("stable_runner", "sdk_versions", "iOS"),
       "package_sha256" => "b" * 64,
-      "asc_build_id" => "build-78"
+      "asc_build_id" => "build-79"
     }
   end
 
   def candidate_build
     {
-      "id" => "build-78",
+      "id" => "build-79",
       "attributes" => {
-        "version" => "78",
+        "version" => "79",
         "processingState" => "VALID",
         "buildAudienceType" => "APP_STORE_ELIGIBLE",
         "usesNonExemptEncryption" => false
@@ -1005,12 +1005,12 @@ class ForzAdvisorReleaseTest < Minitest::Test
     group_reads = 0
     {
       "/v1/apps/#{app}/builds" => { "data" => [candidate_build] },
-      "/v1/builds/build-78" => { "data" => candidate_build },
-      "/v1/builds/build-78/app" => { "data" => { "id" => app } },
-      "/v1/builds/build-78/preReleaseVersion" => { "data" => { "attributes" => { "version" => "1.41.1", "platform" => "IOS" } } },
+      "/v1/builds/build-79" => { "data" => candidate_build },
+      "/v1/builds/build-79/app" => { "data" => { "id" => app } },
+      "/v1/builds/build-79/preReleaseVersion" => { "data" => { "attributes" => { "version" => "1.41.1", "platform" => "IOS" } } },
       "/v1/betaGroups/#{group}" => { "data" => { "id" => group, "attributes" => { "name" => "Internal", "isInternalGroup" => true } } },
       "/v1/betaGroups/#{group}/app" => { "data" => { "id" => app } },
-      "/v1/betaGroups/#{group}/builds" => proc { group_reads += 1; { "data" => group_reads == 1 ? [] : [{ "id" => "build-78" }] } },
+      "/v1/betaGroups/#{group}/builds" => proc { group_reads += 1; { "data" => group_reads == 1 ? [] : [{ "id" => "build-79" }] } },
       ["POST", "/v1/betaGroups/#{group}/relationships/builds"] => {}
     }
   end
@@ -1019,7 +1019,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     app = @config.fetch("app", "id")
     group = @config.fetch("testflight", "internal_group", "id")
     {
-      "/v1/builds/#{build_id}" => { "data" => { "id" => build_id, "attributes" => { "version" => "78", "processingState" => "VALID", "buildAudienceType" => "APP_STORE_ELIGIBLE", "usesNonExemptEncryption" => false } } },
+      "/v1/builds/#{build_id}" => { "data" => { "id" => build_id, "attributes" => { "version" => "79", "processingState" => "VALID", "buildAudienceType" => "APP_STORE_ELIGIBLE", "usesNonExemptEncryption" => false } } },
       "/v1/builds/#{build_id}/app" => { "data" => { "id" => app } },
       "/v1/builds/#{build_id}/preReleaseVersion" => { "data" => { "attributes" => { "version" => "1.41.1", "platform" => "IOS" } } },
       "/v1/betaGroups/#{group}" => { "data" => { "id" => group, "attributes" => { "name" => "Internal", "isInternalGroup" => true } } },
@@ -1048,7 +1048,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
       "source_build_number" => @config.fetch("release", "source_build_number"),
       "stable_runner_profile" => @config.fetch("stable_runner", "profile"),
       "config_fingerprint" => @config.fingerprint,
-      "ref" => "release-1.41.1-appstore-78",
+      "ref" => "release-1.41.1-appstore-79",
       "commit" => "a" * 40
     }
   end
@@ -1088,8 +1088,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
     draft = @config.fetch("app_store", "review_submission_id")
     item = @config.fetch("app_store", "review_submission_item_id")
     version_attrs = { "platform" => "IOS", "versionString" => "1.41.1", "appStoreState" => "READY_FOR_REVIEW", "releaseType" => "AFTER_APPROVAL" }
-    build_attrs = { "version" => "78", "processingState" => "VALID", "buildAudienceType" => "APP_STORE_ELIGIBLE", "usesNonExemptEncryption" => false }
-    selected_attrs = build_attrs.merge("version" => "78")
+    build_attrs = { "version" => "79", "processingState" => "VALID", "buildAudienceType" => "APP_STORE_ELIGIBLE", "usesNonExemptEncryption" => false }
+    selected_attrs = build_attrs.merge("version" => "79")
     screenshot_names = @config.fetch("screenshots", "ordered_files")
     candidate_validation_responses("build-id").merge(
       "/v1/apps/#{app}" => { "data" => { "id" => app, "attributes" => { "name" => "ForzAdvisor", "bundleId" => "com.michaelwilliams.forzadvisor", "contentRightsDeclaration" => "USES_THIRD_PARTY_CONTENT" } } },

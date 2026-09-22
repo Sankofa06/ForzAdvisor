@@ -10,12 +10,12 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-    "release_ref": "release-1.41.1-appstore-78-3"
+    "release_ref": "release-1.41.1-appstore-79-1"
   },
   "release": {
     "marketing_version": "1.41.1",
-    "source_build_number": "78",
-    "current_app_store_build_number": "78",
+    "source_build_number": "79",
+    "current_app_store_build_number": "79",
     "price": {
       "model": "FREE",
       "base_territory": "USA",
