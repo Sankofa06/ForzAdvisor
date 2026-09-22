@@ -8,14 +8,14 @@ This file is the replace-in-place record for one active goal. It describes curre
 - Refreshed: 2026-09-22
 - Goal: Deliver the bounded ForzAdvisor improvements to an internal TestFlight build for owner playtesting.
 - Success: exact verified source reaches an App Store Connect `VALID` build associated with the configured Internal group; owner then completes the live play plan.
-- Constraints: repository rules remain controlling; external effects require separate authority. Implementation is complete and release candidates 79, 80, and 81 are retained as blocked evidence; no upload receipt exists. The owner authorized signing repair; an active ForzAdvisor App Store profile now exists on the runner, and build 82 is the next exact candidate.
+- Constraints: repository rules remain controlling; external effects require separate authority. Implementation is complete and release candidates 79, 80, 81, and 82 are retained as blocked evidence; no upload receipt exists. The owner authorized signing repair; the active ForzAdvisor App Store profile is installed on the runner, and build 83 is the next exact candidate.
 
 ## Current evidence
 
-- Successes: five independent audits, synthesis, bounded implementation, fresh review, local release tests, ReleaseVerify for prior exact candidates, and local Release build 82 with warnings treated as errors all completed.
-- Failures: stable-runner archive failed before receipt for candidates 79, 80, and 81; ASC read-only reconciliation found zero matching builds for each.
-- Open hypotheses: the newly installed profile and private manual signing map will permit the build 82 stable archive and upload.
-- Active signals: build 82 source and signing contract are ready for exact-tag verification and stable-runner delivery.
+- Successes: five independent audits, synthesis, bounded implementation, fresh review, local release tests, ReleaseVerify for prior exact candidates, and local Release build 82 with warnings treated as errors all completed; the runner now reaches the app compile after signing repair.
+- Failures: stable-runner archive failed before receipt for candidates 79, 80, 81, and 82; ASC read-only reconciliation found zero matching builds for each. Candidate 82 exposed a FoundationModels macro API mismatch on the pinned Xcode 26.3 runner.
+- Open hypotheses: removing the newer `@Generable` macro argument will let the pinned Xcode 26.3 runner compile the exact app while preserving structured generation.
+- Active signals: build 83 source and signing contract are ready for exact-tag verification and stable-runner delivery after the compatibility fix.
 - Next decision: verify, archive, upload, wait for `VALID`, and associate only the configured Internal TestFlight group.
 
 ## Refresh contract

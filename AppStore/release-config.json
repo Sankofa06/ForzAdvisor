@@ -10,11 +10,11 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-    "release_ref": "release-1.41.1-testflight-82-1"
+    "release_ref": "release-1.41.1-testflight-83-1"
   },
   "release": {
     "marketing_version": "1.41.1",
-    "source_build_number": "82",
+    "source_build_number": "83",
     "current_app_store_build_number": "78",
     "price": {
       "model": "FREE",

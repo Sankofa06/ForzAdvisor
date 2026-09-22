@@ -13,14 +13,14 @@ import Foundation
 import FoundationModels
 
 @available(iOS 26.4, *)
-@Generable(description: "Complete Forza Horizon tune response.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Complete Forza Horizon tune response.")
 struct OnDeviceTuneResponse {
     let tune: OnDeviceTune
     let notes: OnDeviceTuneNotes
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Complete tune sections in Forza tune-menu order.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Complete tune sections in Forza tune-menu order.")
 struct OnDeviceTune {
     let tires: OnDeviceTires
     let gearing: OnDeviceGearing
@@ -34,20 +34,20 @@ struct OnDeviceTune {
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Tire pressure values in PSI.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Tire pressure values in PSI.")
 struct OnDeviceTires {
     let frontPsi: Double
     let rearPsi: Double
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Gearing values.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Gearing values.")
 struct OnDeviceGearing {
     let finalDrive: Double
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Alignment values in degrees.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Alignment values in degrees.")
 struct OnDeviceAlignment {
     let frontCamber: Double
     let rearCamber: Double
@@ -57,14 +57,14 @@ struct OnDeviceAlignment {
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Front and rear paired values.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Front and rear paired values.")
 struct OnDeviceFrontRear {
     let front: Double
     let rear: Double
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Spring rates and ride heights.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Spring rates and ride heights.")
 struct OnDeviceSprings {
     let frontRate: Double
     let rearRate: Double
@@ -73,7 +73,7 @@ struct OnDeviceSprings {
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Damping values.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Damping values.")
 struct OnDeviceDamping {
     let frontRebound: Double
     let rearRebound: Double
@@ -82,21 +82,21 @@ struct OnDeviceDamping {
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Aero downforce in pounds.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Aero downforce in pounds.")
 struct OnDeviceAero {
     let frontPounds: Double
     let rearPounds: Double
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Brake balance and pressure percentages.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Brake balance and pressure percentages.")
 struct OnDeviceBrakes {
     let balancePercent: Double
     let pressurePercent: Double
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Differential percentages. Leave irrelevant drivetrain fields nil.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Differential percentages. Leave irrelevant drivetrain fields nil.")
 struct OnDeviceDifferential {
     let accelPercent: Double?
     let decelPercent: Double?
@@ -108,7 +108,7 @@ struct OnDeviceDifferential {
 }
 
 @available(iOS 26.4, *)
-@Generable(description: "Short tune notes.", representNilExplicitlyInGeneratedContent: true)
+@Generable(description: "Short tune notes.")
 struct OnDeviceTuneNotes {
     let bias: String
     let ifPushesWide: String
