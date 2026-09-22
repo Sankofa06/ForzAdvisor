@@ -30,7 +30,7 @@ developer Mac.
 
 - App Store Connect app, bundle, team, version, review-draft, and review-item identifiers
 - canonical GitHub checkout, remote, and immutable release ref
-- marketing version `1.41.1`, source build `84`, and current App Store build `78`
+- marketing version `1.41.1`, source build `85`, and current App Store build `78`
 - Free pricing, explicit-human-approval submission policy, and `AFTER_APPROVAL` release timing
 - published privacy-label declaration and human attestation date
 - content-rights, age-rating, review-contact, and export-compliance attestations
