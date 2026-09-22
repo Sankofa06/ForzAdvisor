@@ -153,8 +153,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
     assert_includes workflow, 'RELEASE_SHA: ${{ inputs.release_sha }}'
     assert_includes workflow, 'test "$(git rev-parse HEAD)" = "$RELEASE_SHA"'
-    assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.5.2"'
-    assert_includes workflow, 'test "$(sw_vers -buildVersion)" = "25F84"'
+    assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.6.2"'
+    assert_includes workflow, 'test "$(sw_vers -buildVersion)" = "25G83"'
     assert_includes workflow, 'test "$(xcodebuild -version | tail -1)" = "Build version 17F113"'
   end
 
