@@ -216,9 +216,11 @@ else
 fi
 
 skill_file="$framework_root/.agents/skills/the-perfect-agent/SKILL.md"
-if head -n 1 "$skill_file" | grep -qx -- '---' \
-  && sed -n '2,12p' "$skill_file" | grep -qx 'name: the-perfect-agent' \
-  && sed -n '2,12p' "$skill_file" | grep -q '^description: .\+'; then
+skill_frontmatter_name="$(sed -n '2p' "$skill_file")"
+skill_frontmatter_description="$(sed -n '3p' "$skill_file")"
+if [[ "$(sed -n '1p' "$skill_file")" == "---" \
+  && "$skill_frontmatter_name" == "name: the-perfect-agent" \
+  && "$skill_frontmatter_description" == description:\ * ]]; then
   pass "skill frontmatter"
 else
   fail "invalid the-perfect-agent frontmatter"

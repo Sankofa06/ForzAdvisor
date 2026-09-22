@@ -216,7 +216,7 @@ module ForzAdvisorRelease
         "manage_app_version_and_build_number" => false,
         "strip_swift_symbols" => true,
         "upload_symbols" => true,
-        "test_flight_internal_testing_only" => true
+        "test_flight_internal_testing_only" => false
       }
       platforms = runner.fetch("destinations").keys
       raise ConfigurationError, "stable runner must declare only supported platforms" unless !platforms.empty? && (platforms - %w[iOS macOS]).empty?
