@@ -110,16 +110,13 @@
     },
     "warning_policy": "global",
     "signing": {
-      "mode": "manual",
-      "certificate_id": "2YL26QXK8S",
-      "profile_id": "CGF29WK2SC",
-      "profile_name": "ForzAdvisor App Store - Stable Runner"
+      "mode": "automatic"
     },
     "export": {
       "manage_app_version_and_build_number": false,
       "strip_swift_symbols": true,
       "upload_symbols": true,
-      "test_flight_internal_testing_only": false
+      "test_flight_internal_testing_only": true
     }
   },
   "app_store": {
