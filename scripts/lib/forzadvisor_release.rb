@@ -60,7 +60,7 @@ module ForzAdvisorRelease
       "legacy_xcode_cloud.workflows.release_candidate" => %w[id name],
       "ci" => %w[provider authority verify_workflow verify_job runner runner_os_version runner_os_build xcode_version xcode_build],
       "stable_runner" => %w[profile project scheme configuration destinations xcode_build macos_build sdk_versions minimum_os architectures warning_policy signing export],
-      "stable_runner.signing" => %w[mode],
+      "stable_runner.signing" => %w[mode certificate_id profile_id profile_name],
       "stable_runner.export" => %w[manage_app_version_and_build_number strip_swift_symbols upload_symbols],
       "app_store" => %w[version_id review_submission_id review_submission_item_id],
       "testflight" => %w[internal_group], "testflight.internal_group" => %w[id name],
@@ -85,7 +85,8 @@ module ForzAdvisorRelease
       legacy_xcode_cloud.workflows.release_candidate.id legacy_xcode_cloud.workflows.release_candidate.name
       ci.provider ci.authority ci.verify_workflow ci.verify_job ci.runner ci.runner_os_version ci.runner_os_build ci.xcode_version ci.xcode_build
       stable_runner.profile stable_runner.project stable_runner.scheme stable_runner.configuration
-      stable_runner.xcode_build stable_runner.macos_build stable_runner.warning_policy stable_runner.signing.mode
+      stable_runner.xcode_build stable_runner.macos_build stable_runner.warning_policy
+      stable_runner.signing.mode stable_runner.signing.certificate_id stable_runner.signing.profile_id stable_runner.signing.profile_name
       stable_runner.export.manage_app_version_and_build_number stable_runner.export.strip_swift_symbols stable_runner.export.upload_symbols
       app_store.version_id app_store.review_submission_id app_store.review_submission_item_id
       legacy_xcode_cloud.product_id legacy_xcode_cloud.repository_id testflight.internal_group.id testflight.internal_group.name
@@ -203,7 +204,14 @@ module ForzAdvisorRelease
       raise ConfigurationError, "stable runner Xcode build mismatch" unless runner["xcode_build"] == "17C529"
       raise ConfigurationError, "stable runner macOS build mismatch" unless runner["macos_build"] == "24G720"
       raise ConfigurationError, "stable runner warning policy must be global" unless runner["warning_policy"] == "global"
-      raise ConfigurationError, "stable runner signing must be automatic" unless runner.dig("signing", "mode") == "automatic"
+      signing = runner.fetch("signing")
+      raise ConfigurationError, "unsupported stable runner signing mode" unless %w[automatic manual].include?(signing["mode"])
+      if signing["mode"] == "manual"
+        %w[certificate_id profile_id profile_name].each do |key|
+          value = signing[key]
+          raise ConfigurationError, "manual stable runner signing requires #{key}" unless value.is_a?(String) && !value.strip.empty?
+        end
+      end
       raise ConfigurationError, "stable runner export policy mismatch" unless runner["export"] == {
         "manage_app_version_and_build_number" => false,
         "strip_swift_symbols" => true,

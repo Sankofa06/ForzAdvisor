@@ -10,11 +10,11 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-    "release_ref": "release-1.41.1-testflight-81-1"
+    "release_ref": "release-1.41.1-testflight-82-1"
   },
   "release": {
     "marketing_version": "1.41.1",
-    "source_build_number": "81",
+    "source_build_number": "82",
     "current_app_store_build_number": "78",
     "price": {
       "model": "FREE",
@@ -110,7 +110,10 @@
     },
     "warning_policy": "global",
     "signing": {
-      "mode": "automatic"
+      "mode": "manual",
+      "certificate_id": "2YL26QXK8S",
+      "profile_id": "CGF29WK2SC",
+      "profile_name": "ForzAdvisor App Store - Stable Runner"
     },
     "export": {
       "manage_app_version_and_build_number": false,
