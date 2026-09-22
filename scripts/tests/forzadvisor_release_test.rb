@@ -134,7 +134,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     refute @config.fetch("ci").key?("release_candidate_mode")
     assert_equal "stable-xcode-26.3-intel", @config.fetch("stable_runner", "profile")
     assert_equal "17C529", @config.fetch("stable_runner", "xcode_build")
-    assert_equal "24G720", @config.fetch("stable_runner", "macos_build")
+    assert_equal "24G830", @config.fetch("stable_runner", "macos_build")
     assert_equal "26.2", @config.fetch("stable_runner", "sdk_versions", "iOS")
     assert_equal ["arm64"], @config.fetch("stable_runner", "architectures", "iOS")
     assert_equal "automatic", @config.fetch("stable_runner", "signing", "mode")

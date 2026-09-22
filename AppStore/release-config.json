@@ -10,7 +10,7 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-                "release_ref": "release-1.41.1-appstore-79-2"
+                "release_ref": "release-1.41.1-appstore-79-3"
   },
   "release": {
     "marketing_version": "1.41.1",
@@ -96,7 +96,7 @@
       "iOS": "generic/platform=iOS"
     },
     "xcode_build": "17C529",
-    "macos_build": "24G720",
+    "macos_build": "24G830",
     "sdk_versions": {
       "iOS": "26.2"
     },

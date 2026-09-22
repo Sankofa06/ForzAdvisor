@@ -201,7 +201,7 @@ module ForzAdvisorRelease
       raise ConfigurationError, "stable runner scheme mismatch" unless runner["scheme"] == fetch("xcode", "local_scheme")
       raise ConfigurationError, "stable runner configuration must be Release" unless runner["configuration"] == "Release"
       raise ConfigurationError, "stable runner Xcode build mismatch" unless runner["xcode_build"] == "17C529"
-      raise ConfigurationError, "stable runner macOS build mismatch" unless runner["macos_build"] == "24G720"
+      raise ConfigurationError, "stable runner macOS build mismatch" unless runner["macos_build"] == "24G830"
       raise ConfigurationError, "stable runner warning policy must be global" unless runner["warning_policy"] == "global"
       raise ConfigurationError, "stable runner signing must be automatic" unless runner.dig("signing", "mode") == "automatic"
       raise ConfigurationError, "stable runner export policy mismatch" unless runner["export"] == {
