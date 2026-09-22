@@ -120,7 +120,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
-    assert_equal "79", @config.fetch("release", "source_build_number")
+    assert_equal "80", @config.fetch("release", "source_build_number")
     assert_equal "78", @config.fetch("release", "current_app_store_build_number")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
@@ -232,7 +232,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal ForzAdvisorRelease::Preflight::CHECKS.sort, result["checks"].keys.sort
     assert result["checks"].values.all? { |check| check["passed"] }
     assert_equal @config.fetch("public_urls").values.sort, urls.urls.sort
-    assert_equal "79", result.dig("checks", "project", "evidence", "source_build_number")
+    assert_equal "80", result.dig("checks", "project", "evidence", "source_build_number")
     assert_equal 6, result.dig("checks", "screenshots", "evidence", "count")
   end
 
@@ -259,7 +259,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call
 
     assert_equal "1.41.1", result["marketing_version"]
-    assert_equal "79", result["source_build_number"]
+    assert_equal "80", result["source_build_number"]
     assert_equal %w[forzadvisorTests forzadvisorUITests], result["test_targets"]
     assert_equal ["forzadvisor.xcscheme", "forzadvisor Cloud.xcscheme"], result["schemes"]
   end
@@ -539,7 +539,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_terminal_rollover_archives_once_and_establishes_new_github_verified_identity
     Dir.mktmpdir do |directory|
       store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
-      store.save(stable_identity.merge("schema_version" => 2, "phase" => "human_blocked"))
+      store.save(stable_identity.merge("schema_version" => 2, "source_build_number" => "79", "phase" => "human_blocked"))
       data = JSON.parse(File.read(CONFIG_PATH))
       data["release"]["source_build_number"] = "80"
       path = File.join(directory, "config.json")
@@ -826,7 +826,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::AppStoreStatus.new(config: @config, api: api).call
 
     assert_equal true, result["read_only"]
-    assert_equal "79", result["source_build_number"]
+    assert_equal "80", result["source_build_number"]
     assert_equal "78", result.dig("build", "number")
     assert_equal "READY_FOR_REVIEW", result.dig("version", "state")
     assert_equal 4, api.requests.length
