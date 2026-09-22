@@ -151,6 +151,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_verify_workflow_pins_exact_commit_and_stable_toolchain
     workflow = File.read(File.join(ROOT, ".github", "workflows", "release-verify.yml"))
 
+    assert_includes workflow, "runs-on: macos-26-intel"
     assert_includes workflow, 'RELEASE_SHA: ${{ inputs.release_sha }}'
     assert_includes workflow, 'test "$(git rev-parse HEAD)" = "$RELEASE_SHA"'
     assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.6.1"'

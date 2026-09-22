@@ -10,7 +10,7 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-    "release_ref": "release-1.41.1-testflight-79-2"
+    "release_ref": "release-1.41.1-testflight-79-3"
   },
   "release": {
     "marketing_version": "1.41.1",
@@ -81,7 +81,7 @@
     "authority": "VERIFICATION_ONLY",
     "verify_workflow": ".github/workflows/release-verify.yml",
     "verify_job": "Xcode 26.6 ReleaseVerify",
-    "runner": "macos-26",
+    "runner": "macos-26-intel",
     "runner_os_version": "26.6.1",
     "runner_os_build": "25G76",
     "xcode_version": "26.6",
