@@ -97,6 +97,7 @@ final class TuneResultPresentationTests: XCTestCase {
 
         XCTAssertEqual(presentation.completion, .needsEvidence)
         XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertFalse(presentation.allowsCopy)
         XCTAssertTrue(presentation.allowsSave)
         XCTAssertTrue(presentation.statusDetail.contains("No numeric settings passed"))
     }

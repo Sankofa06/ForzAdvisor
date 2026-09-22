@@ -41,6 +41,10 @@ struct TuneResultPresentation: Equatable {
         availableSettingCount = completion == .available ? readyCount : 0
     }
 
+    var hasAvailableSettings: Bool { availableSettingCount > 0 }
+    var allowsCopy: Bool {
+        completion == .available && hasAvailableSettings
+    }
     var allowsCopyOrSave: Bool { completion == .available }
     var allowsSave: Bool {
         switch completion {
@@ -51,7 +55,10 @@ struct TuneResultPresentation: Equatable {
         }
     }
     var allowsSavedConsequentialActions: Bool {
-        isSaved && completion == .available
+        isSaved && allowsCopy
+    }
+    var allowsSavedEdit: Bool {
+        isSaved && allowsSave
     }
 
     var allowsSavedMetadataEdit: Bool {
@@ -77,7 +84,7 @@ struct TuneResultPresentation: Equatable {
     var statusDetail: String {
         switch completion {
         case .incomplete:
-            "Generation is still in progress. Copy and Save remain unavailable until the complete result arrives."
+            return "Generation is still in progress. Copy and Save remain unavailable until the complete result arrives."
         case .available:
             "\(availableSettingCount) available setting\(availableSettingCount == 1 ? "" : "s"). Availability does not mean accuracy has been validated."
         case .plan:
@@ -85,7 +92,7 @@ struct TuneResultPresentation: Equatable {
         case .needsEvidence:
             "No numeric settings passed the current evidence and constraint checks. Capture the missing build evidence before applying values."
         case .legacyUnavailable:
-            "This saved result predates availability checks. Its values cannot be copied or refined."
+            return "This saved result predates availability checks. Its values cannot be copied or refined."
         }
     }
 }

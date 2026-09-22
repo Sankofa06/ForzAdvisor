@@ -161,6 +161,9 @@ struct OCRConfirmationView: View {
                 )
                 .keyboardType(.numberPad)
             }
+            Text("OCR accepts only explicit hp and lb-ft values. kW, Nm, and values without a supported unit stay blank for manual entry.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .forzAdvisorRowBackground()
     }

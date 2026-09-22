@@ -250,13 +250,25 @@ struct OCRConfirmationDraft: Equatable, Sendable {
             year: year,
             make: make,
             model: model,
-            weightPounds: weightPounds,
-            frontWeightPercent: frontWeightPercent,
-            performanceIndex: performanceIndex,
-            performanceClass: performanceClass,
-            drivetrain: drivetrain,
-            peakHorsepower: peakHorsepower,
-            peakTorqueFootPounds: peakTorqueFootPounds
+            weightPounds: reviewedValue(weightPounds, for: .weightPounds),
+            frontWeightPercent: reviewedValue(
+                frontWeightPercent,
+                for: .frontWeightPercent
+            ),
+            performanceIndex: reviewedValue(
+                performanceIndex,
+                for: .performanceIndex
+            ),
+            performanceClass: reviewedValue(
+                performanceClass,
+                for: .performanceClass
+            ),
+            drivetrain: reviewedValue(drivetrain, for: .drivetrain),
+            peakHorsepower: reviewedValue(peakHorsepower, for: .horsepower),
+            peakTorqueFootPounds: reviewedValue(
+                peakTorqueFootPounds,
+                for: .torque
+            )
         )
     }
 
@@ -283,11 +295,21 @@ struct OCRConfirmationDraft: Equatable, Sendable {
             performanceIndex: performanceIndex,
             performanceClass: performanceClass,
             drivetrain: drivetrain,
-            peakHorsepower: peakHorsepower,
-            peakTorqueFootPounds: peakTorqueFootPounds
+            peakHorsepower: reviewedValue(peakHorsepower, for: .horsepower),
+            peakTorqueFootPounds: reviewedValue(
+                peakTorqueFootPounds,
+                for: .torque
+            )
         )
 
         return car.isValid ? car : nil
+    }
+
+    private func reviewedValue<Value>(
+        _ value: Value?,
+        for field: OCRInputField
+    ) -> Value? {
+        reviewState(for: field) == .needsCheck ? nil : value
     }
 }
 

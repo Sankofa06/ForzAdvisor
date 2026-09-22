@@ -74,7 +74,7 @@ final class DisciplineGenerationPresentationTests: XCTestCase {
                 for: .fh5,
                 disclosure: disclosure
             ),
-            "This FH5 build plan is created locally. Your preferred generation method is not used for FH5."
+            "This FH5 build plan is created locally. No remote provider or numeric tuning settings are used."
         )
     }
 
