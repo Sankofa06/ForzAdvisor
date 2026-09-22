@@ -115,7 +115,7 @@ struct TuneResultScreen: View {
                 Button("Done", action: onDone)
                     .accessibilityIdentifier("doneTuneButton")
             }
-            if presentation.allowsSavedConsequentialActions {
+            if presentation.allowsSavedEdit {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Edit", action: onEdit)
                         .disabled(activeFeedback != nil || isStreaming)

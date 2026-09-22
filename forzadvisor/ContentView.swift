@@ -40,7 +40,9 @@ struct ContentView: View {
                         savedTunes: savedTunes,
                         onNewTune: {
                             cancelActiveTuneWork()
-                            newTuneSession = TuneDraftSession()
+                            newTuneSession = TuneDraftSession.forNewTuneEntry(
+                                existing: newTuneSession
+                            )
                             step = .newTune
                         },
                         onOpenCopilot: presentCopilot,
@@ -143,7 +145,8 @@ struct ContentView: View {
                         car: input,
                         selection: newTuneSession.selectedDiscipline,
                         providerDisclosure: makeProviderDisclosure(
-                            mode: tuneProviderMode
+                            mode: tuneProviderMode,
+                            game: input.game
                         ),
                         onBack: {
                             validationMissionBack {
@@ -687,7 +690,9 @@ struct ContentView: View {
     private var emptyGarageFirstWinAction: (() -> Void)? {
         guard savedTunes.isEmpty else { return nil }
         return {
-            newTuneSession = TuneDraftSession()
+            newTuneSession = TuneDraftSession.forNewTuneEntry(
+                existing: newTuneSession
+            )
             step = .newTune
         }
     }
@@ -1050,6 +1055,28 @@ struct ContentView: View {
                 savedTune: resolvedSavedTune
             )) ?? .empty(savedTuneID: resolvedSavedTune.id)
         }()
+        let feedbackAction: (TuneFeedback) -> Void = { feedback in
+            guard let resolvedSavedTuneID else { return }
+            adjust(tune, savedTuneID: resolvedSavedTuneID, feedback: feedback)
+        }
+        let openFH5ControlledExperiment: (() -> Void)? = {
+            guard experimentEligibility.isSuccess,
+                  let resolvedSavedTuneID,
+                  case .success(let researchRecord) = experimentEligibility else {
+                return nil
+            }
+            return {
+                tuneWorkflow.cancelAdjustment()
+                step = .fh5ControlledExperimentCapture(
+                    tune,
+                    savedTuneID: resolvedSavedTuneID,
+                    researchRecord: researchRecord,
+                    candidateTrialAvailable: candidateTrialArtifact != nil,
+                    thumbnailData: resolvedThumbnailData,
+                    playerNotes: resolvedPlayerNotes
+                )
+            }
+        }()
 
         TuneResultView(
             tune: tune,
@@ -1228,25 +1255,7 @@ struct ContentView: View {
                 validateNumericPromotionReviewPacket,
             fh5NumericPromotionReceiverCandidateFingerprint:
                 numericPromotionReceiverCandidateFingerprint,
-            onOpenFH5ControlledExperiment:
-                experimentEligibility.isSuccess && resolvedSavedTuneID != nil
-                ? {
-                    guard let resolvedSavedTuneID,
-                          case .success(let researchRecord) = experimentEligibility else {
-                        return
-                    }
-                    tuneWorkflow.cancelAdjustment()
-                    step = .fh5ControlledExperimentCapture(
-                        tune,
-                        savedTuneID: resolvedSavedTuneID,
-                        researchRecord: researchRecord,
-                        candidateTrialAvailable:
-                            candidateTrialArtifact != nil,
-                        thumbnailData: resolvedThumbnailData,
-                        playerNotes: resolvedPlayerNotes
-                    )
-                }
-                : nil,
+            onOpenFH5ControlledExperiment: openFH5ControlledExperiment,
             onDeleteFH5ControlledExperimentRecord: { record in
                 guard let resolvedSavedTuneID else { return }
                 deleteFH5ControlledExperimentRecord(
@@ -1412,10 +1421,7 @@ struct ContentView: View {
                     savedTuneID: resolvedSavedTuneID
                 )
             },
-            onFeedback: { feedback in
-                guard let resolvedSavedTuneID else { return }
-                adjust(tune, savedTuneID: resolvedSavedTuneID, feedback: feedback)
-            }
+            onFeedback: feedbackAction
         )
     }
 

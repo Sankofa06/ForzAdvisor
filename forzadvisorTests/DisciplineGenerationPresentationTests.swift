@@ -37,7 +37,10 @@ final class DisciplineGenerationPresentationTests: XCTestCase {
         )
 
         XCTAssertEqual(
-            DisciplineGenerationCopy.routeSummary(disclosure),
+            DisciplineGenerationCopy.routeSummary(
+                for: .fh6,
+                disclosure: disclosure
+            ),
             "Tries Anthropic API first, then Offline formulas if needed."
         )
         XCTAssertTrue(
@@ -60,6 +63,19 @@ final class DisciplineGenerationPresentationTests: XCTestCase {
                 disclosure: disclosure
             ),
             "This FH5 build plan stays on this device. Screenshots and API keys are never included."
+        )
+    }
+
+    func testFH5RouteIsAlwaysLocalBuildPlan() {
+        XCTAssertEqual(
+            DisciplineGenerationCopy.routeSummary(
+                for: .fh5,
+                disclosure: TuneProviderDisclosure(
+                    preferredMode: .anthropicAPI,
+                    capabilities: capabilities
+                )
+            ),
+            "Creates a local FH5 build plan. No remote provider or numeric tuning settings are used."
         )
     }
 

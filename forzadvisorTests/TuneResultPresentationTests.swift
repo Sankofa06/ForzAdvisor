@@ -39,7 +39,7 @@ final class TuneResultPresentationTests: XCTestCase {
 
     func testCompletedProjectedResultAllowsActionsWithoutAccuracyClaim() {
         let presentation = TuneResultPresentation(
-            tune: makeTune(hasProjection: true),
+            tune: makeTune(hasProjection: true, hasAvailableSettings: true),
             isSaved: false,
             isStreaming: false
         )
@@ -47,6 +47,35 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.completion, .available)
         XCTAssertTrue(presentation.allowsCopyOrSave)
         XCTAssertTrue(presentation.statusDetail.contains("does not mean accuracy"))
+    }
+
+    func testZeroSettingFH6ResultIsASavableSetupButNotCopyable() {
+        let presentation = TuneResultPresentation(
+            tune: makeTune(hasProjection: true),
+            isSaved: false,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(presentation.completion, .available)
+        XCTAssertFalse(presentation.hasAvailableSettings)
+        XCTAssertFalse(presentation.allowsCopy)
+        XCTAssertTrue(presentation.allowsSave)
+        XCTAssertEqual(presentation.statusTitle, "Setup ready to save")
+        XCTAssertTrue(presentation.statusDetail.contains("No numeric settings"))
+    }
+
+    func testSavedZeroSettingFH6SetupAllowsEditButNotRefinement() {
+        let presentation = TuneResultPresentation(
+            tune: makeTune(hasProjection: true),
+            isSaved: true,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(presentation.statusTitle, "Saved setup")
+        XCTAssertFalse(presentation.allowsCopy)
+        XCTAssertTrue(presentation.allowsSavedEdit)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+        XCTAssertTrue(presentation.statusDetail.contains("edit it"))
     }
 
     func testLegacyResultRemainsNonCopyable() {
@@ -131,7 +160,10 @@ final class TuneResultPresentationTests: XCTestCase {
         SavedTuneEditDraft(tune: makeTune(hasProjection: true), playerNotes: "")
     }
 
-    private func makeTune(hasProjection: Bool) -> TuneResult {
+    private func makeTune(
+        hasProjection: Bool,
+        hasAvailableSettings: Bool = false
+    ) -> TuneResult {
         TuneResult(
             request: TuneRequest(car: SampleTuningData.starterCar, discipline: .road),
             sections: [],
@@ -141,7 +173,30 @@ final class TuneResultPresentationTests: XCTestCase {
                 ifSnapsOnLift: "Add stability",
                 retuneTrigger: "After material changes"
             ),
-            projectionReport: hasProjection ? emptyProjection : nil
+            projectionReport: hasProjection
+                ? projection(hasAvailableSettings: hasAvailableSettings)
+                : nil
+        )
+    }
+
+    private func projection(hasAvailableSettings: Bool) -> TuneProjectionReport {
+        TuneProjectionReport(
+            schemaVersion: TuneProjectionReport.currentSchemaVersion,
+            snapshotID: nil,
+            contextStatus: .missingSnapshot,
+            capabilityResolution: nil,
+            fields: hasAvailableSettings
+                ? [TuneFieldProjection(
+                    field: .frontTirePressure,
+                    status: .ready,
+                    requiredPurchaseIDs: [],
+                    unresolvedPartIDs: [],
+                    reason: nil
+                )]
+                : [],
+            purchasePlan: [],
+            confirmations: [],
+            diagnostics: []
         )
     }
 

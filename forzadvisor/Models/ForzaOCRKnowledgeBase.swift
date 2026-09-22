@@ -37,13 +37,25 @@ struct ForzaOCRKnowledgeBase {
         applyBestIntegerCandidate(
             field: .horsepower,
             to: &draft,
-            candidates: integerCandidates(in: windows, fieldAliases: ["power", "horsepower", "hp", "kw"], units: #"hp|bhp|kw"#, range: 40...2_500),
+            candidates: integerCandidates(
+                in: windows,
+                fieldAliases: ["power", "horsepower", "hp"],
+                units: #"hp|bhp"#,
+                range: 40...2_500,
+                requiresExplicitUnit: true
+            ),
             assign: { draft, value in draft.peakHorsepower = value }
         )
         applyBestIntegerCandidate(
             field: .torque,
             to: &draft,
-            candidates: integerCandidates(in: windows, fieldAliases: ["torque", "ft lb", "ft-lb", "lb ft", "lb-ft", "nm"], units: #"ft[- ]?lb|lb[- ]?ft|nm"#, range: 40...2_500),
+            candidates: integerCandidates(
+                in: windows,
+                fieldAliases: ["torque", "ft-lb", "lb-ft"],
+                units: #"ft-lb|lb-ft"#,
+                range: 40...2_500,
+                requiresExplicitUnit: true
+            ),
             assign: { draft, value in draft.peakTorqueFootPounds = value }
         )
 
@@ -249,14 +261,23 @@ extension ForzaOCRKnowledgeBase {
         in windows: [ObservationWindow],
         fieldAliases: [String],
         units: String,
-        range: ClosedRange<Int>
+        range: ClosedRange<Int>,
+        requiresExplicitUnit: Bool = false
     ) -> [ParsedCandidate<Int>] {
         windows.compactMap { window in
             guard containsAny(fieldAliases, in: window.normalizedText) else { return nil }
-            let patterns = [
+            var patterns = [
                 #"(?i)\b(\d{2,4})\s*(?:"# + units + #")\b"#,
-                #"(?i)(?:"# + fieldAliases.map(NSRegularExpression.escapedPattern(for:)).joined(separator: "|") + #")[^0-9]*(\d{2,4})\b"#
             ]
+            if !requiresExplicitUnit {
+                patterns.append(
+                    #"(?i)(?:"# +
+                    fieldAliases
+                        .map(NSRegularExpression.escapedPattern(for:))
+                        .joined(separator: "|") +
+                    #")[^0-9]*(\d{2,4})\b"#
+                )
+            }
 
             guard let rawValue = firstCapture(in: window.rawText, patterns: patterns),
                   let value = Int(rawValue),

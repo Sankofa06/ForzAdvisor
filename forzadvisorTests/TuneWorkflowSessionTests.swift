@@ -40,6 +40,28 @@ final class TuneWorkflowSessionTests: XCTestCase {
         ).isMeaningful)
     }
 
+    func testNewTuneEntryRetainsMeaningfulMemoryOnlyDraft() {
+        let draft = TuneDraftSession(stage: .manual(
+            ManualEntryDraft(
+                year: 2020,
+                make: "Toyota",
+                model: "Supra",
+                weightPounds: 3_400
+            ),
+            thumbnailData: Data("photo".utf8)
+        ))
+
+        XCTAssertEqual(
+            TuneDraftSession.forNewTuneEntry(existing: draft),
+            draft
+        )
+        XCTAssertFalse(
+            TuneDraftSession.forNewTuneEntry(
+                existing: TuneDraftSession()
+            ).isMeaningful
+        )
+    }
+
     func testSavedRetuneReturnContextKeepsFullDraftAndBaseline() {
         let baseline = TuneResult(
             request: TuneRequest(

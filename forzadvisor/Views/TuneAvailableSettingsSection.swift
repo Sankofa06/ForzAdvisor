@@ -40,7 +40,7 @@ struct TuneAvailableSettingsSection: View {
                         section: section,
                         isStreaming:
                             presentation.completion == .incomplete,
-                        allowsCopy: presentation.allowsCopyOrSave,
+                        allowsCopy: presentation.allowsCopy,
                         isExpanded: expandedBinding(for: section),
                         copiedLineID: $copiedLineID
                     )

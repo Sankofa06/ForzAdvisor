@@ -79,8 +79,9 @@ struct TuneResultActionSection: View {
 
     var body: some View {
         Section("Apply in game") {
-            if presentation.allowsCopyOrSave {
-                if let text = TuneClipboardFormatter.verifiedSettingsText(for: tune) {
+            if presentation.allowsSave {
+                if presentation.allowsCopy,
+                   let text = TuneClipboardFormatter.verifiedSettingsText(for: tune) {
                     actionButton(
                         title: "Copy available settings",
                         systemImage: "doc.on.doc",
@@ -90,6 +91,7 @@ struct TuneResultActionSection: View {
                         announce("Available settings copied")
                     }
                 }
+
                 if let text = TuneClipboardFormatter.buildPlanText(for: tune) {
                     actionButton(
                         title: "Copy build plan",
@@ -102,17 +104,36 @@ struct TuneResultActionSection: View {
                 }
 
                 if presentation.isSaved {
-                    Label("Saved locally", systemImage: "checkmark.circle.fill")
+                    Label(
+                        presentation.hasAvailableSettings
+                            ? "Saved locally"
+                            : "Saved setup",
+                        systemImage: "checkmark.circle.fill"
+                    )
                         .foregroundStyle(ForzAdvisorTheme.success)
                         .accessibilityIdentifier("savedTuneStatus")
                 } else {
                     actionButton(
-                        title: tune.purpose == .fh5BuildPlan ? "Save Plan" : "Save",
+                        title: tune.purpose == .fh5BuildPlan
+                            ? "Save Plan"
+                            : presentation.hasAvailableSettings
+                                ? "Save"
+                                : "Save Setup",
                         systemImage: "square.and.arrow.down",
                         identifier: "saveTuneButton"
                     ) {
                         onSave()
                     }
+                }
+
+                if !presentation.hasAvailableSettings {
+                    Label(
+                        "No numeric settings are available. Copy and refinement remain unavailable.",
+                        systemImage: "slider.horizontal.3"
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("zeroSettingSetupNotice")
                 }
             } else {
                 Label(

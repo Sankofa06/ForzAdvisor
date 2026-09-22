@@ -23,27 +23,44 @@ struct TuneResultPresentation: Equatable {
         availableSettingCount = tune.projectionReport?.readyCount ?? 0
     }
 
-    var allowsCopyOrSave: Bool { completion == .available }
+    var hasAvailableSettings: Bool { availableSettingCount > 0 }
+    var allowsCopy: Bool {
+        completion == .available && hasAvailableSettings
+    }
+    var allowsSave: Bool { completion == .available }
+    var allowsCopyOrSave: Bool { allowsCopy || allowsSave }
     var allowsSavedConsequentialActions: Bool {
-        isSaved && completion == .available
+        isSaved && allowsCopy
+    }
+    var allowsSavedEdit: Bool {
+        isSaved && allowsSave
     }
 
     var statusTitle: String {
         switch completion {
-        case .incomplete: "Incomplete result"
-        case .available: isSaved ? "Saved locally" : "Ready to use"
-        case .legacyUnavailable: "Legacy result needs review"
+        case .incomplete: return "Incomplete result"
+        case .available:
+            if hasAvailableSettings {
+                return isSaved ? "Saved locally" : "Settings available"
+            }
+            return isSaved ? "Saved setup" : "Setup ready to save"
+        case .legacyUnavailable: return "Legacy result needs review"
         }
     }
 
     var statusDetail: String {
         switch completion {
         case .incomplete:
-            "Generation is still in progress. Copy and Save remain unavailable until the complete result arrives."
+            return "Generation is still in progress. Copy and Save remain unavailable until the complete result arrives."
         case .available:
-            "\(availableSettingCount) available setting\(availableSettingCount == 1 ? "" : "s"). Availability does not mean accuracy has been validated."
+            if hasAvailableSettings {
+                return "\(availableSettingCount) available setting\(availableSettingCount == 1 ? "" : "s"). Availability does not mean accuracy has been validated."
+            }
+            return isSaved
+                ? "No numeric settings are available for this saved setup. You can edit it, but copy and refinement remain unavailable."
+                : "No numeric settings are available for this setup. Save Setup to keep it and edit it later."
         case .legacyUnavailable:
-            "This saved result predates availability checks. Its values cannot be copied or refined."
+            return "This saved result predates availability checks. Its values cannot be copied or refined."
         }
     }
 }
