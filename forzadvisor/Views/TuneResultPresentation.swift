@@ -15,21 +15,28 @@ struct TuneResultPresentation: Equatable {
 
     init(tune: TuneResult, isSaved: Bool, isStreaming: Bool) {
         self.isSaved = isSaved
+        let hasProjectionReport = tune.projectionReport != nil
+        let projectedTune = TuneOutputProjector().project(tune)
+        let projectedReport = projectedTune.projectionReport
+        let readyCount = projectedReport?.readyCount ?? 0
+        let projectedLineCount = projectedTune.sections.flatMap(\.lines).count
+        let hasUsableNumericOutput = readyCount > 0
+            && projectedLineCount == readyCount
+
         if isStreaming {
             completion = .incomplete
-        } else if tune.purpose == .fh5BuildPlan {
+        } else if tune.purpose == .fh5BuildPlan || tune.request.car.game == .fh5 {
             completion = .plan
-        } else if tune.projectionReport?.readyCount ?? 0 > 0 {
+        } else if hasProjectionReport, hasUsableNumericOutput {
             completion = .available
-        } else if TuneClipboardFormatter.buildPlanText(for: tune) != nil
-                    || tune.projectionReport?.requiresInGameConfirmation == true {
+        } else if TuneClipboardFormatter.buildPlanText(for: projectedTune) != nil {
             completion = .plan
-        } else if tune.projectionReport != nil {
+        } else if hasProjectionReport {
             completion = .needsEvidence
         } else {
             completion = .legacyUnavailable
         }
-        availableSettingCount = tune.projectionReport?.readyCount ?? 0
+        availableSettingCount = completion == .available ? readyCount : 0
     }
 
     var allowsCopyOrSave: Bool { completion == .available }
@@ -95,7 +102,7 @@ struct TuneActualProviderPresentation: Equatable {
             usedFallback = false
             return
         }
-        if tune.purpose == .fh5BuildPlan {
+        if tune.purpose == .fh5BuildPlan || tune.request.car.game == .fh5 {
             title = "Generated with: Local FH5 build planner"
             detail = "Created locally without numeric tuning output."
             symbolName = "wrench.and.screwdriver"

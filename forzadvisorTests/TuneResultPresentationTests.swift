@@ -88,7 +88,7 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertTrue(provider.detail.contains("only when generation completes"))
     }
 
-    func testCompletedResultWithNoReadySettingsBecomesPlanOrEvidenceState() {
+    func testCompletedResultWithNoReadySettingsBecomesEvidenceState() {
         let presentation = TuneResultPresentation(
             tune: makeTune(hasProjection: true),
             isSaved: false,
@@ -112,7 +112,7 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertFalse(presentation.allowsSavedConsequentialActions)
     }
 
-    func testCompletedProjectedResultWithReadySettingsAllowsActionsWithoutAccuracyClaim() {
+    func testReadyMetadataWithoutUsableNumericOutputStaysEvidenceGated() {
         var tune = makeTune(hasProjection: true)
         tune.projectionReport?.fields = [
             TuneFieldProjection(
@@ -123,15 +123,73 @@ final class TuneResultPresentationTests: XCTestCase {
                 reason: nil
             )
         ]
+        tune.sections = [TuneSection(
+            title: "Tires",
+            symbolName: "circle.dashed",
+            lines: [
+                TuneLine(
+                    label: "Front pressure",
+                    value: "30.0",
+                    unit: "PSI",
+                    fieldID: .frontTirePressure
+                )
+            ]
+        )]
         let presentation = TuneResultPresentation(
             tune: tune,
             isSaved: false,
             isStreaming: false
         )
 
+        XCTAssertEqual(presentation.completion, .needsEvidence)
+        XCTAssertEqual(presentation.availableSettingCount, 0)
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertNotEqual(presentation.statusTitle, "Ready to use")
+    }
+
+    func testUsableProjectedNumbersAllowNormalTuneActions() async throws {
+        let tune = try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
+            capturedAt: Date(timeIntervalSinceReferenceDate: 72)
+        )
+        let presentation = TuneResultPresentation(
+            tune: tune,
+            isSaved: true,
+            isStreaming: false
+        )
+
         XCTAssertEqual(presentation.completion, .available)
+        XCTAssertGreaterThan(presentation.availableSettingCount, 0)
         XCTAssertTrue(presentation.allowsCopyOrSave)
+        XCTAssertTrue(presentation.allowsSavedConsequentialActions)
         XCTAssertTrue(presentation.statusDetail.contains("does not mean accuracy"))
+    }
+
+    func testFH5NumericPurposeIsPresentedAsPlanOnly() {
+        var car = SampleTuningData.starterCar
+        car.game = .fh5
+        let tune = TuneResult(
+            request: TuneRequest(car: car, discipline: .road),
+            sections: [],
+            notes: TuneNotes(
+                bias: "No numeric FH5 guidance",
+                ifPushesWide: "Not available",
+                ifSnapsOnLift: "Not available",
+                retuneTrigger: "Use the build plan"
+            ),
+            purpose: .numericTune,
+            projectionReport: emptyProjection
+        )
+        let presentation = TuneResultPresentation(
+            tune: tune,
+            isSaved: false,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(presentation.completion, .plan)
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertTrue(presentation.allowsSave)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+        XCTAssertTrue(TuneActualProviderPresentation(tune: tune).title.contains("FH5 build planner"))
     }
 
     func testLegacyResultRemainsNonCopyable() {

@@ -66,7 +66,7 @@ struct TuneResultStatusSection: View {
     }
 
     private var statusColor: Color {
-        presentation.completion == .available || presentation.completion == .plan
+        presentation.completion == .available
             ? ForzAdvisorTheme.success
             : ForzAdvisorTheme.warning
     }
