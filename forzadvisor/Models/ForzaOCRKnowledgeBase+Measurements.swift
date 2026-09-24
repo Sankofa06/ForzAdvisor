@@ -58,7 +58,7 @@ extension ForzaOCRKnowledgeBase {
         in windows: [ObservationWindow],
         kind: MeasurementKind
     ) -> [ParsedCandidate<Int>] {
-        windows.compactMap { window in
+        let candidates = windows.compactMap { window in
             guard containsAny(kind.fieldAliases, in: window.normalizedText),
                   let measurement = firstMeasurement(in: window.rawText, kind: kind),
                   measurementIsUnambiguous(
@@ -86,6 +86,35 @@ extension ForzaOCRKnowledgeBase {
                 normalizedValue: "\(normalizedValue)"
             )
         }
+        return measurementValuesAreUnambiguous(candidates) ? candidates : []
+    }
+
+    func measurementValuesAreUnambiguous<Value>(
+        _ candidates: [ParsedCandidate<Value>]
+    ) -> Bool {
+        let readings = Set(candidates.compactMap { candidate -> String? in
+            guard let sourceValue = candidate.sourceValue,
+                  let value = Double(sourceValue),
+                  let sourceUnit = candidate.sourceUnit else {
+                return nil
+            }
+            return "\(sourceUnit.rawValue):\(value)"
+        })
+        return readings.count <= 1
+    }
+
+    func hasConflictingMeasurementReadings(
+        in windows: [ObservationWindow],
+        kind: MeasurementKind
+    ) -> Bool {
+        let readings = Set(windows.compactMap { window -> String? in
+            guard containsAny(kind.fieldAliases, in: window.normalizedText),
+                  let measurement = firstMeasurement(in: window.rawText, kind: kind) else {
+                return nil
+            }
+            return "\(measurement.sourceUnit.rawValue):\(measurement.value)"
+        })
+        return readings.count > 1
     }
 
     func measurementIsUnambiguous(
@@ -110,6 +139,10 @@ extension ForzaOCRKnowledgeBase {
         in windows: [ObservationWindow],
         kind: MeasurementKind
     ) -> [ParsedCandidate<String>] {
+        let hasConflictingReadings = hasConflictingMeasurementReadings(
+            in: windows,
+            kind: kind
+        )
         windows.compactMap { window in
             guard containsAny(kind.fieldAliases, in: window.normalizedText),
                   let sourceValue = firstCapture(in: window.rawText, pattern: kind.ambiguousPattern),
@@ -117,6 +150,7 @@ extension ForzaOCRKnowledgeBase {
                 return nil
             }
             if let measurement = firstMeasurement(in: window.rawText, kind: kind),
+               !hasConflictingReadings,
                measurementIsUnambiguous(
                    measurement.sourceValue,
                    measurement.sourceUnit,

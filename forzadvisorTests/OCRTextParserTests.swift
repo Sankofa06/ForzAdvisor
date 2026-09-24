@@ -191,6 +191,22 @@ final class OCRTextParserTests: XCTestCase {
         XCTAssertTrue(draft.evidence[.torque]?.requiresManualCorrection == true)
     }
 
+    func testParserRejectsConflictingMeasurementValuesAcrossObservations() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(text: "Power 480 hp", confidence: 0.93),
+            OCRTextObservation(text: "Power 520 hp", confidence: 0.91),
+            OCRTextObservation(text: "Torque 400 lb-ft", confidence: 0.92),
+            OCRTextObservation(text: "Torque 430 lb-ft", confidence: 0.9)
+        ])
+
+        XCTAssertNil(draft.peakHorsepower)
+        XCTAssertNil(draft.peakTorqueFootPounds)
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceUnit, .ambiguous)
+        XCTAssertEqual(draft.evidence[.torque]?.sourceUnit, .ambiguous)
+        XCTAssertTrue(draft.evidence[.horsepower]?.requiresManualCorrection == true)
+        XCTAssertTrue(draft.evidence[.torque]?.requiresManualCorrection == true)
+    }
+
     func testParserValidatesMetricMeasurementRangeAfterConversion() {
         let draft = OCRTextParser.confirmationDraft(from: [
             OCRTextObservation(text: "Power 1800 kW", confidence: 0.93),
