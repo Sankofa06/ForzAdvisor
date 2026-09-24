@@ -45,6 +45,51 @@ final class TuneResultUITests: XCTestCase {
     }
 
     @MainActor
+    func testResultCaptureButtonDispatchesFromRenderedEvidenceSection() {
+        let app = launchCaptureActionHarness()
+        let capture = app.buttons["verifyTirePressureCaptureButton"]
+        XCTAssertTrue(capture.waitForExistence(timeout: 5))
+        for _ in 0..<8 where !capture.isHittable { app.swipeUp() }
+        XCTAssertTrue(capture.isHittable)
+
+        capture.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Result: Verify Tire Pressures"]
+                .waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testEvidenceHubCaptureButtonDispatchesFromRenderedHubView() {
+        let app = launchCaptureActionHarness()
+        let openEvidenceHub = app.buttons["openTuneEvidenceHubButton"]
+        XCTAssertTrue(openEvidenceHub.waitForExistence(timeout: 5))
+        openEvidenceHub.tap()
+
+        XCTAssertTrue(app.navigationBars["Evidence Hub"].waitForExistence(timeout: 5))
+        let capture = app.buttons["hubVerifyTirePressureCaptureButton"]
+        XCTAssertTrue(capture.waitForExistence(timeout: 5))
+        for _ in 0..<8 where !capture.isHittable { app.swipeUp() }
+        XCTAssertTrue(capture.isHittable)
+        capture.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Hub: Verify Tire Pressures"]
+                .waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    private func launchCaptureActionHarness() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-ui-test-capture-actions"]
+        app.launch()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15))
+        return app
+    }
+
+    @MainActor
     private func openCompletedManualResult(in app: XCUIApplication) {
         let garage = app.descendants(matching: .any)["garageHome"].firstMatch
         XCTAssertTrue(garage.waitForExistence(timeout: 15))
