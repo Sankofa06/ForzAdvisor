@@ -61,7 +61,8 @@ extension ForzaOCRKnowledgeBase {
         windows.compactMap { window in
             guard containsAny(kind.fieldAliases, in: window.normalizedText),
                   let measurement = firstMeasurement(in: window.rawText, kind: kind),
-                  measurementUnitIsUnambiguous(
+                  measurementIsUnambiguous(
+                    measurement.sourceValue,
                     measurement.sourceUnit,
                     in: window,
                     kind: kind
@@ -87,16 +88,21 @@ extension ForzaOCRKnowledgeBase {
         }
     }
 
-    func measurementUnitIsUnambiguous(
+    func measurementIsUnambiguous(
+        _ sourceValue: String,
         _ sourceUnit: OCRMeasurementUnit,
         in window: ObservationWindow,
         kind: MeasurementKind
     ) -> Bool {
         window.candidates.allSatisfy { candidateText in
-            guard firstCapture(in: candidateText, pattern: kind.ambiguousPattern) != nil else {
-                return true
+            if let alternative = firstMeasurement(in: candidateText, kind: kind) {
+                return alternative.sourceUnit == sourceUnit
+                    && alternative.value == Double(sourceValue)
             }
-            return firstMeasurement(in: candidateText, kind: kind)?.sourceUnit == sourceUnit
+            return firstCapture(
+                in: candidateText,
+                pattern: kind.ambiguousPattern
+            ) == nil
         }
     }
 
@@ -111,7 +117,8 @@ extension ForzaOCRKnowledgeBase {
                 return nil
             }
             if let measurement = firstMeasurement(in: window.rawText, kind: kind),
-               measurementUnitIsUnambiguous(
+               measurementIsUnambiguous(
+                   measurement.sourceValue,
                    measurement.sourceUnit,
                    in: window,
                    kind: kind
