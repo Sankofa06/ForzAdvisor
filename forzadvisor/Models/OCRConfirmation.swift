@@ -52,6 +52,22 @@ struct OCRTextObservation: Equatable, Sendable {
     }
 }
 
+enum OCRMeasurementUnit: String, Equatable, Sendable {
+    case horsepower = "hp"
+    case kilowatts = "kW"
+    case poundFeet = "lb-ft"
+    case newtonMeters = "Nm"
+    case ambiguous = "ambiguous"
+
+    var requiresExplicitConfirmation: Bool {
+        self == .kilowatts || self == .newtonMeters || self == .ambiguous
+    }
+
+    var requiresManualCorrection: Bool {
+        self == .ambiguous
+    }
+}
+
 struct OCRFieldEvidence: Equatable, Sendable {
     static let reviewThreshold = 0.6
 
@@ -59,9 +75,18 @@ struct OCRFieldEvidence: Equatable, Sendable {
     var confidence: Double
     var candidates: [String] = []
     var boundingBox: CGRect?
+    var sourceValue: String? = nil
+    var normalizedValue: String? = nil
+    var sourceUnit: OCRMeasurementUnit? = nil
 
     var needsReview: Bool {
-        rawText == nil || confidence < Self.reviewThreshold
+        rawText == nil
+            || confidence < Self.reviewThreshold
+            || sourceUnit?.requiresExplicitConfirmation == true
+    }
+
+    var requiresManualCorrection: Bool {
+        sourceUnit?.requiresManualCorrection == true
     }
 
     static var missing: OCRFieldEvidence {
@@ -83,6 +108,8 @@ enum OCRConfirmationUnresolvedField: Hashable, Sendable {
     case performanceIndex
     case performanceClass
     case drivetrain
+    case horsepower
+    case torque
 
     var title: String {
         switch self {
@@ -93,6 +120,8 @@ enum OCRConfirmationUnresolvedField: Hashable, Sendable {
         case .performanceIndex: "PI"
         case .performanceClass: "Class"
         case .drivetrain: "Drivetrain"
+        case .horsepower: "Horsepower"
+        case .torque: "Torque"
         }
     }
 
@@ -104,6 +133,8 @@ enum OCRConfirmationUnresolvedField: Hashable, Sendable {
         case .performanceIndex: .performanceIndex
         case .performanceClass: .performanceClass
         case .drivetrain: .drivetrain
+        case .horsepower: .horsepower
+        case .torque: .torque
         }
     }
 }
@@ -113,9 +144,12 @@ struct OCRFieldCandidate: Identifiable, Equatable, Sendable {
     var value: String
     var confidence: Double
     var rawText: String
+    var sourceValue: String? = nil
+    var sourceUnit: OCRMeasurementUnit? = nil
+    var normalizedValue: String? = nil
 
     var id: String {
-        "\(field.rawValue)-\(value)-\(rawText)-\(confidence)"
+        "\(field.rawValue)-\(value)-\(rawText)-\(confidence)-\(sourceUnit?.rawValue ?? "")"
     }
 }
 
@@ -173,8 +207,17 @@ struct OCRConfirmationDraft: Equatable, Sendable {
         if requiresFieldReview, let field = fieldsNeedingReview.first {
             return field.unresolvedField
         }
+        if requiresFieldReview,
+           let field = Self.optionalFields.first(where: {
+               evidence[$0]?.needsReview == true
+                   && reviewState(for: $0) == .needsCheck
+           }) {
+            return field.unresolvedField
+        }
         return nil
     }
+
+    private static let optionalFields: [OCRInputField] = [.horsepower, .torque]
 
     private var requiresFieldReview: Bool {
         !evidence.isEmpty || thumbnailData != nil
@@ -193,6 +236,7 @@ struct OCRConfirmationDraft: Equatable, Sendable {
     }
 
     mutating func confirm(_ field: OCRInputField) {
+        guard !evidence(for: field).requiresManualCorrection else { return }
         reviewStates[field] = .confirmed
     }
 
@@ -255,7 +299,8 @@ extension OCRInputField {
         case .performanceIndex: .performanceIndex
         case .performanceClass: .performanceClass
         case .drivetrain: .drivetrain
-        case .horsepower, .torque: .identity
+        case .horsepower: .horsepower
+        case .torque: .torque
         }
     }
 }
