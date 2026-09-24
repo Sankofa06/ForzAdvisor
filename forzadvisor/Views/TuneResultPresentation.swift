@@ -27,6 +27,8 @@ struct TuneResultPresentation: Equatable {
             completion = .incomplete
         } else if tune.purpose == .fh5BuildPlan || tune.request.car.game == .fh5 {
             completion = .plan
+        } else if projectedReport?.requiresInGameConfirmation == true {
+            completion = .plan
         } else if hasProjectionReport, hasUsableNumericOutput {
             completion = .available
         } else if TuneClipboardFormatter.buildPlanText(for: projectedTune) != nil {

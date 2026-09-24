@@ -164,6 +164,26 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.statusDetail.contains("does not mean accuracy"))
     }
 
+    func testUsableNumbersWithPendingInGameConfirmationStayPlanOnly() async throws {
+        var tune = try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
+            capturedAt: Date(timeIntervalSinceReferenceDate: 73)
+        )
+        tune.projectionReport?.confirmations = [
+            TuneSettingConfirmation(setting: .alignment, candidateParts: [])
+        ]
+
+        let presentation = TuneResultPresentation(
+            tune: tune,
+            isSaved: true,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(presentation.completion, .plan)
+        XCTAssertEqual(presentation.availableSettingCount, 0)
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+    }
+
     func testFH5NumericPurposeIsPresentedAsPlanOnly() {
         var car = SampleTuningData.starterCar
         car.game = .fh5
