@@ -58,7 +58,7 @@ extension ForzaOCRKnowledgeBase {
         in windows: [ObservationWindow],
         kind: MeasurementKind
     ) -> [ParsedCandidate<Int>] {
-        let candidates = windows.compactMap { window in
+        let candidates: [ParsedCandidate<Int>] = windows.compactMap { window in
             guard containsAny(kind.fieldAliases, in: window.normalizedText),
                   let measurement = firstMeasurement(in: window.rawText, kind: kind),
                   measurementIsUnambiguous(
@@ -143,7 +143,7 @@ extension ForzaOCRKnowledgeBase {
             in: windows,
             kind: kind
         )
-        windows.compactMap { window in
+        return windows.compactMap { window in
             guard containsAny(kind.fieldAliases, in: window.normalizedText),
                   let sourceValue = firstCapture(in: window.rawText, pattern: kind.ambiguousPattern),
                   Double(sourceValue)?.isFinite == true else {
