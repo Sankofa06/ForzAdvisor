@@ -2,6 +2,57 @@ import XCTest
 @testable import forzadvisor
 
 final class TuneResultPresentationTests: XCTestCase {
+    func testEligibleResultCaptureCallbacksProduceVisibleActionsAndDispatch() {
+        var dispatched = [TuneResultCaptureActionKind]()
+        let actions = TuneResultCaptureActions(
+            onVerifyTuneMenu: { dispatched.append(.tuneMenu) },
+            onVerifyTirePressures: { dispatched.append(.tirePressures) },
+            onVerifyUpgradeParts: { dispatched.append(.upgradeParts) }
+        )
+
+        XCTAssertEqual(
+            actions.availableActions.map(\.kind),
+            [.tuneMenu, .tirePressures, .upgradeParts]
+        )
+        XCTAssertEqual(
+            actions.availableActions.map(\.accessibilityIdentifier),
+            [
+                "verifyTuneMenuCaptureButton",
+                "verifyTirePressureCaptureButton",
+                "verifyUpgradePartsCaptureButton"
+            ]
+        )
+        actions.availableActions.forEach { $0.perform() }
+        XCTAssertEqual(
+            dispatched,
+            [.tuneMenu, .tirePressures, .upgradeParts]
+        )
+    }
+
+    func testIneligibleAndStreamingCaptureActionsAreNotAvailable() {
+        let ineligibleActions = TuneResultCaptureActions()
+        XCTAssertTrue(ineligibleActions.availableActions.isEmpty)
+
+        var dispatchedTireAction = false
+        let partiallyEligibleActions = TuneResultCaptureActions(
+            onVerifyTirePressures: { dispatchedTireAction = true }
+        )
+        XCTAssertEqual(
+            partiallyEligibleActions.availableActions.map(\.kind),
+            [.tirePressures]
+        )
+        partiallyEligibleActions.availableActions[0].perform()
+        XCTAssertTrue(dispatchedTireAction)
+
+        let streamingActions = TuneResultCaptureActions(
+            onVerifyTuneMenu: {},
+            onVerifyTirePressures: {},
+            onVerifyUpgradeParts: {},
+            isStreaming: true
+        )
+        XCTAssertTrue(streamingActions.availableActions.isEmpty)
+    }
+
     func testStreamingResultIsExplicitlyIncompleteAndCannotCopyOrSave() {
         let presentation = TuneResultPresentation(
             tune: makeTune(hasProjection: true),

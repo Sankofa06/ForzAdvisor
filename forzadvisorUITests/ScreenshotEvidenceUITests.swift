@@ -253,6 +253,11 @@ final class ScreenshotEvidenceUITests: XCTestCase {
             app.descendants(matching: .any)["tuneResultStatus"]
                 .firstMatch.exists
         )
+        // This manual FH6 result has no confirmed build snapshot, so its
+        // eligibility callbacks stay unavailable on the result screen.
+        XCTAssertFalse(app.buttons["verifyTuneMenuCaptureButton"].exists)
+        XCTAssertFalse(app.buttons["verifyTirePressureCaptureButton"].exists)
+        XCTAssertFalse(app.buttons["verifyUpgradePartsCaptureButton"].exists)
         let save = app.buttons["saveTuneButton"]
         scrollToHittable(save, in: app)
     }
