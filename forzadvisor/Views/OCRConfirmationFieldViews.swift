@@ -21,7 +21,14 @@ struct OCRReviewNumberField: View {
                     .multilineTextAlignment(.trailing)
                     .focused(focus, equals: focusValue)
             }
-            OCRReviewStatusRow(state: state, rawText: evidence.rawText, onConfirm: onConfirm)
+            OCRReviewStatusRow(
+                state: state,
+                rawText: evidence.rawText,
+                normalizedValue: evidence.normalizedValue,
+                normalizedUnit: placeholder,
+                requiresManualCorrection: evidence.requiresManualCorrection,
+                onConfirm: onConfirm
+            )
             OCRCandidateChipRow(candidates: candidates, onSelect: onCandidate)
         }
         .ocrReviewRow(state: state)
@@ -31,34 +38,56 @@ struct OCRReviewNumberField: View {
 struct OCRReviewStatusRow: View {
     let state: OCRFieldReviewState
     var rawText: String?
+    var normalizedValue: String?
+    var normalizedUnit: String?
+    var requiresManualCorrection: Bool
     let onConfirm: () -> Void
 
     init(
         state: OCRFieldReviewState,
         rawText: String? = nil,
+        normalizedValue: String? = nil,
+        normalizedUnit: String? = nil,
+        requiresManualCorrection: Bool = false,
         onConfirm: @escaping () -> Void
     ) {
         self.state = state
         self.rawText = rawText
+        self.normalizedValue = normalizedValue
+        self.normalizedUnit = normalizedUnit
+        self.requiresManualCorrection = requiresManualCorrection
         self.onConfirm = onConfirm
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            Label(state.rawValue, systemImage: statusImage)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(state == .needsCheck ? ForzAdvisorTheme.warning : ForzAdvisorTheme.success)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Label(state.rawValue, systemImage: statusImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(state == .needsCheck ? ForzAdvisorTheme.warning : ForzAdvisorTheme.success)
+                Spacer()
+                if state == .needsCheck && !requiresManualCorrection {
+                    Button("Confirm", action: onConfirm)
+                        .font(.caption.weight(.semibold))
+                        .frame(minHeight: ForzAdvisorTheme.minimumTouchTarget)
+                }
+            }
             if let rawText {
-                Text("Read as \(rawText)")
+                Text("Source: \(rawText)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer()
-            if state == .needsCheck {
-                Button("Confirm", action: onConfirm)
-                    .font(.caption.weight(.semibold))
-                    .frame(minHeight: ForzAdvisorTheme.minimumTouchTarget)
+            if let normalizedValue, let normalizedUnit {
+                Text("Normalized by OCR: \(normalizedValue) \(normalizedUnit)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if requiresManualCorrection {
+                Text("Unit is missing or unclear. Enter the value from the game in \(normalizedUnit ?? "the displayed unit").")
+                    .font(.caption)
+                    .foregroundStyle(ForzAdvisorTheme.warning)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

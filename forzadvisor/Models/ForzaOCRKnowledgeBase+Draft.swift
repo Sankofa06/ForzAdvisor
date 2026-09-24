@@ -67,7 +67,10 @@ extension ForzaOCRKnowledgeBase {
             rawText: candidate.rawText,
             confidence: candidate.confidence,
             candidates: candidate.candidates,
-            boundingBox: candidate.boundingBox
+            boundingBox: candidate.boundingBox,
+            sourceValue: candidate.sourceValue,
+            normalizedValue: candidate.normalizedValue,
+            sourceUnit: candidate.sourceUnit
         )
     }
 
@@ -79,7 +82,10 @@ extension ForzaOCRKnowledgeBase {
             field: field,
             value: candidate.textValue,
             confidence: candidate.confidence,
-            rawText: candidate.rawText
+            rawText: candidate.rawText,
+            sourceValue: candidate.sourceValue,
+            sourceUnit: candidate.sourceUnit,
+            normalizedValue: candidate.normalizedValue
         )
     }
 }
