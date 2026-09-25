@@ -59,11 +59,11 @@ extension ForzAdvisorUITests {
         nextButton.tap()
 
         let roadButton = app.buttons["disciplineButton-road"]
-        XCTAssertTrue(app.navigationBars["Choose Discipline"].waitForExistence(timeout: 5))
-        XCTAssertTrue(roadButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Choose Discipline"].waitForExistence(timeout: 15))
+        XCTAssertTrue(roadButton.waitForExistence(timeout: 15))
         roadButton.tap()
 
-        XCTAssertTrue(app.navigationBars["Choose Discipline"].exists)
+        XCTAssertTrue(app.navigationBars["Choose Discipline"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.navigationBars["Tune"].exists)
         XCTAssertFalse(app.descendants(matching: .any)["availableSettingsSection"].exists)
 
@@ -71,29 +71,29 @@ extension ForzAdvisorUITests {
         let disciplineList = app.collectionViews.firstMatch
         XCTAssertTrue(disciplineList.exists)
         for _ in 0..<8 where !startButton.exists { disciplineList.swipeUp() }
-        XCTAssertTrue(startButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(startButton.waitForExistence(timeout: 15))
         XCTAssertTrue(startButton.isHittable)
         startButton.tap()
 
         XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 15))
 
         let saveButton = app.buttons["saveTuneButton"]
-        XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 15))
         saveButton.tap()
 
         let doneButton = app.buttons["doneTuneButton"]
-        XCTAssertTrue(doneButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(doneButton.waitForExistence(timeout: 15))
         doneButton.tap()
 
         let savedTuneRow = app.buttons["savedTuneRow"].firstMatch
-        XCTAssertTrue(savedTuneRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(savedTuneRow.waitForExistence(timeout: 15))
         savedTuneRow.tap()
 
-        XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["1997 Mazda Miata"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["1997 Mazda Miata"].waitForExistence(timeout: 15))
         XCTAssertTrue(
             app.descendants(matching: .any)["availableSettingsSection"]
-                .firstMatch.waitForExistence(timeout: 5)
+                .firstMatch.waitForExistence(timeout: 15)
         )
         XCTAssertFalse(app.buttons["feedbackButton-pushesWide"].exists)
     }

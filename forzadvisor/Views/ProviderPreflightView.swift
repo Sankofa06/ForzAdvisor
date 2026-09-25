@@ -14,7 +14,7 @@ struct ProviderPreflightView: View {
         VStack(alignment: .leading, spacing: 5) {
             Text("Expected route")
                 .font(.subheadline.weight(.semibold))
-            Text(DisciplineGenerationCopy.routeSummary(disclosure))
+            Text(DisciplineGenerationCopy.routeSummary(for: game, disclosure: disclosure))
                 .font(.subheadline)
                 .foregroundStyle(ForzAdvisorTheme.secondaryText)
         }

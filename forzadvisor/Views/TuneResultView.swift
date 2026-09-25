@@ -75,10 +75,20 @@ struct TuneResultView: View {
     let onDeleteFH6CommunityOutcomeReviewEntry: (FH6CommunityOutcomeReviewEntry) -> Void
     let onFeedback: (TuneFeedback) -> Void
 
+    private var captureActions: TuneResultCaptureActions {
+        TuneResultCaptureActions(
+            onVerifyTuneMenu: onVerifyTuneMenu,
+            onVerifyTirePressures: onVerifyTirePressures,
+            onVerifyUpgradeParts: onVerifyUpgradeParts,
+            isStreaming: isStreaming
+        )
+    }
+
     private var evidenceHubDestination: AnyView {
         AnyView(TuneEvidenceHubView(adapter: .init(
             summary: evidenceSummary,
             evidenceRecords: validationEvidenceRecords,
+            captureActions: captureActions,
             onRecordTestDrive: onRecordTestDrive,
             onOpenFH5Research: onOpenFH5Research,
             onOpenFH5Experiment: onOpenFH5ControlledExperiment,
@@ -111,6 +121,7 @@ struct TuneResultView: View {
             showsFirstSavedSetupStepGuideHandoff:
                 showsFirstSavedSetupCopilotHandoff,
             evidenceSummary: evidenceSummary,
+            captureActions: captureActions,
             evidenceHubDestination:
                 isSaved && !isStreaming ? evidenceHubDestination : nil,
             upgradePaths: upgradePaths,

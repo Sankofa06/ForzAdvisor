@@ -70,6 +70,152 @@ final class OCRTextParserTests: XCTestCase {
         XCTAssertEqual(draft.drivetrain, .awd)
         XCTAssertEqual(draft.peakHorsepower, 480)
         XCTAssertEqual(draft.peakTorqueFootPounds, 410)
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceUnit, .horsepower)
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceValue, "480")
+        XCTAssertEqual(draft.evidence[.horsepower]?.normalizedValue, "480")
+        XCTAssertEqual(draft.evidence[.torque]?.sourceUnit, .poundFeet)
+        XCTAssertEqual(draft.evidence[.torque]?.sourceValue, "410")
+    }
+
+    func testParserConvertsMetricPowerAndTorqueToTheDraftUnits() {
+        var draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(text: "Power 100 kW", confidence: 0.93),
+            OCRTextObservation(text: "Torque 400 Nm", confidence: 0.92)
+        ])
+
+        XCTAssertEqual(draft.peakHorsepower, 134)
+        XCTAssertEqual(draft.peakTorqueFootPounds, 295)
+        XCTAssertEqual(draft.evidence[.horsepower]?.rawText, "Power 100 kW")
+        XCTAssertEqual(draft.evidence[.torque]?.rawText, "Torque 400 Nm")
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceValue, "100")
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceUnit, .kilowatts)
+        XCTAssertEqual(draft.evidence[.horsepower]?.normalizedValue, "134")
+        XCTAssertEqual(draft.evidence[.torque]?.sourceValue, "400")
+        XCTAssertEqual(draft.evidence[.torque]?.sourceUnit, .newtonMeters)
+        XCTAssertEqual(draft.evidence[.torque]?.normalizedValue, "295")
+        XCTAssertTrue(draft.evidence[.horsepower]?.needsReview == true)
+        XCTAssertTrue(draft.evidence[.torque]?.needsReview == true)
+
+        fillRequiredFields(in: &draft)
+        for field in OCRConfirmationDraft.requiredFields {
+            draft.confirm(field)
+        }
+        XCTAssertEqual(draft.firstUnresolvedField, .horsepower)
+        draft.confirm(.horsepower)
+        XCTAssertEqual(draft.firstUnresolvedField, .torque)
+        draft.confirm(.torque)
+        XCTAssertNil(draft.firstUnresolvedField)
+    }
+
+    func testParserRejectsUnitlessMeasurementsAndRequiresManualCorrection() {
+        var draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(text: "Power 480", confidence: 0.93),
+            OCRTextObservation(text: "Torque 410", confidence: 0.92)
+        ])
+
+        XCTAssertNil(draft.peakHorsepower)
+        XCTAssertNil(draft.peakTorqueFootPounds)
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceValue, "480")
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceUnit, .ambiguous)
+        XCTAssertEqual(draft.evidence[.torque]?.sourceValue, "410")
+        XCTAssertEqual(draft.evidence[.torque]?.sourceUnit, .ambiguous)
+        XCTAssertTrue(draft.candidates(for: .horsepower).isEmpty)
+        XCTAssertTrue(draft.evidence[.horsepower]?.requiresManualCorrection == true)
+
+        fillRequiredFields(in: &draft)
+        for field in OCRConfirmationDraft.requiredFields {
+            draft.confirm(field)
+        }
+        XCTAssertEqual(draft.firstUnresolvedField, .horsepower)
+        draft.confirm(.horsepower)
+        XCTAssertEqual(draft.firstUnresolvedField, .horsepower)
+
+        draft.peakHorsepower = 480
+        draft.markCorrected(.horsepower)
+        XCTAssertEqual(draft.firstUnresolvedField, .torque)
+        draft.peakTorqueFootPounds = 410
+        draft.markCorrected(.torque)
+        XCTAssertNil(draft.firstUnresolvedField)
+    }
+
+    func testParserRejectsMeasurementsWithAnIncompatibleUnit() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(text: "Power 300 Nm", confidence: 0.93),
+            OCRTextObservation(text: "Torque 300 hp", confidence: 0.92)
+        ])
+
+        XCTAssertNil(draft.peakHorsepower)
+        XCTAssertNil(draft.peakTorqueFootPounds)
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceUnit, .ambiguous)
+        XCTAssertEqual(draft.evidence[.torque]?.sourceUnit, .ambiguous)
+        XCTAssertTrue(draft.evidence[.horsepower]?.requiresManualCorrection == true)
+        XCTAssertTrue(draft.evidence[.torque]?.requiresManualCorrection == true)
+    }
+
+    func testParserRejectsMetricConversionWhenOCRAlternativesDisagreeOnUnit() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(
+                text: "Power 100 kW",
+                confidence: 0.93,
+                candidates: ["Power 100 hp"]
+            )
+        ])
+
+        XCTAssertNil(draft.peakHorsepower)
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceUnit, .ambiguous)
+        XCTAssertNil(draft.evidence[.horsepower]?.normalizedValue)
+        XCTAssertTrue(draft.evidence[.horsepower]?.requiresManualCorrection == true)
+    }
+
+    func testParserRejectsMeasurementsWhenOCRAlternativesDisagreeOnValue() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(
+                text: "Power 100 kW",
+                confidence: 0.93,
+                candidates: ["Power 110 kW"]
+            ),
+            OCRTextObservation(
+                text: "Torque 400 Nm",
+                confidence: 0.92,
+                candidates: ["Torque 410 Nm"]
+            )
+        ])
+
+        XCTAssertNil(draft.peakHorsepower)
+        XCTAssertNil(draft.peakTorqueFootPounds)
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceUnit, .ambiguous)
+        XCTAssertEqual(draft.evidence[.torque]?.sourceUnit, .ambiguous)
+        XCTAssertNil(draft.evidence[.horsepower]?.normalizedValue)
+        XCTAssertNil(draft.evidence[.torque]?.normalizedValue)
+        XCTAssertTrue(draft.evidence[.horsepower]?.requiresManualCorrection == true)
+        XCTAssertTrue(draft.evidence[.torque]?.requiresManualCorrection == true)
+    }
+
+    func testParserRejectsConflictingMeasurementValuesAcrossObservations() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(text: "Power 480 hp", confidence: 0.93),
+            OCRTextObservation(text: "Power 520 hp", confidence: 0.91),
+            OCRTextObservation(text: "Torque 400 lb-ft", confidence: 0.92),
+            OCRTextObservation(text: "Torque 430 lb-ft", confidence: 0.9)
+        ])
+
+        XCTAssertNil(draft.peakHorsepower)
+        XCTAssertNil(draft.peakTorqueFootPounds)
+        XCTAssertEqual(draft.evidence[.horsepower]?.sourceUnit, .ambiguous)
+        XCTAssertEqual(draft.evidence[.torque]?.sourceUnit, .ambiguous)
+        XCTAssertTrue(draft.evidence[.horsepower]?.requiresManualCorrection == true)
+        XCTAssertTrue(draft.evidence[.torque]?.requiresManualCorrection == true)
+    }
+
+    func testParserValidatesMetricMeasurementRangeAfterConversion() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(text: "Power 1800 kW", confidence: 0.93),
+            OCRTextObservation(text: "Torque 3390 Nm", confidence: 0.92)
+        ])
+
+        XCTAssertEqual(draft.peakHorsepower, 2_414)
+        XCTAssertNil(draft.peakTorqueFootPounds)
+        XCTAssertNil(draft.evidence[.torque])
     }
 
     func testParserFlagsLowConfidenceRequiredFieldsForReview() {
@@ -127,6 +273,80 @@ final class OCRTextParserTests: XCTestCase {
         XCTAssertTrue(fallback.validationIssues.contains(.missingDrivetrain))
     }
 
+    func testManualFallbackClearsFieldsStillNeedingOCRReview() {
+        var draft = OCRConfirmationDraft(
+            year: 2020,
+            make: "Toyota",
+            model: "Supra",
+            weightPounds: 3_400,
+            frontWeightPercent: 52,
+            performanceIndex: 700,
+            performanceClass: .a,
+            drivetrain: .rwd,
+            peakHorsepower: 400,
+            peakTorqueFootPounds: 350
+        )
+        for field in OCRConfirmationDraft.requiredFields + [.horsepower, .torque] {
+            draft.evidence[field] = OCRFieldEvidence(
+                rawText: field.title,
+                confidence: 0.4
+            )
+        }
+        draft.confirm(.weightPounds)
+        draft.markCorrected(.performanceClass)
+        draft.confirm(.horsepower)
+
+        let fallback = draft.manualEntryFallback()
+        XCTAssertEqual(fallback.game, .fh6)
+        XCTAssertEqual(fallback.year, 2020)
+        XCTAssertEqual(fallback.make, "Toyota")
+        XCTAssertEqual(fallback.model, "Supra")
+        XCTAssertEqual(fallback.weightPounds, 3_400)
+        XCTAssertNil(fallback.frontWeightPercent)
+        XCTAssertNil(fallback.performanceIndex)
+        XCTAssertEqual(fallback.performanceClass, .a)
+        XCTAssertNil(fallback.drivetrain)
+        XCTAssertEqual(fallback.peakHorsepower, 400)
+        XCTAssertNil(fallback.peakTorqueFootPounds)
+    }
+
+    func testConfirmedCarInputDropsOptionalValuesStillNeedingOCRReview() {
+        var draft = OCRConfirmationDraft(
+            year: 2020,
+            make: "Toyota",
+            model: "Supra",
+            weightPounds: 3_400,
+            frontWeightPercent: 52,
+            performanceIndex: 700,
+            performanceClass: .a,
+            drivetrain: .rwd,
+            peakHorsepower: 400,
+            peakTorqueFootPounds: 350
+        )
+        draft.reviewStates[.horsepower] = .needsCheck
+        draft.reviewStates[.torque] = .needsCheck
+
+        let car = draft.confirmedCarInput()
+
+        XCTAssertNotNil(car)
+        XCTAssertNil(car?.peakHorsepower)
+        XCTAssertNil(car?.peakTorqueFootPounds)
+    }
+
+    func testParserRejectsAmbiguousAndUnsupportedPowerTorqueUnits() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(text: "Power 350 kW", confidence: 0.95),
+            OCRTextObservation(text: "Torque 500 Nm", confidence: 0.95),
+            OCRTextObservation(text: "Power 480", confidence: 0.95),
+            OCRTextObservation(text: "Torque 410", confidence: 0.95)
+        ])
+
+        XCTAssertNil(draft.peakHorsepower)
+        XCTAssertNil(draft.peakTorqueFootPounds)
+        XCTAssertTrue(draft.candidates(for: .horsepower).isEmpty)
+        XCTAssertTrue(draft.candidates(for: .torque).isEmpty)
+    }
+
     func testSelectedGameControlsOCRValidationAndSurvivesWorkflowTransitions() throws {
         var draft = OCRConfirmationDraft()
         draft.game = .fh5
@@ -152,5 +372,16 @@ final class OCRTextParserTests: XCTestCase {
         }
         XCTAssertEqual(restoredDraft.game, .fh5)
         XCTAssertEqual(restoredDraft.confirmedCarInput()?.game, .fh5)
+    }
+
+    private func fillRequiredFields(in draft: inout OCRConfirmationDraft) {
+        draft.year = 2020
+        draft.make = "Toyota"
+        draft.model = "Supra"
+        draft.weightPounds = 3_400
+        draft.frontWeightPercent = 51
+        draft.performanceClass = .a
+        draft.performanceIndex = 650
+        draft.drivetrain = .rwd
     }
 }

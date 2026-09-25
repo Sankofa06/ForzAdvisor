@@ -10,12 +10,12 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-    "release_ref": "release-1.41.1-appstore-78-3"
+    "release_ref": "release-1.41.2-testflight-87-1"
   },
   "release": {
-    "marketing_version": "1.41.1",
-    "source_build_number": "78",
-    "current_app_store_build_number": "78",
+    "marketing_version": "1.41.2",
+    "source_build_number": "87",
+    "current_app_store_build_number": "87",
     "price": {
       "model": "FREE",
       "base_territory": "USA",
@@ -82,8 +82,8 @@
     "verify_workflow": ".github/workflows/release-verify.yml",
     "verify_job": "Xcode 26.6 ReleaseVerify",
     "runner": "macos-26",
-    "runner_os_version": "26.5.2",
-    "runner_os_build": "25F84",
+    "runner_os_version": "26.6.2",
+    "runner_os_build": "25G83",
     "xcode_version": "26.6",
     "xcode_build": "17F113"
   },
@@ -96,7 +96,7 @@
       "iOS": "generic/platform=iOS"
     },
     "xcode_build": "17C529",
-    "macos_build": "24G720",
+    "macos_build": "24G830",
     "sdk_versions": {
       "iOS": "26.2"
     },
@@ -115,11 +115,12 @@
     "export": {
       "manage_app_version_and_build_number": false,
       "strip_swift_symbols": true,
-      "upload_symbols": true
+      "upload_symbols": true,
+      "test_flight_internal_testing_only": false
     }
   },
   "app_store": {
-    "version_id": "0af3abb8-de19-49a0-ac54-54e5fbc805bd",
+    "version_id": "61290001-4fec-4bd6-941d-587989e61766",
     "review_submission_id": "8edc6ebc-972a-415a-bd2c-7167d20a3488",
     "review_submission_item_id": "OGVkYzZlYmMtOTcyYS00MTVhLWJkMmMtNzE2N2QyMGEzNDg4fDZ8ODg2MzUwNDA1"
   },

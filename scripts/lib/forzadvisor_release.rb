@@ -61,7 +61,7 @@ module ForzAdvisorRelease
       "ci" => %w[provider authority verify_workflow verify_job runner runner_os_version runner_os_build xcode_version xcode_build],
       "stable_runner" => %w[profile project scheme configuration destinations xcode_build macos_build sdk_versions minimum_os architectures warning_policy signing export],
       "stable_runner.signing" => %w[mode],
-      "stable_runner.export" => %w[manage_app_version_and_build_number strip_swift_symbols upload_symbols],
+      "stable_runner.export" => %w[manage_app_version_and_build_number strip_swift_symbols upload_symbols test_flight_internal_testing_only],
       "app_store" => %w[version_id review_submission_id review_submission_item_id],
       "testflight" => %w[internal_group], "testflight.internal_group" => %w[id name],
       "metadata" => %w[path required_sections],
@@ -85,8 +85,9 @@ module ForzAdvisorRelease
       legacy_xcode_cloud.workflows.release_candidate.id legacy_xcode_cloud.workflows.release_candidate.name
       ci.provider ci.authority ci.verify_workflow ci.verify_job ci.runner ci.runner_os_version ci.runner_os_build ci.xcode_version ci.xcode_build
       stable_runner.profile stable_runner.project stable_runner.scheme stable_runner.configuration
-      stable_runner.xcode_build stable_runner.macos_build stable_runner.warning_policy stable_runner.signing.mode
-      stable_runner.export.manage_app_version_and_build_number stable_runner.export.strip_swift_symbols stable_runner.export.upload_symbols
+      stable_runner.xcode_build stable_runner.macos_build stable_runner.warning_policy
+      stable_runner.signing.mode
+      stable_runner.export.manage_app_version_and_build_number stable_runner.export.strip_swift_symbols stable_runner.export.upload_symbols stable_runner.export.test_flight_internal_testing_only
       app_store.version_id app_store.review_submission_id app_store.review_submission_item_id
       legacy_xcode_cloud.product_id legacy_xcode_cloud.repository_id testflight.internal_group.id testflight.internal_group.name
       metadata.path metadata.required_sections screenshots.directory screenshots.width screenshots.height
@@ -160,8 +161,8 @@ module ForzAdvisorRelease
       raise ConfigurationError, "invalid GitHub verify workflow" unless fetch("ci", "verify_workflow") == ".github/workflows/release-verify.yml"
       raise ConfigurationError, "invalid GitHub verify job" unless fetch("ci", "verify_job") == "Xcode 26.6 ReleaseVerify"
       raise ConfigurationError, "unsupported GitHub runner" unless fetch("ci", "runner") == "macos-26"
-      raise ConfigurationError, "unsupported CI macOS version" unless fetch("ci", "runner_os_version") == "26.5.2"
-      raise ConfigurationError, "unsupported CI macOS build" unless fetch("ci", "runner_os_build") == "25F84"
+      raise ConfigurationError, "unsupported CI macOS version" unless fetch("ci", "runner_os_version") == "26.6.2"
+      raise ConfigurationError, "unsupported CI macOS build" unless fetch("ci", "runner_os_build") == "25G83"
       raise ConfigurationError, "unsupported CI Xcode version" unless fetch("ci", "xcode_version") == "26.6"
       raise ConfigurationError, "unsupported CI Xcode build" unless fetch("ci", "xcode_build") == "17F113"
       validate_stable_runner!
@@ -201,13 +202,15 @@ module ForzAdvisorRelease
       raise ConfigurationError, "stable runner scheme mismatch" unless runner["scheme"] == fetch("xcode", "local_scheme")
       raise ConfigurationError, "stable runner configuration must be Release" unless runner["configuration"] == "Release"
       raise ConfigurationError, "stable runner Xcode build mismatch" unless runner["xcode_build"] == "17C529"
-      raise ConfigurationError, "stable runner macOS build mismatch" unless runner["macos_build"] == "24G720"
+      raise ConfigurationError, "stable runner macOS build mismatch" unless runner["macos_build"] == "24G830"
       raise ConfigurationError, "stable runner warning policy must be global" unless runner["warning_policy"] == "global"
-      raise ConfigurationError, "stable runner signing must be automatic" unless runner.dig("signing", "mode") == "automatic"
+      signing = runner.fetch("signing")
+      raise ConfigurationError, "stable runner signing policy must remain automatic" unless signing["mode"] == "automatic"
       raise ConfigurationError, "stable runner export policy mismatch" unless runner["export"] == {
         "manage_app_version_and_build_number" => false,
         "strip_swift_symbols" => true,
-        "upload_symbols" => true
+        "upload_symbols" => true,
+        "test_flight_internal_testing_only" => false
       }
       platforms = runner.fetch("destinations").keys
       raise ConfigurationError, "stable runner must declare only supported platforms" unless !platforms.empty? && (platforms - %w[iOS macOS]).empty?

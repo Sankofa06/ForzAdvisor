@@ -78,6 +78,21 @@ final class TuneProviderDisclosureTests: XCTestCase {
         }
     }
 
+    func testFH5ForcesLocalDisclosureEvenWhenRemoteIsPreferred() {
+        let disclosure = TuneProviderDisclosure(
+            preferredMode: .anthropicAPI,
+            capabilities: fullyReady,
+            game: .fh5
+        )
+
+        XCTAssertEqual(disclosure.preferredMode, .offlineFormula)
+        XCTAssertEqual(disclosure.readiness, .ready)
+        XCTAssertEqual(disclosure.route.expectedFirstMode, .offlineFormula)
+        XCTAssertNil(disclosure.route.fallbackMode)
+        XCTAssertTrue(disclosure.route.preferredModeWillBeAttempted)
+        XCTAssertEqual(disclosure.dataBoundary, .localOnly)
+    }
+
     func testResultActualProviderVocabularyUsesRecordedActualMode() {
         let info = TuneProviderInfo(
             requestedMode: .anthropicAPI,

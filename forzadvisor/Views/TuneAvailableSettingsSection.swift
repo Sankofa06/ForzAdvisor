@@ -7,13 +7,27 @@ struct TuneAvailableSettingsSection: View {
     @Binding var copiedLineID: TuneLine.ID?
 
     var body: some View {
-        Section("Available settings") {
-            Text("Availability means these values can be entered in game. It is not an accuracy or validation score.")
+        Section(presentation.sectionTitle) {
+            Text(presentation.sectionDescription)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("availableSettingsBoundary")
 
-            if tune.sections.isEmpty {
+            if presentation.completion == .plan {
+                ContentUnavailableView(
+                    presentation.isFH6EvidenceWithheld
+                        ? "Settings withheld — more game evidence needed"
+                        : "No numeric settings yet",
+                    systemImage: "list.bullet.clipboard",
+                    description: Text("Use the setup plan and confirm the missing parts or tuning-menu ranges in game. Then generate again when the evidence is ready.")
+                )
+            } else if presentation.completion == .needsEvidence {
+                ContentUnavailableView(
+                    "More game evidence needed",
+                    systemImage: "checkmark.shield",
+                    description: Text("Forza Advisor withheld numeric values because the current build evidence cannot support them yet.")
+                )
+            } else if tune.sections.isEmpty {
                 ContentUnavailableView(
                     presentation.completion == .incomplete
                         ? "Settings still arriving"
@@ -40,7 +54,7 @@ struct TuneAvailableSettingsSection: View {
                         section: section,
                         isStreaming:
                             presentation.completion == .incomplete,
-                        allowsCopy: presentation.allowsCopyOrSave,
+                        allowsCopy: presentation.allowsCopy,
                         isExpanded: expandedBinding(for: section),
                         copiedLineID: $copiedLineID
                     )
@@ -60,6 +74,35 @@ struct TuneAvailableSettingsSection: View {
             } else {
                 expandedSectionTitles.remove(section.title)
             }
+        }
+    }
+}
+
+private extension TuneResultPresentation {
+    var sectionTitle: String {
+        switch completion {
+        case .available: "Available settings"
+        case .plan: "Setup plan"
+        case .needsEvidence: "Evidence needed"
+        case .incomplete: "Available settings"
+        case .legacyUnavailable: "Available settings"
+        }
+    }
+
+    var sectionDescription: String {
+        switch completion {
+        case .available:
+            "Availability means these values can be entered in game. It is not an accuracy or validation score."
+        case .plan:
+            isFH6EvidenceWithheld
+                ? "Numeric values are withheld until more game evidence is confirmed. This plan keeps the next in-game step explicit."
+                : "No numeric values are being presented yet. This plan keeps the next in-game step explicit."
+        case .needsEvidence:
+            "Numeric values stay hidden until the required build and tuning-menu evidence is trustworthy."
+        case .incomplete:
+            "Settings remain unavailable until generation completes."
+        case .legacyUnavailable:
+            "This saved result predates the current availability checks."
         }
     }
 }

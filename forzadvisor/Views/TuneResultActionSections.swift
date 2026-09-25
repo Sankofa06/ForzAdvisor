@@ -59,6 +59,8 @@ struct TuneResultStatusSection: View {
         switch presentation.completion {
         case .incomplete: "clock.arrow.trianglehead.counterclockwise.rotate.90"
         case .available: presentation.isSaved ? "checkmark.circle.fill" : "checkmark.shield"
+        case .plan: "list.bullet.clipboard"
+        case .needsEvidence: "checkmark.shield"
         case .legacyUnavailable: "exclamationmark.triangle"
         }
     }
@@ -79,8 +81,9 @@ struct TuneResultActionSection: View {
 
     var body: some View {
         Section("Apply in game") {
-            if presentation.allowsCopyOrSave {
-                if let text = TuneClipboardFormatter.verifiedSettingsText(for: tune) {
+            if presentation.allowsSave {
+                if presentation.allowsCopy,
+                   let text = TuneClipboardFormatter.verifiedSettingsText(for: tune) {
                     actionButton(
                         title: "Copy available settings",
                         systemImage: "doc.on.doc",
@@ -90,31 +93,51 @@ struct TuneResultActionSection: View {
                         announce("Available settings copied")
                     }
                 }
+
                 if let text = TuneClipboardFormatter.buildPlanText(for: tune) {
                     actionButton(
-                        title: "Copy build plan",
+                        title: "Copy setup plan",
                         systemImage: "doc.on.doc",
                         identifier: "copyBuildPlanButton"
                     ) {
                         UIPasteboard.general.string = text
-                        announce("Build plan copied")
+                        announce("Setup plan copied")
                     }
                 }
 
                 if presentation.isSaved {
-                    Label("Saved locally", systemImage: "checkmark.circle.fill")
+                    Label(
+                        presentation.hasAvailableSettings
+                            ? "Saved locally"
+                            : "Saved setup",
+                        systemImage: "checkmark.circle.fill"
+                    )
                         .foregroundStyle(ForzAdvisorTheme.success)
                         .accessibilityIdentifier("savedTuneStatus")
                 } else {
                     actionButton(
-                        title: tune.purpose == .fh5BuildPlan ? "Save Plan" : "Save",
+                        title: tune.purpose == .fh5BuildPlan
+                            ? "Save Plan"
+                            : presentation.hasAvailableSettings
+                                ? "Save"
+                                : "Save Setup",
                         systemImage: "square.and.arrow.down",
                         identifier: "saveTuneButton"
                     ) {
                         onSave()
                     }
                 }
-            } else {
+
+                if !presentation.hasAvailableSettings {
+                    Label(
+                        "No numeric settings are available. Copy and refinement remain unavailable.",
+                        systemImage: "slider.horizontal.3"
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("zeroSettingSetupNotice")
+                }
+            } else if presentation.completion == .incomplete {
                 Label(
                     "Copy and Save unavailable until this result is complete",
                     systemImage: "lock.fill"
@@ -122,6 +145,14 @@ struct TuneResultActionSection: View {
                 .font(.subheadline)
                 .foregroundStyle(ForzAdvisorTheme.warning)
                 .accessibilityIdentifier("incompleteResultActionsUnavailable")
+            } else {
+                Label(
+                    "Copy and Save unavailable for this legacy result",
+                    systemImage: "exclamationmark.triangle"
+                )
+                .font(.subheadline)
+                .foregroundStyle(ForzAdvisorTheme.warning)
+                .accessibilityIdentifier("legacyResultActionsUnavailable")
             }
 
             if let feedback {
