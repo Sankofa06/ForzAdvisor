@@ -121,7 +121,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
     assert_equal "87", @config.fetch("release", "source_build_number")
-    assert_equal "78", @config.fetch("release", "current_app_store_build_number")
+    assert_equal "87", @config.fetch("release", "current_app_store_build_number")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
@@ -137,10 +137,10 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal "24G830", @config.fetch("stable_runner", "macos_build")
     assert_equal "26.2", @config.fetch("stable_runner", "sdk_versions", "iOS")
     assert_equal ["arm64"], @config.fetch("stable_runner", "architectures", "iOS")
-    assert_equal "manual", @config.fetch("stable_runner", "signing", "mode")
-    assert_equal "2YL26QXK8S", @config.fetch("stable_runner", "signing", "certificate_id")
-    assert_equal "CGF29WK2SC", @config.fetch("stable_runner", "signing", "profile_id")
-    assert_equal "ForzAdvisor App Store - Stable Runner", @config.fetch("stable_runner", "signing", "profile_name")
+    assert_equal "automatic", @config.fetch("stable_runner", "signing", "mode")
+    refute @config.fetch("stable_runner", "signing").key?("certificate_id")
+    refute @config.fetch("stable_runner", "signing").key?("profile_id")
+    refute @config.fetch("stable_runner", "signing").key?("profile_name")
     assert_equal false, @config.fetch("stable_runner", "export", "test_flight_internal_testing_only")
   end
 
@@ -191,7 +191,6 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
     with_config do |data, path|
       data["stable_runner"]["signing"]["mode"] = "manual"
-      data["stable_runner"]["signing"].delete("profile_id")
       File.write(path, JSON.generate(data))
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
     end
@@ -348,7 +347,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
-  def test_release_declarations_require_price_rights_age_contact_and_manual_policy
+  def test_release_declarations_require_price_rights_age_contact_and_approval_policy
     result = ForzAdvisorRelease::ReleaseDeclarationInspector.new(@config).call
 
     assert_equal "FREE", result["price"]
@@ -709,7 +708,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_candidate_validation_rejects_removed_group_wrong_build_prerelease_platform_and_export_value
     group = @config.fetch("testflight", "internal_group", "id")
     mutations = {
-      "wrong build" => proc { |responses| responses["/v1/builds/build"]["data"]["attributes"]["version"] = @config.fetch("release", "current_app_store_build_number") },
+      "wrong build" => proc { |responses| responses["/v1/builds/build"]["data"]["attributes"]["version"] = (@config.fetch("release", "source_build_number").to_i + 1).to_s },
       "wrong prerelease" => proc { |responses| responses["/v1/builds/build/preReleaseVersion"]["data"]["attributes"]["version"] = "1.41.1" },
       "wrong platform" => proc { |responses| responses["/v1/builds/build/preReleaseVersion"]["data"]["attributes"]["platform"] = "MAC_OS" },
       "missing export compliance" => proc { |responses| responses["/v1/builds/build"]["data"]["attributes"].delete("usesNonExemptEncryption") },
@@ -834,7 +833,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     responses = {
       "/v1/apps/#{app_id}" => { "data" => { "id" => app_id, "attributes" => { "name" => "ForzAdvisor", "bundleId" => "com.michaelwilliams.forzadvisor" } } },
       "/v1/apps/#{app_id}/appStoreVersions" => { "data" => [{ "id" => "version-id", "attributes" => { "appStoreState" => "READY_FOR_REVIEW" } }] },
-      "/v1/apps/#{app_id}/builds" => { "data" => [{ "id" => "build-id", "attributes" => { "version" => "78", "processingState" => "VALID" } }] },
+      "/v1/apps/#{app_id}/builds" => { "data" => [{ "id" => "build-id", "attributes" => { "version" => @config.fetch("release", "current_app_store_build_number"), "processingState" => "VALID" } }] },
       "/v1/apps/#{app_id}/reviewSubmissions" => { "data" => [{ "id" => "submission-id", "attributes" => { "state" => "READY_FOR_REVIEW" } }] }
     }
     api = FakeAPI.new(responses)
@@ -842,7 +841,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
     assert_equal true, result["read_only"]
     assert_equal "87", result["source_build_number"]
-    assert_equal "78", result.dig("build", "number")
+    assert_equal @config.fetch("release", "current_app_store_build_number"), result.dig("build", "number")
     assert_equal "READY_FOR_REVIEW", result.dig("version", "state")
     assert_equal 4, api.requests.length
   end

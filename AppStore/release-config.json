@@ -15,7 +15,7 @@
   "release": {
     "marketing_version": "1.41.2",
     "source_build_number": "87",
-    "current_app_store_build_number": "78",
+    "current_app_store_build_number": "87",
     "price": {
       "model": "FREE",
       "base_territory": "USA",
@@ -116,7 +116,7 @@
       "manage_app_version_and_build_number": false,
       "strip_swift_symbols": true,
       "upload_symbols": true,
-      "test_flight_internal_testing_only": true
+      "test_flight_internal_testing_only": false
     }
   },
   "app_store": {
