@@ -1,6 +1,6 @@
 # Tune workflow tests and compiler fix — 2026-09-26
 
-Current outcome: compiler repair implemented and scoped local verification complete. All 585 unit tests and all three selected UI cases have passing results, with the final result UI case passing after its documented targeted correction. Debug and clean Release builds pass without compiler warnings. An existing SwiftUI layout runtime warning remains unresolved; full release verification and TestFlight are not claimed.
+Current outcome: compiler repair and test improvements are committed, pushed, and available in [draft PR #7](https://github.com/Sankofa06/ForzAdvisor/pull/7). All 585 unit tests and all three selected UI cases have passing results, with the final result UI case passing after its documented targeted correction. Debug and clean Release builds pass without compiler warnings. An existing SwiftUI layout runtime warning remains unresolved. Existing internal TestFlight 1.41.2 (87) is live and valid but does not contain this patch; new delivery is blocked by the existing candidate's human-verification state and outstanding release gates.
 
 ## Work contract
 
@@ -122,14 +122,14 @@ Numbered runtime flow and retained screenshots:
 The source choices, filled form, result, and Evidence Hub screenshots were visually inspected. Logs were inspected separately. These UI cases verify workflow and test-fixture reliability; they do not assert real-world numeric tuning accuracy or replace human acceptance.
 
 
-## Delivery gate
+## Delivery gate at local verification (before publication)
 
 **TestFlight blocked.** Read-only status found an existing coordinator candidate 1.41.2 (87), commit `f3318c37dba4e745a31fda4e862468db75a11e16`, at `human_verification_pending`. This checkout's release configuration is 1.41.1 (78); the coordinator reports `stable-runner state identity mismatch: marketing_version`. That pending candidate cannot be rolled over automatically. Its state is preserved; no version/build allocation, commit, push, archive, upload, or tester reassignment occurred.
 
 The published 1.41.1 (78) was separately confirmed `VALID` / `READY_FOR_SALE`; it is not the pending beta. Evidence: `asc-status.json`, `candidate-status-error.log`. Complete local `ReleaseVerify` and GitHub Actions for an immutable revision remain required before any later distribution; neither is claimed by the proportional local gates here. The next delivery decision is the owner's acceptance/fix/block verdict for existing build 87, followed by reconciliation with the intended source/version.
 
 
-## Closeout
+## Local verification closeout (before publication)
 
 - Highest delivery state: implemented and scoped local verification complete, with the existing runtime warning disclosed. No cloud verification or distribution performed.
 - Source remains uncommitted on `agent/astra-test-improvements`, based on `b840cb2e863924103fa8717ec2cbfe582eb28a9b`. No commit, push, PR, version change, or external release mutation.
@@ -144,3 +144,24 @@ The closeout validator initially rejected the shortened authority marker, which 
 ## Explicit commit, push, and TestFlight request
 
 The owner subsequently requested commit, push, and TestFlight delivery if needed. The release contract remains ForzAdvisor / `com.michaelwilliams.forzadvisor` / team `5RGU344VJR`, iOS, configured `Internal` group, and logical archive profile `stable-xcode-26.3-intel`. App Review is not authorized. This branch retains the verified source; the existing 1.41.2 (87) candidate comes from another branch and must not be represented as containing this patch. Publish these scoped changes first, then revalidate the existing candidate and all release gates before any new build allocation or upload.
+
+### Publication and live TestFlight check
+
+The scoped changes were committed as `a45963f` (compiler repair), `3c76f45` (workflow regressions), `4ad4894` (test fixture reliability), and `a7c6d5673bcbf5810fc85d0d428d4827ace4b15b` (verification record). `git push -u origin agent/astra-test-improvements` succeeded; remote branch identity was confirmed with `git ls-remote`. [Draft PR #7](https://github.com/Sankofa06/ForzAdvisor/pull/7) targets `main`. No protected branch was merged. This publication addendum changes documentation only; executable-source fingerprint remains `35fd074a61b553491c385e65ac3d25a00a284e69154062307dd36efaf88a9892`.
+
+Current delivery evidence root: `/tmp/forzadvisor-testflight-20260926`.
+
+| Gate | Tool or command | Target | Result | Evidence path | Warnings or gaps |
+|---|---|---|---|---|---|
+| Deterministic tests | `ruby scripts/tests/forzadvisor_release_test.rb` | Release coordinator | PASS: 50 tests, 322 assertions | `release-tests.log` | No failures/errors/skips |
+| Framework validation | `scripts/validate-agent-framework.sh` | Publication state | PASS | `framework.log`, `framework-publication.log` | No app/test source edits |
+| Release preflight | `scripts/release preflight --ref agent/astra-test-improvements` | Pushed commit `a7c6d5673bcbf5810fc85d0d428d4827ace4b15b` | PASS | `pushed-preflight.log` | Static/configuration check; does not replace Xcode or GitHub release gates |
+| Existing beta status | Read-only `CandidateBuildValidator`, matching config/library extracted from `f3318c37dba4e745a31fda4e862468db75a11e16` | iOS 1.41.2 (87), build ID `54c5fe2d-bbd2-4287-83ac-40a76698e697` | PASS: `VALID`, configured internal-group association confirmed | `existing-build-87-live-status.json` | Different source revision; not delivery of this patch |
+| Candidate preservation | SHA-256 before and after read-only inspection | Existing coordinator state | PASS: unchanged | `initial-coordinator-sha256.txt`, `publication-preservation.txt` | Phase remains `human_verification_pending` |
+| Replacement candidate | Coordinator rollover contract review | This patch | BLOCKED | `AppStore/release-automation.md`, `scripts/lib/forzadvisor_release.rb` | Owner result pending, newer release-source/version reconciliation required, full ReleaseVerify and exact-revision GitHub gate not run |
+
+The first live-status attempt used the current branch's older config schema and rejected the newer candidate config before any API mutation. Reading the library and config from the exact existing candidate commit resolved that read-only schema mismatch. No release schema was changed to bypass a gate.
+
+The owner was asked for the device-test result (`ACCEPT`, `NEEDS FIXES`, or `BLOCKED`), notes, and evidence for build 87. The coordinator rejects a different candidate while its phase is `human_verification_pending`. A human `ACCEPT` accepts that existing build and does not itself permit automatic rollover; a failure/block result follows the documented correction path. No result was invented or written. The active candidate, build number, group, and signing configuration remain unchanged.
+
+Highest state for this patch: **committed and pushed; scoped local verification complete; TestFlight blocked**. No immutable release tag, cloud verification dispatch, archive, upload, App Review action, or new build allocation occurred. The existing valid beta remains available to the internal group.
