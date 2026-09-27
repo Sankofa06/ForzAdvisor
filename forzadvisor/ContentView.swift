@@ -1050,6 +1050,120 @@ struct ContentView: View {
                 savedTune: resolvedSavedTune
             )) ?? .empty(savedTuneID: resolvedSavedTune.id)
         }()
+        let onFeedback: (TuneFeedback) -> Void = { feedback in
+            guard let resolvedSavedTuneID else { return }
+            adjust(tune, savedTuneID: resolvedSavedTuneID, feedback: feedback)
+        }
+
+        let onSave: () -> TuneResultSaveOutcome = {
+            let wasGarageEmpty = savedTunes.isEmpty
+            let outcome = save(
+                tune,
+                playerNotes: resolvedPlayerNotes,
+                thumbnailData: resolvedThumbnailData
+            )
+            if case .saved(let savedTuneID) = outcome {
+                firstSavedSetupCopilotHandoff.recordSaveResult(
+                    savedTuneID: savedTuneID,
+                    wasGarageEmpty: wasGarageEmpty
+                )
+                if returnToValidationMission(.setupSaved) {
+                    return outcome
+                }
+                step = .result(
+                    tune,
+                    savedTuneID: savedTuneID,
+                    adjustmentChanges: [],
+                    thumbnailData: resolvedThumbnailData,
+                    playerNotes: resolvedPlayerNotes
+                )
+            }
+            return outcome
+        }
+
+        let onEdit: () -> Void = {
+            guard let resolvedSavedTuneID else { return }
+            tuneWorkflow.cancelAdjustment()
+            step = .editSavedTune(
+                tune,
+                savedTuneID: resolvedSavedTuneID,
+                playerNotes: resolvedPlayerNotes,
+                thumbnailData: resolvedThumbnailData
+            )
+        }
+
+        let onVerifyTuneMenu: (() -> Void)? = eligibleFH6TuneMenuCaptureSnapshot(for: tune) == nil ? nil : {
+            tuneWorkflow.cancelAdjustment()
+            step = .fh6TuneMenuCapture(
+                tune,
+                savedTuneID: resolvedSavedTuneID,
+                thumbnailData: resolvedThumbnailData,
+                playerNotes: resolvedPlayerNotes
+            )
+        }
+
+        let onVerifyTirePressures: (() -> Void)? = eligibleFH6TuneMenuCaptureSnapshot(for: tune) != nil
+            || eligibleTireCaptureSnapshot(for: tune) == nil
+            ? nil : {
+            tuneWorkflow.cancelAdjustment()
+            step = .tirePressureCapture(
+                tune,
+                savedTuneID: resolvedSavedTuneID,
+                thumbnailData: resolvedThumbnailData,
+                playerNotes: resolvedPlayerNotes
+            )
+        }
+
+        let onVerifyUpgradeParts: (() -> Void)? = eligibleUpgradeCaptureSnapshot(for: tune) == nil ? nil : {
+            tuneWorkflow.cancelAdjustment()
+            step = .upgradePartCapture(
+                tune,
+                savedTuneID: resolvedSavedTuneID,
+                thumbnailData: resolvedThumbnailData,
+                playerNotes: resolvedPlayerNotes
+            )
+        }
+
+        let onOpenFH5Research: (() -> Void)? = researchEligibility.isSuccess && resolvedSavedTuneID != nil ? {
+            guard let resolvedSavedTuneID else { return }
+            tuneWorkflow.cancelAdjustment()
+            step = .fh5ResearchCapture(
+                tune,
+                savedTuneID: resolvedSavedTuneID,
+                thumbnailData: resolvedThumbnailData,
+                playerNotes: resolvedPlayerNotes
+            )
+        } : nil
+
+        let onOpenFH5ControlledExperiment: (() -> Void)? = experimentEligibility.isSuccess && resolvedSavedTuneID != nil
+            ? {
+                guard let resolvedSavedTuneID,
+                      case .success(let researchRecord) = experimentEligibility else {
+                    return
+                }
+                tuneWorkflow.cancelAdjustment()
+                step = .fh5ControlledExperimentCapture(
+                    tune,
+                    savedTuneID: resolvedSavedTuneID,
+                    researchRecord: researchRecord,
+                    candidateTrialAvailable:
+                        candidateTrialArtifact != nil,
+                    thumbnailData: resolvedThumbnailData,
+                    playerNotes: resolvedPlayerNotes
+                )
+            }
+            : nil
+
+        let onRecordTestDrive: (() -> Void)? = validationEligibility.isSuccess && resolvedSavedTuneID != nil ? {
+            guard let resolvedSavedTuneID else { return }
+            tuneWorkflow.cancelAdjustment()
+            step = .recordTestDrive(
+                tune,
+                savedTuneID: resolvedSavedTuneID,
+                thumbnailData: resolvedThumbnailData,
+                playerNotes: resolvedPlayerNotes
+            )
+        } : nil
 
         TuneResultView(
             tune: tune,
@@ -1086,83 +1200,14 @@ struct ContentView: View {
                 cancelActiveTuneWork()
                 step = .home
             },
-            onSave: {
-                let wasGarageEmpty = savedTunes.isEmpty
-                let outcome = save(
-                    tune,
-                    playerNotes: resolvedPlayerNotes,
-                    thumbnailData: resolvedThumbnailData
-                )
-                if case .saved(let savedTuneID) = outcome {
-                    firstSavedSetupCopilotHandoff.recordSaveResult(
-                        savedTuneID: savedTuneID,
-                        wasGarageEmpty: wasGarageEmpty
-                    )
-                    if returnToValidationMission(.setupSaved) {
-                        return outcome
-                    }
-                    step = .result(
-                        tune,
-                        savedTuneID: savedTuneID,
-                        adjustmentChanges: [],
-                        thumbnailData: resolvedThumbnailData,
-                        playerNotes: resolvedPlayerNotes
-                    )
-                }
-                return outcome
-            },
-            onEdit: {
-                guard let resolvedSavedTuneID else { return }
-                tuneWorkflow.cancelAdjustment()
-                step = .editSavedTune(
-                    tune,
-                    savedTuneID: resolvedSavedTuneID,
-                    playerNotes: resolvedPlayerNotes,
-                    thumbnailData: resolvedThumbnailData
-                )
-            },
-            onVerifyTuneMenu: eligibleFH6TuneMenuCaptureSnapshot(for: tune) == nil ? nil : {
-                tuneWorkflow.cancelAdjustment()
-                step = .fh6TuneMenuCapture(
-                    tune,
-                    savedTuneID: resolvedSavedTuneID,
-                    thumbnailData: resolvedThumbnailData,
-                    playerNotes: resolvedPlayerNotes
-                )
-            },
-            onVerifyTirePressures:
-                eligibleFH6TuneMenuCaptureSnapshot(for: tune) != nil
-                || eligibleTireCaptureSnapshot(for: tune) == nil
-                ? nil : {
-                tuneWorkflow.cancelAdjustment()
-                step = .tirePressureCapture(
-                    tune,
-                    savedTuneID: resolvedSavedTuneID,
-                    thumbnailData: resolvedThumbnailData,
-                    playerNotes: resolvedPlayerNotes
-                )
-            },
-            onVerifyUpgradeParts: eligibleUpgradeCaptureSnapshot(for: tune) == nil ? nil : {
-                tuneWorkflow.cancelAdjustment()
-                step = .upgradePartCapture(
-                    tune,
-                    savedTuneID: resolvedSavedTuneID,
-                    thumbnailData: resolvedThumbnailData,
-                    playerNotes: resolvedPlayerNotes
-                )
-            },
+            onSave: onSave,
+            onEdit: onEdit,
+            onVerifyTuneMenu: onVerifyTuneMenu,
+            onVerifyTirePressures: onVerifyTirePressures,
+            onVerifyUpgradeParts: onVerifyUpgradeParts,
             latestFH5ResearchRecord: latestResearchRecord,
             fh5NumericReadiness: fh5NumericReadiness,
-            onOpenFH5Research: researchEligibility.isSuccess && resolvedSavedTuneID != nil ? {
-                guard let resolvedSavedTuneID else { return }
-                tuneWorkflow.cancelAdjustment()
-                step = .fh5ResearchCapture(
-                    tune,
-                    savedTuneID: resolvedSavedTuneID,
-                    thumbnailData: resolvedThumbnailData,
-                    playerNotes: resolvedPlayerNotes
-                )
-            } : nil,
+            onOpenFH5Research: onOpenFH5Research,
             onDeleteFH5ResearchRecord: { record in
                 guard let resolvedSavedTuneID else { return }
                 deleteFH5ResearchObservationRecord(record, savedTuneID: resolvedSavedTuneID)
@@ -1228,25 +1273,7 @@ struct ContentView: View {
                 validateNumericPromotionReviewPacket,
             fh5NumericPromotionReceiverCandidateFingerprint:
                 numericPromotionReceiverCandidateFingerprint,
-            onOpenFH5ControlledExperiment:
-                experimentEligibility.isSuccess && resolvedSavedTuneID != nil
-                ? {
-                    guard let resolvedSavedTuneID,
-                          case .success(let researchRecord) = experimentEligibility else {
-                        return
-                    }
-                    tuneWorkflow.cancelAdjustment()
-                    step = .fh5ControlledExperimentCapture(
-                        tune,
-                        savedTuneID: resolvedSavedTuneID,
-                        researchRecord: researchRecord,
-                        candidateTrialAvailable:
-                            candidateTrialArtifact != nil,
-                        thumbnailData: resolvedThumbnailData,
-                        playerNotes: resolvedPlayerNotes
-                    )
-                }
-                : nil,
+            onOpenFH5ControlledExperiment: onOpenFH5ControlledExperiment,
             onDeleteFH5ControlledExperimentRecord: { record in
                 guard let resolvedSavedTuneID else { return }
                 deleteFH5ControlledExperimentRecord(
@@ -1288,16 +1315,7 @@ struct ContentView: View {
                     savedTuneID: resolvedSavedTuneID
                 )
             },
-            onRecordTestDrive: validationEligibility.isSuccess && resolvedSavedTuneID != nil ? {
-                guard let resolvedSavedTuneID else { return }
-                tuneWorkflow.cancelAdjustment()
-                step = .recordTestDrive(
-                    tune,
-                    savedTuneID: resolvedSavedTuneID,
-                    thumbnailData: resolvedThumbnailData,
-                    playerNotes: resolvedPlayerNotes
-                )
-            } : nil,
+            onRecordTestDrive: onRecordTestDrive,
             onDeleteValidationRecord: { record in
                 guard let resolvedSavedTuneID else { return }
                 deleteValidationRecord(record, savedTuneID: resolvedSavedTuneID)
@@ -1412,10 +1430,7 @@ struct ContentView: View {
                     savedTuneID: resolvedSavedTuneID
                 )
             },
-            onFeedback: { feedback in
-                guard let resolvedSavedTuneID else { return }
-                adjust(tune, savedTuneID: resolvedSavedTuneID, feedback: feedback)
-            }
+            onFeedback: onFeedback
         )
     }
 
