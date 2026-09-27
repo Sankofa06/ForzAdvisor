@@ -4,17 +4,16 @@ This file is the replace-in-place record for one active goal. It describes curre
 
 ## Active goal
 
-- Status: blocked — existing TestFlight candidate awaits owner device-test result
+- Status: active — integrating and verifying both branches
 - Refreshed: 2026-09-26
-- Goal: Commit and push the verified test/compiler changes, then deliver their exact revision to internal TestFlight if the repository release gates permit it.
-- Authority: repository rules remain controlling; external effects require separate authority. The owner explicitly authorized commit, push, and TestFlight delivery for this task. No App Review authority.
+- Goal: Merge the exact TestFlight build 87 source into the Astra test/compiler patch, preserve both sets of improvements, verify the combined source, and push it to the existing PR before continuing eligible TestFlight gates.
+- Authority: repository rules remain controlling; external effects require separate authority. The owner explicitly authorized this source merge, commit, push, and TestFlight delivery. No protected-main merge or App Review authority.
 
 ## Current evidence
 
-- [Verification ledger](docs/verification/test-improvements-2026-09-26.md) records the exact source, failures, corrections, passing tests/builds, warning, screenshots, and cleanup.
-- Used GPT-6 Astra xhigh. Added ten workflow regressions, repaired the result-view compiler failure, replaced brittle SwiftUI reflection, and corrected persistence/UI test setup plus a validator pipe-handling bug. Passing results: 585 unit tests and three focused UI cases; Debug and clean Release builds have no compiler warnings.
-- Changes are committed and pushed on `agent/astra-test-improvements`, base `b840cb2e863924103fa8717ec2cbfe582eb28a9b`, in commits `a45963f`, `3c76f45`, `4ad4894`, and `a7c6d56`. [Draft PR #7](https://github.com/Sankofa06/ForzAdvisor/pull/7) contains the patch and verification record. Task-owned simulator and build products are removed; diagnostic evidence is retained.
-- An existing Manual Entry SwiftUI layout warning remains unresolved. Complete local ReleaseVerify and exact-revision cloud verification were not run; no distribution is claimed.
-- Live App Store Connect verification confirms existing TestFlight 1.41.2 (87), commit `f3318c37dba4e745a31fda4e862468db75a11e16`, is `VALID` and associated with `Internal`. It does not contain this patch. The coordinator remains `human_verification_pending`; its unchanged checksum is verified. The owner has been asked for the device-test result, notes, and evidence required by the release workflow. No new build number, upload, or tester reassignment occurred.
-- Repository release preflight passes on pushed commit `a7c6d5673bcbf5810fc85d0d428d4827ace4b15b`. A replacement candidate still requires resolution of the existing candidate and reconciliation with the newer release source/version, followed by full local and exact-revision GitHub release verification. Existing `ACCEPT` leads to acceptance of build 87, not automatic authorization to bypass the coordinator's rollover rules.
-- Separate pilot evidence and its access/participant-authorization gates remain in `docs/research/`.
+- Canonical checkout: `~/Agents/ForzAdvisor`; integration worktree owned by this task: `/tmp/codex-worktrees/ForzAdvisor/astra-build87-20260926`, branch `agent/astra-build87-integration`.
+- Merge parents: Astra patch `970111502fecd0e2a60b418009592ac140da21c9` and build 87 `f3318c37dba4e745a31fda4e862468db75a11e16`. Delivery branch: `agent/astra-test-improvements`, [draft PR #7](https://github.com/Sankofa06/ForzAdvisor/pull/7).
+- Four conflicts: current task record, result callbacks, screenshot assertion, and equivalent framework-pipeline fixes. Resolution preserves typed callbacks using build 87 helpers; screenshot assertion retains build 87's plan wording plus the condition-based wait; validator retains the no-SIGPIPE fix. Build 87 app behavior, OCR conversion, stable-toolchain compatibility, project version/signing, and release configuration are preserved.
+- The existing [verification ledger](docs/verification/test-improvements-2026-09-26.md) records prior evidence and will hold the combined-source gates. Earlier passing results do not establish the merged artifact's verification.
+- Existing TestFlight 1.41.2 (87) is `VALID` and internally associated at `human_verification_pending`. No owner device-test result is supplied; candidate state and build number remain unchanged. The combined source needs a fresh number and all release gates before replacement upload.
+- The separate consolidation worktree and its later features remain untouched. Pilot evidence and participant-authorization gates remain in `docs/research/`.

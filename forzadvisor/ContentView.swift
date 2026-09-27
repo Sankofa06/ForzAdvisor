@@ -1051,8 +1051,11 @@ struct ContentView: View {
             )) ?? .empty(savedTuneID: resolvedSavedTune.id)
         }()
         let onFeedback: (TuneFeedback) -> Void = { feedback in
-            guard let resolvedSavedTuneID else { return }
-            adjust(tune, savedTuneID: resolvedSavedTuneID, feedback: feedback)
+            adjustDisplayedTune(
+                tune,
+                savedTuneID: resolvedSavedTuneID,
+                feedback: feedback
+            )
         }
 
         let onSave: () -> TuneResultSaveOutcome = {
@@ -1137,17 +1140,11 @@ struct ContentView: View {
 
         let onOpenFH5ControlledExperiment: (() -> Void)? = experimentEligibility.isSuccess && resolvedSavedTuneID != nil
             ? {
-                guard let resolvedSavedTuneID,
-                      case .success(let researchRecord) = experimentEligibility else {
-                    return
-                }
-                tuneWorkflow.cancelAdjustment()
-                step = .fh5ControlledExperimentCapture(
-                    tune,
+                openFH5ControlledExperiment(
+                    tune: tune,
+                    eligibility: experimentEligibility,
                     savedTuneID: resolvedSavedTuneID,
-                    researchRecord: researchRecord,
-                    candidateTrialAvailable:
-                        candidateTrialArtifact != nil,
+                    candidateTrialAvailable: candidateTrialArtifact != nil,
                     thumbnailData: resolvedThumbnailData,
                     playerNotes: resolvedPlayerNotes
                 )
@@ -1431,6 +1428,38 @@ struct ContentView: View {
                 )
             },
             onFeedback: onFeedback
+        )
+    }
+
+    private func adjustDisplayedTune(
+        _ tune: TuneResult,
+        savedTuneID: UUID?,
+        feedback: TuneFeedback
+    ) {
+        guard let savedTuneID else { return }
+        adjust(tune, savedTuneID: savedTuneID, feedback: feedback)
+    }
+
+    private func openFH5ControlledExperiment(
+        tune: TuneResult,
+        eligibility: Result<FH5ResearchObservationRecord, FH5ControlledExperimentIssue>,
+        savedTuneID: UUID?,
+        candidateTrialAvailable: Bool,
+        thumbnailData: Data?,
+        playerNotes: String
+    ) {
+        guard let savedTuneID,
+              case .success(let researchRecord) = eligibility else {
+            return
+        }
+        tuneWorkflow.cancelAdjustment()
+        step = .fh5ControlledExperimentCapture(
+            tune,
+            savedTuneID: savedTuneID,
+            researchRecord: researchRecord,
+            candidateTrialAvailable: candidateTrialAvailable,
+            thumbnailData: thumbnailData,
+            playerNotes: playerNotes
         )
     }
 

@@ -253,7 +253,7 @@ extension ContentView {
                 step = .result(
                     tune,
                     savedTuneID: savedTuneID,
-                    adjustmentChanges: result.changes,
+                    adjustmentChanges: [],
                     thumbnailData: try savedTune(for: savedTuneID)?.thumbnailData,
                     playerNotes: try savedTune(for: savedTuneID)?.playerNotes ?? ""
                 )

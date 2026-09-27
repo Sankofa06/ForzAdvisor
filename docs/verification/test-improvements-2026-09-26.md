@@ -165,3 +165,35 @@ The first live-status attempt used the current branch's older config schema and 
 The owner was asked for the device-test result (`ACCEPT`, `NEEDS FIXES`, or `BLOCKED`), notes, and evidence for build 87. The coordinator rejects a different candidate while its phase is `human_verification_pending`. A human `ACCEPT` accepts that existing build and does not itself permit automatic rollover; a failure/block result follows the documented correction path. No result was invented or written. The active candidate, build number, group, and signing configuration remain unchanged.
 
 Highest state for this patch: **committed and pushed; scoped local verification complete; TestFlight blocked**. No immutable release tag, cloud verification dispatch, archive, upload, App Review action, or new build allocation occurred. The existing valid beta remains available to the internal group.
+
+
+## Build 87 integration — 2026-09-26
+
+The owner requested a careful merge to preserve both sets of improvements. The implementation contract is to merge exact TestFlight source `f3318c37dba4e745a31fda4e862468db75a11e16` into patch `970111502fecd0e2a60b418009592ac140da21c9`, retain both histories, verify the combined app/tests, and update existing PR #7. This is a bounded integration with existing behavior as its acceptance contract. It does not merge protected main, incorporate the separate consolidation branch, allocate a release number, or change the existing TestFlight candidate.
+
+Task-owned worktree: `/tmp/codex-worktrees/ForzAdvisor/astra-build87-20260926`, temporary branch `agent/astra-build87-integration`. Canonical checkout stays on `agent/astra-test-improvements` until the verified merge can fast-forward it. Evidence root: `/tmp/forzadvisor-build87-merge-20260926`. Local execution host: coordination Mac, arm64, Xcode 27.0 (27A266a); project `forzadvisor.xcodeproj`, shared scheme `forzadvisor`, plan `ReleaseVerify`, task-owned iPhone 18 Pro simulator named `ForzAdvisor Merge87 20260926`, iOS 27.0, ID `0B1127B7-AD70-4DDA-8485-B9CA63B99181`.
+
+The intended write set consists of incoming build 87 changes plus four conflict resolutions and this existing verification ledger. Source/version/signing/release configuration comes unchanged from build 87; the existing number 87 identifies the inherited source configuration, not a new upload identity. A later release must allocate a fresh number through the governed release path.
+
+Conflict resolution:
+
+- `ContentView.swift`: keep all nine explicitly typed callback bindings and have the feedback/controlled-experiment bindings invoke build 87's existing helper functions. Both helper bodies match build 87 byte for byte. No callback guards, actions, or capture inputs are dropped.
+- `ScreenshotEvidenceUITests.swift`: keep the setup-plan disclaimer from build 87 and the patch's condition-based existence wait; retain the per-character input verification and scrolling helpers.
+- `scripts/validate-agent-framework.sh`: keep the patch's full-pipe consumption fix, which eliminates SIGPIPE without tightening the accepted frontmatter layout. Both branches independently fixed the same pipeline issue.
+- `PERCEPTION.md`: replace stale parent task state with this integration's source identity and current evidence, while retaining the required authority boundary.
+
+One-off parent comparisons confirm all 20 files changed only on the build 87 branch match that parent and all 10 files changed only on the patch branch match the patch (including its deleted reflection test). The shared set is exactly the four files listed above. This retains build 87's plan/evidence/result semantics, OCR metric conversions and regressions, FH5 provider disclosure, stable-Xcode macro compatibility, metadata editing, and release tooling, together with all ten new workflow regressions, persistence fixture cleanup, and deterministic UI setup. Evidence: `preservation.txt`.
+
+Merged executable-source fingerprint: `ec274372f3d0c66750d8c2294f32520e50449798df0f7e81dd88d56f9a0de2ae`; manifest `merge-source-manifest.sha256`. Documentation is excluded. Previous section results describe their earlier source identities and do not substitute for merged-source verification.
+
+| Gate | Tool or command | Target | Result | Evidence path | Warnings or gaps |
+|---|---|---|---|---|---|
+| Parent preservation | Exact file comparisons and reviewed callback diff | Both merge parents | PASS | `preservation.txt`, `merge-source-manifest.sha256` | Four documented conflict resolutions |
+| Framework validation | `scripts/validate-agent-framework.sh` | Updated active task | PASS after path correction | `framework.log`, `framework-corrected.log` | Initial run correctly rejected an absolute private home path in task state; replaced with portable `~/Agents/ForzAdvisor` |
+| Deterministic release tests | `ruby scripts/tests/forzadvisor_release_test.rb` | Merged release coordinator | PASS: 50 tests, 330 assertions | `release-tests.log` | Zero failures/errors/skips |
+| Debug build for testing | XcodeBuildMCP CLI `simulator build --build-for-testing`, compiler warnings as errors | App and both test targets | PASS: 50 seconds; zero warnings/errors | `build.xcresult`, `build-full.log`, `build-arguments.json` | MCP endpoint again rejected missing scheme despite defaults readback; equivalent CLI with explicit arguments used |
+
+| Clean Release build | XcodeBuildMCP CLI `simulator build --configuration Release`, fresh Derived Data and compiler warnings as errors | Combined app | PASS: 61.6 seconds; zero warnings/errors | `release-build.xcresult`, `release-build-full.log`, `release-build-summary.json` | Simulator build; not a distribution archive |
+| Focused integration tests | XcodeBuildMCP prepared products, six unit-suite filters | Workflow recovery/cancellation, OCR, result presentation, FH5 provider disclosure | PASS: 48 tests, zero failures/skips | `focused.xcresult`, `focused-full.log`, `focused-summary.json` | 73 seconds including simulator setup |
+
+The combined source is locally viable and ready to commit as a two-parent merge. The broader runtime gate remains in progress; UI execution waits for the other project's active simulator-heavy batch. No new TestFlight delivery is claimed.

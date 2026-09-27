@@ -37,13 +37,13 @@ struct ForzaOCRKnowledgeBase {
         applyBestIntegerCandidate(
             field: .horsepower,
             to: &draft,
-            candidates: integerCandidates(in: windows, fieldAliases: ["power", "horsepower", "hp", "kw"], units: #"hp|bhp|kw"#, range: 40...2_500),
+            candidates: measurementCandidates(in: windows, kind: .horsepower),
             assign: { draft, value in draft.peakHorsepower = value }
         )
         applyBestIntegerCandidate(
             field: .torque,
             to: &draft,
-            candidates: integerCandidates(in: windows, fieldAliases: ["torque", "ft lb", "ft-lb", "lb ft", "lb-ft", "nm"], units: #"ft[- ]?lb|lb[- ]?ft|nm"#, range: 40...2_500),
+            candidates: measurementCandidates(in: windows, kind: .torque),
             assign: { draft, value in draft.peakTorqueFootPounds = value }
         )
 
@@ -265,6 +265,81 @@ extension ForzaOCRKnowledgeBase {
 
             return candidate(value: value, textValue: rawValue, window: window, labelBoost: 0.08)
         }
+    }
+
+    enum MeasurementKind {
+        case horsepower
+        case torque
+
+        var fieldAliases: [String] {
+            switch self {
+            case .horsepower: ["power", "horsepower", "hp", "kw"]
+            case .torque: ["torque", "ft lb", "ft-lb", "lb ft", "lb-ft", "nm"]
+            }
+        }
+
+        var unitsPattern: String {
+            switch self {
+            case .horsepower: #"hp|bhp|kw"#
+            case .torque: #"ft[- ]?lb|lb[- ]?ft|nm"#
+            }
+        }
+
+        func convert(_ value: Double, unit: String) -> Int {
+            let normalizedUnit = unit.lowercased().replacingOccurrences(of: " ", with: "")
+            let converted: Double
+            switch self {
+            case .horsepower:
+                converted = normalizedUnit == "kw" ? value * 1.34102209 : value
+            case .torque:
+                converted = normalizedUnit == "nm" ? value * 0.7375621493 : value
+            }
+            return Int(converted.rounded())
+        }
+    }
+
+    func measurementCandidates(
+        in windows: [ObservationWindow],
+        kind: MeasurementKind
+    ) -> [ParsedCandidate<Int>] {
+        windows.compactMap { window in
+            guard containsAny(kind.fieldAliases, in: window.normalizedText),
+                  let measurement = firstMeasurement(
+                    in: window.rawText,
+                    units: kind.unitsPattern
+                  ) else { return nil }
+
+            let convertedValue = kind.convert(
+                measurement.value,
+                unit: measurement.unit
+            )
+            guard (40...2_500).contains(convertedValue) else { return nil }
+
+            return candidate(
+                value: convertedValue,
+                textValue: "\(convertedValue)",
+                window: window,
+                labelBoost: 0.08
+            )
+        }
+    }
+
+    func firstMeasurement(
+        in text: String,
+        units: String
+    ) -> (value: Double, unit: String)? {
+        let pattern = #"(?i)(\d{2,4}(?:\.\d+)?)\s*("# + units + #")\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return nil
+        }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        guard let match = regex.firstMatch(in: text, range: range),
+              let valueRange = Range(match.range(at: 1), in: text),
+              let unitRange = Range(match.range(at: 2), in: text),
+              let value = Double(text[valueRange]) else {
+            return nil
+        }
+        return (value, String(text[unitRange]))
     }
 
     func candidate<Value>(
