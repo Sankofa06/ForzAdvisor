@@ -12,10 +12,25 @@ extension ForzAdvisorUITests {
         XCTAssertTrue(garageHome.waitForExistence(timeout: 15))
         garageHome.descendants(matching: .button)["newTuneButton"].tap()
 
-        XCTAssertTrue(app.buttons["takePhotoPrimaryButton"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["importScreenshotButton"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["manualEntryButton"].waitForExistence(timeout: 5))
+        for (identifier, title) in [
+            ("takePhotoPrimaryButton", "Take Photo"),
+            ("importScreenshotButton", "Import Screenshot"),
+            ("manualEntryButton", "Enter Manually")
+        ] {
+            let button = app.buttons[identifier]
+            XCTAssertTrue(button.waitForExistence(timeout: 5), identifier)
+            XCTAssertTrue(button.label.contains(title), title)
+        }
         XCTAssertFalse(app.buttons["catalogEntryButton"].exists)
+        for unsupportedClaim in [
+            "Browse Full Official", "official FH5", "official FH6", "roster-only"
+        ] {
+            let claim = NSPredicate(format: "label CONTAINS[c] %@", unsupportedClaim)
+            XCTAssertFalse(
+                app.descendants(matching: .any).matching(claim).firstMatch.exists,
+                unsupportedClaim
+            )
+        }
     }
 
     @MainActor

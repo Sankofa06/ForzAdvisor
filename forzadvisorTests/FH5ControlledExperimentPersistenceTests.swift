@@ -66,6 +66,9 @@ final class FH5ControlledExperimentPersistenceTests: FH5ResearchTestCase {
                 configurations: configuration
             )
             let context = ModelContext(container)
+            context.autosaveEnabled = false
+            // Keep pending changes from outliving the temporary store.
+            defer { context.rollback() }
             let saved = try SavedTune(tune: plan)
             context.insert(saved)
             try saved.appendFH5ResearchObservationRecord(research)
@@ -81,6 +84,9 @@ final class FH5ControlledExperimentPersistenceTests: FH5ResearchTestCase {
                 configurations: configuration
             )
             let context = ModelContext(container)
+            context.autosaveEnabled = false
+            // Keep pending changes from outliving the temporary store.
+            defer { context.rollback() }
             let saved = try XCTUnwrap(
                 context.fetch(FetchDescriptor<SavedTune>()).first
             )
@@ -114,6 +120,9 @@ final class FH5ControlledExperimentPersistenceTests: FH5ResearchTestCase {
                 configurations: configuration
             )
             let context = ModelContext(container)
+            context.autosaveEnabled = false
+            // Keep pending changes from outliving the temporary store.
+            defer { context.rollback() }
             let saved = try XCTUnwrap(
                 context.fetch(FetchDescriptor<SavedTune>()).first
             )

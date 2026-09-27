@@ -28,18 +28,10 @@ final class ScreenshotEvidenceUITests: XCTestCase {
             "availableSettingsSection"
         ].firstMatch
         scrollToHittable(availableSettings, in: app)
-        let availableSettingsRenderDelay = expectation(
-            description: "Available settings finishes rendering"
-        )
-        availableSettingsRenderDelay.isInverted = true
-        XCTAssertEqual(
-            XCTWaiter().wait(for: [availableSettingsRenderDelay], timeout: 0.5),
-            .completed
-        )
         XCTAssertTrue(
             app.staticTexts[
                 "Availability means these values can be entered in game. It is not an accuracy or validation score."
-            ].exists
+            ].waitForExistence(timeout: 5)
         )
         capture("06-result-available-settings-light", in: app)
 

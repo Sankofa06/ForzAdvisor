@@ -51,58 +51,44 @@ final class TuneResultUITests: XCTestCase {
         garage.descendants(matching: .button)["newTuneButton"].tap()
         app.buttons["manualEntryButton"].tap()
 
-        app.textFields["manualEntryYearField"].enterResultText("1997")
-        app.textFields["manualEntryMakeField"].enterResultText("Mazda")
-        app.textFields["manualEntryModelField"].enterResultText("Miata")
-        dismissKeyboardAndScroll(in: app)
-        app.textFields["manualEntryWeightField"].enterResultText("2345")
-        dismissKeyboardAndScroll(in: app)
-        app.textFields["manualEntryFrontWeightField"].enterResultText("55")
-        dismissKeyboardAndScroll(in: app)
-        app.textFields["manualEntryPerformanceIndexField"].enterResultText("750")
+        app.textFields["manualEntryYearField"].enterText("1997", in: app)
         dismissKeyboard(in: app)
-        app.buttons["manualEntryClass-S1"].tap()
-        app.buttons["manualEntryDrivetrain-RWD"].tap()
+        app.textFields["manualEntryMakeField"].enterText("Mazda", in: app)
+        dismissKeyboard(in: app)
+        app.textFields["manualEntryModelField"].enterText("Miata", in: app)
+        dismissKeyboard(in: app)
+        app.textFields["manualEntryWeightField"].enterText("2345", in: app)
+        dismissKeyboard(in: app)
+        app.textFields["manualEntryFrontWeightField"].enterText("55", in: app)
+        dismissKeyboard(in: app)
+        app.textFields["manualEntryPerformanceIndexField"].enterText("750", in: app)
+        dismissKeyboard(in: app)
+        let performanceClass = app.buttons["manualEntryClass-S1"]
+        performanceClass.scrollToInteractionViewport(in: app)
+        performanceClass.tap()
+        let drivetrain = app.buttons["manualEntryDrivetrain-RWD"]
+        drivetrain.scrollToInteractionViewport(in: app)
+        drivetrain.tap()
 
         let next = app.buttons["manualEntryNextButton"]
-        XCTAssertTrue(next.waitUntilResultEnabled(timeout: 5))
+        XCTAssertTrue(next.waitUntilEnabled(timeout: 5))
         next.tap()
-        app.buttons["disciplineButton-road"].tap()
+        XCTAssertTrue(app.navigationBars["Choose Discipline"].waitForExistence(timeout: 5))
+        let road = app.buttons["disciplineButton-road"]
+        road.scrollToInteractionViewport(in: app)
+        road.tap()
         let start = app.buttons["startTuneGenerationButton"]
+        // The lazy list creates the generation control only after scrolling.
         for _ in 0..<8 where !start.exists { app.swipeUp() }
-        XCTAssertTrue(start.waitForExistence(timeout: 5))
-        XCTAssertTrue(start.isHittable)
+        start.scrollToInteractionViewport(in: app)
         start.tap()
         XCTAssertTrue(app.navigationBars["Tune"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["saveTuneButton"].waitForExistence(timeout: 15))
     }
 
     @MainActor
-    private func dismissKeyboardAndScroll(in app: XCUIApplication) {
-        dismissKeyboard(in: app)
-        app.swipeUp()
-    }
-
-    @MainActor
     private func dismissKeyboard(in app: XCUIApplication) {
         let done = app.buttons["manualEntryKeyboardDoneButton"]
         if done.waitForExistence(timeout: 2) { done.tap() }
-    }
-}
-
-private extension XCUIElement {
-    func enterResultText(_ text: String) {
-        XCTAssertTrue(waitForExistence(timeout: 5))
-        tap()
-        typeText(text)
-    }
-
-    func waitUntilResultEnabled(timeout: TimeInterval) -> Bool {
-        let predicate = NSPredicate(format: "isEnabled == true")
-        let expectation = XCTNSPredicateExpectation(
-            predicate: predicate,
-            object: self
-        )
-        return XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed
     }
 }
