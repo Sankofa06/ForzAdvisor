@@ -1,6 +1,6 @@
 # Tune workflow tests and compiler fix — 2026-09-26
 
-Current outcome: compiler repair and test improvements are committed, pushed, and available in [draft PR #7](https://github.com/Sankofa06/ForzAdvisor/pull/7). All 585 unit tests and all three selected UI cases have passing results, with the final result UI case passing after its documented targeted correction. Debug and clean Release builds pass without compiler warnings. An existing SwiftUI layout runtime warning remains unresolved. Existing internal TestFlight 1.41.2 (87) is live and valid but does not contain this patch; new delivery is blocked by the existing candidate's human-verification state and outstanding release gates.
+Current outcome: exact TestFlight build 87 source and the Astra compiler/test patch are merged and pushed in [PR #7](https://github.com/Sankofa06/ForzAdvisor/pull/7), merge commit `326302fab4e0ec5d3a0e4e7140042024aaeba252`. The combined source passes all 600 tests in the complete local ReleaseVerify plan (590 unit, 10 UI), with no failures, skips, or expected failures. Debug and clean Release builds have zero compiler warnings. Six existing SwiftUI runtime layout warnings and the screenshot-mode verification gap described below remain unresolved. No new TestFlight build was allocated or uploaded.
 
 ## Work contract
 
@@ -182,7 +182,7 @@ Conflict resolution:
 - `scripts/validate-agent-framework.sh`: keep the patch's full-pipe consumption fix, which eliminates SIGPIPE without tightening the accepted frontmatter layout. Both branches independently fixed the same pipeline issue.
 - `PERCEPTION.md`: replace stale parent task state with this integration's source identity and current evidence, while retaining the required authority boundary.
 
-One-off parent comparisons confirm all 20 files changed only on the build 87 branch match that parent and all 10 files changed only on the patch branch match the patch (including its deleted reflection test). The shared set is exactly the four files listed above. This retains build 87's plan/evidence/result semantics, OCR metric conversions and regressions, FH5 provider disclosure, stable-Xcode macro compatibility, metadata editing, and release tooling, together with all ten new workflow regressions, persistence fixture cleanup, and deterministic UI setup. Evidence: `preservation.txt`.
+At conflict resolution, one-off parent comparisons confirmed all 20 files changed only on the build 87 branch matched that parent and all 10 files changed only on the patch branch matched the patch (including its deleted reflection test). After the intentional verification-ledger append, all 20 build 87 paths and the other nine patch paths still match; see `published-source-preservation.txt`. The shared set is exactly the four files listed above. This retains build 87's plan/evidence/result semantics, OCR metric conversions and regressions, FH5 provider disclosure, stable-Xcode macro compatibility, metadata editing, and release tooling, together with all ten new workflow regressions, persistence fixture cleanup, and deterministic UI setup. Evidence: `preservation.txt`.
 
 Merged executable-source fingerprint: `ec274372f3d0c66750d8c2294f32520e50449798df0f7e81dd88d56f9a0de2ae`; manifest `merge-source-manifest.sha256`. Documentation is excluded. Previous section results describe their earlier source identities and do not substitute for merged-source verification.
 
@@ -196,4 +196,32 @@ Merged executable-source fingerprint: `ec274372f3d0c66750d8c2294f32520e50449798d
 | Clean Release build | XcodeBuildMCP CLI `simulator build --configuration Release`, fresh Derived Data and compiler warnings as errors | Combined app | PASS: 61.6 seconds; zero warnings/errors | `release-build.xcresult`, `release-build-full.log`, `release-build-summary.json` | Simulator build; not a distribution archive |
 | Focused integration tests | XcodeBuildMCP prepared products, six unit-suite filters | Workflow recovery/cancellation, OCR, result presentation, FH5 provider disclosure | PASS: 48 tests, zero failures/skips | `focused.xcresult`, `focused-full.log`, `focused-summary.json` | 73 seconds including simulator setup |
 
-The combined source is locally viable and ready to commit as a two-parent merge. The broader runtime gate remains in progress; UI execution waits for the other project's active simulator-heavy batch. No new TestFlight delivery is claimed.
+| Complete local regression | XcodeBuildMCP CLI `simulator test`, complete prepared ReleaseVerify plan, no test filters, serial | All unit and UI tests | PASS: 600 passed, zero failures/skips/expected failures; 956.5 seconds | `release-verify.xcresult`, `release-verify-full.log`, `release-verify-summary.json`, `release-verify-arguments.json` | Six existing SwiftUI runtime layout warnings; warning gate is not clean |
+| Runtime evidence | Four screenshot scenarios and all ten UI cases; attachment/log review | Entry, generation, saving/reopening, metadata editing, settings, step guide | Functional flows PASS; visual mode proof limited | `screenshots/`, `attachments/manifest.json`, `runtime-log-review.txt` | 16 named screenshots; dark and XXXL names do not establish active modes |
+| Pushed-source preflight | `scripts/release preflight --ref agent/astra-test-improvements` | Merge `326302fab4e0ec5d3a0e4e7140042024aaeba252` | PASS | `preflight.log` | Does not replace release warning/cloud/human gates |
+| Integration/publication | Two-parent merge, fast-forward task branch, push and ancestry checks | PR #7 | PASS | `published-source-preservation.txt` | Both exact source revisions are ancestors; protected main unchanged |
+| Release-state preservation | SHA-256 before/after | Existing TestFlight coordinator | PASS: unchanged | `coordinator-before.sha256`, `coordinator-after.sha256` | Build 87 remains human_verification_pending |
+| Source/secret review | Manifest verification, `git diff --check`, added-line key/token pattern review | Intended merged source | PASS | `published-source-preservation.txt`, `secret-scan.txt` | No new release number, tag, or cloud dispatch |
+| Cleanup | Guarded ownership/process checks, simulator shutdown/delete, remove owned products and integrated worktree/branch | Task resources | PASS | `cleanup.txt` | Result bundles, logs, source manifests and screenshots retained |
+
+### Merged runtime findings and delivery state
+
+All 590 unit tests and ten UI tests passed on the same executable-source fingerprint above. The UI suite covers launch, game-selection round trip, supported source entries, manual generation/save/reopen, the result metadata-edit flow, and four screenshot scenarios. Test outputs, exact arguments, and all prior failed attempts remain separate. No test was skipped or assertion relaxed for this integration.
+
+The complete run records six `Invalid frame dimension (negative or non-finite)` warnings with unknown source locations: manual game selection, manual save/reopen, the three manual-result screenshot scenarios, and the result metadata-edit case. This is the same runtime warning seen before the merge. The combined app has no compiler warnings; its runtime warning origin is still unverified, so the release warning gate remains blocked. Log review found zero prior temporary-store CoreData cleanup errors and zero unmounted-State warnings.
+
+Numbered runtime evidence:
+
+1. Launch the empty garage and inspect supported tune-source choices (`screenshots/01-empty-garage-light.png`, `02-new-tune-source-light.png`).
+2. Enter the complete manual fixture and choose a discipline (`03-manual-entry-validation-ready-light.png`, `04-discipline-provider-preflight-light.png`).
+3. Generate the setup plan and inspect its explicit no-numeric-settings boundary (`05-result-top-light.png`, `06-result-available-settings-light.png`).
+4. Inspect the optional evidence explanation, save, and open Evidence Hub (`07-result-evidence-summary-light.png`, `08-evidence-hub-light.png`).
+5. Inspect provider settings and local step-guide choices (`09-settings-provider-card-light.png`, `10-step-guide-choices-light.png`).
+6. Run the existing alternate-appearance and text-size screenshot cases (`11` through `16`); these execute successfully but do not prove the requested display modes, as explained below.
+7. Run save/reopen and metadata-edit assertions; their passing activities are retained in the result bundle.
+
+Visual review of `05`, `06`, `13`, and `16` confirms the retained setup-plan wording, no-numeric-settings explanation, copy-plan action and Save setup action. It also reveals a pre-existing screenshot-harness limitation: captures named dark/XXXL show the same light, normal-size result presentation. The app's unchanged UI-test initialization replaces `UserDefaults.argumentDomain` with only the offline-provider override, dropping the supplied appearance/text-size defaults. No claim of actual dark-mode or XXXL rendering coverage is made. Fixing this harness gap is deferred from the requested preservation merge; the UI tests' successful assertions do not establish those visual modes.
+
+The merge is complete and pushed. Both original commit histories are retained, and all executable files match the built/tested snapshot. Only this verification record and current task state change afterward. The owned worktree, temporary integration branch, simulator, both Derived Data directories, and test products were removed after completion. The separate consolidation worktree and its later changes were untouched.
+
+**TestFlight remains blocked:** the source/version split is resolved, but existing build 87 still awaits the owner's device-test result; the runtime warning and visual-mode evidence gap remain; a future fresh build identity requires exact-revision cloud verification and stable-runner release gates. Existing candidate state is unchanged. No App Review authority is granted or exercised.
