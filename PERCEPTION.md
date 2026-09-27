@@ -6,27 +6,14 @@ This file is the replace-in-place record for one active goal. It describes curre
 
 - Status: active
 - Refreshed: 2026-09-26
-- Goal: Execute the owner-approved ForzAdvisor near-term growth plan through local evidence preparation, then make at most one evidence-backed product change after the pilot gate.
-- Success: produce a source-linked FH6 pilot protocol and store/accessibility evidence matrix; resolve the exact existing installable build and participant access path before any pilot; select one narrow product fix only when the pilot supports it; independently review and verify any resulting change.
-- Constraints: canonical repository `Sankofa06/ForzAdvisor`; initial artifact identity `main` at `1d04c1d3a9be9494e481a4d5a7871c7ccd807a68`, clean at start. Current authorization covers local planning/research documents and later conditional local implementation. No participant contact/recruitment, recordings, App Store Connect access or edits, new pilot build/TestFlight distribution, App Review, or public release without their separate gates. No analytics SDK or tracking. Preserve FH5 plan-only, roster/rights, offline-default, provider-disclosure, and accuracy-claim boundaries. Model lane: GPT-6 Luna xhigh for scoped agents.
-- Authority: repository rules remain controlling; external effects require separate authority. The owner's 2026-09-26 request authorizes committing and pushing the pending documentation to `main`.
+- Goal: Commit and push the verified test/compiler changes, then deliver their exact revision to internal TestFlight if the repository release gates permit it.
+- Authority: repository rules remain controlling; external effects require separate authority. The owner explicitly authorized commit, push, and TestFlight delivery for this task. No App Review authority.
 
 ## Current evidence
 
-- Successes: owner approved the refined plan on 2026-09-24; clean repository snapshot confirmed at the artifact identity above; source-linked pilot protocol and store/accessibility audit completed; fresh independent review passed gates G1-G7 on the frozen preparation artifacts.
-- Failures: none.
-- Open hypotheses: first-time users may confuse performance OCR with car identity entry; current store speed language may need substantiation; the candidate trust-and-setup wedge has not been shown to be a competitive moat.
-- Active signals: local build references disagree (project settings 78, metadata 77, Aug. 22 release record 78); the US listing reports too few ratings for an overview, says privacy responses include User Content linked to the user, and has no accessibility features indicated (observed 2026-09-24); local store materials make speed-oriented claims without a measured time study; the UX spec's VoiceOver completion notes conflict; existing UX-cohesion work was locally verified complete Aug. 16.
-- Acceptance gates: (1) **PASS** — source-linked pilot protocol and store/accessibility evidence matrix are prepared; (2) **BLOCKED** — owner must confirm exact existing installable build and participant access route; (3) **BLOCKED** — owner must provide the same rights-cleared, identifiers-free screenshot fixture for all sessions; (4) **BLOCKED** — participant recruitment/contact and consent/notes process require separate approval; (5) conditional — at most one code slice, selected from attributable pilot evidence; (6) **PASS for preparation docs** — fresh independent reviewer accepted frozen artifacts; future code still needs independent review; (7) future app-target change requires XcodeBuildMCP, focused UI/accessibility evidence, and repository release gates; (8) all store/account/release actions stay separately gated.
-- Work ownership: Mara — commission/integration; Theo — pilot protocol and optional owner-supplied aggregate metrics; Iris — local/store claim and accessibility evidence audit; Ellis — conditional single-slice implementation only; Rowan — independent acceptance after a frozen change.
-- Delivery target: local preparation artifacts complete; stop before the pilot until the exact build/access route, screenshot fixture, and separate recruitment approval are supplied.
-- Next action: ask the owner for the three outstanding pilot inputs/approvals; keep app code and external systems untouched until those gates clear.
-
-## Refresh contract
-
-- Keep one active goal and one current definition of success.
-- Refresh after a material decision, success, failure, constraint change, or new evidence.
-- Every observation needs a source/date or must be labeled as a hypothesis.
-- Remove resolved signals instead of accumulating a historical log.
-- Clear the active goal when completed; durable lessons are promoted separately through `MEMORY.md`.
-- Never store secrets, raw transcripts, hidden reasoning, sensitive personal information, or private infrastructure identifiers.
+- [Verification ledger](docs/verification/test-improvements-2026-09-26.md) records the exact source, failures, corrections, passing tests/builds, warning, screenshots, and cleanup.
+- Used GPT-6 Astra xhigh. Added ten workflow regressions, repaired the result-view compiler failure, replaced brittle SwiftUI reflection, and corrected persistence/UI test setup plus a validator pipe-handling bug. Passing results: 585 unit tests and three focused UI cases; Debug and clean Release builds have no compiler warnings.
+- Changes remain uncommitted on `agent/astra-test-improvements`, base `b840cb2e863924103fa8717ec2cbfe582eb28a9b`. Task-owned simulator and build products are removed; diagnostic evidence is retained.
+- An existing Manual Entry SwiftUI layout warning remains unresolved. Complete local ReleaseVerify and exact-revision cloud verification were not run; no distribution is claimed.
+- TestFlight remains blocked by the existing coordinator candidate 1.41.2 (87), commit `f3318c37dba4e745a31fda4e862468db75a11e16`, at `human_verification_pending`, and this checkout's 1.41.1 configuration mismatch. The candidate was preserved. No build number, upload, or external release mutation occurred.
+- Separate pilot evidence and its access/participant-authorization gates remain in `docs/research/`.
