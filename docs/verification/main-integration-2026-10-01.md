@@ -1,6 +1,6 @@
 # Main integration and repository cleanup — 2026-10-01
 
-Status: source and local verification passed; main reconciliation and pruning pending. This is not a TestFlight delivery record.
+Status: COMPLETE — verified source merged to main, pushed, and stale repository state pruned. This is not a TestFlight delivery record.
 
 ## Commission and identity
 
@@ -8,7 +8,7 @@ The owner requested all outstanding PR/branch improvements preserved and merged/
 
 - Canonical repository: `Sankofa06/ForzAdvisor`, checkout `~/Agents/ForzAdvisor`, remote `origin`.
 - Starting main: `b840cb2e863924103fa8717ec2cbfe582eb28a9b`.
-- Integration branch: `agent/astra-test-improvements`; frozen source `f9dd64f860a714706a633b5ee6e5bd52088a8b61`, 326-file manifest SHA-256 `0656f7bdc68bbe4d82a159d96ca01bcdbb124acf41dc9d9263fd3fbb2db963d5`.
+- Former integration branch: `agent/astra-test-improvements` (pruned after merge); frozen source `f9dd64f860a714706a633b5ee6e5bd52088a8b61`, 326-file manifest SHA-256 `0656f7bdc68bbe4d82a159d96ca01bcdbb124acf41dc9d9263fd3fbb2db963d5`.
 - Project/scheme: `forzadvisor.xcodeproj`, shared `forzadvisor`, `ReleaseVerify.xctestplan`.
 - Verification host/toolchain: coordination Mac, macOS 27.0 (`26A428`), Xcode 27.0 (`27A266a`), XcodeBuildMCP 2.7.0.
 - Owned destination: iPhone 18 Pro, iOS 27.0 (`24A5370g`), simulator `47AA3926-F46A-433F-B983-90884251711F`.
@@ -59,7 +59,7 @@ Existing assertions exposed the compilation/readiness/OCR integration failures; 
 | Clean Release build | XcodeBuildMCP `build_sim`, `clean`, warnings as errors | `f9dd64f` | PASS | `release-build-coalesced.xcresult` and retained MCP build log | No compiler warnings/errors. Earlier builds are retained as superseded evidence. |
 | Complete ReleaseVerify | XcodeBuildMCP CLI, serial full plan, warnings as errors | `f9dd64f` | PASS, 640 tests: 625 unit + 15 UI; zero failures/skips/expected failures | `release-verify-f9dd64f.xcresult`, `release-verify-f9dd64f-summary.json`, `release-verify-f9dd64f.log` | Seven pre-existing SwiftUI invalid-frame runtime warnings; one toolchain App Intents metadata-extraction warning. No source compiler warnings. The MCP CLI avoids the endpoint’s 300-second timeout. Superseded/interrupted evidence is retained. |
 | Independent source acceptance | Fresh Astra xhigh reviewer | `f9dd64f` | PASS, four gates; no material blockers | `source-acceptance-f9dd64f.md` | Earlier reports found defects repaired in subsequent commits. |
-| Main / PR reconciliation / pruning | Exact ref checks and GitHub PR state | Final published revision | PENDING | Final reconciliation pending | No force-push or release-tag deletion. |
+| Main / PR reconciliation / pruning | Exact ref checks, ancestry, source manifest, GitHub PR state | Merge `8aaa18e96ad92af427011d786d0dfcd82e600651`; documentation closure retains source identity | PASS | Persistent `cleanup-action-record.json` and final state record | PRs #5/#6/#7 merged; no open PRs; 10 local / 6 remote branches and one stale stash removed. No force-push or release-tag deletion. |
 
 ## OCR preservation correction
 
@@ -94,3 +94,11 @@ The simulator lane was coordinated with the owner’s explicit authorization and
 This record establishes integration and cleanup, not distribution readiness. The release coordinator still identifies TestFlight 1.41.2 (87) as the existing human-verification candidate. No new build number, release tag, archive, upload, group assignment, or App Review submission is part of this cleanup.
 
 Release preflight correctly rejected a source revision that does not match the configured build-87 tag. Fresh exact-revision GitHub Release Verify, stable-runner release gates, and the owner result remain necessary for a later candidate. The prior ledger records pre-existing source-unattributed SwiftUI layout warnings and unproven dark/XXXL screenshot modes; these remain disclosed rather than being treated as clean release evidence.
+
+## Final repository state
+
+- PRs [#5](https://github.com/Sankofa06/ForzAdvisor/pull/5), [#6](https://github.com/Sankofa06/ForzAdvisor/pull/6), and [#7](https://github.com/Sankofa06/ForzAdvisor/pull/7) are confirmed merged. GitHub automatically reconciled #5 and #6 when #7 preserved their heads in main’s ancestry.
+- Merge `8aaa18e96ad92af427011d786d0dfcd82e600651` contains all original PR heads and frozen source `f9dd64f`. All 326 app/test/project/configuration inputs match the verified source manifest. The final administrative closure updates only this ledger and PERCEPTION.
+- Removed the ten audited local task branches, six matching remote task branches, and the exact historical PERCEPTION-only stash `1af8ccbbe10257f1282893d9c71492450fbe9da2`. Patch-equivalent and semantically superseded histories were backed up before deletion.
+- Only local `main` and remote `origin/main` remain (plus the normal `origin/HEAD` symbolic ref). There is one canonical worktree, no stash, and no open PR. Main is pushed and the checkout is clean after the documentation closure commit.
+- All 22 release tags, Codex internal refs, screenshots, and Xcode user state remain. Recovery includes `before-cleanup.bundle`, `before-prune-final.bundle`, `merged-before-prune.bundle`, exact ref inventories, and the separate stash patch in persistent Codex state. No force-push or broad filesystem cleanup was used.
