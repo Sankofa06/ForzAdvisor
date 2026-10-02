@@ -4,6 +4,7 @@ struct TuneEvidenceHubSection: View {
     let summary: TuneEvidenceSummary
     let isSaved: Bool
     let isStreaming: Bool
+    let captureActions: TuneResultCaptureActions
     let destination: AnyView?
     let availabilityNote: String?
 
@@ -15,6 +16,13 @@ struct TuneEvidenceHubSection: View {
             Text("Use Evidence Hub later if you want to record on-device observations, choose future reuse, or review shared evidence. It never changes available settings automatically.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            ForEach(captureActions.availableActions) { captureAction in
+                Button(captureAction.title, action: captureAction.perform)
+                    .accessibilityIdentifier(
+                        captureAction.accessibilityIdentifier
+                    )
+            }
 
             if let availabilityNote {
                 Label(
@@ -37,7 +45,7 @@ struct TuneEvidenceHubSection: View {
                         .accessibilityIdentifier("openTuneEvidenceHubButton")
                 }
             } else {
-                Text("Save the complete result before adding optional evidence.")
+                Text("Save the complete result to store observations and open Evidence Hub.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

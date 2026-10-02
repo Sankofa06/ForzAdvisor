@@ -17,7 +17,8 @@ enum TuneClipboardFormatter {
         }
 
         var lines = headerLines(for: sanitized)
-        lines.append("Verified settings")
+        lines.append("Available settings")
+        lines.append("Availability does not mean accuracy has been validated.")
         lines.append(contentsOf: sanitized.sections.flatMap { section in
             sectionTextLines(for: section) + [""]
         })

@@ -45,7 +45,7 @@ enum DisciplineGenerationCopy {
         disclosure: TuneProviderDisclosure
     ) -> String {
         if game == .fh5 {
-            return "This FH5 build plan is created locally. Your preferred generation method is not used for FH5."
+            return "This FH5 build plan is created locally. No remote provider or numeric tuning settings are used."
         }
         let route = disclosure.route
         if !route.preferredModeWillBeAttempted {

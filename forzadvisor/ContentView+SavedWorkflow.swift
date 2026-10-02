@@ -388,7 +388,8 @@ extension ContentView {
     }
 
     func makeProviderDisclosure(
-        mode: TuneProviderMode
+        mode: TuneProviderMode,
+        game: ForzaGame? = nil
     ) -> TuneProviderDisclosure {
         let onDevice: TuneProviderCapability =
             OnDeviceModelAvailability.current().isAvailable
@@ -408,7 +409,8 @@ extension ContentView {
             capabilities: TuneProviderCapabilities(
                 onDeviceModel: onDevice,
                 anthropicAPI: api
-            )
+            ),
+            game: game
         )
     }
 }

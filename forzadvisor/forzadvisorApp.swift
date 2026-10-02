@@ -30,7 +30,15 @@ struct forzadvisorApp: App {
 
     var body: some Scene {
         WindowGroup {
+#if DEBUG
+            if CommandLine.arguments.contains("-ui-test-capture-actions") {
+                TuneCaptureActionUITestHarness()
+            } else {
+                ContentView()
+            }
+#else
             ContentView()
+#endif
         }
         .modelContainer(modelContainer)
     }

@@ -129,6 +129,8 @@ final class TuneClipboardFormatterTests: XCTestCase {
         )
 
         let export = try XCTUnwrap(TuneClipboardFormatter.verifiedSettingsText(for: projected))
+        XCTAssertTrue(export.contains("Available settings"))
+        XCTAssertTrue(export.contains("Availability does not mean accuracy"))
         XCTAssertTrue(export.contains("Front tire pressure: 30.0 PSI"))
         XCTAssertFalse(export.contains("999.9"))
         XCTAssertFalse(export.contains("Injected rear"))
