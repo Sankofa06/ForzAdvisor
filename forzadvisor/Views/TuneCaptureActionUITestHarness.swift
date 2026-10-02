@@ -58,4 +58,36 @@ struct TuneCaptureActionUITestHarness: View {
         )))
     }
 }
+
+struct LegacyTuneSettingsUITestHarness: View {
+    private var tune: TuneResult {
+        var car = SampleTuningData.starterCar
+        car.game = .fh6
+        return TuneResult(
+            request: TuneRequest(car: car, discipline: .road),
+            sections: [TuneSection(
+                title: "Legacy sentinel",
+                symbolName: "slider.horizontal.3",
+                lines: [TuneLine(label: "Front pressure", value: "37.125", unit: "PSI", fieldID: .frontTirePressure)]
+            )],
+            notes: TuneNotes(bias: "Legacy", ifPushesWide: "Legacy", ifSnapsOnLift: "Legacy", retuneTrigger: "Legacy"),
+            projectionReport: nil
+        )
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                TuneAvailableSettingsSection(
+                    tune: tune,
+                    presentation: TuneResultPresentation(tune: tune, isSaved: true, isStreaming: false),
+                    expandedSectionTitles: .constant(["Legacy sentinel"]),
+                    copiedLineID: .constant(nil)
+                )
+                Text("Stored fixture lines: \(tune.sections.flatMap(\.lines).count)")
+            }
+            .navigationTitle("Legacy Result Test")
+        }
+    }
+}
 #endif

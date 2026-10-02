@@ -27,6 +27,12 @@ struct TuneAvailableSettingsSection: View {
                     systemImage: "checkmark.shield",
                     description: Text("Forza Advisor withheld numeric values because the current build evidence cannot support them yet.")
                 )
+            } else if presentation.completion == .legacyUnavailable {
+                ContentUnavailableView(
+                    "Legacy settings withheld",
+                    systemImage: "clock.badge.exclamationmark",
+                    description: Text("Generate a new result after confirming the current build and tuning-menu evidence. Your saved setup is preserved.")
+                )
             } else if tune.sections.isEmpty {
                 ContentUnavailableView(
                     presentation.completion == .incomplete
@@ -85,7 +91,7 @@ private extension TuneResultPresentation {
         case .plan: "Setup plan"
         case .needsEvidence: "Evidence needed"
         case .incomplete: "Available settings"
-        case .legacyUnavailable: "Available settings"
+        case .legacyUnavailable: "Legacy review required"
         }
     }
 
@@ -102,7 +108,7 @@ private extension TuneResultPresentation {
         case .incomplete:
             "Settings remain unavailable until generation completes."
         case .legacyUnavailable:
-            "This saved result predates the current availability checks."
+            "This saved result predates the current availability checks. Its numeric values are withheld."
         }
     }
 }

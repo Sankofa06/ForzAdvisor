@@ -45,6 +45,23 @@ final class TuneResultUITests: XCTestCase {
     }
 
     @MainActor
+    func testLegacyNumericValuesAreWithheldFromRenderedSettings() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-ui-test-legacy-settings"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Legacy Result Test"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Stored fixture lines: 1"].exists)
+        XCTAssertTrue(app.staticTexts["Legacy settings withheld"].exists)
+        XCTAssertFalse(app.staticTexts["Available settings"].exists)
+        XCTAssertFalse(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "37.125")).firstMatch.exists)
+        XCTAssertFalse(app.buttons["Expand all"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Legacy numeric settings withheld"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    @MainActor
     func testResultCaptureButtonDispatchesFromRenderedEvidenceSection() {
         let app = launchCaptureActionHarness()
         let capture = app.buttons["verifyTirePressureCaptureButton"]
