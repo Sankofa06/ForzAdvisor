@@ -35,6 +35,24 @@ struct TuneResultBoundarySanitizer {
             || tune.projectionReport != nil
 
         guard requiresProjection else { return tune }
-        return TuneOutputProjector().project(tune)
+        var projected = TuneOutputProjector().project(tune)
+        guard let original = tune.projectionReport,
+              var report = projected.projectionReport else { return projected }
+
+        // Reopening or saving is not new evidence that resolves a confirmation.
+        for confirmation in original.confirmations where !report.confirmations.contains(confirmation) {
+            report.confirmations.append(confirmation)
+        }
+        if original.requiresInGameConfirmation && !report.requiresInGameConfirmation {
+            for field in original.fields where field.status == .needsConstraint
+                || field.status == .providerOmitted || field.status == .rejectedValue {
+                let confirmation = TuneSettingConfirmation(setting: field.field.setting, candidateParts: [])
+                if !report.confirmations.contains(confirmation) {
+                    report.confirmations.append(confirmation)
+                }
+            }
+        }
+        projected.projectionReport = report
+        return projected
     }
 }

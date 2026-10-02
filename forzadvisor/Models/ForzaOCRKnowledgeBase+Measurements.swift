@@ -149,8 +149,12 @@ extension ForzaOCRKnowledgeBase {
                 guard containsAny(kind.fieldAliases, in: normalize(primary)) else {
                     return true
                 }
+                let labelPattern = switch kind {
+                case .horsepower: #"^\s*(?:power|horsepower)\s*[:=]?\s*$"#
+                case .torque: #"^\s*torque\s*[:=]?\s*$"#
+                }
                 return group.allSatisfy {
-                    containsAny(kind.fieldAliases, in: normalize($0))
+                    normalize($0).range(of: labelPattern, options: .regularExpression) != nil
                 }
             }
             return group.allSatisfy { candidateText in

@@ -270,6 +270,22 @@ final class OCRTextParserTests: XCTestCase {
         }
     }
 
+    func testParserRejectsCompetingUnitsAndQualifiersInSplitFragments() {
+        for fragments in [
+            ["100", "hp/kW"], ["Power", "100", "kW/hp"],
+            ["100", "hp / PS"], ["100", "hp unknown"],
+            ["400", "lb-ft/Nm"], ["Torque", "400", "Nm/lb-ft"]
+        ] {
+            let draft = OCRTextParser.confirmationDraft(from: fragments.map {
+                OCRTextObservation(text: $0, confidence: 0.95)
+            })
+            XCTAssertNil(draft.peakHorsepower, fragments.description)
+            XCTAssertNil(draft.peakTorqueFootPounds, fragments.description)
+            XCTAssertTrue(draft.candidates(for: .horsepower).isEmpty, fragments.description)
+            XCTAssertTrue(draft.candidates(for: .torque).isEmpty, fragments.description)
+        }
+    }
+
     func testParserRejectsUnlabeledAmbiguousMeasurementAlternatives() {
         for alternative in ["480 PS", "480", "520 hp"] {
             let draft = OCRTextParser.confirmationDraft(from: [
