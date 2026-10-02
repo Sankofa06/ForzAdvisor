@@ -449,19 +449,21 @@ final class OCRTextParserTests: XCTestCase {
     }
 
     func testParserKeepsUnresolvedPowerAndTorqueFieldsIndependent() {
-        for unresolved in ["400", "400 PS", "-400 Nm", "1,500 Nm", "400 kW/Nm"] {
-            let power = OCRTextParser.confirmationDraft(from: [
-                OCRTextObservation(text: "Power 100 kW", confidence: 0.95),
-                OCRTextObservation(text: "Torque \(unresolved)", confidence: 0.95)
-            ])
-            XCTAssertEqual(power.peakHorsepower, 134, unresolved)
-            XCTAssertNil(power.peakTorqueFootPounds, unresolved)
-            let torque = OCRTextParser.confirmationDraft(from: [
-                OCRTextObservation(text: "Power \(unresolved)", confidence: 0.95),
-                OCRTextObservation(text: "Torque 400 Nm", confidence: 0.95)
-            ])
-            XCTAssertNil(torque.peakHorsepower, unresolved)
-            XCTAssertEqual(torque.peakTorqueFootPounds, 295, unresolved)
+        for unresolved in ["400", "400 PS", "-400 Nm", "-400 kW", "1,500 Nm", "1,500 kW", "400 kW/Nm"] {
+            let cases: [(String, String, Int?, Int?)] = [
+                ("Power 100 kW", "Torque \(unresolved)", 134, nil),
+                ("Power \(unresolved)", "Torque 400 Nm", nil, 295)
+            ]
+            for (power, torque, expectedPower, expectedTorque) in cases {
+                for texts in [[power, torque], [torque, power],
+                              ["\(power); \(torque)"], ["\(torque); \(power)"]] {
+                    let draft = OCRTextParser.confirmationDraft(from: texts.map {
+                        OCRTextObservation(text: $0, confidence: 0.95)
+                    })
+                    XCTAssertEqual(draft.peakHorsepower, expectedPower, texts.description)
+                    XCTAssertEqual(draft.peakTorqueFootPounds, expectedTorque, texts.description)
+                }
+            }
         }
         for fragments in [["Power 100 kW", "Torque", "400"], ["Power 100 kW", "Torque"]] {
             let draft = OCRTextParser.confirmationDraft(from: fragments.map {

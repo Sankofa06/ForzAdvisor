@@ -300,6 +300,17 @@ extension ForzaOCRKnowledgeBase {
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         var reading: (value: Double, sourceValue: String, sourceUnit: OCRMeasurementUnit)?
         for match in regex.matches(in: text, range: range) {
+            // Establish field ownership before validating the numeric token.
+            // A malformed reading explicitly labeled for the other field must
+            // not invalidate this field in a coalesced OCR observation.
+            if let labelRange = Range(match.range(at: 1), in: text) {
+                let label = text[labelRange].lowercased()
+                switch kind {
+                case .horsepower where label == "torque": continue
+                case .torque where label == "power" || label == "horsepower": continue
+                default: break
+                }
+            }
             guard let valueRange = Range(match.range(at: 2), in: text),
                   let unitRange = Range(match.range(at: 3), in: text),
                   text[valueRange].range(
@@ -309,14 +320,6 @@ extension ForzaOCRKnowledgeBase {
                   let value = Double(text[valueRange]),
                   let sourceUnit = kind.sourceUnit(for: String(text[unitRange])) else {
                 return nil
-            }
-            if let labelRange = Range(match.range(at: 1), in: text) {
-                let label = text[labelRange].lowercased()
-                switch kind {
-                case .horsepower where label == "torque": continue
-                case .torque where label == "power" || label == "horsepower": continue
-                default: break
-                }
             }
             if let reading,
                reading.value != value || reading.sourceUnit != sourceUnit {
