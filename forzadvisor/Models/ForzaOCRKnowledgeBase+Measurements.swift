@@ -180,26 +180,55 @@ extension ForzaOCRKnowledgeBase {
         in text: String,
         kind: MeasurementKind
     ) -> (value: Double, sourceValue: String, sourceUnit: OCRMeasurementUnit)? {
-        let pattern = #"(?i)(?:(power|horsepower|torque)\s*[:=-]?\s*)?(\d{2,4}(?:\.\d+)?)\s*("# + kind.unitsPattern + #")\b"#
+        let pattern = #"(?i)(?<![\w.+-])(?:(power|horsepower|torque)\s*[:=]?\s*)?(\d{2,4}(?:\.\d+)?)\s*("# + kind.unitsPattern + #")\b"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return nil
         }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
-        guard let match = regex.firstMatch(in: text, range: range),
-              let valueRange = Range(match.range(at: 2), in: text),
-              let unitRange = Range(match.range(at: 3), in: text),
-              let value = Double(text[valueRange]),
-              let sourceUnit = kind.sourceUnit(for: String(text[unitRange])) else {
+        var reading: (value: Double, sourceValue: String, sourceUnit: OCRMeasurementUnit)?
+        for match in regex.matches(in: text, range: range) {
+            guard let valueRange = Range(match.range(at: 2), in: text),
+                  let unitRange = Range(match.range(at: 3), in: text),
+                  let value = Double(text[valueRange]),
+                  let sourceUnit = kind.sourceUnit(for: String(text[unitRange])) else {
+                return nil
+            }
+            if let labelRange = Range(match.range(at: 1), in: text) {
+                let label = text[labelRange].lowercased()
+                switch kind {
+                case .horsepower where label == "torque": continue
+                case .torque where label == "power" || label == "horsepower": continue
+                default: break
+                }
+            }
+            if let reading,
+               reading.value != value || reading.sourceUnit != sourceUnit {
+                return nil
+            }
+            reading = (value, String(text[valueRange]), sourceUnit)
+        }
+        guard let reading else { return nil }
+
+        // Every labeled reading must agree, including ones without a supported
+        // unit. Coalesced OCR lines must not hide a second conflicting value.
+        let labels = switch kind {
+        case .horsepower: "power|horsepower"
+        case .torque: "torque"
+        }
+        let labeledPattern = #"(?i)\b(?:"# + labels + #")\s*[:=]?\s*([+-]?\d+(?:\.\d+)?)"#
+        guard let labeledRegex = try? NSRegularExpression(pattern: labeledPattern) else {
             return nil
         }
-        if let labelRange = Range(match.range(at: 1), in: text) {
-            let label = text[labelRange].lowercased()
-            switch kind {
-            case .horsepower where label == "torque": return nil
-            case .torque where label == "power" || label == "horsepower": return nil
-            default: break
+        for match in labeledRegex.matches(in: text, range: range) {
+            guard let valueRange = Range(match.range(at: 1), in: text),
+                  Double(text[valueRange]) == reading.value,
+                  let unit = firstCapture(
+                    in: String(text[valueRange.upperBound...]),
+                    pattern: #"(?i)^\s*("# + kind.unitsPattern + #")\b"#
+                  ), kind.sourceUnit(for: unit) == reading.sourceUnit else {
+                return nil
             }
         }
-        return (value, String(text[valueRange]), sourceUnit)
+        return reading
     }
 }

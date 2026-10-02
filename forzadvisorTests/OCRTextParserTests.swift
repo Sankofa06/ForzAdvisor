@@ -207,6 +207,35 @@ final class OCRTextParserTests: XCTestCase {
         XCTAssertTrue(draft.evidence[.torque]?.requiresManualCorrection == true)
     }
 
+    func testParserRejectsConflictingMeasurementsWithinOneObservation() {
+        for text in [
+            "Power 480 hp / Power 520 hp; Torque 400 lb-ft / Torque 430 lb-ft",
+            "Power 480 / Power 520 hp; Torque 400 / Torque 430 lb-ft",
+            "Power 480 hp / 520 hp; Torque 400 lb-ft / 430 lb-ft",
+            "Power 12500 hp; Torque 12500 lb-ft",
+            "Power -480 hp; Torque -400 lb-ft"
+        ] {
+            let draft = OCRTextParser.confirmationDraft(from: [
+                OCRTextObservation(text: text, confidence: 0.95)
+            ])
+            XCTAssertNil(draft.peakHorsepower, text)
+            XCTAssertNil(draft.peakTorqueFootPounds, text)
+            XCTAssertTrue(draft.candidates(for: .horsepower).isEmpty, text)
+            XCTAssertTrue(draft.candidates(for: .torque).isEmpty, text)
+        }
+    }
+
+    func testParserAllowsRepeatedIdenticalMeasurementsWithinOneObservation() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(
+                text: "Power 480 hp / Power 480 hp; Torque 400 lb-ft / Torque 400 lb-ft",
+                confidence: 0.95
+            )
+        ])
+        XCTAssertEqual(draft.peakHorsepower, 480)
+        XCTAssertEqual(draft.peakTorqueFootPounds, 400)
+    }
+
     func testParserValidatesMetricMeasurementRangeAfterConversion() {
         let draft = OCRTextParser.confirmationDraft(from: [
             OCRTextObservation(text: "Power 1800 kW", confidence: 0.93),
