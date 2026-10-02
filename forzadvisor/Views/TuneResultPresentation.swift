@@ -100,13 +100,13 @@ struct TuneResultPresentation: Equatable {
         case .incomplete:
             return "Generation is still in progress. Copy and Save remain unavailable until the complete result arrives."
         case .available:
-            "\(availableSettingCount) available setting\(availableSettingCount == 1 ? "" : "s"). Availability does not mean accuracy has been validated."
+            return "\(availableSettingCount) available setting\(availableSettingCount == 1 ? "" : "s"). Availability does not mean accuracy has been validated."
         case .plan:
-            isFH6EvidenceWithheld
+            return isFH6EvidenceWithheld
                 ? "Numeric settings are withheld until more game evidence is confirmed. Use the setup plan when one is available, then generate again."
                 : "No numeric settings are ready to enter. Save this setup and follow the in-game confirmations before generating again."
         case .needsEvidence:
-            isFH6EvidenceWithheld
+            return isFH6EvidenceWithheld
                 ? "Numeric settings are withheld until more game evidence is confirmed. Capture the missing build evidence before applying values."
                 : "No numeric settings passed the current evidence and constraint checks. Capture the missing build evidence before applying values."
         case .legacyUnavailable:
