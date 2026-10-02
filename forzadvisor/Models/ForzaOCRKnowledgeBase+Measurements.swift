@@ -58,10 +58,19 @@ extension ForzaOCRKnowledgeBase {
         in windows: [ObservationWindow],
         kind: MeasurementKind
     ) -> [ParsedCandidate<Int>] {
-        // Check all observations before selecting an explicit reading. Otherwise
-        // filtering can hide a conflicting unitless or unsupported reading.
+        // The complete capture must support one reading before a narrower
+        // window can supply its confidence/evidence. Discarding a conflicting
+        // aggregate must never leave an apparently safe adjacent pair behind.
         let originalWindows = windows.filter { $0.candidateGroups.count == 1 }
-        guard ambiguousMeasurementCandidates(in: originalWindows, kind: kind).isEmpty else {
+        guard let completeWindow = windows.last,
+              let completeMeasurement = firstMeasurement(in: completeWindow.rawText, kind: kind),
+              measurementIsUnambiguous(
+                completeMeasurement.sourceValue,
+                completeMeasurement.sourceUnit,
+                in: completeWindow,
+                kind: kind
+              ),
+              ambiguousMeasurementCandidates(in: originalWindows, kind: kind).isEmpty else {
             return []
         }
         let candidates: [ParsedCandidate<Int>] = windows.compactMap { window in

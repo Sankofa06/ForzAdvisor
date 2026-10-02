@@ -274,7 +274,10 @@ final class OCRTextParserTests: XCTestCase {
         for fragments in [
             ["100", "hp/kW"], ["Power", "100", "kW/hp"],
             ["100", "hp / PS"], ["100", "hp unknown"],
-            ["400", "lb-ft/Nm"], ["Torque", "400", "Nm/lb-ft"]
+            ["400", "lb-ft/Nm"], ["Torque", "400", "Nm/lb-ft"],
+            ["Power", "100", "hp", "kW"], ["100", "kW", "hp"],
+            ["Torque", "400", "lb-ft", "Nm"], ["400", "Nm", "lb-ft"],
+            ["Power", "100", "200", "hp"], ["100", "200", "hp"]
         ] {
             let draft = OCRTextParser.confirmationDraft(from: fragments.map {
                 OCRTextObservation(text: $0, confidence: 0.95)
