@@ -33,6 +33,14 @@ struct TuneDraftSession: Equatable, Sendable {
         }
         return selection
     }
+
+    static func forNewTuneEntry(
+        existing session: TuneDraftSession
+    ) -> TuneDraftSession {
+        session.isMeaningful
+            ? session
+            : TuneDraftSession()
+    }
 }
 
 struct SavedTuneRetuneSession: Equatable, Sendable {

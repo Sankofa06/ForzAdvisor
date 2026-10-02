@@ -577,6 +577,9 @@ final class FH6ValidationReviewTests: XCTestCase {
                 configurations: configuration
             )
             let context = ModelContext(container)
+            context.autosaveEnabled = false
+            // Keep pending changes from outliving the temporary store.
+            defer { context.rollback() }
             let saved = try SavedTune(tune: tune)
             context.insert(saved)
             try saved.appendValidationRecord(fixture.record)
@@ -596,6 +599,9 @@ final class FH6ValidationReviewTests: XCTestCase {
                 configurations: configuration
             )
             let context = ModelContext(container)
+            context.autosaveEnabled = false
+            // Keep pending changes from outliving the temporary store.
+            defer { context.rollback() }
             let saved = try XCTUnwrap(
                 context.fetch(FetchDescriptor<SavedTune>()).first
             )

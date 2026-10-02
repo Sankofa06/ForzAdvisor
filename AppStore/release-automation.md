@@ -30,7 +30,7 @@ developer Mac.
 
 - App Store Connect app, bundle, team, version, review-draft, and review-item identifiers
 - canonical GitHub checkout, remote, and immutable release ref
-- marketing version `1.41.1`, source build `78`, and current App Store build `78`
+- marketing version `1.41.2`, source build `87`, and current App Store build `87`
 - Free pricing, explicit-human-approval submission policy, and `AFTER_APPROVAL` release timing
 - published privacy-label declaration and human attestation date
 - content-rights, age-rating, review-contact, and export-compliance attestations
@@ -38,7 +38,9 @@ developer Mac.
 - Xcode project, schemes, complete `ReleaseVerify` plan, and privacy manifest
 - GitHub verification workflow and its public toolchain facts
 - the logical stable-runner profile, public pinned toolchain facts, project,
-  scheme, generic iOS destination, signing mode, and warning policy
+  scheme, generic iOS destination, signing mode, warning policy, and an
+  explicit App Store-eligible export policy with
+  `testFlightInternalTestingOnly=false`
 - intended internal TestFlight group
 - metadata limits and exact screenshot order
 - retained legacy Xcode Cloud identifiers, which are historical and are not the

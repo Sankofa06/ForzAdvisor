@@ -48,7 +48,7 @@ extension XCUIElement {
             return
         }
 
-        typeText(text)
+        typeTextAndVerifyValue(text)
     }
 
     @MainActor
@@ -62,7 +62,7 @@ extension XCUIElement {
         for attempt in 0..<3 {
             scrollToInteractionViewport(in: app)
             if focusForTyping(timeout: focusTimeout) {
-                typeText(text)
+                typeTextAndVerifyValue(text)
                 return
             }
 
@@ -80,6 +80,26 @@ extension XCUIElement {
         }
 
         XCTFail("\(identifier) did not receive keyboard focus before typing.")
+    }
+
+    private func typeTextAndVerifyValue(_ text: String) {
+        let initialValue = value as? String ?? ""
+        var expectedValue = initialValue == placeholderValue ? "" : initialValue
+
+        // A whole-string burst can outrun SwiftUI form updates in Simulator.
+        // Observe every character; never retry or silently repair a mismatch.
+        for character in text {
+            typeText(String(character))
+            expectedValue.append(character)
+            let expectation = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "value == %@", expectedValue),
+                object: self
+            )
+            guard XCTWaiter.wait(for: [expectation], timeout: 2) == .completed else {
+                XCTFail("\(identifier) expected \(expectedValue), received \(value ?? "nil").")
+                return
+            }
+        }
     }
 
     private func focusForTyping(timeout: TimeInterval) -> Bool {

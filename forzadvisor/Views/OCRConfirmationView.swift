@@ -143,10 +143,27 @@ struct OCRConfirmationView: View {
 
     private var optionalSection: some View {
         Section("Optional Performance") {
-            TextField("Horsepower · Optional", text: optionalNumberText($draft.peakHorsepower))
+            if draft.evidence[.horsepower] != nil {
+                intField(.horsepower, placeholder: "hp", value: $draft.peakHorsepower)
+            } else {
+                TextField(
+                    "Horsepower · Optional",
+                    text: optionalNumberText($draft.peakHorsepower, correctedField: .horsepower)
+                )
                 .keyboardType(.numberPad)
-            TextField("Torque · Optional", text: optionalNumberText($draft.peakTorqueFootPounds))
+            }
+            if draft.evidence[.torque] != nil {
+                intField(.torque, placeholder: "lb-ft", value: $draft.peakTorqueFootPounds)
+            } else {
+                TextField(
+                    "Torque · Optional",
+                    text: optionalNumberText($draft.peakTorqueFootPounds, correctedField: .torque)
+                )
                 .keyboardType(.numberPad)
+            }
+            Text("OCR accepts explicit hp and lb-ft values. Explicit kW and Nm readings are converted for your confirmation. Ambiguous values stay blank for manual correction.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .forzAdvisorRowBackground()
     }

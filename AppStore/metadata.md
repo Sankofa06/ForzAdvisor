@@ -81,8 +81,8 @@ Camera permission is optional and requested only after the reviewer chooses Take
 
 - Bundle ID: com.michaelwilliams.forzadvisor
 - SKU: forzadvisor-ios
-- Current project version: 1.41.1
-- Current project build: 77
+- Current project version: 1.41.2
+- Current project build: 87
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 

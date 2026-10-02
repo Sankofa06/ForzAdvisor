@@ -37,15 +37,23 @@ struct ForzaOCRKnowledgeBase {
         applyBestIntegerCandidate(
             field: .horsepower,
             to: &draft,
-            candidates: integerCandidates(in: windows, fieldAliases: ["power", "horsepower", "hp", "kw"], units: #"hp|bhp|kw"#, range: 40...2_500),
+            candidates: measurementCandidates(in: windows, kind: .horsepower),
             assign: { draft, value in draft.peakHorsepower = value }
         )
+        if draft.evidence[.horsepower] == nil,
+           let candidate = bestCandidate(ambiguousMeasurementCandidates(in: windows, kind: .horsepower)) {
+            draft.evidence[.horsepower] = evidence(from: candidate)
+        }
         applyBestIntegerCandidate(
             field: .torque,
             to: &draft,
-            candidates: integerCandidates(in: windows, fieldAliases: ["torque", "ft lb", "ft-lb", "lb ft", "lb-ft", "nm"], units: #"ft[- ]?lb|lb[- ]?ft|nm"#, range: 40...2_500),
+            candidates: measurementCandidates(in: windows, kind: .torque),
             assign: { draft, value in draft.peakTorqueFootPounds = value }
         )
+        if draft.evidence[.torque] == nil,
+           let candidate = bestCandidate(ambiguousMeasurementCandidates(in: windows, kind: .torque)) {
+            draft.evidence[.torque] = evidence(from: candidate)
+        }
 
         return draft
     }
@@ -58,6 +66,7 @@ extension ForzaOCRKnowledgeBase {
         var confidence: Double
         var boundingBox: CGRect?
         var candidates: [String]
+        var candidateGroups: [[String]]
     }
 
     struct ParsedCandidate<Value> {
@@ -67,6 +76,9 @@ extension ForzaOCRKnowledgeBase {
         var rawText: String
         var candidates: [String]
         var boundingBox: CGRect?
+        var sourceValue: String? = nil
+        var sourceUnit: OCRMeasurementUnit? = nil
+        var normalizedValue: String? = nil
     }
 
     func observationWindows(from observations: [OCRTextObservation]) -> [ObservationWindow] {
@@ -92,7 +104,8 @@ extension ForzaOCRKnowledgeBase {
                 normalizedText: normalize(joined),
                 confidence: min(first.confidence, second.confidence),
                 boundingBox: first.boundingBox?.union(second.boundingBox ?? first.boundingBox ?? .zero),
-                candidates: (first.candidates + second.candidates + [joined]).deduplicated()
+                candidates: (first.candidates + second.candidates + [joined]).deduplicated(),
+                candidateGroups: [first.candidates, second.candidates]
             ))
         }
 
@@ -103,7 +116,8 @@ extension ForzaOCRKnowledgeBase {
                 normalizedText: normalize(allText),
                 confidence: sorted.map(\.confidence).min() ?? 0,
                 boundingBox: nil,
-                candidates: sorted.flatMap(\.candidates).deduplicated()
+                candidates: sorted.flatMap(\.candidates).deduplicated(),
+                candidateGroups: sorted.map(\.candidates)
             ))
         }
 
@@ -116,7 +130,8 @@ extension ForzaOCRKnowledgeBase {
             normalizedText: normalize(observation.text),
             confidence: observation.confidence,
             boundingBox: observation.boundingBox,
-            candidates: observation.candidates
+            candidates: observation.candidates,
+            candidateGroups: [observation.candidates]
         )
     }
 
@@ -271,7 +286,10 @@ extension ForzaOCRKnowledgeBase {
         value: Value,
         textValue: String,
         window: ObservationWindow,
-        labelBoost _: Double
+        labelBoost _: Double,
+        sourceValue: String? = nil,
+        sourceUnit: OCRMeasurementUnit? = nil,
+        normalizedValue: String? = nil
     ) -> ParsedCandidate<Value> {
         ParsedCandidate(
             value: value,
@@ -279,7 +297,10 @@ extension ForzaOCRKnowledgeBase {
             confidence: window.confidence,
             rawText: window.rawText,
             candidates: window.candidates,
-            boundingBox: window.boundingBox
+            boundingBox: window.boundingBox,
+            sourceValue: sourceValue,
+            sourceUnit: sourceUnit,
+            normalizedValue: normalizedValue
         )
     }
 

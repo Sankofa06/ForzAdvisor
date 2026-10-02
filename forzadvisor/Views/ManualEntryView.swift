@@ -226,6 +226,12 @@ struct ManualEntryView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier(identifier)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityAddTraits(
+            isSelected
+                ? .isSelected
+                : []
+        )
     }
 
     private func trackedText(

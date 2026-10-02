@@ -3,6 +3,7 @@ import SwiftUI
 struct TuneEvidenceHubAdapter {
     let summary: TuneEvidenceSummary
     let evidenceRecords: [ValidationEvidenceRecord]
+    let captureActions: TuneResultCaptureActions
     let onRecordTestDrive: (() -> Void)?
     let onOpenFH5Research: (() -> Void)?
     let onOpenFH5Experiment: (() -> Void)?
@@ -58,6 +59,12 @@ struct TuneEvidenceHubView: View {
             action("Record FH5 Research", id: "hubRecordFH5Research", adapter.onOpenFH5Research)
             action("Run FH5 Experiment", id: "hubRunFH5Experiment", adapter.onOpenFH5Experiment)
             action("Run FH6 Community Comparison", id: "hubRunFH6CommunityTrial", adapter.onRunFH6CommunityTrial)
+            ForEach(adapter.captureActions.availableActions) { captureAction in
+                Button(captureAction.title, action: captureAction.perform)
+                    .accessibilityIdentifier(
+                        captureAction.hubAccessibilityIdentifier
+                    )
+            }
         }
         .forzAdvisorRowBackground()
     }

@@ -2,6 +2,57 @@ import XCTest
 @testable import forzadvisor
 
 final class TuneResultPresentationTests: XCTestCase {
+    func testEligibleResultCaptureCallbacksProduceVisibleActionsAndDispatch() {
+        var dispatched = [TuneResultCaptureActionKind]()
+        let actions = TuneResultCaptureActions(
+            onVerifyTuneMenu: { dispatched.append(.tuneMenu) },
+            onVerifyTirePressures: { dispatched.append(.tirePressures) },
+            onVerifyUpgradeParts: { dispatched.append(.upgradeParts) }
+        )
+
+        XCTAssertEqual(
+            actions.availableActions.map(\.kind),
+            [.tuneMenu, .tirePressures, .upgradeParts]
+        )
+        XCTAssertEqual(
+            actions.availableActions.map(\.accessibilityIdentifier),
+            [
+                "verifyTuneMenuCaptureButton",
+                "verifyTirePressureCaptureButton",
+                "verifyUpgradePartsCaptureButton"
+            ]
+        )
+        actions.availableActions.forEach { $0.perform() }
+        XCTAssertEqual(
+            dispatched,
+            [.tuneMenu, .tirePressures, .upgradeParts]
+        )
+    }
+
+    func testIneligibleAndStreamingCaptureActionsAreNotAvailable() {
+        let ineligibleActions = TuneResultCaptureActions()
+        XCTAssertTrue(ineligibleActions.availableActions.isEmpty)
+
+        var dispatchedTireAction = false
+        let partiallyEligibleActions = TuneResultCaptureActions(
+            onVerifyTirePressures: { dispatchedTireAction = true }
+        )
+        XCTAssertEqual(
+            partiallyEligibleActions.availableActions.map(\.kind),
+            [.tirePressures]
+        )
+        partiallyEligibleActions.availableActions[0].perform()
+        XCTAssertTrue(dispatchedTireAction)
+
+        let streamingActions = TuneResultCaptureActions(
+            onVerifyTuneMenu: {},
+            onVerifyTirePressures: {},
+            onVerifyUpgradeParts: {},
+            isStreaming: true
+        )
+        XCTAssertTrue(streamingActions.availableActions.isEmpty)
+    }
+
     func testStreamingResultIsExplicitlyIncompleteAndCannotCopyOrSave() {
         let presentation = TuneResultPresentation(
             tune: makeTune(hasProjection: true),
@@ -37,16 +88,135 @@ final class TuneResultPresentationTests: XCTestCase {
         XCTAssertTrue(provider.detail.contains("only when generation completes"))
     }
 
-    func testCompletedProjectedResultAllowsActionsWithoutAccuracyClaim() {
+    func testCompletedFH6ResultWithNoReadySettingsUsesWithheldPlanState() {
         let presentation = TuneResultPresentation(
             tune: makeTune(hasProjection: true),
             isSaved: false,
             isStreaming: false
         )
 
+        XCTAssertEqual(presentation.completion, .plan)
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertFalse(presentation.allowsCopy)
+        XCTAssertTrue(presentation.allowsSave)
+        XCTAssertTrue(presentation.isFH6EvidenceWithheld)
+        XCTAssertEqual(
+            presentation.statusTitle,
+            "Settings withheld — more game evidence needed"
+        )
+        XCTAssertTrue(presentation.statusDetail.contains("more game evidence"))
+    }
+
+    func testSavedEvidenceStateAllowsMetadataEditButNotConsequentialActions() {
+        let presentation = TuneResultPresentation(
+            tune: makeTune(hasProjection: true),
+            isSaved: true,
+            isStreaming: false
+        )
+
+        XCTAssertTrue(presentation.allowsSavedMetadataEdit)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+    }
+
+    func testReadyMetadataWithoutUsableNumericOutputRemainsWithheldForFH6() {
+        var tune = makeTune(hasProjection: true)
+        tune.projectionReport?.fields = [
+            TuneFieldProjection(
+                field: .frontTirePressure,
+                status: .ready,
+                requiredPurchaseIDs: [],
+                unresolvedPartIDs: [],
+                reason: nil
+            )
+        ]
+        tune.sections = [TuneSection(
+            title: "Tires",
+            symbolName: "circle.dashed",
+            lines: [
+                TuneLine(
+                    label: "Front pressure",
+                    value: "30.0",
+                    unit: "PSI",
+                    fieldID: .frontTirePressure
+                )
+            ]
+        )]
+        let presentation = TuneResultPresentation(
+            tune: tune,
+            isSaved: false,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(presentation.completion, .plan)
+        XCTAssertEqual(presentation.availableSettingCount, 0)
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertTrue(presentation.isFH6EvidenceWithheld)
+        XCTAssertNotEqual(presentation.statusTitle, "Ready to use")
+    }
+
+    func testUsableProjectedNumbersAllowNormalTuneActions() async throws {
+        let tune = try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
+            capturedAt: Date(timeIntervalSinceReferenceDate: 72)
+        )
+        let presentation = TuneResultPresentation(
+            tune: tune,
+            isSaved: true,
+            isStreaming: false
+        )
+
         XCTAssertEqual(presentation.completion, .available)
+        XCTAssertGreaterThan(presentation.availableSettingCount, 0)
         XCTAssertTrue(presentation.allowsCopyOrSave)
+        XCTAssertTrue(presentation.allowsSavedConsequentialActions)
         XCTAssertTrue(presentation.statusDetail.contains("does not mean accuracy"))
+    }
+
+    func testUsableNumbersWithPendingInGameConfirmationStayPlanOnly() async throws {
+        var tune = try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
+            capturedAt: Date(timeIntervalSinceReferenceDate: 73)
+        )
+        tune.projectionReport?.confirmations = [
+            TuneSettingConfirmation(setting: .alignment, candidateParts: [])
+        ]
+
+        let presentation = TuneResultPresentation(
+            tune: tune,
+            isSaved: true,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(presentation.completion, .plan)
+        XCTAssertEqual(presentation.availableSettingCount, 0)
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+    }
+
+    func testFH5NumericPurposeIsPresentedAsPlanOnly() {
+        var car = SampleTuningData.starterCar
+        car.game = .fh5
+        let tune = TuneResult(
+            request: TuneRequest(car: car, discipline: .road),
+            sections: [],
+            notes: TuneNotes(
+                bias: "No numeric FH5 guidance",
+                ifPushesWide: "Not available",
+                ifSnapsOnLift: "Not available",
+                retuneTrigger: "Use the build plan"
+            ),
+            purpose: .numericTune,
+            projectionReport: emptyProjection
+        )
+        let presentation = TuneResultPresentation(
+            tune: tune,
+            isSaved: false,
+            isStreaming: false
+        )
+
+        XCTAssertEqual(presentation.completion, .plan)
+        XCTAssertFalse(presentation.allowsCopyOrSave)
+        XCTAssertTrue(presentation.allowsSave)
+        XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+        XCTAssertTrue(TuneActualProviderPresentation(tune: tune).title.contains("FH5 build planner"))
     }
 
     func testLegacyResultRemainsNonCopyable() {

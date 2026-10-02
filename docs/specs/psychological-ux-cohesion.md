@@ -91,6 +91,7 @@ The complete set below was approved for implementation on 2026-08-15.
 - NI-05: OCR uses actionable review states (Needs Check, Confirmed, Corrected), not raw confidence-as-accuracy percentages.
 - NI-06: Confirmation can display the retained local source image and relevant Vision region; absent/corrupt image data never blocks valid form review.
 - NI-07: Back preserves meaningful in-memory work and Tune Source offers Resume; destructive replacement/discard is explicit.
+- NI-08: OCR accepts horsepower and torque only with explicit compatible units; kW/Nm conversions show the source and normalized values and require confirmation, while unitless, incompatible, or conflicting readings require manual correction.
 
 ### Discipline And Generation
 
@@ -110,6 +111,8 @@ The complete set below was approved for implementation on 2026-08-15.
 - TR-05: Apply and Undo revalidate the exact persisted baseline/candidate and roll back safely on failure.
 - TR-06: Saved edit uses one action based on impact; re-tune failure preserves the draft and prior saved tune.
 - TR-07: `Available settings` never implies accuracy validation; no synthesized confidence score is added.
+- TR-08: “Ready to use” requires projected numeric lines for every ready field and no pending in-game confirmation; incomplete, evidence-gated, or confirmation-pending results cannot copy or refine, and FH5 remains plan-only regardless of a mislabeled purpose.
+- TR-09: Eligible result screens expose exact-context tune-menu, tire-pressure, and upgrade-part capture actions; streaming and ineligible actions stay hidden.
 
 ### Validation And Beta Missions
 

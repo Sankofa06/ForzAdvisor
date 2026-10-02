@@ -104,8 +104,22 @@ struct TuneProviderDisclosure: Equatable, Sendable {
 
     init(
         preferredMode: TuneProviderMode,
-        capabilities: TuneProviderCapabilities
+        capabilities: TuneProviderCapabilities,
+        game: ForzaGame? = nil
     ) {
+        if game == .fh5 {
+            self.preferredMode = .offlineFormula
+            self.readiness = .ready
+            self.route = TuneProviderRouteExpectation(
+                preferredMode: .offlineFormula,
+                expectedFirstMode: .offlineFormula,
+                fallbackMode: nil,
+                preferredModeWillBeAttempted: true
+            )
+            self.dataBoundary = .localOnly
+            return
+        }
+
         let readiness = capabilities.capability(for: preferredMode)
         let canAttemptPreference = readiness.supportsPreferredAttempt
 

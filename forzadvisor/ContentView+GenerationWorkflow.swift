@@ -60,7 +60,13 @@ extension ContentView {
             discipline: discipline,
             buildSnapshot: resolvedBuildSnapshot
         )
-        let disclosure = makeProviderDisclosure(mode: tuneProviderMode)
+        let effectiveProviderMode: TuneProviderMode = input.game == .fh5
+            ? .offlineFormula
+            : tuneProviderMode
+        let disclosure = makeProviderDisclosure(
+            mode: effectiveProviderMode,
+            game: input.game
+        )
         let returnContext: TuneGenerationReturnContext = retuneSession.map {
             .savedEdit($0)
         } ?? .newTune(newTuneSession)
@@ -70,7 +76,7 @@ extension ContentView {
             thumbnailData: thumbnailData,
             savedTuneID: savedTuneID,
             playerNotes: playerNotes,
-            preferredProviderMode: tuneProviderMode,
+            preferredProviderMode: effectiveProviderMode,
             providerDisclosure: disclosure,
             returnContext: returnContext,
             completedValidationDraftKind: completedValidationDraftKind,
@@ -253,7 +259,7 @@ extension ContentView {
                 step = .result(
                     tune,
                     savedTuneID: savedTuneID,
-                    adjustmentChanges: result.changes,
+                    adjustmentChanges: [],
                     thumbnailData: try savedTune(for: savedTuneID)?.thumbnailData,
                     playerNotes: try savedTune(for: savedTuneID)?.playerNotes ?? ""
                 )

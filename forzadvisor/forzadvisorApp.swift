@@ -30,7 +30,19 @@ struct forzadvisorApp: App {
 
     var body: some Scene {
         WindowGroup {
+#if DEBUG
+            if CommandLine.arguments.contains("-ui-test-legacy-settings") {
+                LegacyTuneSettingsUITestHarness()
+            } else if CommandLine.arguments.contains("-ui-test-capture-actions") {
+                TuneCaptureActionUITestHarness()
+            } else if CommandLine.arguments.contains("-ui-test-ocr-manual-values") {
+                OCRManualValuesUITestHarness()
+            } else {
+                ContentView()
+            }
+#else
             ContentView()
+#endif
         }
         .modelContainer(modelContainer)
     }

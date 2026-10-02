@@ -1,5 +1,86 @@
 import SwiftUI
 
+enum TuneResultCaptureActionKind: String, CaseIterable, Identifiable {
+    case tuneMenu
+    case tirePressures
+    case upgradeParts
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .tuneMenu: "Verify FH6 Tune Menu"
+        case .tirePressures: "Verify Tire Pressures"
+        case .upgradeParts: "Verify Upgrade Parts"
+        }
+    }
+
+    var accessibilityIdentifier: String {
+        switch self {
+        case .tuneMenu: "verifyTuneMenuCaptureButton"
+        case .tirePressures: "verifyTirePressureCaptureButton"
+        case .upgradeParts: "verifyUpgradePartsCaptureButton"
+        }
+    }
+
+    var hubAccessibilityIdentifier: String {
+        switch self {
+        case .tuneMenu: "hubVerifyTuneMenuCaptureButton"
+        case .tirePressures: "hubVerifyTirePressureCaptureButton"
+        case .upgradeParts: "hubVerifyUpgradePartsCaptureButton"
+        }
+    }
+}
+
+struct TuneResultCaptureAction: Identifiable {
+    let kind: TuneResultCaptureActionKind
+    let perform: () -> Void
+
+    var id: String { kind.id }
+    var title: String { kind.title }
+    var accessibilityIdentifier: String {
+        kind.accessibilityIdentifier
+    }
+    var hubAccessibilityIdentifier: String {
+        kind.hubAccessibilityIdentifier
+    }
+}
+
+struct TuneResultCaptureActions {
+    let onVerifyTuneMenu: (() -> Void)?
+    let onVerifyTirePressures: (() -> Void)?
+    let onVerifyUpgradeParts: (() -> Void)?
+    let isStreaming: Bool
+
+    init(
+        onVerifyTuneMenu: (() -> Void)? = nil,
+        onVerifyTirePressures: (() -> Void)? = nil,
+        onVerifyUpgradeParts: (() -> Void)? = nil,
+        isStreaming: Bool = false
+    ) {
+        self.onVerifyTuneMenu = onVerifyTuneMenu
+        self.onVerifyTirePressures = onVerifyTirePressures
+        self.onVerifyUpgradeParts = onVerifyUpgradeParts
+        self.isStreaming = isStreaming
+    }
+
+    var availableActions: [TuneResultCaptureAction] {
+        guard !isStreaming else { return [] }
+
+        return [
+            onVerifyTuneMenu.map {
+                TuneResultCaptureAction(kind: .tuneMenu, perform: $0)
+            },
+            onVerifyTirePressures.map {
+                TuneResultCaptureAction(kind: .tirePressures, perform: $0)
+            },
+            onVerifyUpgradeParts.map {
+                TuneResultCaptureAction(kind: .upgradeParts, perform: $0)
+            }
+        ].compactMap { $0 }
+    }
+}
+
 struct TuneResultScreen: View {
     let tune: TuneResult
     let isSaved: Bool
@@ -11,6 +92,7 @@ struct TuneResultScreen: View {
     let rootActions: TuneResultRootActions
     let showsFirstSavedSetupStepGuideHandoff: Bool
     let evidenceSummary: TuneEvidenceSummary
+    let captureActions: TuneResultCaptureActions
     let evidenceHubDestination: AnyView?
     let upgradePaths: [TuneControlUpgradePath]
     let resolveUpgradePathClipboardText: (String) -> String?
@@ -97,6 +179,7 @@ struct TuneResultScreen: View {
                 summary: evidenceSummary,
                 isSaved: isSaved,
                 isStreaming: isStreaming,
+                captureActions: captureActions,
                 destination: evidenceHubDestination,
                 availabilityNote: evidenceAvailabilityNote
             )
@@ -115,7 +198,7 @@ struct TuneResultScreen: View {
                 Button("Done", action: onDone)
                     .accessibilityIdentifier("doneTuneButton")
             }
-            if presentation.allowsSavedConsequentialActions {
+            if presentation.allowsSavedMetadataEdit {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Edit", action: onEdit)
                         .disabled(activeFeedback != nil || isStreaming)

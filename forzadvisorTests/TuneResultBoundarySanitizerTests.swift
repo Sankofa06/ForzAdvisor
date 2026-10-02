@@ -12,6 +12,32 @@ import XCTest
 
 @MainActor
 final class TuneResultBoundarySanitizerTests: XCTestCase {
+    func testPendingConfirmationsSurviveSanitizingSavingAndReopening() async throws {
+        let ready = try await SyntheticLegacyTuneFixtureFactory.eligibleValidationTune(
+            capturedAt: Date(timeIntervalSinceReferenceDate: 74)
+        )
+        for pendingStatus in [nil, TuneProjectionStatus.needsConstraint, .providerOmitted, .rejectedValue] {
+            var tune = ready
+            if let pendingStatus {
+                tune.projectionReport?.fields[0].status = pendingStatus
+            } else {
+                tune.projectionReport?.confirmations = [
+                    TuneSettingConfirmation(setting: .alignment, candidateParts: [])
+                ]
+            }
+            let sanitized = TuneResultBoundarySanitizer().sanitize(tune)
+            let reopened = try persistAndReopen(sanitized)
+            let displayed = TuneResultBoundarySanitizer().sanitize(reopened)
+            XCTAssertEqual(displayed, sanitized)
+            XCTAssertTrue(displayed.projectionReport?.requiresInGameConfirmation == true)
+            let presentation = TuneResultPresentation(tune: displayed, isSaved: true, isStreaming: false)
+            XCTAssertEqual(presentation.completion, .plan)
+            XCTAssertEqual(presentation.availableSettingCount, 0)
+            XCTAssertFalse(presentation.allowsCopyOrSave)
+            XCTAssertFalse(presentation.allowsSavedConsequentialActions)
+        }
+    }
+
     func testLegacyFH5MissingPurposeSanitizesAndPersistsAsPlanOnly() throws {
         let sentinel = "fh5-legacy-sentinel-419.731"
         let rulesetID = "legacy.fh5.numeric"
