@@ -171,10 +171,18 @@ extension ForzaOCRKnowledgeBase {
         let normalized = fragments.map { normalize($0) }
         let text = normalized.joined(separator: " ") as NSString
         let number = #"[0-9]{2,4}(?:\.[0-9]+)?"#
-        // Every nonseparator token must belong to a complete recognized field.
-        // Explicit unrelated fields own their values; arbitrary text and bare
-        // numbers never become unrelated merely because a pair parsed earlier.
+        let otherLabel = kind == .horsepower ? "torque" : "(?:power|horsepower)"
+        let units = #"(?:hp|bhp|kw|ft[- ]?lb|lb[- ]?ft|nm|ps|cv)\b"#
+        // An explicit other-field label owns its unresolved numeric reading.
+        // It may be absent, unitless, malformed, or have incompatible units;
+        // none of those conditions supplies a reading for the current field.
+        let otherField = #"\b"# + otherLabel + #"\b(?:\s*[:=]?\s*[\d.,'’+−-]+(?:\s+\d+)*(?:\s*"#
+            + units + #"(?:\s*/\s*"# + units + #")*)?)?"#
+        // Measurement fragments must be consumed completely. Explicit other
+        // fields own their values; separate screenshot context is recognized
+        // below only at original observation boundaries.
         let fields = [
+            otherField,
             #"(?:(?:power|horsepower)\s*[:=]?\s*)?"# + number + #"\s*(?:hp|bhp|kw)\b"#,
             #"(?:torque\s*[:=]?\s*)?"# + number + #"\s*(?:ft[- ]?lb|lb[- ]?ft|nm)\b"#,
             #"(?:front(?:\s+weight)?|(?:weight\s+)?distribution|balance)\s*[:=]?\s*\d{2}(?:\.\d+)?\s*%"#,
@@ -182,7 +190,8 @@ extension ForzaOCRKnowledgeBase {
             #"(?:weight|curb(?:\s+weight)?|mass)\s*[:=]?\s*(?:\d{1,2},\d{3}|\d{3,5})(?:\s*(?:lbs?|pounds|kg))?\b"#,
             #"(?:(?:class|pi)\s*[:=]?\s*)?(?:s1|s2|r|x|d|c|b|a)\s*-?\s*\d{3}\b"#,
             #"(?:class|pi)\s*[:=]?\s*(?:(?:s1|s2|r|x|d|c|b|a)|\d{3})\b"#,
-            #"(?:drivetrain\s*[:=]?\s*)?(?:awd|rwd|fwd|4wd|(?:all|rear|front)[ -]?wheel(?:[ -]+drive)?)\b"#
+            #"(?:drivetrain\s*[:=]?\s*)?(?:awd|rwd|fwd|4wd|(?:all|rear|front)[ -]?wheel(?:[ -]+drive)?)\b"#,
+            #"(?:speed|handling|acceleration|launch|braking|off[- ]?road)\s*[:=]?\s*(?:10(?:\.0+)?|[0-9](?:\.[0-9]+)?)\b"#
         ]
         let pattern = #"(?i)(?<![\w.,'’+−-])(?:"# + fields.joined(separator: "|") + ")"
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
@@ -195,20 +204,53 @@ extension ForzaOCRKnowledgeBase {
             offset += range.length + 1
             return range
         }
+        let contextRanges = ranges.indices.compactMap { index -> NSRange? in
+            isUnrelatedScreenshotObservation(normalized[index]) ? ranges[index] : nil
+        }
+        let fieldRanges = regex.matches(in: text as String, range: NSRange(location: 0, length: text.length))
+            .map(\.range).filter { range in
+                !contextRanges.contains { NSIntersectionRange($0, range).length > 0 }
+            }
         var signature = Array(repeating: [String](), count: fragments.count)
         var end = 0
-        for match in regex.matches(in: text as String, range: NSRange(location: 0, length: text.length)) {
-            let gap = text.substring(with: NSRange(location: end, length: match.range.location - end))
+        // Keep context in the stream: deleting it could join a value and unit
+        // across a car heading or hide a trailing unresolved fragment.
+        for range in (fieldRanges + contextRanges).sorted(by: { $0.location < $1.location }) {
+            let gap = text.substring(with: NSRange(location: end, length: range.location - end))
             guard gap.unicodeScalars.allSatisfy(separators.contains) else { return nil }
-            let reading = firstMeasurement(in: text.substring(with: match.range), kind: kind)
+            let reading = firstMeasurement(in: text.substring(with: range), kind: kind)
             let token = reading.map { "\($0.sourceUnit.rawValue):\($0.value)" } ?? "unrelated"
-            for index in ranges.indices where NSIntersectionRange(ranges[index], match.range).length > 0 {
+            for index in ranges.indices where NSIntersectionRange(ranges[index], range).length > 0 {
                 signature[index].append(token)
             }
-            end = NSMaxRange(match.range)
+            end = NSMaxRange(range)
         }
         guard text.substring(from: end).unicodeScalars.allSatisfy(separators.contains) else { return nil }
         return signature
+    }
+
+    func isUnrelatedScreenshotObservation(_ normalizedText: String) -> Bool {
+        let text = normalizedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        // A complete car heading supplies context for its year/model numbers.
+        // Measurement labels and units, including unsupported PS/CV, must never
+        // be hidden inside that context.
+        let measurementMarkers = #"(?:\b(?:power|horsepower|torque)\b|(?<![a-z])(?:hp|bhp|kw|nm|ps|cv|ft[- ]?lb|lb[- ]?ft)\b)"#
+        guard text.range(of: measurementMarkers, options: .regularExpression) == nil else { return false }
+        let nameToken = #"[a-z0-9][a-z0-9.'’&()-]*"#
+        let namedToken = #"(?=[a-z0-9.'’&()-]*[a-z])"# + nameToken
+        let carHeading = #"^(?:19|20)\d{2}\s+[a-z][a-z0-9.'’&-]*\s+"#
+            + nameToken + #"(?:\s+"# + namedToken + ")*$"
+        if text.range(of: carHeading, options: .regularExpression) != nil { return true }
+        // These titles/actions are whole observations, not permissive words
+        // in the measurement grammar. "100 hp Upgrade Shop" still fails.
+        return [
+            "garage", "my cars", "car collection", "car mastery", "select car",
+            "upgrade shop", "custom upgrade", "auto upgrade", "tune car",
+            "upgrades and tuning", "upgrades & tuning", "conversion", "engine",
+            "platform and handling", "tires and rims", "aero and appearance",
+            "performance", "performance stats", "specifications",
+            "back", "select", "apply", "install", "continue"
+        ].contains(text)
     }
 
     func ambiguousMeasurementCandidates(
