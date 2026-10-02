@@ -58,6 +58,11 @@ extension ForzaOCRKnowledgeBase {
         in windows: [ObservationWindow],
         kind: MeasurementKind
     ) -> [ParsedCandidate<Int>] {
+        // Check all observations before selecting an explicit reading. Otherwise
+        // filtering can hide a conflicting unitless or unsupported reading.
+        guard ambiguousMeasurementCandidates(in: windows, kind: kind).isEmpty else {
+            return []
+        }
         let candidates: [ParsedCandidate<Int>] = windows.compactMap { window in
             guard containsAny(kind.fieldAliases, in: window.normalizedText),
                   let measurement = firstMeasurement(in: window.rawText, kind: kind),
@@ -175,17 +180,25 @@ extension ForzaOCRKnowledgeBase {
         in text: String,
         kind: MeasurementKind
     ) -> (value: Double, sourceValue: String, sourceUnit: OCRMeasurementUnit)? {
-        let pattern = #"(?i)(\d{2,4}(?:\.\d+)?)\s*("# + kind.unitsPattern + #")\b"#
+        let pattern = #"(?i)(?:(power|horsepower|torque)\s*[:=-]?\s*)?(\d{2,4}(?:\.\d+)?)\s*("# + kind.unitsPattern + #")\b"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return nil
         }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         guard let match = regex.firstMatch(in: text, range: range),
-              let valueRange = Range(match.range(at: 1), in: text),
-              let unitRange = Range(match.range(at: 2), in: text),
+              let valueRange = Range(match.range(at: 2), in: text),
+              let unitRange = Range(match.range(at: 3), in: text),
               let value = Double(text[valueRange]),
               let sourceUnit = kind.sourceUnit(for: String(text[unitRange])) else {
             return nil
+        }
+        if let labelRange = Range(match.range(at: 1), in: text) {
+            let label = text[labelRange].lowercased()
+            switch kind {
+            case .horsepower where label == "torque": return nil
+            case .torque where label == "power" || label == "horsepower": return nil
+            default: break
+            }
         }
         return (value, String(text[valueRange]), sourceUnit)
     }

@@ -28,7 +28,10 @@ struct TuneResultPresentation: Equatable {
             completion = .incomplete
         } else if tune.purpose == .fh5BuildPlan || tune.request.car.game == .fh5 {
             completion = .plan
-        } else if projectedReport?.requiresInGameConfirmation == true {
+        } else if !hasProjectionReport {
+            completion = .legacyUnavailable
+        } else if tune.projectionReport?.requiresInGameConfirmation == true
+            || projectedReport?.requiresInGameConfirmation == true {
             completion = .plan
         } else if hasProjectionReport, hasUsableNumericOutput {
             completion = .available
