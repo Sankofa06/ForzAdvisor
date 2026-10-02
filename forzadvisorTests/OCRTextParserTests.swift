@@ -306,15 +306,89 @@ final class OCRTextParserTests: XCTestCase {
         }
     }
 
+    func testParserRejectsUnconsumedMeasurementFragmentsAtEveryObservationBoundary() {
+        for (label, value, unit, field) in [
+            ("Power", "100", "hp", OCRInputField.horsepower),
+            ("Torque", "400", "lb-ft", OCRInputField.torque)
+        ] {
+            for suffix in [["200"], [value], ["/", "PS"], ["unknown"]] {
+                let fragments = [label, value, unit] + suffix
+                // Exercise each grouping, from one coalesced observation to
+                // individually split labels, values, units, and residue.
+                for boundaries in 0..<(1 << (fragments.count - 1)) {
+                    var observations = [fragments[0]]
+                    for index in 1..<fragments.count {
+                        if boundaries & (1 << (index - 1)) == 0 {
+                            observations[observations.count - 1] += " " + fragments[index]
+                        } else {
+                            observations.append(fragments[index])
+                        }
+                    }
+                    let draft = OCRTextParser.confirmationDraft(from: observations.map {
+                        OCRTextObservation(text: $0, confidence: 0.95)
+                    })
+                    XCTAssertNil(draft.peakHorsepower, observations.description)
+                    XCTAssertNil(draft.peakTorqueFootPounds, observations.description)
+                    XCTAssertTrue(draft.candidates(for: field).isEmpty, observations.description)
+                    XCTAssertTrue(draft.evidence(for: field).requiresManualCorrection, observations.description)
+                }
+            }
+        }
+    }
+
+    func testParserRejectsUnconsumedOCRAlternativesInEveryMeasurementFragment() {
+        for fragments in [["Power", "100", "hp"], ["Torque", "400", "lb-ft"]] {
+            for index in fragments.indices {
+                for suffix in [" 200", " / PS", " unknown"] {
+                    let observations = fragments.enumerated().map { offset, text in
+                        OCRTextObservation(
+                            text: text,
+                            confidence: 0.95,
+                            candidates: offset == index ? [text + suffix] : []
+                        )
+                    }
+                    let draft = OCRTextParser.confirmationDraft(from: observations)
+                    XCTAssertNil(draft.peakHorsepower, observations.description)
+                    XCTAssertNil(draft.peakTorqueFootPounds, observations.description)
+                }
+            }
+        }
+    }
+
     func testParserKeepsUnrelatedObservationAlternativesSeparate() {
-        let draft = OCRTextParser.confirmationDraft(from: [
-            OCRTextObservation(text: "480 hp", confidence: 0.95),
-            OCRTextObservation(text: "400 lb-ft", confidence: 0.95),
+        let weight = [
             OCRTextObservation(text: "Weight", confidence: 0.95),
             OCRTextObservation(text: "3400", confidence: 0.95, candidates: ["3500"])
+        ]
+        let measurements = [
+            OCRTextObservation(text: "480 hp", confidence: 0.95),
+            OCRTextObservation(text: "400 lb-ft", confidence: 0.95)
+        ]
+        for observations in [measurements + weight, weight + measurements,
+                             [measurements[0]] + weight + [measurements[1]]] {
+            let draft = OCRTextParser.confirmationDraft(from: observations)
+            XCTAssertEqual(draft.peakHorsepower, 480)
+            XCTAssertEqual(draft.peakTorqueFootPounds, 400)
+        }
+    }
+
+    func testParserKeepsRecognizedFieldAlternativesSeparateFromSplitMeasurements() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            OCRTextObservation(text: "Weight", confidence: 0.95),
+            OCRTextObservation(text: "3400", confidence: 0.95, candidates: ["3500"]),
+            OCRTextObservation(text: "Power", confidence: 0.95, candidates: ["Horsepower"]),
+            OCRTextObservation(text: "100", confidence: 0.95, candidates: ["100.0"]),
+            OCRTextObservation(text: "kW", confidence: 0.95),
+            OCRTextObservation(text: "Front", confidence: 0.95),
+            OCRTextObservation(text: "52%", confidence: 0.95, candidates: ["53%"]),
+            OCRTextObservation(text: "Torque", confidence: 0.95),
+            OCRTextObservation(text: "400", confidence: 0.95),
+            OCRTextObservation(text: "Nm", confidence: 0.95)
         ])
-        XCTAssertEqual(draft.peakHorsepower, 480)
-        XCTAssertEqual(draft.peakTorqueFootPounds, 400)
+        XCTAssertEqual(draft.peakHorsepower, 134)
+        XCTAssertEqual(draft.peakTorqueFootPounds, 295)
+        XCTAssertEqual(draft.reviewState(for: .horsepower), .needsCheck)
+        XCTAssertEqual(draft.reviewState(for: .torque), .needsCheck)
     }
 
     func testParserRejectsConflictingSplitMeasurementAlternatives() {
@@ -345,11 +419,12 @@ final class OCRTextParserTests: XCTestCase {
     }
 
     func testParserNeverTruncatesFormattedOrSignedMeasurementTokens() {
-        for token in ["1,500", "1 500", "1\u{00a0}500", "1'500", "12500", "-500", "−500"] {
+        for token in ["1,500", "1 500", "1\u{00a0}500", "1'500", "12500", "+500", "-500", "−500"] {
             for observations in [
                 ["\(token) hp", "\(token) lb-ft"],
                 ["Power", "\(token) hp", "Torque", "\(token) lb-ft"],
-                ["Power \(token) hp", "Torque \(token) lb-ft"]
+                ["Power \(token) hp", "Torque \(token) lb-ft"],
+                ["Power", token, "hp", "Torque", token, "lb-ft"]
             ] {
                 let draft = OCRTextParser.confirmationDraft(from: observations.map {
                     OCRTextObservation(text: $0, confidence: 0.95)

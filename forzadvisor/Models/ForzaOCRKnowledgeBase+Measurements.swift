@@ -61,16 +61,16 @@ extension ForzaOCRKnowledgeBase {
         // The complete capture must support one reading before a narrower
         // window can supply its confidence/evidence. Discarding a conflicting
         // aggregate must never leave an apparently safe adjacent pair behind.
-        let originalWindows = windows.filter { $0.candidateGroups.count == 1 }
         guard let completeWindow = windows.last,
-              let completeMeasurement = firstMeasurement(in: completeWindow.rawText, kind: kind),
+              let completeMeasurement = windows.lazy.compactMap({
+                  firstMeasurement(in: $0.rawText, kind: kind)
+              }).first,
               measurementIsUnambiguous(
                 completeMeasurement.sourceValue,
                 completeMeasurement.sourceUnit,
                 in: completeWindow,
                 kind: kind
-              ),
-              ambiguousMeasurementCandidates(in: originalWindows, kind: kind).isEmpty else {
+              ) else {
             return []
         }
         let candidates: [ParsedCandidate<Int>] = windows.compactMap { window in
@@ -138,68 +138,77 @@ extension ForzaOCRKnowledgeBase {
         in window: ObservationWindow,
         kind: MeasurementKind
     ) -> Bool {
-        window.candidateGroups.allSatisfy { group in
-            guard let primary = group.first else { return true }
-            guard firstMeasurement(in: primary, kind: kind) != nil else {
-                let primaryText = primary.trimmingCharacters(in: .whitespacesAndNewlines)
-                if let unit = kind.sourceUnit(for: primaryText),
-                   kind.convertedValue(1, sourceUnit: unit) != nil {
-                    return unit == sourceUnit && group.allSatisfy {
-                        kind.sourceUnit(for: $0.trimmingCharacters(in: .whitespacesAndNewlines)) == unit
-                    }
-                }
-                if let value = Double(primaryText), value == Double(sourceValue) {
-                    return group.allSatisfy {
-                        Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) == value
-                    }
-                }
-                // Other fields in a combined window do not become alternatives
-                // for this measurement. Preserve split field-label ambiguity.
-                guard containsAny(kind.fieldAliases, in: normalize(primary)) else {
-                    return true
-                }
-                let labelPattern = switch kind {
-                case .horsepower: #"^\s*(?:power|horsepower)\s*[:=]?\s*$"#
-                case .torque: #"^\s*torque\s*[:=]?\s*$"#
-                }
-                return group.allSatisfy {
-                    normalize($0).range(of: labelPattern, options: .regularExpression) != nil
-                }
-            }
-            return group.allSatisfy { candidateText in
-                guard isUnambiguousMeasurementObservation(candidateText),
-                      let alternative = firstMeasurement(in: candidateText, kind: kind) else {
-                    return false
-                }
-                return alternative.sourceUnit == sourceUnit
-                    && alternative.value == Double(sourceValue)
-            }
-        }
-    }
-
-    func isUnambiguousMeasurementObservation(_ text: String) -> Bool {
-        // A measurement observation may include both power and torque, but an
-        // extra number without a recognized unit is an unresolved alternative.
-        // Apply this to original observation groups, never the combined window.
-        let pattern = #"(?i)[\d.,'’+−-]+(?:\s+\d+)*\s*(?:hp|bhp|kw|ft[- ]?lb|lb[- ]?ft|nm)\b"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+        let primary = window.candidateGroups.compactMap(\.first)
+        guard primary.count == window.candidateGroups.count,
+              let value = Double(sourceValue),
+              let signature = measurementObservationSignature(primary, kind: kind) else {
             return false
         }
-        let remaining = regex.stringByReplacingMatches(
-            in: text,
-            range: NSRange(text.startIndex..<text.endIndex, in: text),
-            withTemplate: ""
-        ).replacingOccurrences(
-            of: #"(?i)\b(?:power|horsepower|torque)\b"#,
-            with: "",
-            options: .regularExpression
-        )
-        // Leftover unit markers or unrecognized text can qualify the same value
-        // (for example hp/kW). Only field labels and separators may remain.
+        let reading = "\(sourceUnit.rawValue):\(value)"
+        guard signature.joined().contains(reading),
+              signature.joined().allSatisfy({ $0 == reading || $0 == "unrelated" }) else {
+            return false
+        }
+        for (index, group) in window.candidateGroups.enumerated() {
+            for alternative in group.dropFirst() {
+                var fragments = primary
+                fragments[index] = alternative
+                // Preserve each original observation's field ownership. An
+                // alternative cannot move a number into another field or rely
+                // on a duplicate reading elsewhere to hide missing evidence.
+                guard measurementObservationSignature(fragments, kind: kind) == signature else {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    func measurementObservationSignature(
+        _ fragments: [String],
+        kind: MeasurementKind
+    ) -> [[String]]? {
+        let normalized = fragments.map { normalize($0) }
+        let text = normalized.joined(separator: " ") as NSString
+        let number = #"[0-9]{2,4}(?:\.[0-9]+)?"#
+        // Every nonseparator token must belong to a complete recognized field.
+        // Explicit unrelated fields own their values; arbitrary text and bare
+        // numbers never become unrelated merely because a pair parsed earlier.
+        let fields = [
+            #"(?:(?:power|horsepower)\s*[:=]?\s*)?"# + number + #"\s*(?:hp|bhp|kw)\b"#,
+            #"(?:torque\s*[:=]?\s*)?"# + number + #"\s*(?:ft[- ]?lb|lb[- ]?ft|nm)\b"#,
+            #"(?:front(?:\s+weight)?|(?:weight\s+)?distribution|balance)\s*[:=]?\s*\d{2}(?:\.\d+)?\s*%"#,
+            #"\d{2}(?:\.\d+)?\s*%\s*front\b"#,
+            #"(?:weight|curb(?:\s+weight)?|mass)\s*[:=]?\s*(?:\d{1,2},\d{3}|\d{3,5})(?:\s*(?:lbs?|pounds|kg))?\b"#,
+            #"(?:(?:class|pi)\s*[:=]?\s*)?(?:s1|s2|r|x|d|c|b|a)\s*-?\s*\d{3}\b"#,
+            #"(?:class|pi)\s*[:=]?\s*(?:(?:s1|s2|r|x|d|c|b|a)|\d{3})\b"#,
+            #"(?:drivetrain\s*[:=]?\s*)?(?:awd|rwd|fwd|4wd|(?:all|rear|front)[ -]?wheel(?:[ -]+drive)?)\b"#
+        ]
+        let pattern = #"(?i)(?<![\w.,'’+−-])(?:"# + fields.joined(separator: "|") + ")"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
         let separators = CharacterSet.whitespacesAndNewlines.union(
-            CharacterSet(charactersIn: ":=;/|,()[]-")
+            CharacterSet(charactersIn: ":=;/|,()[]")
         )
-        return remaining.unicodeScalars.allSatisfy(separators.contains)
+        var offset = 0
+        let ranges = normalized.map { fragment -> NSRange in
+            let range = NSRange(location: offset, length: (fragment as NSString).length)
+            offset += range.length + 1
+            return range
+        }
+        var signature = Array(repeating: [String](), count: fragments.count)
+        var end = 0
+        for match in regex.matches(in: text as String, range: NSRange(location: 0, length: text.length)) {
+            let gap = text.substring(with: NSRange(location: end, length: match.range.location - end))
+            guard gap.unicodeScalars.allSatisfy(separators.contains) else { return nil }
+            let reading = firstMeasurement(in: text.substring(with: match.range), kind: kind)
+            let token = reading.map { "\($0.sourceUnit.rawValue):\($0.value)" } ?? "unrelated"
+            for index in ranges.indices where NSIntersectionRange(ranges[index], match.range).length > 0 {
+                signature[index].append(token)
+            }
+            end = NSMaxRange(match.range)
+        }
+        guard text.substring(from: end).unicodeScalars.allSatisfy(separators.contains) else { return nil }
+        return signature
     }
 
     func ambiguousMeasurementCandidates(
