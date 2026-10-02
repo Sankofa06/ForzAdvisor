@@ -180,7 +180,7 @@ extension ForzaOCRKnowledgeBase {
         in text: String,
         kind: MeasurementKind
     ) -> (value: Double, sourceValue: String, sourceUnit: OCRMeasurementUnit)? {
-        let pattern = #"(?i)(?<![\w.+-])(?:(power|horsepower|torque)\s*[:=]?\s*)?(\d{2,4}(?:\.\d+)?)\s*("# + kind.unitsPattern + #")\b"#
+        let pattern = #"(?i)(?<![\w.,'’+−-])(?:(power|horsepower|torque)\s*[:=]?\s*)?([\d.,'’+−-]+(?:\s+\d+)*)\s*("# + kind.unitsPattern + #")\b"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else {
             return nil
         }
@@ -189,6 +189,10 @@ extension ForzaOCRKnowledgeBase {
         for match in regex.matches(in: text, range: range) {
             guard let valueRange = Range(match.range(at: 2), in: text),
                   let unitRange = Range(match.range(at: 3), in: text),
+                  text[valueRange].range(
+                    of: #"^[0-9]{2,4}(?:\.[0-9]+)?$"#,
+                    options: .regularExpression
+                  ) != nil,
                   let value = Double(text[valueRange]),
                   let sourceUnit = kind.sourceUnit(for: String(text[unitRange])) else {
                 return nil

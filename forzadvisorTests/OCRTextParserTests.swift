@@ -236,6 +236,22 @@ final class OCRTextParserTests: XCTestCase {
         XCTAssertEqual(draft.peakTorqueFootPounds, 400)
     }
 
+    func testParserNeverTruncatesFormattedOrSignedMeasurementTokens() {
+        for token in ["1,500", "1 500", "1\u{00a0}500", "1'500", "12500", "-500", "−500"] {
+            for observations in [
+                ["\(token) hp", "\(token) lb-ft"],
+                ["Power", "\(token) hp", "Torque", "\(token) lb-ft"],
+                ["Power \(token) hp", "Torque \(token) lb-ft"]
+            ] {
+                let draft = OCRTextParser.confirmationDraft(from: observations.map {
+                    OCRTextObservation(text: $0, confidence: 0.95)
+                })
+                XCTAssertNil(draft.peakHorsepower, observations.joined(separator: " | "))
+                XCTAssertNil(draft.peakTorqueFootPounds, observations.joined(separator: " | "))
+            }
+        }
+    }
+
     func testParserValidatesMetricMeasurementRangeAfterConversion() {
         let draft = OCRTextParser.confirmationDraft(from: [
             OCRTextObservation(text: "Power 1800 kW", confidence: 0.93),
