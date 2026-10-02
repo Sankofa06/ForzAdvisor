@@ -154,7 +154,7 @@ extension ForzaOCRKnowledgeBase {
                 }
             }
             return group.allSatisfy { candidateText in
-                guard hasOnlyExplicitMeasurementNumbers(in: candidateText),
+                guard isUnambiguousMeasurementObservation(candidateText),
                       let alternative = firstMeasurement(in: candidateText, kind: kind) else {
                     return false
                 }
@@ -164,7 +164,7 @@ extension ForzaOCRKnowledgeBase {
         }
     }
 
-    func hasOnlyExplicitMeasurementNumbers(in text: String) -> Bool {
+    func isUnambiguousMeasurementObservation(_ text: String) -> Bool {
         // A measurement observation may include both power and torque, but an
         // extra number without a recognized unit is an unresolved alternative.
         // Apply this to original observation groups, never the combined window.
@@ -176,8 +176,17 @@ extension ForzaOCRKnowledgeBase {
             in: text,
             range: NSRange(text.startIndex..<text.endIndex, in: text),
             withTemplate: ""
+        ).replacingOccurrences(
+            of: #"(?i)\b(?:power|horsepower|torque)\b"#,
+            with: "",
+            options: .regularExpression
         )
-        return remaining.rangeOfCharacter(from: .decimalDigits) == nil
+        // Leftover unit markers or unrecognized text can qualify the same value
+        // (for example hp/kW). Only field labels and separators may remain.
+        let separators = CharacterSet.whitespacesAndNewlines.union(
+            CharacterSet(charactersIn: ":=;/|,()[]-")
+        )
+        return remaining.unicodeScalars.allSatisfy(separators.contains)
     }
 
     func ambiguousMeasurementCandidates(
