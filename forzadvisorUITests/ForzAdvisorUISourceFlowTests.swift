@@ -2,6 +2,33 @@ import XCTest
 
 extension ForzAdvisorUITests {
     @MainActor
+    func testManualDraftSurvivesGarageAndNewTune() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing"]
+        app.launch()
+        let garage = app.descendants(matching: .any)["garageHome"].firstMatch
+        XCTAssertTrue(garage.waitForExistence(timeout: 15))
+        garage.descendants(matching: .button)["newTuneButton"].tap()
+        app.buttons["manualEntryButton"].tap()
+        let make = app.textFields["manualEntryMakeField"]
+        make.enterText("Mazda", in: app)
+        app.buttons["manualEntryKeyboardDoneButton"].tap()
+        app.navigationBars["Manual Entry"].buttons["Cancel"].tap()
+        app.buttons["Close"].tap()
+        XCTAssertTrue(garage.waitForExistence(timeout: 5))
+        garage.descendants(matching: .button)["newTuneButton"].tap()
+        let resume = app.buttons["resumeNewTuneButton"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 5))
+        resume.tap()
+        XCTAssertTrue(make.waitForExistence(timeout: 5))
+        XCTAssertEqual(make.value as? String, "Mazda")
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "restored-manual-draft"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    @MainActor
     func testTuneSourceOffersOnlySupportedEntries() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-ui-testing"]
@@ -90,6 +117,10 @@ extension ForzAdvisorUITests {
 
         XCTAssertTrue(app.buttons["disciplineButton-road"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["FH5"].waitForExistence(timeout: 5))
+        app.buttons["disciplineButton-road"].tap()
+        let localMethod = app.staticTexts["Local FH5 build planner"]
+        for _ in 0..<8 where !localMethod.exists { app.swipeUp() }
+        XCTAssertTrue(localMethod.waitForExistence(timeout: 5))
         app.navigationBars["Choose Discipline"].buttons["Back"].tap()
 
         XCTAssertTrue(fh5Button.waitForExistence(timeout: 5))

@@ -5,8 +5,8 @@ struct ProviderPreflightView: View {
     let disclosure: TuneProviderDisclosure
 
     var body: some View {
-        LabeledContent("Preferred method") {
-            Text(disclosure.preferredMode.title)
+        LabeledContent(game == .fh5 ? "Method" : "Preferred method") {
+            Text(game == .fh5 ? "Local FH5 build planner" : disclosure.preferredMode.title)
         }
         LabeledContent("Readiness") {
             Text(disclosure.readiness.readinessTitle)

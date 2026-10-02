@@ -1,6 +1,8 @@
 # Honest, Recoverable First Tune
 
-Status: implemented for internal TestFlight review
+Status: integrated for verification; not yet delivered as a replacement TestFlight build
+
+The later issue #4 policy supersedes the original unit and zero-setting rules below: explicit kW/Nm readings may be converted with source and normalized values shown for confirmation; ambiguous readings require manual correction. Empty or unusable results cannot be saved or refined as numeric tunes. FH5 remains plan-only.
 
 ## Intent
 

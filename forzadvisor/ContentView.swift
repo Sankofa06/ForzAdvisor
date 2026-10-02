@@ -40,7 +40,9 @@ struct ContentView: View {
                         savedTunes: savedTunes,
                         onNewTune: {
                             cancelActiveTuneWork()
-                            newTuneSession = TuneDraftSession()
+                            newTuneSession = TuneDraftSession.forNewTuneEntry(
+                                existing: newTuneSession
+                            )
                             step = .newTune
                         },
                         onOpenCopilot: presentCopilot,
@@ -143,7 +145,8 @@ struct ContentView: View {
                         car: input,
                         selection: newTuneSession.selectedDiscipline,
                         providerDisclosure: makeProviderDisclosure(
-                            mode: tuneProviderMode
+                            mode: tuneProviderMode,
+                            game: input.game
                         ),
                         onBack: {
                             validationMissionBack {
@@ -687,7 +690,9 @@ struct ContentView: View {
     private var emptyGarageFirstWinAction: (() -> Void)? {
         guard savedTunes.isEmpty else { return nil }
         return {
-            newTuneSession = TuneDraftSession()
+            newTuneSession = TuneDraftSession.forNewTuneEntry(
+                existing: newTuneSession
+            )
             step = .newTune
         }
     }
