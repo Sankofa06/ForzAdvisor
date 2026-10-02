@@ -236,6 +236,23 @@ final class OCRTextParserTests: XCTestCase {
         XCTAssertEqual(draft.peakTorqueFootPounds, 400)
     }
 
+    func testParserRejectsUnlabeledExtraReadingsWithinMeasurementObservation() {
+        for suffix in ["520 PS", "520", "520 unknown"] {
+            let power = OCRTextParser.confirmationDraft(from: [
+                OCRTextObservation(text: "Power 480 hp / \(suffix)", confidence: 0.95)
+            ])
+            XCTAssertNil(power.peakHorsepower, suffix)
+            XCTAssertTrue(power.candidates(for: .horsepower).isEmpty, suffix)
+            XCTAssertTrue(power.evidence(for: .horsepower).requiresManualCorrection, suffix)
+            let torque = OCRTextParser.confirmationDraft(from: [
+                OCRTextObservation(text: "Torque 400 lb-ft / \(suffix)", confidence: 0.95)
+            ])
+            XCTAssertNil(torque.peakTorqueFootPounds, suffix)
+            XCTAssertTrue(torque.candidates(for: .torque).isEmpty, suffix)
+            XCTAssertTrue(torque.evidence(for: .torque).requiresManualCorrection, suffix)
+        }
+    }
+
     func testParserRejectsUnlabeledAmbiguousMeasurementAlternatives() {
         for alternative in ["480 PS", "480", "520 hp"] {
             let draft = OCRTextParser.confirmationDraft(from: [

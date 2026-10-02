@@ -154,13 +154,30 @@ extension ForzaOCRKnowledgeBase {
                 }
             }
             return group.allSatisfy { candidateText in
-                guard let alternative = firstMeasurement(in: candidateText, kind: kind) else {
+                guard hasOnlyExplicitMeasurementNumbers(in: candidateText),
+                      let alternative = firstMeasurement(in: candidateText, kind: kind) else {
                     return false
                 }
                 return alternative.sourceUnit == sourceUnit
                     && alternative.value == Double(sourceValue)
             }
         }
+    }
+
+    func hasOnlyExplicitMeasurementNumbers(in text: String) -> Bool {
+        // A measurement observation may include both power and torque, but an
+        // extra number without a recognized unit is an unresolved alternative.
+        // Apply this to original observation groups, never the combined window.
+        let pattern = #"(?i)[\d.,'’+−-]+(?:\s+\d+)*\s*(?:hp|bhp|kw|ft[- ]?lb|lb[- ]?ft|nm)\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return false
+        }
+        let remaining = regex.stringByReplacingMatches(
+            in: text,
+            range: NSRange(text.startIndex..<text.endIndex, in: text),
+            withTemplate: ""
+        )
+        return remaining.rangeOfCharacter(from: .decimalDigits) == nil
     }
 
     func ambiguousMeasurementCandidates(
