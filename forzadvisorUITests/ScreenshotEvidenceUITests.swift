@@ -30,7 +30,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         scrollToHittable(availableSettings, in: app)
         XCTAssertTrue(
             app.staticTexts[
-                "No numeric values are being presented yet. This plan keeps the next in-game step explicit."
+                "Numeric values are withheld until more game evidence is confirmed. This plan keeps the next in-game step explicit."
             ].waitForExistence(timeout: 5)
         )
         capture("06-result-available-settings-light", in: app)

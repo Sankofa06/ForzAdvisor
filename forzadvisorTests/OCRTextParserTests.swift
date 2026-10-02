@@ -264,6 +264,33 @@ final class OCRTextParserTests: XCTestCase {
         XCTAssertEqual(draft.peakTorqueFootPounds, 400)
     }
 
+    func testParserRejectsConflictingSplitMeasurementAlternatives() {
+        for observations in [
+            [OCRTextObservation(text: "480", confidence: 0.95),
+             OCRTextObservation(text: "hp", confidence: 0.95, candidates: ["kW"])],
+            [OCRTextObservation(text: "480", confidence: 0.95, candidates: ["520"]),
+             OCRTextObservation(text: "hp", confidence: 0.95)],
+            [OCRTextObservation(text: "400", confidence: 0.95),
+             OCRTextObservation(text: "lb-ft", confidence: 0.95, candidates: ["Nm"])],
+            [OCRTextObservation(text: "400", confidence: 0.95, candidates: ["430"]),
+             OCRTextObservation(text: "lb-ft", confidence: 0.95)]
+        ] {
+            let draft = OCRTextParser.confirmationDraft(from: observations)
+            XCTAssertNil(draft.peakHorsepower)
+            XCTAssertNil(draft.peakTorqueFootPounds)
+        }
+    }
+
+    func testParserAcceptsUnambiguousSplitLabelsValuesAndUnits() {
+        let draft = OCRTextParser.confirmationDraft(from: [
+            "Power", "100", "kW", "Torque", "400", "Nm"
+        ].map { OCRTextObservation(text: $0, confidence: 0.95) })
+        XCTAssertEqual(draft.peakHorsepower, 134)
+        XCTAssertEqual(draft.peakTorqueFootPounds, 295)
+        XCTAssertEqual(draft.reviewState(for: .horsepower), .needsCheck)
+        XCTAssertEqual(draft.reviewState(for: .torque), .needsCheck)
+    }
+
     func testParserNeverTruncatesFormattedOrSignedMeasurementTokens() {
         for token in ["1,500", "1 500", "1\u{00a0}500", "1'500", "12500", "-500", "−500"] {
             for observations in [

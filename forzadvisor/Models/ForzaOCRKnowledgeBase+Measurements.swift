@@ -60,7 +60,8 @@ extension ForzaOCRKnowledgeBase {
     ) -> [ParsedCandidate<Int>] {
         // Check all observations before selecting an explicit reading. Otherwise
         // filtering can hide a conflicting unitless or unsupported reading.
-        guard ambiguousMeasurementCandidates(in: windows, kind: kind).isEmpty else {
+        let originalWindows = windows.filter { $0.candidateGroups.count == 1 }
+        guard ambiguousMeasurementCandidates(in: originalWindows, kind: kind).isEmpty else {
             return []
         }
         let candidates: [ParsedCandidate<Int>] = windows.compactMap { window in
@@ -131,6 +132,18 @@ extension ForzaOCRKnowledgeBase {
         window.candidateGroups.allSatisfy { group in
             guard let primary = group.first else { return true }
             guard firstMeasurement(in: primary, kind: kind) != nil else {
+                let primaryText = primary.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let unit = kind.sourceUnit(for: primaryText),
+                   kind.convertedValue(1, sourceUnit: unit) != nil {
+                    return unit == sourceUnit && group.allSatisfy {
+                        kind.sourceUnit(for: $0.trimmingCharacters(in: .whitespacesAndNewlines)) == unit
+                    }
+                }
+                if let value = Double(primaryText), value == Double(sourceValue) {
+                    return group.allSatisfy {
+                        Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) == value
+                    }
+                }
                 // Other fields in a combined window do not become alternatives
                 // for this measurement. Preserve split field-label ambiguity.
                 guard containsAny(kind.fieldAliases, in: normalize(primary)) else {
