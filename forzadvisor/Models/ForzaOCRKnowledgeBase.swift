@@ -66,6 +66,7 @@ extension ForzaOCRKnowledgeBase {
         var confidence: Double
         var boundingBox: CGRect?
         var candidates: [String]
+        var candidateGroups: [[String]]
     }
 
     struct ParsedCandidate<Value> {
@@ -103,7 +104,8 @@ extension ForzaOCRKnowledgeBase {
                 normalizedText: normalize(joined),
                 confidence: min(first.confidence, second.confidence),
                 boundingBox: first.boundingBox?.union(second.boundingBox ?? first.boundingBox ?? .zero),
-                candidates: (first.candidates + second.candidates + [joined]).deduplicated()
+                candidates: (first.candidates + second.candidates + [joined]).deduplicated(),
+                candidateGroups: [first.candidates, second.candidates]
             ))
         }
 
@@ -114,7 +116,8 @@ extension ForzaOCRKnowledgeBase {
                 normalizedText: normalize(allText),
                 confidence: sorted.map(\.confidence).min() ?? 0,
                 boundingBox: nil,
-                candidates: sorted.flatMap(\.candidates).deduplicated()
+                candidates: sorted.flatMap(\.candidates).deduplicated(),
+                candidateGroups: sorted.map(\.candidates)
             ))
         }
 
@@ -127,7 +130,8 @@ extension ForzaOCRKnowledgeBase {
             normalizedText: normalize(observation.text),
             confidence: observation.confidence,
             boundingBox: observation.boundingBox,
-            candidates: observation.candidates
+            candidates: observation.candidates,
+            candidateGroups: [observation.candidates]
         )
     }
 

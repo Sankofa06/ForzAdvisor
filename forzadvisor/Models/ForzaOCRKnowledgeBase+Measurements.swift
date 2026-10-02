@@ -128,15 +128,25 @@ extension ForzaOCRKnowledgeBase {
         in window: ObservationWindow,
         kind: MeasurementKind
     ) -> Bool {
-        window.candidates.allSatisfy { candidateText in
-            if let alternative = firstMeasurement(in: candidateText, kind: kind) {
+        window.candidateGroups.allSatisfy { group in
+            guard let primary = group.first else { return true }
+            guard firstMeasurement(in: primary, kind: kind) != nil else {
+                // Other fields in a combined window do not become alternatives
+                // for this measurement. Preserve split field-label ambiguity.
+                guard containsAny(kind.fieldAliases, in: normalize(primary)) else {
+                    return true
+                }
+                return group.allSatisfy {
+                    containsAny(kind.fieldAliases, in: normalize($0))
+                }
+            }
+            return group.allSatisfy { candidateText in
+                guard let alternative = firstMeasurement(in: candidateText, kind: kind) else {
+                    return false
+                }
                 return alternative.sourceUnit == sourceUnit
                     && alternative.value == Double(sourceValue)
             }
-            return firstCapture(
-                in: candidateText,
-                pattern: kind.ambiguousPattern
-            ) == nil
         }
     }
 
