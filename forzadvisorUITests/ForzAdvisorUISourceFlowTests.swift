@@ -118,9 +118,13 @@ extension ForzAdvisorUITests {
         XCTAssertTrue(app.buttons["disciplineButton-road"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["FH5"].waitForExistence(timeout: 5))
         app.buttons["disciplineButton-road"].tap()
-        let localMethod = app.staticTexts["Local FH5 build planner"]
+        let localMethod = app.staticTexts["Method, Local FH5 build planner"]
         for _ in 0..<8 where !localMethod.exists { app.swipeUp() }
         XCTAssertTrue(localMethod.waitForExistence(timeout: 5))
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = "fh5-local-planning-method"
+        attachment.lifetime = .keepAlways
+        add(attachment)
         app.navigationBars["Choose Discipline"].buttons["Back"].tap()
 
         XCTAssertTrue(fh5Button.waitForExistence(timeout: 5))
