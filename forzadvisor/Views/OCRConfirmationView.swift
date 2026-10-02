@@ -148,7 +148,7 @@ struct OCRConfirmationView: View {
             } else {
                 TextField(
                     "Horsepower · Optional",
-                    text: optionalNumberText($draft.peakHorsepower)
+                    text: optionalNumberText($draft.peakHorsepower, correctedField: .horsepower)
                 )
                 .keyboardType(.numberPad)
             }
@@ -157,11 +157,11 @@ struct OCRConfirmationView: View {
             } else {
                 TextField(
                     "Torque · Optional",
-                    text: optionalNumberText($draft.peakTorqueFootPounds)
+                    text: optionalNumberText($draft.peakTorqueFootPounds, correctedField: .torque)
                 )
                 .keyboardType(.numberPad)
             }
-            Text("OCR accepts only explicit hp and lb-ft values. kW, Nm, and values without a supported unit stay blank for manual entry.")
+            Text("OCR accepts explicit hp and lb-ft values. Explicit kW and Nm readings are converted for your confirmation. Ambiguous values stay blank for manual correction.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

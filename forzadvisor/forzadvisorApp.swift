@@ -33,6 +33,8 @@ struct forzadvisorApp: App {
 #if DEBUG
             if CommandLine.arguments.contains("-ui-test-capture-actions") {
                 TuneCaptureActionUITestHarness()
+            } else if CommandLine.arguments.contains("-ui-test-ocr-manual-values") {
+                OCRManualValuesUITestHarness()
             } else {
                 ContentView()
             }
