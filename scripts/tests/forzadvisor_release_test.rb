@@ -217,6 +217,11 @@ class ForzAdvisorReleaseTest < Minitest::Test
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
     end
     with_config do |data, path|
+      data["legacy_xcode_cloud"]["status"] = "ACTIVE"
+      File.write(path, JSON.generate(data))
+      assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
+    end
+    with_config do |data, path|
       data["screenshots"]["ordered_files"] << data["screenshots"]["ordered_files"].first
       File.write(path, JSON.generate(data))
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
@@ -402,6 +407,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_legacy_cloud_coordinator_remains_testable_but_is_not_exposed_by_cli
+    assert_equal "DISABLED_DO_NOT_USE", @config.fetch("legacy_xcode_cloud", "status")
     tag = "release-legacy"
     repository_id = @config.fetch("legacy_xcode_cloud", "repository_id")
     workflow_id = @config.fetch("legacy_xcode_cloud", "workflows", "verify", "id")
