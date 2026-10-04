@@ -54,7 +54,7 @@ module ForzAdvisorRelease
       "release.export_compliance" => %w[uses_non_exempt_encryption],
       "public_urls" => %w[marketing privacy support],
       "xcode" => %w[project app_target local_scheme cloud_scheme test_plan privacy_manifest],
-      "legacy_xcode_cloud" => %w[product_id repository_id workflows],
+      "legacy_xcode_cloud" => %w[status product_id repository_id workflows],
       "legacy_xcode_cloud.workflows" => %w[verify release_candidate],
       "legacy_xcode_cloud.workflows.verify" => %w[id name],
       "legacy_xcode_cloud.workflows.release_candidate" => %w[id name],
@@ -81,6 +81,7 @@ module ForzAdvisorRelease
       release.privacy.human_attestation_date
       public_urls.marketing public_urls.privacy public_urls.support
       xcode.project xcode.app_target xcode.local_scheme xcode.cloud_scheme xcode.test_plan xcode.privacy_manifest
+      legacy_xcode_cloud.status
       legacy_xcode_cloud.workflows.verify.id legacy_xcode_cloud.workflows.verify.name
       legacy_xcode_cloud.workflows.release_candidate.id legacy_xcode_cloud.workflows.release_candidate.name
       ci.provider ci.authority ci.verify_workflow ci.verify_job ci.runner ci.runner_os_version ci.runner_os_build ci.xcode_version ci.xcode_build
@@ -119,7 +120,7 @@ module ForzAdvisorRelease
     private
 
     def validate!
-      raise ConfigurationError, "unsupported release config schema" unless data["schema_version"] == 2
+      raise ConfigurationError, "unsupported release config schema" unless data["schema_version"] == 3
 
       REQUIRED_PATHS.each do |path|
         value = path.split(".").reduce(data) { |item, key| item.is_a?(Hash) ? item[key] : nil }
@@ -144,6 +145,7 @@ module ForzAdvisorRelease
         value = path.empty? ? data : path.split(".").reduce(data) { |item, key| item.fetch(key) }
         raise ConfigurationError, "unexpected or missing config keys at #{path.empty? ? 'root' : path}" unless value.is_a?(Hash) && value.keys.sort == expected.sort
       end
+      raise ConfigurationError, "legacy Xcode Cloud must remain disabled" unless fetch("legacy_xcode_cloud", "status") == "DISABLED_DO_NOT_USE"
       uuid = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
       %w[product_id repository_id].each { |key| raise ConfigurationError, "invalid legacy_xcode_cloud.#{key}" unless fetch("legacy_xcode_cloud", key).match?(uuid) }
       %w[version_id review_submission_id].each { |key| raise ConfigurationError, "invalid app_store.#{key}" unless fetch("app_store", key).match?(uuid) }
