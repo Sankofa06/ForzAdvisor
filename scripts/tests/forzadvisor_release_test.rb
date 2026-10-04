@@ -126,7 +126,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
     assert_equal false, @config.fetch("release", "privacy", "tracking")
-    assert_equal 2, @config.fetch("schema_version")
+    assert_equal 3, @config.fetch("schema_version")
     assert_equal "GITHUB_ACTIONS", @config.fetch("ci", "provider")
     assert_equal "VERIFICATION_ONLY", @config.fetch("ci", "authority")
     assert_equal ".github/workflows/release-verify.yml", @config.fetch("ci", "verify_workflow")
