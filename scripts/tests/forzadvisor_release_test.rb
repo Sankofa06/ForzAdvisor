@@ -410,17 +410,21 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal "DISABLED_DO_NOT_USE", @config.fetch("legacy_xcode_cloud", "status")
     api = FakeAPI.new({})
     Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StateStore.new(directory: directory)
       coordinator = ForzAdvisorRelease::CloudCoordinator.new(
         config: @config,
         api: api,
         git: FakeGitRepository.new,
-        store: ForzAdvisorRelease::StateStore.new(directory: directory)
+        store: store
       )
 
       start_error = assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.start(ref: "release-legacy") }
       assert_match(/legacy Xcode Cloud is disabled/, start_error.message)
       resume_error = assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume }
       assert_match(/legacy Xcode Cloud is disabled/, resume_error.message)
+      store.save("phase" => "candidate_start_intent", "ref" => "release-legacy")
+      status_error = assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.status }
+      assert_match(/legacy Xcode Cloud is disabled/, status_error.message)
       assert_empty api.requests, "retired coordinator entry points must stop before provider calls"
     end
   end
