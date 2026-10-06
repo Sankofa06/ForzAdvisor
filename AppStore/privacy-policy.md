@@ -12,7 +12,7 @@ Camera photos and imported screenshots are processed on device with Apple Vision
 
 The app does not include or download a bundled car roster. Car identity and performance information used for a new tune comes from you.
 
-Saved tunes, notes, thumbnails, preferences, and validation records stay on your device unless you explicitly share an eligible export through the iOS system share sheet.
+Saved tunes, notes, thumbnails, preferences, and validation records are stored locally on your device. As described above, when you use Anthropic API mode, the app sends confirmed car details, current tune details for adjustments, and relevant player notes to Anthropic. If iCloud Backup is enabled, Apple may include app data in that backup.
 
 ## Optional Remote Tune Generation
 
