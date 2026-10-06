@@ -49,7 +49,7 @@ Local app data, such as saved tunes, records, and preferences, is stored in the 
 
 - deleting saved tunes and their local thumbnails;
 - deleting supported local validation and review records;
-- clearing the optional Anthropic API key before uninstalling: open Settings, select Anthropic API mode if needed, then tap Clear Key;
+- clearing the optional Anthropic API key before uninstalling: open Settings, under Preferred generation method select API if needed, then tap Clear Key;
 - disabling camera access in iOS Settings; and
 - choosing not to grant photo or camera access and using manual entry instead.
 
