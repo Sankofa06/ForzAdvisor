@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>ForzAdvisor — Local documentation</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1c2934;
+        --muted: #5d6b74;
+        --paper: #f4f3ee;
+        --card: #fffefa;
+        --line: #d8dfdf;
+        --blue: #194e63;
+        --copper: #8b4528;
+        --shadow: 0 12px 34px rgb(28 41 52 / 8%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      }
+      a {
+        color: var(--blue);
+        text-underline-offset: .18em;
+      }
+      a:hover {
+        color: var(--copper);
+      }
+      a:focus-visible {
+        outline: 3px solid var(--copper);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+      .skip-link {
+        position: absolute;
+        left: 14px;
+        top: -60px;
+        z-index: 2;
+        padding: 8px 12px;
+        background: white;
+      }
+      .skip-link:focus {
+        top: 12px;
+      }
+      .page {
+        width: min(1060px,calc(100% - 36px));
+        margin: 0 auto;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+        padding: 24px 0;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+      }
+      .mark {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 11px;
+        background: var(--blue);
+        color: white;
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .brand strong,  .brand small {
+        display: block;
+      }
+      .brand strong {
+        line-height: 1.2;
+      }
+      .brand small {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .home-link {
+        font-size: 14px;
+        font-weight: 650;
+      }
+      main {
+        padding: 12px 0 60px;
+      }
+      .hero {
+        padding: clamp(24px,5vw,48px);
+        border: 1px solid #cfdbda;
+        border-radius: 22px;
+        background: linear-gradient(125deg,#e7efee,#fbf6ec);
+        box-shadow: var(--shadow);
+      }
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--copper);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+      }
+      h1 {
+        max-width: 800px;
+        margin: 0;
+        font-size: clamp(36px,6vw,58px);
+        line-height: 1.05;
+        letter-spacing: -.045em;
+      }
+      .lede {
+        max-width: 760px;
+        margin: 16px 0 0;
+        color: var(--muted);
+        font-size: 18px;
+      }
+      .badge {
+        display: inline-block;
+        margin-top: 23px;
+        padding: 5px 10px;
+        border: 1px solid #bdd0ce;
+        border-radius: 99px;
+        background: rgb(255 255 255 / 72%);
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 750;
+      }
+      .notice {
+        margin: 16px 0 0;
+        padding: 12px 15px;
+        border-left: 3px solid var(--copper);
+        background: rgb(255 255 255 / 62%);
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .jump {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin: 20px 0 42px;
+      }
+      .jump a {
+        display: block;
+        padding: 7px 11px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--card);
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 650;
+        text-decoration: none;
+      }
+      .jump a:hover {
+        border-color: var(--blue);
+      }
+      section {
+        margin-top: 38px;
+        scroll-margin-top: 18px;
+      }
+      .section-head {
+        margin-bottom: 15px;
+      }
+      h2 {
+        margin: 0;
+        font-size: 25px;
+        line-height: 1.2;
+        letter-spacing: -.02em;
+      }
+      .section-head p {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 14px;
+      }
+      .card {
+        min-width: 0;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--card);
+      }
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 17px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+      }
+      .card p+p {
+        margin-top: 9px;
+      }
+      .link-list {
+        display: grid;
+        grid-template-columns: repeat(2,minmax(0,1fr));
+        gap: 9px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .link-list a {
+        display: block;
+        height: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--card);
+        text-decoration: none;
+      }
+      .link-list a span,  .link-list a small {
+        display: block;
+      }
+      .link-list a span {
+        font-weight: 700;
+      }
+      .link-list a small {
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .code-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .code-list li {
+        padding: 5px 9px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #f7f8f6;
+        color: #34434c;
+        font: 13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;
+      }
+      .record-note {
+        margin-top: 14px;
+        padding: 15px 18px;
+        border: 1px solid #e7d9cf;
+        border-radius: 12px;
+        background: #fbf2ec;
+      }
+      .record-note p {
+        margin: 0;
+      }
+      .record-note p+p {
+        margin-top: 7px;
+      }
+      footer {
+        margin-top: 42px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+      }
+      @media(max-width:650px) {
+        .page {
+          width: min(calc(100% - 28px),1060px);
+        }
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .grid,  .link-list {
+          grid-template-columns: 1fr;
+        }
+        .jump {
+          margin-bottom: 32px;
+        }
+        .hero {
+          border-radius: 16px;
+        }
+      }
+      @media(prefers-reduced-motion:reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+      }
+      @media print {
+        body {
+          background: white;
+        }
+        .page {
+          width: 100%;
+        }
+        .jump {
+          display: none;
+        }
+        .hero,  .card,  .link-list a,  .record-note {
+          box-shadow: none;
+          break-inside: avoid;
+        }
+        a {
+          color: inherit;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="page">
+      <header class="topbar">
+        <div class="brand">
+          <span class="mark" aria-hidden="true">F</span>
+          <span>
+            <strong>ForzAdvisor</strong>
+            <small>Offline project guide</small>
+          </span>
+        </div>
+        <a class="home-link" href="../README.md">Repository home README</a>
+      </header>
+      <main id="main-content">
+        <section class="hero" id="overview" aria-labelledby="page-title">
+          <p class="eyebrow">Local guide · source-linked</p>
+          <h1 id="page-title">A guide to the project.</h1>
+          <p class="lede">An unofficial, offline-first iPhone companion for turning user-supplied racing-game car details into tuning guidance.</p>
+          <span class="badge">Open as a local file · no server required</span>
+          <p class="notice">This is a navigation page, not a live status report. The checked-out source, repository instructions, and linked records remain authoritative.</p>
+        </section>
+        <nav class="jump" aria-label="On this page">
+          <a href="#map">Project map</a>
+          <a href="#workflow">Workflow</a>
+          <a href="#records">Release and test records</a>
+        </nav>
+        <section id="map" aria-labelledby="map-title">
+          <div class="section-head"><h2 id="map-title">Project map</h2><p>Start with the repository's own source documents.</p></div>
+          <div class="grid">
+            <article class="card">
+              <h3>How the repository is organized</h3>
+              <p>App code, unit tests, UI tests, and release documentation are kept in separate repository areas. The documentation index covers product, support, and policy. Follow the linked release workflow and checklist for release guidance.</p>
+              <ul class="code-list">
+                <li>forzadvisor/</li>
+                <li>forzadvisorTests/</li>
+                <li>forzadvisorUITests/</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Guides and contracts</h3>
+              <ul class="link-list">
+                <li>
+                  <a href="../docs/index.md">
+                    <span>Documentation index</span>
+                    <small>Product overview and documentation links</small>
+                  </a>
+                </li>
+                <li>
+                  <a href="../AGENTS.md">
+                    <span>Repository instructions</span>
+                    <small>Repository and verification rules</small>
+                  </a>
+                </li>
+                <li>
+                  <a href="../docs/specs/release-workflow.md">
+                    <span>Release workflow</span>
+                    <small>Verification, delivery, and rollback contract</small>
+                  </a>
+                </li>
+                <li>
+                  <a href="../scripts/release">
+                    <span>Release command entry point</span>
+                    <small>Inspect the checked-out script and its help</small>
+                  </a>
+                </li>
+              </ul>
+            </article>
+          </div>
+        </section>
+        <section id="workflow" aria-labelledby="workflow-title">
+          <div class="section-head"><h2 id="workflow-title">Workflow</h2><p>Use the instructions that match the branch you have open.</p></div>
+          <article class="card">
+            <p>The documented local preflight begins with <code>scripts/release preflight</code>. See the release workflow for exact options and the meaning of each gate. A command or release result is not implied by this page.</p>
+            <ul class="link-list" style="margin-top:14px">
+              <li>
+                <a href="../docs/specs/release-workflow.md">
+                  <span>Release workflow</span>
+                  <small>Gate order and evidence requirements</small>
+                </a>
+              </li>
+              <li>
+                <a href="../scripts/release">
+                  <span>Release script</span>
+                  <small>Repository entry point</small>
+                </a>
+              </li>
+              <li>
+                <a href="../AGENTS.md">
+                  <span>Repository instructions</span>
+                  <small>Source and verification boundaries</small>
+                </a>
+              </li>
+            </ul>
+          </article>
+        </section>
+        <section id="records" aria-labelledby="records-title">
+          <div class="section-head"><h2 id="records-title">Release and test records</h2><p>Find the record that matches the source and build under review.</p></div>
+          <article class="card">
+            <p>Start at the release checklist for the candidate record. Dated release records are under AppStore/releases/ and verification reports under docs/verification/. Confirm that the exact revision and build match the work you are checking.</p>
+            <ul class="code-list">
+              <li>AppStore/releases/</li>
+              <li>docs/verification/</li>
+            </ul>
+            <div class="record-note"><p><strong>Check the record itself.</strong> Confirm its revision, scope, and observed result before relying on it.</p><p>This page makes no claim about the current test, beta, or release state.</p></div>
+            <ul class="link-list" style="margin-top:14px">
+              <li>
+                <a href="../AppStore/release-checklist.md">
+                  <span>Release checklist</span>
+                  <small>Entry point for candidate and release evidence</small>
+                </a>
+              </li>
+              <li>
+                <a href="../docs/specs/release-workflow.md">
+                  <span>Release workflow</span>
+                  <small>Explains how evidence is recorded</small>
+                </a>
+              </li>
+            </ul>
+          </article>
+        </section>
+        <footer>Static HTML with inline styling and local file links. It makes no network requests and needs no login or server. Markdown links open the repository source; use the checked-out files for current details.</footer>
+      </main>
+    </div>
+  </body>
+</html>
