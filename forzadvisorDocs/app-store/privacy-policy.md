@@ -12,15 +12,15 @@ Camera photos and imported screenshots are processed on device with Apple Vision
 
 The app does not include or download a bundled car roster. Car identity and performance information used for a new tune comes from you.
 
-Saved tunes, notes, thumbnails, preferences, and validation records are stored locally on your device. As described above, when you use Anthropic API mode, the app sends confirmed car details, current tune details for adjustments, and relevant player notes to Anthropic. If iCloud Backup is enabled, Apple may include app data in that backup.
+Saved tunes, notes, thumbnails, preferences, and validation records are stored locally on your device. Player notes saved with a tune are not sent in Anthropic API requests. When you request a tune in Anthropic API mode, ForzAdvisor sends confirmed car details and the selected discipline to Anthropic. For an adjustment, the app sends the previous tune and requested adjustment. If iCloud Backup is enabled, Apple may include app data in that backup.
 
 ## Optional Remote Tune Generation
 
 Offline formula tuning is the default and requires no account or API key.
 
-If you select Anthropic API mode and save your own API key, ForzAdvisor sends confirmed car details, the selected discipline, current tune details for adjustments, and relevant player notes to Anthropic to generate or refine a tune. Camera photos and imported screenshots are not sent by ForzAdvisor.
+When you request a tune in Anthropic API mode and have saved your own API key, ForzAdvisor sends confirmed car details and the selected discipline to Anthropic. For an adjustment, the app sends the previous tune and requested adjustment. Player notes saved with a tune are not sent in these API requests. Camera photos and imported screenshots are not sent by ForzAdvisor.
 
-The API key is stored in the iOS Keychain. You can remove it from Settings at any time.
+The API key is stored in the iOS Keychain. For each remote request, ForzAdvisor sends it to Anthropic in an authentication header. You can remove it from Settings at any time.
 
 Optional Apple on-device model assistance is designed to run on the device and falls back to offline formulas when unavailable or unsuccessful.
 
