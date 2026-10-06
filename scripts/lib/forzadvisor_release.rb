@@ -1374,6 +1374,7 @@ module ForzAdvisorRelease
       @store.save(intent.merge("phase" => "verify_running", "verify_run_id" => run.fetch("id")))
     end
     def status
+      ensure_legacy_cloud_enabled!
       advance(@store.load, false)
     end
     def resume
