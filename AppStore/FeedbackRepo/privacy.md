@@ -45,11 +45,11 @@ ForzAdvisor:
 
 ## Data Retention And Controls
 
-Local information remains on your device until you delete the related saved tune or record, remove the API key, or uninstall the app. Available controls include:
+Local app data, such as saved tunes, records, and preferences, is stored in the app's container on your device and is removed when you delete the app. The optional Anthropic API key is stored separately in the iOS Keychain and may remain after the app is removed. Available controls include:
 
 - deleting saved tunes and their local thumbnails;
 - deleting supported local validation and review records;
-- clearing the optional Anthropic API key in Settings;
+- clearing the optional Anthropic API key before uninstalling: open Settings, select Anthropic API mode if needed, then tap Clear Key;
 - disabling camera access in iOS Settings; and
 - choosing not to grant photo or camera access and using manual entry instead.
 
