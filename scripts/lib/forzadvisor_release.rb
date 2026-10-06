@@ -1352,6 +1352,7 @@ module ForzAdvisorRelease
       @config, @api, @git, @store = config, api, git, store
     end
     def start(ref: nil)
+      ensure_legacy_cloud_enabled!
       raise PreflightError, "cloud-start requires --ref RELEASE_TAG" if ref.to_s.empty?
       proof = @git.assert_release_state!(@config, ref: ref, require_tag: true)
       previous = @store.active? ? @store.load : nil
@@ -1376,9 +1377,15 @@ module ForzAdvisorRelease
       advance(@store.load, false)
     end
     def resume
+      ensure_legacy_cloud_enabled!
       advance(@store.load, true)
     end
     private
+    def ensure_legacy_cloud_enabled!
+      return unless @config.fetch("legacy_xcode_cloud", "status") == "DISABLED_DO_NOT_USE"
+
+      raise PreflightError, "legacy Xcode Cloud is disabled by repository policy"
+    end
     def advance(state, mutate)
       case state["phase"]
       when "candidate_start_intent" then start_candidate(state)
