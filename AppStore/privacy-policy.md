@@ -12,15 +12,15 @@ Camera photos and imported screenshots are processed on device with Apple Vision
 
 The app does not include or download a bundled car roster. Car identity and performance information used for a new tune comes from you.
 
-Saved tunes, notes, thumbnails, preferences, and validation records stay on your device unless you explicitly share an eligible export through the iOS system share sheet.
+Saved tunes, notes, thumbnails, preferences, and validation records are stored locally on your device. Player notes saved with a tune are not sent in Anthropic API requests. When you request a tune in Anthropic API mode, ForzAdvisor sends confirmed car details and the selected discipline to Anthropic. For an adjustment, the app sends the previous tune and requested adjustment. If iCloud Backup is enabled, Apple may include app data in that backup.
 
 ## Optional Remote Tune Generation
 
 Offline formula tuning is the default and requires no account or API key.
 
-If you select Anthropic API mode and save your own API key, ForzAdvisor sends confirmed car details, the selected discipline, current tune details for adjustments, and relevant player notes to Anthropic to generate or refine a tune. Camera photos and imported screenshots are not sent by ForzAdvisor.
+When you request a tune in Anthropic API mode and have saved your own API key, ForzAdvisor sends confirmed car details and the selected discipline to Anthropic. For an adjustment, the app sends the previous tune and requested adjustment. Player notes saved with a tune are not sent in these API requests. Camera photos and imported screenshots are not sent by ForzAdvisor.
 
-The API key is stored in the iOS Keychain. You can remove it from Settings at any time.
+The API key is stored in the iOS Keychain. For each remote request, ForzAdvisor sends it to Anthropic in an authentication header. You can remove it from Settings at any time.
 
 Optional Apple on-device model assistance is designed to run on the device and falls back to offline formulas when unavailable or unsuccessful.
 
@@ -45,11 +45,11 @@ ForzAdvisor:
 
 ## Data Retention And Controls
 
-Local information remains on your device until you delete the related saved tune or record, remove the API key, or uninstall the app. Available controls include:
+Local app data, such as saved tunes, records, and preferences, is stored in the app's container on your device and is removed from the device when you delete the app. A copy included in a device backup may remain in that backup after app removal. The optional Anthropic API key is stored separately in the iOS Keychain and may remain after the app is removed. Available controls include:
 
 - deleting saved tunes and their local thumbnails;
 - deleting supported local validation and review records;
-- clearing the optional Anthropic API key in Settings;
+- clearing the optional Anthropic API key before uninstalling: open Settings, under Preferred generation method select API if needed, then tap Clear Key;
 - disabling camera access in iOS Settings; and
 - choosing not to grant photo or camera access and using manual entry instead.
 
