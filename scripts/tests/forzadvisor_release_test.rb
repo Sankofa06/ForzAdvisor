@@ -406,26 +406,22 @@ class ForzAdvisorReleaseTest < Minitest::Test
     refute_match(/^\s+pull_request:/, workflow)
   end
 
-  def test_legacy_cloud_coordinator_remains_testable_but_is_not_exposed_by_cli
+  def test_legacy_cloud_coordinator_start_and_resume_fail_closed_before_provider_calls
     assert_equal "DISABLED_DO_NOT_USE", @config.fetch("legacy_xcode_cloud", "status")
-    tag = "release-legacy"
-    repository_id = @config.fetch("legacy_xcode_cloud", "repository_id")
-    workflow_id = @config.fetch("legacy_xcode_cloud", "workflows", "verify", "id")
-    responses = {
-      "/v1/scmRepositories/#{repository_id}/gitReferences" => { "data" => [{ "id" => "legacy-ref", "attributes" => { "kind" => "TAG", "canonicalName" => "refs/tags/#{tag}" } }] },
-      "/v1/ciWorkflows/#{workflow_id}/buildRuns" => { "data" => [] },
-      ["POST", "/v1/ciBuildRuns"] => { "data" => { "id" => "legacy-run" } }
-    }
+    api = FakeAPI.new({})
     Dir.mktmpdir do |directory|
       coordinator = ForzAdvisorRelease::CloudCoordinator.new(
         config: @config,
-        api: FakeAPI.new(responses),
+        api: api,
         git: FakeGitRepository.new,
         store: ForzAdvisorRelease::StateStore.new(directory: directory)
       )
-      state = coordinator.start(ref: tag)
-      assert_equal "verify_running", state["phase"]
-      assert_equal "legacy-run", state["verify_run_id"]
+
+      start_error = assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.start(ref: "release-legacy") }
+      assert_match(/legacy Xcode Cloud is disabled/, start_error.message)
+      resume_error = assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume }
+      assert_match(/legacy Xcode Cloud is disabled/, resume_error.message)
+      assert_empty api.requests, "retired coordinator entry points must stop before provider calls"
     end
   end
 
