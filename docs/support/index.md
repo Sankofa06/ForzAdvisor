@@ -32,7 +32,7 @@ The bundled FH5/FH6 roster and reviewed stock catalog were removed. Use photo, s
 
 No. Camera photos and imported screenshots are processed on device with Apple Vision OCR. If you save the resulting tune, the app may keep a small local thumbnail on your device.
 
-Optional Anthropic API mode sends confirmed text details and notes, not the source image.
+In optional Anthropic API mode, a new-tune request sends confirmed car details and the selected discipline; an adjustment sends the previous tune and requested adjustment. Saved player notes, camera photos, and imported screenshots are not sent in these requests.
 
 ### What does FH5 produce?
 
