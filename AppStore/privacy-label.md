@@ -14,7 +14,7 @@ This file records the answers published in App Store Connect for ForzAdvisor 1.4
 
 ## Operational interpretation
 
-ForzAdvisor stores user-entered gameplay details, notes, tunes, thumbnails, and optional validation content locally. Optional Anthropic API mode sends confirmed text details and relevant notes to Anthropic only when the user selects that provider; source photos and screenshots are not sent by ForzAdvisor. The app has no advertising or analytics SDK and does not track users across apps or websites.
+ForzAdvisor stores user-entered gameplay details, notes, tunes, thumbnails, and optional validation content locally. When you request a tune in Anthropic API mode, ForzAdvisor sends confirmed car details and the selected discipline to Anthropic. For an adjustment, it sends the previous tune and requested adjustment. Player notes saved with a tune are not sent in these API requests. For each remote request, ForzAdvisor sends the saved API key to Anthropic in an authentication header. Source photos and imported screenshots are not sent by ForzAdvisor. The app has no advertising or analytics SDK and does not track users across apps or websites.
 
 ## Release gate
 
