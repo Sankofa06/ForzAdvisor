@@ -120,9 +120,9 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
-    assert_equal "88", @config.fetch("release", "source_build_number")
+    assert_equal "89", @config.fetch("release", "source_build_number")
     assert_equal "87", @config.fetch("release", "current_app_store_build_number")
-    assert_equal "release-1.41.2-testflight-88-3", @config.fetch("repository", "release_ref")
+    assert_equal "release-1.41.2-testflight-89-1", @config.fetch("repository", "release_ref")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
@@ -140,7 +140,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal "24G830", @config.fetch("stable_runner", "macos_build")
     assert_equal "26.2", @config.fetch("stable_runner", "sdk_versions", "iOS")
     assert_equal ["arm64"], @config.fetch("stable_runner", "architectures", "iOS")
-    assert_equal "automatic", @config.fetch("stable_runner", "signing", "mode")
+    assert_equal "manual", @config.fetch("stable_runner", "signing", "mode")
     refute @config.fetch("stable_runner", "signing").key?("certificate_id")
     refute @config.fetch("stable_runner", "signing").key?("profile_id")
     refute @config.fetch("stable_runner", "signing").key?("profile_name")
@@ -196,7 +196,12 @@ class ForzAdvisorReleaseTest < Minitest::Test
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
     end
     with_config do |data, path|
-      data["stable_runner"]["signing"]["mode"] = "manual"
+      data["stable_runner"]["signing"]["mode"] = "unreviewed"
+      File.write(path, JSON.generate(data))
+      assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
+    end
+    with_config do |data, path|
+      data["stable_runner"]["signing"]["profile_name"] = "must remain private"
       File.write(path, JSON.generate(data))
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
     end
@@ -252,7 +257,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal ForzAdvisorRelease::Preflight::CHECKS.sort, result["checks"].keys.sort
     assert result["checks"].values.all? { |check| check["passed"] }
     assert_equal @config.fetch("public_urls").values.sort, urls.urls.sort
-    assert_equal "88", result.dig("checks", "project", "evidence", "source_build_number")
+    assert_equal "89", result.dig("checks", "project", "evidence", "source_build_number")
     assert_equal 6, result.dig("checks", "screenshots", "evidence", "count")
   end
 
@@ -279,7 +284,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call
 
     assert_equal "1.41.2", result["marketing_version"]
-    assert_equal "88", result["source_build_number"]
+    assert_equal "89", result["source_build_number"]
+    assert_equal "Manual", result["signing_style"]
     assert_equal %w[forzadvisorTests forzadvisorUITests], result["test_targets"]
     assert_equal ["forzadvisor.xcscheme", "forzadvisor Cloud.xcscheme"], result["schemes"]
   end
@@ -766,6 +772,56 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
+  def test_build_88_blocked_state_and_prior_receipt_are_archived_exactly_for_build_89
+    Dir.mktmpdir do |directory|
+      state_dir = File.join(directory, "state")
+      store = ForzAdvisorRelease::StableStateStore.new(directory: state_dir)
+      previous = stable_identity.merge(
+        "ref" => "release-1.41.2-testflight-88-3",
+        "commit" => "bcc3e6cf4ca77bf0c9c55c2a8143f09a4608a810",
+        "source_build_number" => "88",
+        "schema_version" => 2,
+        "phase" => "human_blocked",
+        "upload_intent_at" => "2026-10-08T21:27:56Z",
+        "candidate_block" => { "kind" => "AMBIGUOUS_UPLOAD", "notes" => "exact build reconciled with no matching ASC candidate" },
+        "superseded_pending_candidate" => {
+          "transition" => "SUPERSEDED_PENDING",
+          "previous_candidate" => {
+            "phase" => "human_verification_pending",
+            "source_build_number" => "87",
+            "release_receipt" => { "state" => "VALID", "build" => "87", "receipt_marker" => "preserve-exactly" }
+          }
+        }
+      )
+      previous = store.save(previous)
+      tag = @config.fetch("repository", "release_ref")
+      commit = "d" * 40
+      github = ForzAdvisorRelease::GitHubVerificationEvidence.new(config: @config, client: FakeGitHubClient.new(run: github_run(tag: tag, commit: commit), jobs: [github_job]))
+      coordinator = ForzAdvisorRelease::StableRunnerCoordinator.new(config: @config, git: FakeGitRepository.new(commit: commit), store: store, github_verification: github, helper: nil, api: nil)
+
+      assert_raises(ForzAdvisorRelease::PreflightError) do
+        coordinator.start(ref: tag, verify_run_id: "89", upload: false, confirmation: nil)
+      end
+
+      archives = Dir.glob(File.join(state_dir, "history", "*.json"))
+      assert_equal 1, archives.length
+      assert_equal 0o600, File.stat(archives.first).mode & 0o777
+      archived = JSON.parse(File.read(archives.first))
+      assert_equal previous, archived
+      assert_equal previous.dig("candidate_block"), archived.dig("candidate_block")
+      assert_equal previous.dig("upload_intent_at"), archived.dig("upload_intent_at")
+      assert_equal previous.dig("superseded_pending_candidate", "previous_candidate", "release_receipt"),
+        archived.dig("superseded_pending_candidate", "previous_candidate", "release_receipt")
+      refute archived.key?("release_receipt")
+      before = File.binread(archives.first)
+      assert_equal archives.first, store.archive(previous)
+      assert_equal before, File.binread(archives.first)
+      assert_equal 1, Dir.glob(File.join(state_dir, "history", "*.json")).length
+      assert_equal "github_verified", store.load.fetch("phase")
+      assert_equal "89", store.load.fetch("source_build_number")
+    end
+  end
+
   def test_terminal_rollover_rejects_same_build_even_when_commit_changes
     Dir.mktmpdir do |directory|
       store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
@@ -780,7 +836,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
-  def test_pending_candidate_supersession_archives_build_87_without_inventing_human_result
+  def test_pending_candidate_supersession_archives_build_87_before_build_89_without_inventing_human_result
     Dir.mktmpdir do |directory|
       store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
       previous = stable_identity.merge(
@@ -807,12 +863,12 @@ class ForzAdvisorReleaseTest < Minitest::Test
       )
 
       assert_equal 1, helper.calls.length
-      assert_equal "build-88", active.fetch("build_id")
+      assert_equal "build-89", active.fetch("build_id")
       assert_equal "human_verification_pending", active.fetch("phase")
       assert_equal 1, api.requests.count { |request| request[0] == "POST" }
       active = store.load
       assert_equal "human_verification_pending", active["phase"]
-      assert_equal "88", active["source_build_number"]
+      assert_equal "89", active["source_build_number"]
       assert_equal candidate_commit, active["commit"]
       refute active.key?("human_verification")
       assert_equal candidate_commit, active.dig("release_receipt", "commit")
@@ -1212,7 +1268,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::AppStoreStatus.new(config: @config, api: api).call
 
     assert_equal true, result["read_only"]
-    assert_equal "88", result["source_build_number"]
+    assert_equal "89", result["source_build_number"]
     assert_equal @config.fetch("release", "current_app_store_build_number"), result.dig("build", "number")
     assert_equal "READY_FOR_REVIEW", result.dig("version", "state")
     assert_equal 4, api.requests.length
@@ -1312,6 +1368,36 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
+  def test_stable_runner_helper_defaults_to_the_versioned_repository_script
+    commit = "a" * 40
+    runner = RecordingRunner.new("RELEASE_RECEIPT #{JSON.generate(release_receipt(commit: commit))}\n")
+    helper = ForzAdvisorRelease::StableRunnerHelper.new(root: ROOT, runner: runner)
+    confirmation = "UPLOAD:IOS:#{@config.fetch('app', 'id')}:#{@config.fetch('app', 'bundle_id')}:1.41.2:89:#{commit}"
+    helper.upload(commit: commit, app_id: @config.fetch("app", "id"), bundle_id: @config.fetch("app", "bundle_id"), version: "1.41.2", build: "89", confirmation: confirmation)
+    assert_equal File.join(ROOT, "scripts", "stable-runner", "ssh_runner_build.sh"), runner.calls.first.fetch(:command).first
+  end
+
+  def test_versioned_runner_uses_private_manual_signing_metadata_and_verifies_archive_and_export
+    helper = File.read(File.join(ROOT, "scripts", "stable-runner", "ssh_runner_build.sh"))
+    assert_includes helper, "--validate-signing"
+    assert_includes helper, "signing_metadata_path"
+    assert_includes helper, "verify_ios_profile.py"
+    assert_includes helper, "security find-identity -v -p codesigning"
+    assert_includes helper, "codesign --display --extract-certificates"
+    assert_includes helper, 'CODE_SIGN_IDENTITY="$signing_certificate_hash"'
+    assert_includes helper, 'signingCertificate -string "$signing_certificate_hash"'
+    refute_includes helper, "set-key-partition-list"
+    refute_includes helper, 'unlock-keychain -p "$keychain_password"'
+    assert_includes helper, "original_keychains_captured == 1"
+    assert_includes helper, "XCODE_CODE_SIGNATURE_VERIFIED"
+    assert_includes helper, 'PROVISIONING_PROFILE_SPECIFIER="$signing_profile_name"'
+    assert_includes helper, "verify_manual_ios_component"
+    assert_includes helper, "archive_sha256"
+    assert_includes helper, "package_sha256"
+    refute_match(/signing_profiles=.*committed_config/, helper)
+    refute_match(/signing_certificate_id=.*committed_config/, helper)
+  end
+
   def test_cli_submission_is_separate_and_double_guarded
     cli = File.read(File.join(ROOT, "scripts", "release"))
     library = File.read(File.join(ROOT, "scripts", "lib", "forzadvisor_release.rb"))
@@ -1370,7 +1456,9 @@ class ForzAdvisorReleaseTest < Minitest::Test
       "xcode_build" => @config.fetch("stable_runner", "xcode_build"),
       "macos_build" => @config.fetch("stable_runner", "macos_build"),
       "sdk_version" => @config.fetch("stable_runner", "sdk_versions", "iOS"),
+      "archive_sha256" => "c" * 64,
       "package_sha256" => "b" * 64,
+      "signing_verification" => "MANUAL_IOS_PROFILE_AND_SIGNER_VERIFIED",
       "asc_build_id" => candidate_build.fetch("id")
     }
   end

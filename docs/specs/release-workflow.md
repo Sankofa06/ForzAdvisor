@@ -49,10 +49,15 @@ local gates
    can access release credentials, archive, export, or upload. The published
    [macOS 26 runner inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
    is the availability source for the pinned host, Xcode, and simulator.
-6. Only logical profile `stable-xcode-26.3-intel` may archive, export, or upload.
-   The route rechecks its private profile, pinned public toolchain facts, signing
-   prerequisites, exact committed configuration, archive identity, architectures,
-   codesigning, embedded profiles, and warning policy before upload.
+6. Only logical profile stable-xcode-26.3-intel may archive, export, or upload.
+   The tracked scripts/stable-runner/ssh_runner_build.sh rechecks its private
+   runner profile and pinned public toolchain facts. For manual distribution
+   signing it derives selectors only from the existing private signing metadata,
+   validates the active App Store profile and its certificate against the
+   existing valid distribution identity, and verifies archive and exported IPA
+   signatures and embedded profiles before upload. The exact committed
+   configuration contains only the signing mode, never certificate/profile
+   selectors or credentials.
 7. Upload intent is explicit and bound to platform, app ID, bundle ID, version,
    build, and exact commit. An existing matching App Store build or ambiguous
    state fails closed before upload.

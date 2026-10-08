@@ -206,7 +206,7 @@ module ForzAdvisorRelease
       raise ConfigurationError, "stable runner macOS build mismatch" unless runner["macos_build"] == "24G830"
       raise ConfigurationError, "stable runner warning policy must be global" unless runner["warning_policy"] == "global"
       signing = runner.fetch("signing")
-      raise ConfigurationError, "stable runner signing policy must remain automatic" unless signing["mode"] == "automatic"
+      raise ConfigurationError, "stable runner signing mode must be manual or automatic" unless %w[manual automatic].include?(signing["mode"])
       raise ConfigurationError, "stable runner export policy mismatch" unless runner["export"] == {
         "manage_app_version_and_build_number" => false,
         "strip_swift_symbols" => true,
@@ -348,9 +348,12 @@ module ForzAdvisorRelease
         "CURRENT_PROJECT_VERSION" => @config.fetch("release", "source_build_number"),
         "DEVELOPMENT_TEAM" => @config.fetch("app", "team_id"),
         "PRODUCT_BUNDLE_IDENTIFIER" => @config.fetch("app", "bundle_id"),
-        "CODE_SIGN_STYLE" => "Automatic",
+        "CODE_SIGN_STYLE" => (@config.fetch("stable_runner", "signing", "mode") == "manual" ? "Manual" : "Automatic"),
         "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption" => "NO"
       }
+      if @config.fetch("stable_runner", "signing", "mode") == "manual"
+        expected_assignments["CODE_SIGN_IDENTITY"] = "Apple Distribution"
+      end
       build_settings = nil
       Dir.mktmpdir("forzadvisor-release-build-settings-") do |derived_data_path|
         output, error, status = Open3.capture3(
@@ -386,7 +389,7 @@ module ForzAdvisorRelease
       %w[forzadvisorTests forzadvisorUITests].each do |target|
         raise PreflightError, "release test plan is missing #{target}" unless targets.include?(target)
       end
-      { "marketing_version" => expected_assignments["MARKETING_VERSION"], "source_build_number" => expected_assignments["CURRENT_PROJECT_VERSION"], "schemes" => [File.basename(local_scheme), File.basename(cloud_scheme)], "test_targets" => targets }
+      { "marketing_version" => expected_assignments["MARKETING_VERSION"], "source_build_number" => expected_assignments["CURRENT_PROJECT_VERSION"], "signing_style" => expected_assignments["CODE_SIGN_STYLE"], "schemes" => [File.basename(local_scheme), File.basename(cloud_scheme)], "test_targets" => targets }
     rescue JSON::ParserError, KeyError => error
       raise PreflightError, "invalid release test plan: #{error.message}"
     end
@@ -916,7 +919,7 @@ module ForzAdvisorRelease
   class StableRunnerHelper
     RECEIPT_PREFIX = "RELEASE_RECEIPT "
 
-    def initialize(root:, runner: CommandRunner.new, script: File.expand_path("~/.codex/skills/release-apple-app/scripts/ssh_runner_build.sh"))
+    def initialize(root:, runner: CommandRunner.new, script: File.expand_path("../stable-runner/ssh_runner_build.sh", __dir__))
       @root = root
       @runner = runner
       @script = script
@@ -1449,7 +1452,11 @@ module ForzAdvisorRelease
       }
       mismatch = expected.find { |key, value| receipt[key] != value }
       raise PreflightError, "stable runner receipt mismatch: #{mismatch.first}" if mismatch
+      raise PreflightError, "stable runner receipt archive hash is invalid" unless receipt["archive_sha256"].to_s.match?(/\A[0-9a-f]{64}\z/)
       raise PreflightError, "stable runner receipt package hash is invalid" unless receipt["package_sha256"].to_s.match?(/\A[0-9a-f]{64}\z/)
+      expected_signing_verification = @config.fetch("stable_runner", "signing", "mode") == "manual" ?
+        "MANUAL_IOS_PROFILE_AND_SIGNER_VERIFIED" : "XCODE_CODE_SIGNATURE_VERIFIED"
+      raise PreflightError, "stable runner receipt signing verification is missing" unless receipt["signing_verification"] == expected_signing_verification
       raise PreflightError, "stable runner receipt App Store build id is missing" if receipt["asc_build_id"].to_s.empty?
       true
     end

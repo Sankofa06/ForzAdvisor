@@ -30,7 +30,7 @@ developer Mac.
 
 - App Store Connect app, bundle, team, version, review-draft, and review-item identifiers
 - canonical GitHub checkout, remote, and immutable release ref
-- marketing version `1.41.2`, proposed source build `88`, and current App Store
+- marketing version `1.41.2`, proposed source build `89`, and current App Store
   build `87`
 - Free pricing, explicit-human-approval submission policy, and `AFTER_APPROVAL` release timing
 - published privacy-label declaration and human attestation date
@@ -39,7 +39,7 @@ developer Mac.
 - Xcode project, schemes, complete `ReleaseVerify` plan, and privacy manifest
 - GitHub verification workflow and its public toolchain facts
 - the logical stable-runner profile, public pinned toolchain facts, project,
-  scheme, generic iOS destination, signing mode, warning policy, and an
+  scheme, generic iOS destination, manual signing mode, warning policy, and an
   explicit App Store-eligible export policy with
   `testFlightInternalTestingOnly=false`
 - intended internal TestFlight group
@@ -176,12 +176,17 @@ unpushed source, configuration not read from the exact commit, runner-profile
 or toolchain drift, an existing matching App Store build, missing signing
 prerequisites, or an ambiguous identity before upload.
 
-The shared runner route transfers the exact commit to a task-owned remote
-directory, archives with the configured project/scheme/destination, treats
-source warnings as failures, verifies bundle/version/build/architectures,
-codesigning and embedded profiles, Xcode build, and macOS build, then exports and
-uploads from that same task. Private endpoint, keychain, signing, and credential
-details must never enter repository files or logs.
+The tracked scripts/stable-runner/ssh_runner_build.sh transfers the exact commit
+to a task-owned remote directory, derives certificate/profile selectors only from
+the existing private signing metadata for the exact shipping bundle set, and
+uses the configured project/scheme/destination. It checks the selected active
+App Store profile and its certificate against the existing valid distribution
+identity, archives with source warnings as failures, and verifies each embedded
+provisioning profile, signer identity, bundle/version/build, architectures,
+Xcode build, and macOS build before export. It then rechecks the exported IPA
+signature/profile and computes the package SHA-256 before upload from that same
+task. Private endpoint, keychain, signing, and credential details must never
+enter repository files or logs.
 
 If interruption occurs while the state is only `github_verified`, resume with
 the same explicit upload authorization and exact token:

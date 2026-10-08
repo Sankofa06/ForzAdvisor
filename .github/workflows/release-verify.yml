@@ -74,6 +74,12 @@ jobs:
           set -euo pipefail
           ruby scripts/tests/forzadvisor_release_test.rb
 
+      - name: Manual signing contract unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/tests/test_ios_profile_verifier.py
+
       - name: Repository release preflight
         shell: bash
         run: |
