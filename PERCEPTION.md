@@ -23,11 +23,12 @@ This file is the replace-in-place record for one active goal. It describes curre
 - Build 89 has no upload-start intent. Do not persist the coordinator upload intent until local portable coverage, the fresh exact-source Release Verify run, fresh Pro preflight, exact-source Pro build, and existing-profile signing validation pass.
 - Fresh read-only Pro lane preflight passed: pinned toolchain and existing signing metadata match, at least 15 GiB free, no active xcodebuild/xctest/Fabricon work, and no archive lock. No simulator was booted; inventory was left unchanged. Pro remains reserved for the pending ForzAdvisor source-bound build, signing validation, and archive, and must be rechecked before native work.
 - The latest exact-source review identified lexical workspace-root validation and lock release after cleanup errors. The correction now uses an exact-commit allocator to canonicalize the configured root under the real system temp directory, reject symlinked path components before source transfer, revalidate the task after transfer, and retain the archive lock on any sensitive cleanup failure; portable tests cover these paths.
+- The latest exact-source review also found that the local runner, preflight helper, and upload waiter were not all proven equal to the named commit before SSH work. The current correction compares those local control files with their exact Git blobs before any SSH call; the waiter check is required before upload mode. A regression test checks the source-pin ordering. This source-pin correction still requires fresh independent review before publication.
 
 ## Next gates
 
 1. Re-run local helper syntax and portable regression tests, then inspect the final diff and exact source.
-2. Have a fresh independent reviewer verify the committed candidate, exact source bundle, and manifest before publication.
+2. Have a fresh independent reviewer verify the corrected committed candidate, exact source bundle, and manifest before publication.
 3. After review, push main and immutable tag release-1.41.2-testflight-89-3; dispatch one final exact-tag Release Verify run.
 4. After that run passes, rerun shared Pro preflight, exact-source warnings-as-errors build, and signing smoke serially. Then start the authorized archive/export/upload through the repository coordinator.
 5. Wait for build 89 to become VALID and verify association only with the existing Internal group. Commit and push the final release receipt; do not stage or submit for App Review.

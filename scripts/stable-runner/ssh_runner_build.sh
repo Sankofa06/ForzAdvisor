@@ -49,6 +49,7 @@ fi
 repo_path=${1:A}
 release_commit=$2
 script_dir=${0:A:h}
+script_path=${0:A}
 committed_config=
 generated_project_root=
 
@@ -69,6 +70,24 @@ trap cleanup_local EXIT
 git -C "$repo_path" cat-file -e "$release_commit^{commit}" 2>/dev/null || { print "FAIL  release commit is unavailable locally"; exit 2; }
 canonical_commit=$(git -C "$repo_path" rev-parse "$release_commit^{commit}" 2>/dev/null) || { print "FAIL  release commit could not be resolved"; exit 2; }
 canonical_commit=${canonical_commit:l}
+verify_committed_control_file() {
+  local relative_path=$1
+  local local_path=$2
+  [[ "$local_path" == "$repo_path/$relative_path" && -f "$local_path" && ! -L "$local_path" ]] || {
+    print "FAIL  local release control file is not the canonical repository path: $relative_path"
+    return 1
+  }
+  if ! git -C "$repo_path" show "${canonical_commit}:$relative_path" 2>/dev/null | cmp -s - "$local_path"; then
+    print "FAIL  local release control file differs from the exact source commit: $relative_path"
+    return 1
+  fi
+  return 0
+}
+verify_committed_control_file scripts/stable-runner/ssh_runner_build.sh "$script_path" || exit 2
+verify_committed_control_file scripts/stable-runner/ssh_runner_preflight.sh "$script_dir/ssh_runner_preflight.sh" || exit 2
+if (( upload == 1 )); then
+  verify_committed_control_file scripts/stable-runner/wait_for_asc_build.rb "$script_dir/wait_for_asc_build.rb" || exit 2
+fi
 if (( upload == 1 )) && [[ "$release_commit" != "$canonical_commit" ]]; then
   print "FAIL  upload requires the lowercase canonical 40-character commit"
   exit 2

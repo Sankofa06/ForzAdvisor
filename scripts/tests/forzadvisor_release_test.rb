@@ -136,6 +136,30 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert status.success?, [stdout, stderr].reject(&:empty?).join("\n")
   end
 
+  def test_stable_runner_pins_local_control_scripts_to_the_exact_commit_before_ssh
+    helper = File.read(File.join(ROOT, "scripts", "stable-runner", "ssh_runner_build.sh"))
+    pin_function = helper.index("verify_committed_control_file()")
+    helper_pin = helper.index("verify_committed_control_file scripts/stable-runner/ssh_runner_build.sh")
+    preflight_pin = helper.index("verify_committed_control_file scripts/stable-runner/ssh_runner_preflight.sh")
+    waiter_pin = helper.index("verify_committed_control_file scripts/stable-runner/wait_for_asc_build.rb")
+    ssh_preflight = helper.index('"$script_dir/ssh_runner_preflight.sh" "$profile_path"')
+    first_ssh = helper.index('ssh -o LogLevel=QUIET "$ssh_host"')
+
+    refute_nil pin_function
+    refute_nil helper_pin
+    refute_nil preflight_pin
+    refute_nil waiter_pin
+    refute_nil ssh_preflight
+    refute_nil first_ssh
+    assert_includes helper, 'git -C "$repo_path" show "${canonical_commit}:$relative_path" 2>/dev/null | cmp -s - "$local_path"'
+    assert_includes helper, 'script_path=${0:A}'
+    assert_operator pin_function, :<, helper_pin
+    assert_operator helper_pin, :<, preflight_pin
+    assert_operator preflight_pin, :<, waiter_pin
+    assert_operator waiter_pin, :<, ssh_preflight
+    assert_operator ssh_preflight, :<, first_ssh
+  end
+
   def test_private_signing_metadata_is_loaded_from_json_and_fails_closed_on_invalid_paths
     helper = File.read(File.join(ROOT, "scripts", "stable-runner", "ssh_runner_build.sh"))
     assert_includes helper, "validate_ios_signing_metadata.py"
