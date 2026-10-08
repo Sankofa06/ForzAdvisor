@@ -559,7 +559,7 @@ if [[ "$signing_mode" == manual ]]; then
       [[ -n "$private_value" ]] && print -r -- "$private_value" >>"$redaction_values"
     done
   fi
-  original_keychains=("${(@f)$(security list-keychains -d user | sed -E 's/^[[:space:]]*"//; s/"$//')})"
+  original_keychains=("${(@f)$(security list-keychains -d user | sed -E 's/^[[:space:]]*"//; s/"$//')}")
   (( ${#original_keychains} > 0 )) || { print "FAIL  existing user keychain search list is empty"; exit 1; }
   original_keychains_captured=1
   [[ -x /usr/bin/expect ]] || { print "FAIL  secure existing-keychain unlock prompt handler is unavailable"; exit 1; }

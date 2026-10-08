@@ -2,6 +2,7 @@
 
 require "json"
 require "minitest/autorun"
+require "open3"
 require "tmpdir"
 require "zlib"
 require_relative "../lib/forzadvisor_release"
@@ -119,10 +120,25 @@ class ForzAdvisorReleaseTest < Minitest::Test
     @config = ForzAdvisorRelease::Config.new(CONFIG_PATH)
   end
 
+  def test_stable_runner_remote_payload_has_valid_zsh_syntax_when_available
+    zsh_directory = ENV.fetch("PATH", "").split(File::PATH_SEPARATOR).find do |directory|
+      File.executable?(File.join(directory, "zsh"))
+    end
+    zsh = File.join(zsh_directory, "zsh") if zsh_directory
+    skip "zsh unavailable in this environment" unless zsh
+
+    helper = File.read(File.join(ROOT, "scripts", "stable-runner", "ssh_runner_build.sh"))
+    payload = helper.match(/<<'REMOTE_SCRIPT'\n(.*?)\nREMOTE_SCRIPT/m)
+    refute_nil payload
+
+    stdout, stderr, status = Open3.capture3(zsh, "-n", "-c", payload[1])
+    assert status.success?, [stdout, stderr].reject(&:empty?).join("\n")
+  end
+
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
     assert_equal "89", @config.fetch("release", "source_build_number")
     assert_equal "87", @config.fetch("release", "current_app_store_build_number")
-    assert_equal "release-1.41.2-testflight-89-1", @config.fetch("repository", "release_ref")
+    assert_equal "release-1.41.2-testflight-89-2", @config.fetch("repository", "release_ref")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
