@@ -7,20 +7,38 @@ struct TuneAvailableSettingsSection: View {
     @Binding var copiedLineID: TuneLine.ID?
 
     var body: some View {
-        Section(presentation.sectionTitle) {
+        Section {
             Text(presentation.sectionDescription)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .accessibilityIdentifier("availableSettingsBoundary")
 
             if presentation.completion == .plan {
-                ContentUnavailableView(
-                    presentation.isFH6EvidenceWithheld
-                        ? "Settings withheld — more game evidence needed"
-                        : "No numeric settings yet",
-                    systemImage: "list.bullet.clipboard",
-                    description: Text("Use the setup plan and confirm the missing parts or tuning-menu ranges in game. Then generate again when the evidence is ready.")
-                )
+                if presentation.isFH6EvidenceWithheld {
+                    ContentUnavailableView {
+                        VStack(spacing: 12) {
+                            Image(systemName: "list.bullet.clipboard")
+                                .accessibilityHidden(true)
+                            Text("Settings withheld — more game evidence needed")
+                                .font(.title3.weight(.semibold))
+                                .multilineTextAlignment(.center)
+                                .lineLimit(nil)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("withheldSettingsTitle")
+                        }
+                    } description: {
+                        Text("Use the setup plan and confirm the missing parts or tuning-menu ranges in game. Then generate again when the evidence is ready.")
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("withheldSettingsExplanation")
+                    }
+                } else {
+                    ContentUnavailableView(
+                        "No numeric settings yet",
+                        systemImage: "list.bullet.clipboard",
+                        description: Text("Use the setup plan and confirm the missing parts or tuning-menu ranges in game. Then generate again when the evidence is ready.")
+                    )
+                }
             } else if presentation.completion == .needsEvidence {
                 ContentUnavailableView(
                     "More game evidence needed",
@@ -66,9 +84,11 @@ struct TuneAvailableSettingsSection: View {
                     )
                 }
             }
+        } header: {
+            Text(presentation.sectionTitle)
+                .accessibilityIdentifier("availableSettingsSection")
         }
         .forzAdvisorRowBackground()
-        .accessibilityIdentifier("availableSettingsSection")
     }
 
     private func expandedBinding(for section: TuneSection) -> Binding<Bool> {

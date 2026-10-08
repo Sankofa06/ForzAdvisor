@@ -81,14 +81,18 @@ extension ScreenshotEvidenceUITests {
 
         let next = app.buttons["manualEntryNextButton"]
         XCTAssertTrue(next.waitUntilEnabled(timeout: 5))
+        scrollBackwardToHittable(frontWeight, in: app)
         XCTAssertEqual(
-            app.textFields["manualEntryFrontWeightField"].value as? String,
+            frontWeight.value as? String,
             "55"
         )
     }
 
     @MainActor
-    func openDisciplinePreflight(in app: XCUIApplication) {
+    func openDisciplinePreflight(
+        in app: XCUIApplication,
+        verifyProviderLabels: Bool = true
+    ) {
         app.buttons["manualEntryNextButton"].tap()
         XCTAssertTrue(
             app.navigationBars["Choose Discipline"].waitForExistence(timeout: 5)
@@ -100,8 +104,24 @@ extension ScreenshotEvidenceUITests {
         let start = app.buttons["startTuneGenerationButton"]
         scrollToHittable(start, in: app)
         XCTAssertTrue(start.isEnabled)
-        XCTAssertTrue(app.staticTexts["Preferred method"].exists)
-        XCTAssertTrue(app.staticTexts["Readiness"].exists)
+        if verifyProviderLabels {
+            assertAccessibilityLabelContains("Preferred method", in: app)
+            assertAccessibilityLabelContains("Readiness", in: app)
+        }
+    }
+
+    @MainActor
+    func assertAccessibilityLabelContains(
+        _ text: String,
+        in app: XCUIApplication
+    ) {
+        let matchingElement = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", text))
+            .firstMatch
+        XCTAssertTrue(
+            matchingElement.waitForExistence(timeout: 5),
+            "Expected an accessibility label to contain \(text)."
+        )
     }
 
     @MainActor

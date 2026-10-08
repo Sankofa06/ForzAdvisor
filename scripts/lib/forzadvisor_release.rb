@@ -10,6 +10,7 @@ require "openssl"
 require "open3"
 require "pathname"
 require "rexml/document"
+require "tmpdir"
 require "time"
 require "uri"
 require "zlib"
@@ -161,8 +162,8 @@ module ForzAdvisorRelease
       raise ConfigurationError, "invalid GitHub verify workflow" unless fetch("ci", "verify_workflow") == ".github/workflows/release-verify.yml"
       raise ConfigurationError, "invalid GitHub verify job" unless fetch("ci", "verify_job") == "Xcode 26.6 ReleaseVerify"
       raise ConfigurationError, "unsupported GitHub runner" unless fetch("ci", "runner") == "macos-26"
-      raise ConfigurationError, "unsupported CI macOS version" unless fetch("ci", "runner_os_version") == "26.6.2"
-      raise ConfigurationError, "unsupported CI macOS build" unless fetch("ci", "runner_os_build") == "25G83"
+      raise ConfigurationError, "unsupported CI macOS version" unless fetch("ci", "runner_os_version") == "26.6.1"
+      raise ConfigurationError, "unsupported CI macOS build" unless fetch("ci", "runner_os_build") == "25G76"
       raise ConfigurationError, "unsupported CI Xcode version" unless fetch("ci", "xcode_version") == "26.6"
       raise ConfigurationError, "unsupported CI Xcode build" unless fetch("ci", "xcode_build") == "17F113"
       validate_stable_runner!
@@ -350,10 +351,25 @@ module ForzAdvisorRelease
         "CODE_SIGN_STYLE" => "Automatic",
         "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption" => "NO"
       }
-      output, error, status = Open3.capture3("xcodebuild", "-project", project, "-target", @config.fetch("xcode", "app_target"), "-configuration", "Release", "-showBuildSettings", chdir: @root)
-      raise PreflightError, "could not resolve Release build settings: #{Redactor.call(error)}" unless status.success?
+      build_settings = nil
+      Dir.mktmpdir("forzadvisor-release-build-settings-") do |derived_data_path|
+        output, error, status = Open3.capture3(
+          "xcodebuild", "-project", project,
+          "-scheme", @config.fetch("xcode", "local_scheme"),
+          "-configuration", "Release",
+          "-derivedDataPath", derived_data_path,
+          "-showBuildSettings", "-json",
+          chdir: @root
+        )
+        raise PreflightError, "could not resolve Release build settings: #{Redactor.call(error)}" unless status.success?
+
+        rows = JSON.parse(output)
+        target = rows.find { |row| row["target"] == @config.fetch("xcode", "app_target") }
+        raise PreflightError, "Release app-target build settings are missing" unless target
+        build_settings = target.fetch("buildSettings")
+      end
       expected_assignments.each do |key, value|
-        actual = output[/^\s*#{Regexp.escape(key)}\s*=\s*(.+?)\s*$/, 1]
+        actual = build_settings[key]
         raise PreflightError, "Release app-target setting mismatch: #{key}" unless actual == value.to_s
       end
 
@@ -770,7 +786,11 @@ module ForzAdvisorRelease
     private
 
     def request(method, path, query: {}, body: nil)
-      uri = URI("#{BASE_URL}#{path}")
+      base_uri = URI(BASE_URL)
+      uri = path.to_s.match?(%r{\Ahttps?://}) ? URI(path) : URI("#{BASE_URL}#{path}")
+      unless uri.scheme == "https" && uri.host == base_uri.host && uri.port == base_uri.port && uri.userinfo.nil? && uri.fragment.nil?
+        raise APIError, "invalid App Store Connect request URL"
+      end
       uri.query = URI.encode_www_form(query) unless query.empty?
       request = { get: Net::HTTP::Get, post: Net::HTTP::Post, patch: Net::HTTP::Patch }.fetch(method).new(uri)
       request["Authorization"] = "Bearer #{@credentials.token}"
@@ -785,8 +805,41 @@ module ForzAdvisorRelease
       raise APIError, "App Store Connect HTTP #{response.code}#{detail.empty? ? '' : ": #{detail}"}"
     rescue JSON::ParserError => error
       raise APIError, "App Store Connect returned invalid JSON: #{error.message}"
+    rescue URI::InvalidURIError => error
+      raise APIError, "App Store Connect returned an invalid pagination URL: #{error.message}"
     rescue SocketError, SystemCallError, Timeout::Error => error
       raise APIError, "App Store Connect request failed: #{error.message}"
+    end
+  end
+
+  class APICollection
+    MAX_PAGES = 100
+
+    def self.fetch_all(api:, path:, query: {})
+      records = []
+      visited_links = {}
+      response = api.get(path, query)
+      pages = 0
+
+      loop do
+        pages += 1
+        raise APIError, "App Store Connect pagination exceeded #{MAX_PAGES} pages" if pages > MAX_PAGES
+        raise APIError, "App Store Connect collection response is invalid" unless response.is_a?(Hash) && response["data"].is_a?(Array)
+
+        records.concat(response.fetch("data"))
+        links = response["links"]
+        raise APIError, "App Store Connect pagination links are invalid" unless links.nil? || links.is_a?(Hash)
+        next_link = links&.fetch("next", nil)
+        break if next_link.nil?
+        raise APIError, "App Store Connect pagination link is invalid" unless next_link.is_a?(String) && !next_link.empty?
+        raise APIError, "App Store Connect pagination link repeated" if visited_links[next_link]
+        raise APIError, "App Store Connect pagination exceeded #{MAX_PAGES} pages" if pages >= MAX_PAGES
+
+        visited_links[next_link] = true
+        response = api.get(next_link)
+      end
+
+      records
     end
   end
 
@@ -950,7 +1003,45 @@ module ForzAdvisorRelease
       File.delete(temporary) if defined?(temporary) && temporary && File.file?(temporary)
     end
 
+    def transition(expected_state:, archive_expected: false)
+      with_lock do
+        current = active? ? load : nil
+        if expected_state
+          raise PreflightError, "stable-runner state changed before rollover" unless current == expected_state
+        elsif current
+          raise PreflightError, "stable-runner state became active before candidate start"
+        end
+        raise PreflightError, "cannot archive an absent stable-runner state" if archive_expected && !current
+
+        archive_path = archive(current) if archive_expected
+        replacement = yield(current, archive_path)
+        raise Error, "stable-runner transition did not produce state" unless replacement.is_a?(Hash)
+        { "state" => save(replacement), "archive_path" => archive_path }
+      end
+    end
+
+    def with_upload_operation_lock(wait: true, &block)
+      with_file_lock("upload-operation.lock", wait: wait, &block)
+    end
+
     private
+
+    def with_lock
+      with_file_lock("active-v2.lock") { yield }
+    end
+
+    def with_file_lock(name, wait: true)
+      FileUtils.mkdir_p(@directory)
+      lock_path = File.join(@directory, name)
+      File.open(lock_path, File::RDWR | File::CREAT, 0o600) do |lock_file|
+        File.chmod(0o600, lock_path)
+        acquired = lock_file.flock(wait ? File::LOCK_EX : File::LOCK_EX | File::LOCK_NB)
+        raise PreflightError, "stable-runner upload operation is still active" unless acquired
+        yield
+      ensure
+        lock_file&.flock(File::LOCK_UN)
+      end
+    end
 
     def path
       File.join(@directory, "active-v2.json")
@@ -991,7 +1082,7 @@ module ForzAdvisorRelease
         prerelease.dig("attributes", "version") == @config.fetch("release", "marketing_version") &&
         prerelease.dig("attributes", "platform") == "IOS"
       raise APIError, "candidate build or internal TestFlight group identity mismatch" unless valid
-      associated = @api.get("/v1/betaGroups/#{group_id}/builds", "limit" => 200).fetch("data", []).any? { |item| item["id"] == build_id }
+      associated = APICollection.fetch_all(api: @api, path: "/v1/betaGroups/#{group_id}/builds", query: { "limit" => 200 }).any? { |item| item["id"] == build_id }
       raise APIError, "candidate build is no longer associated with the configured internal TestFlight group" if require_testflight_association && !associated
       {
         "build_id" => build_id,
@@ -1015,7 +1106,7 @@ module ForzAdvisorRelease
     def call
       app_id = @config.fetch("app", "id")
       build_number = @config.fetch("release", "source_build_number")
-      candidates = @api.get("/v1/apps/#{app_id}/builds", "limit" => 200).fetch("data", []).each_with_object([]) do |build, matches|
+      candidates = APICollection.fetch_all(api: @api, path: "/v1/apps/#{app_id}/builds", query: { "limit" => 200 }).each_with_object([]) do |build, matches|
         next unless build.dig("attributes", "version") == build_number
         prerelease = @api.get("/v1/builds/#{build.fetch('id')}/preReleaseVersion").fetch("data")
         next unless prerelease.dig("attributes", "version") == @config.fetch("release", "marketing_version") && prerelease.dig("attributes", "platform") == "IOS"
@@ -1040,7 +1131,7 @@ module ForzAdvisorRelease
     def call(receipt:)
       app_id = @config.fetch("app", "id")
       build_number = @config.fetch("release", "source_build_number")
-      records = @api.get("/v1/apps/#{app_id}/builds", "limit" => 200).fetch("data", [])
+      records = APICollection.fetch_all(api: @api, path: "/v1/apps/#{app_id}/builds", query: { "limit" => 200 })
       candidates = records.select do |record|
         next false unless record.dig("attributes", "version") == build_number
         prerelease = @api.get("/v1/builds/#{record.fetch('id')}/preReleaseVersion").fetch("data")
@@ -1079,7 +1170,7 @@ module ForzAdvisorRelease
       unless validation["testflight_associated"]
         @checkpoint.call("testflight_attach_intent", { "build_id" => build_id, "group_id" => group_id })
         @api.post("/v1/betaGroups/#{group_id}/relationships/builds", { data: [{ type: "builds", id: build_id }] })
-        observed = @api.get("/v1/betaGroups/#{group_id}/builds", "limit" => 200).fetch("data", [])
+        observed = APICollection.fetch_all(api: @api, path: "/v1/betaGroups/#{group_id}/builds", query: { "limit" => 200 })
         raise APIError, "TestFlight build attachment was not observed" unless observed.any? { |item| item["id"] == build_id }
         @checkpoint.call("testflight_attached", { "build_id" => build_id, "group_id" => group_id })
       end
@@ -1089,7 +1180,7 @@ module ForzAdvisorRelease
 
   class StableRunnerCoordinator
     HUMAN_RESULTS = %w[ACCEPT NEEDS_FIXES BLOCKED].freeze
-    ROLLOVER_PHASES = %w[human_needs_fixes human_blocked app_review_submitted submission_failed].freeze
+    ROLLOVER_PHASES = %w[human_verification_pending human_needs_fixes human_blocked app_review_submitted submission_failed].freeze
 
     def initialize(config:, git:, store:, github_verification:, helper:, api:)
       @config = config
@@ -1103,6 +1194,7 @@ module ForzAdvisorRelease
     def start(ref:, verify_run_id:, upload:, confirmation:)
       proof = @git.assert_release_state!(@config, ref: ref, require_tag: true)
       identity = release_identity(proof)
+      existing = nil
       if @store.active?
         existing = @store.load
         if same_identity?(existing, identity)
@@ -1113,37 +1205,57 @@ module ForzAdvisorRelease
           return existing
         end
         raise PreflightError, "another stable-runner release state is active" unless ROLLOVER_PHASES.include?(existing["phase"])
+        if existing["phase"] == "human_verification_pending"
+          assert_pending_candidate_supersession!(existing, identity)
+          raise PreflightError, "pending candidate supersession requires --upload" unless upload
+          expected_confirmation = confirmation_token(identity.fetch("commit"))
+          raise PreflightError, "upload confirmation does not match the exact release identity" unless confirmation == expected_confirmation
+        end
         raise PreflightError, "terminal rollover requires a new version/build identity" if same_build_identity?(existing, identity)
       end
       verification = @github_verification.call(run_id: verify_run_id, ref: proof.fetch("ref"), commit: proof.fetch("commit"))
-      @store.archive(@store.load) if @store.active?
-      state = @store.save(identity.merge(
+      assert_candidate_build_absent! if upload
+      state_data = identity.merge(
         "schema_version" => StableStateStore::SCHEMA_VERSION,
         "phase" => "github_verified",
         "github_verification" => verification
-      ))
-      perform_upload(state, upload: upload, confirmation: confirmation)
+      )
+      transition = @store.transition(expected_state: existing, archive_expected: !existing.nil?) do |previous, archive_path|
+        if previous && previous["phase"] == "human_verification_pending"
+          state_data["superseded_pending_candidate"] = pending_supersession_evidence(previous, archive_path)
+        end
+        state_data
+      end
+      state = transition.fetch("state")
+      perform_upload(state, upload: upload, confirmation: confirmation, build_preflight: upload)
     end
 
-    def perform_upload(state, upload:, confirmation:)
+    def perform_upload(state, upload:, confirmation:, build_preflight: false)
       raise PreflightError, "candidate upload requires --upload" unless upload
       expected_confirmation = confirmation_token(state.fetch("commit"))
       raise PreflightError, "upload confirmation does not match the exact release identity" unless confirmation == expected_confirmation
-      state = @store.save(state.merge(
-        "phase" => "upload_start_intent",
-        "upload_intent_at" => Time.now.utc.iso8601,
-        "confirmation_sha256" => Digest::SHA256.hexdigest(confirmation)
-      ))
-      receipt = @helper.upload(
-        commit: state.fetch("commit"),
-        app_id: @config.fetch("app", "id"),
-        bundle_id: @config.fetch("app", "bundle_id"),
-        version: @config.fetch("release", "marketing_version"),
-        build: @config.fetch("release", "source_build_number"),
-        confirmation: confirmation
-      )
-      validate_receipt!(receipt, state.fetch("commit"))
-      state = @store.save(state.merge("phase" => "upload_valid", "release_receipt" => receipt))
+      assert_candidate_build_absent! unless build_preflight
+      state = @store.with_upload_operation_lock do
+        upload_intent = @store.transition(expected_state: state) do |current, _archive_path|
+          current.merge(
+            "phase" => "upload_start_intent",
+            "upload_intent_at" => Time.now.utc.iso8601,
+            "confirmation_sha256" => Digest::SHA256.hexdigest(confirmation)
+          )
+        end.fetch("state")
+        receipt = @helper.upload(
+          commit: upload_intent.fetch("commit"),
+          app_id: @config.fetch("app", "id"),
+          bundle_id: @config.fetch("app", "bundle_id"),
+          version: @config.fetch("release", "marketing_version"),
+          build: @config.fetch("release", "source_build_number"),
+          confirmation: confirmation
+        )
+        validate_receipt!(receipt, upload_intent.fetch("commit"))
+        @store.transition(expected_state: upload_intent) do |current, _archive_path|
+          current.merge("phase" => "upload_valid", "release_receipt" => receipt)
+        end.fetch("state")
+      end
       finalize(state)
     end
 
@@ -1177,13 +1289,18 @@ module ForzAdvisorRelease
 
     def block_candidate(notes:)
       raise PreflightError, "candidate-block requires nonempty notes" if notes.to_s.strip.empty?
-      state = @store.load
-      validate_state_identity!(state)
-      raise PreflightError, "candidate-block is only allowed from ambiguous upload intent" unless state["phase"] == "upload_start_intent"
-      @store.save(state.merge(
-        "phase" => "human_blocked",
-        "candidate_block" => { "kind" => "AMBIGUOUS_UPLOAD", "notes" => notes.to_s.strip, "recorded_at" => Time.now.utc.iso8601 }
-      ))
+      @store.with_upload_operation_lock(wait: false) do
+        state = @store.load
+        validate_state_identity!(state)
+        raise PreflightError, "candidate-block is only allowed from ambiguous upload intent" unless state["phase"] == "upload_start_intent"
+        @store.transition(expected_state: state) do |current, _archive_path|
+          raise PreflightError, "candidate-block is only allowed from ambiguous upload intent" unless current["phase"] == "upload_start_intent"
+          current.merge(
+            "phase" => "human_blocked",
+            "candidate_block" => { "kind" => "AMBIGUOUS_UPLOAD", "notes" => notes.to_s.strip, "recorded_at" => Time.now.utc.iso8601 }
+          )
+        end.fetch("state")
+      end
     end
 
     def record_human_result(result:, notes:, evidence:)
@@ -1200,10 +1317,13 @@ module ForzAdvisorRelease
         raise PreflightError, "human verification result cannot overwrite #{state['phase']}"
       end
       phase = { "ACCEPT" => "human_accepted", "NEEDS_FIXES" => "human_needs_fixes", "BLOCKED" => "human_blocked" }.fetch(normalized)
-      @store.save(state.merge(
-        "phase" => phase,
-        "human_verification" => record.merge("recorded_at" => Time.now.utc.iso8601)
-      ))
+      @store.transition(expected_state: state) do |current, _archive_path|
+        raise PreflightError, "human result cannot overwrite #{current['phase']}" unless current["phase"] == "human_verification_pending"
+        current.merge(
+          "phase" => phase,
+          "human_verification" => record.merge("recorded_at" => Time.now.utc.iso8601)
+        )
+      end.fetch("state")
     end
 
     def confirmation_token(commit)
@@ -1238,6 +1358,13 @@ module ForzAdvisorRelease
 
     private
 
+    def assert_candidate_build_absent!
+      observation = CandidateReconciler.new(config: @config, api: @api).call
+      return observation if observation.fetch("matching_build_count").zero?
+
+      raise PreflightError, "matching App Store Connect build already exists; refusing upload"
+    end
+
     def same_identity?(left, right)
       %w[app_id bundle_id marketing_version source_build_number stable_runner_profile config_fingerprint ref commit].all? { |key| left[key] == right[key] }
     end
@@ -1246,15 +1373,50 @@ module ForzAdvisorRelease
       %w[app_id bundle_id marketing_version source_build_number].all? { |key| left[key] == right[key] }
     end
 
+    def assert_pending_candidate_supersession!(previous, replacement)
+      %w[app_id bundle_id marketing_version].each do |key|
+        raise PreflightError, "pending candidate supersession requires the same #{key}" unless previous[key] == replacement[key]
+      end
+      unless previous["ref"] != replacement["ref"] && previous["commit"] != replacement["commit"]
+        raise PreflightError, "pending candidate supersession requires a distinct release tag and commit"
+      end
+      previous_build = Integer(previous.fetch("source_build_number"), 10)
+      replacement_build = Integer(replacement.fetch("source_build_number"), 10)
+      raise PreflightError, "pending candidate supersession requires a higher build number" unless replacement_build > previous_build
+    rescue ArgumentError, TypeError, KeyError
+      raise PreflightError, "pending candidate supersession requires valid numeric build identities"
+    end
+
+    def pending_supersession_evidence(previous, archive_path)
+      {
+        "transition" => "SUPERSEDED_PENDING",
+        "previous_candidate" => {
+          "ref" => previous.fetch("ref"),
+          "commit" => previous.fetch("commit"),
+          "source_build_number" => previous.fetch("source_build_number"),
+          "phase" => previous.fetch("phase"),
+          "build_id" => previous["build_id"]
+        },
+        "archive_sha256" => Digest::SHA256.file(archive_path).hexdigest,
+        "recorded_at" => Time.now.utc.iso8601
+      }
+    end
+
     def finalize(state)
       build = UploadedBuildResolver.new(config: @config, api: @api).call(receipt: state.fetch("release_receipt"))
-      state = @store.save(state.merge(build).merge("phase" => "candidate_ready"))
+      state = @store.transition(expected_state: state) do |current, _archive_path|
+        current.merge(build).merge("phase" => "candidate_ready")
+      end.fetch("state")
       checkpoint = proc do |event, evidence|
         phase = event == "testflight_attach_intent" ? "testflight_attach_intent" : state["phase"]
-        state = @store.save(state.merge("phase" => phase, "testflight_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => evidence }))
+        state = @store.transition(expected_state: state) do |current, _archive_path|
+          current.merge("phase" => phase, "testflight_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => evidence })
+        end.fetch("state")
       end
       distribution = TestFlightDistributor.new(config: @config, api: @api, checkpoint: checkpoint).call(build_id: build.fetch("build_id"))
-      @store.save(state.merge(distribution))
+      @store.transition(expected_state: state) do |current, _archive_path|
+        current.merge(distribution)
+      end.fetch("state")
     end
 
     def release_identity(proof)

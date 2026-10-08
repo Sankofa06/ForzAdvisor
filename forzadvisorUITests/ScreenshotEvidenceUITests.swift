@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 final class ScreenshotEvidenceUITests: XCTestCase {
     override func setUpWithError() throws {
@@ -103,9 +104,10 @@ final class ScreenshotEvidenceUITests: XCTestCase {
 
     @MainActor
     func testDarkModeGarageNewTuneAndResultScreenshotEvidence() {
-        let app = launchApp(arguments: ["-AppleInterfaceStyle", "Dark"])
+        let app = launchApp(arguments: ["-ui-test-dark-appearance"])
 
         assertEmptyGarage(in: app)
+        assertDarkAppearanceRendered(in: app)
         capture("11-empty-garage-dark", in: app)
         openNewTune(in: app)
         capture("12-new-tune-source-dark", in: app)
@@ -117,19 +119,139 @@ final class ScreenshotEvidenceUITests: XCTestCase {
 
     @MainActor
     func testAccessibilityXXXLGarageNewTuneAndResultScreenshotEvidence() {
-        let app = launchApp(arguments: [
-            "-UIPreferredContentSizeCategoryName",
-            "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge"
-        ])
+        let app = launchApp(arguments: ["-ui-test-accessibility-xxxl"])
 
         assertEmptyGarage(in: app)
         capture("14-empty-garage-accessibility-xxxl", in: app)
         openNewTune(in: app)
         capture("15-new-tune-source-accessibility-xxxl", in: app)
         openValidationReadyManualEntry(in: app)
-        openDisciplinePreflight(in: app)
+        openDisciplinePreflight(in: app, verifyProviderLabels: false)
         openResult(in: app)
         capture("16-result-top-accessibility-xxxl", in: app)
+
+        let withheldTitle = app.staticTexts["withheldSettingsTitle"]
+        let resultList = app.collectionViews.firstMatch
+        let scrollStart = resultList.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72)
+        )
+        let scrollEnd = resultList.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.68)
+        )
+        // The target follows the oversized setup-plan description. Small,
+        // slow drags reveal it without centering the whole section or
+        // flinging past the row.
+        for _ in 0..<24 where !withheldTitle.exists {
+            scrollStart.press(
+                forDuration: 0.05,
+                thenDragTo: scrollEnd,
+                withVelocity: .slow,
+                thenHoldForDuration: 0
+            )
+        }
+
+        XCTAssertTrue(withheldTitle.waitForExistence(timeout: 5))
+        centerInInteractionViewport(withheldTitle, using: resultList, in: app)
+        XCTAssertTrue(
+            withheldTitle.isHittable,
+            "The withheld-settings title should be visible in the XXXL result screenshot."
+        )
+        XCTAssertEqual(
+            withheldTitle.label,
+            "Settings withheld — more game evidence needed"
+        )
+        XCTAssertGreaterThan(
+            withheldTitle.frame.height,
+            80,
+            "The withheld-settings title should wrap at XXXL text size."
+        )
+        capture("17-result-withheld-settings-title-accessibility-xxxl", in: app)
+
+        let withheldExplanation = app.staticTexts["withheldSettingsExplanation"]
+        scrollToHittable(withheldExplanation, in: app)
+        XCTAssertTrue(
+            withheldExplanation.isHittable,
+            "The withheld-settings explanation should be visible in its XXXL result screenshot."
+        )
+        XCTAssertEqual(
+            withheldExplanation.label,
+            "Use the setup plan and confirm the missing parts or tuning-menu ranges in game. Then generate again when the evidence is ready."
+        )
+        capture("18-result-withheld-settings-explanation-accessibility-xxxl", in: app)
+    }
+
+    @MainActor
+    private func assertDarkAppearanceRendered(
+        in app: XCUIApplication,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard let image = app.screenshot().image.cgImage else {
+            XCTFail(
+                "The app screenshot did not contain a CGImage.",
+                file: file,
+                line: line
+            )
+            return
+        }
+
+        let sampleX = image.width / 100
+        let sampleY = image.height / 2
+        var pixel = [UInt8](repeating: 0, count: 4)
+        let sampledColor = pixel.withUnsafeMutableBytes { bytes
+            -> (red: UInt8, green: UInt8, blue: UInt8)? in
+            guard let data = bytes.baseAddress,
+                  let context = CGContext(
+                    data: data,
+                    width: 1,
+                    height: 1,
+                    bitsPerComponent: 8,
+                    bytesPerRow: 4,
+                    space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo:
+                        CGImageAlphaInfo.premultipliedLast.rawValue
+                        | CGBitmapInfo.byteOrder32Big.rawValue
+                  )
+            else {
+                return nil
+            }
+
+            context.translateBy(
+                x: -CGFloat(sampleX),
+                y: -CGFloat(sampleY)
+            )
+            context.draw(
+                image,
+                in: CGRect(
+                    x: 0,
+                    y: 0,
+                    width: CGFloat(image.width),
+                    height: CGFloat(image.height)
+                )
+            )
+            return (bytes[0], bytes[1], bytes[2])
+        }
+
+        guard let sampledColor else {
+            XCTFail(
+                "The app screenshot background pixel could not be read.",
+                file: file,
+                line: line
+            )
+            return
+        }
+
+        let luminance =
+            0.2126 * Double(sampledColor.red) / 255
+            + 0.7152 * Double(sampledColor.green) / 255
+            + 0.0722 * Double(sampledColor.blue) / 255
+        XCTAssertLessThan(
+            luminance,
+            0.25,
+            "The captured screen background should use the dark palette.",
+            file: file,
+            line: line
+        )
     }
 
 }

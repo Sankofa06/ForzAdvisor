@@ -6,11 +6,13 @@ require "yaml"
 class VerificationWorkflowContractTest < Minitest::Test
   ROOT = File.expand_path("../..", __dir__)
   WORKFLOW_PATH = File.join(ROOT, ".github", "workflows", "verification-ci.yml")
+  RELEASE_WORKFLOW_PATH = File.join(ROOT, ".github", "workflows", "release-verify.yml")
 
   def setup
     @workflow = YAML.safe_load(File.read(WORKFLOW_PATH), aliases: false)
     @events = @workflow.fetch("on") { @workflow.fetch(true) }
     @jobs = @workflow.fetch("jobs")
+    @release_workflow = YAML.safe_load(File.read(RELEASE_WORKFLOW_PATH), aliases: false)
   end
 
   def test_only_pr_static_and_manual_verification_triggers_exist
@@ -69,13 +71,36 @@ class VerificationWorkflowContractTest < Minitest::Test
     assert_includes commands, "SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
   end
 
-  def test_all_manual_native_lanes_pin_ios_26_4_1_destinations
+  def test_verification_ci_manual_native_lanes_pin_ios_26_4_1_destinations
     commands = %w[build-unit smoke full-regression].flat_map do |name|
       @jobs.fetch(name).fetch("steps").map { |step| step["run"].to_s }
     end.join("\n")
 
     assert_equal 4, commands.scan(/-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26\.4\.1'/).length
     refute_match(/OS=26\.5/, commands)
+  end
+
+  def test_release_verify_uses_supported_ios_26_5_simulator_and_full_passing_gate
+    job = @release_workflow.fetch("jobs").fetch("verify")
+    commands = job.fetch("steps").map { |step| step["run"].to_s }.join("\n")
+
+    assert_equal "macos-26", job.fetch("runs-on")
+    assert_equal "/Applications/Xcode_26.6.app/Contents/Developer", job.fetch("env").fetch("DEVELOPER_DIR")
+    assert_includes commands, 'test "$(sw_vers -productVersion)" = "26.6.1"'
+    assert_includes commands, 'test "$(sw_vers -buildVersion)" = "25G76"'
+    assert_includes commands, 'test "$(xcodebuild -version | tail -1)" = "Build version 17F113"'
+    assert_includes commands, "-testPlan ReleaseVerify"
+    assert_includes commands, 'if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then'
+    assert_includes commands, 'if [[ "$GITHUB_SHA" != "$RELEASE_SHA" ]]; then'
+    assert_includes commands, "-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'"
+    assert_includes commands, "SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
+    assert_includes commands, "GCC_TREAT_WARNINGS_AS_ERRORS=YES"
+    assert_includes commands, "xcrun xcresulttool get test-results summary"
+    assert_includes commands, ".totalTestCount > 0"
+    assert_includes commands, ".failedTests == 0"
+    assert_includes commands, ".skippedTests == 0"
+    assert_includes commands, ".expectedFailures == 0"
+    refute_includes commands, "-only-testing:"
   end
 
   def test_checkout_does_not_persist_credentials_and_workflow_has_no_secrets_or_release_steps

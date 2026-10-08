@@ -30,18 +30,25 @@ struct forzadvisorApp: App {
 
     var body: some Scene {
         WindowGroup {
+            Group {
 #if DEBUG
-            if CommandLine.arguments.contains("-ui-test-legacy-settings") {
-                LegacyTuneSettingsUITestHarness()
-            } else if CommandLine.arguments.contains("-ui-test-capture-actions") {
-                TuneCaptureActionUITestHarness()
-            } else if CommandLine.arguments.contains("-ui-test-ocr-manual-values") {
-                OCRManualValuesUITestHarness()
-            } else {
-                ContentView()
-            }
+                if Self.isAccessibilityXXXLUITesting {
+                    ContentView().dynamicTypeSize(.accessibility5)
+                } else if CommandLine.arguments.contains("-ui-test-legacy-settings") {
+                    LegacyTuneSettingsUITestHarness()
+                } else if CommandLine.arguments.contains("-ui-test-capture-actions") {
+                    TuneCaptureActionUITestHarness()
+                } else if CommandLine.arguments.contains("-ui-test-ocr-manual-values") {
+                    OCRManualValuesUITestHarness()
+                } else {
+                    ContentView()
+                }
 #else
-            ContentView()
+                ContentView()
+#endif
+            }
+#if DEBUG
+            .preferredColorScheme(Self.uiTestColorScheme)
 #endif
         }
         .modelContainer(modelContainer)
@@ -52,6 +59,21 @@ private extension forzadvisorApp {
     static var isUITesting: Bool {
         CommandLine.arguments.contains("-ui-testing")
     }
+
+#if DEBUG
+    static var isAccessibilityXXXLUITesting: Bool {
+        isUITesting && CommandLine.arguments.contains("-ui-test-accessibility-xxxl")
+    }
+
+    static var uiTestColorScheme: ColorScheme? {
+        guard isUITesting,
+              CommandLine.arguments.contains("-ui-test-dark-appearance")
+        else {
+            return nil
+        }
+        return .dark
+    }
+#endif
 
     static func makeModelContainer() throws -> ModelContainer {
         let schema = Schema([SavedTune.self])
