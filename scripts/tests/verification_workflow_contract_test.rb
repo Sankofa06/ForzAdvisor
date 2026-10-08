@@ -86,8 +86,8 @@ class VerificationWorkflowContractTest < Minitest::Test
 
     assert_equal "macos-26", job.fetch("runs-on")
     assert_equal "/Applications/Xcode_26.6.app/Contents/Developer", job.fetch("env").fetch("DEVELOPER_DIR")
-    assert_includes commands, 'test "$(sw_vers -productVersion)" = "26.6.1"'
-    assert_includes commands, 'test "$(sw_vers -buildVersion)" = "25G76"'
+    assert_includes commands, 'test "$(sw_vers -productVersion)" = "26.6.2"'
+    assert_includes commands, 'test "$(sw_vers -buildVersion)" = "25G83"'
     assert_includes commands, 'test "$(xcodebuild -version | tail -1)" = "Build version 17F113"'
     assert_includes commands, "-testPlan ReleaseVerify"
     assert_includes commands, 'if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then'

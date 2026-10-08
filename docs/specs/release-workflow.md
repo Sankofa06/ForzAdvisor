@@ -42,7 +42,7 @@ local gates
 4. Focused tests, a warning-free Release build, the complete local
    `ReleaseVerify` plan, and runtime evidence pass before immutable handoff.
 5. GitHub Actions verifies the exact immutable tag and SHA on its pinned
-   fresh-machine toolchain: `macos-26`, macOS 26.6.1 (`25G76`), Xcode 26.6
+   fresh-machine toolchain: `macos-26`, macOS 26.6.2 (`25G83`), Xcode 26.6
    (`17F113`), and iPhone 17 Pro / iOS 26.5. Its dispatch ref and run head branch
    are the same tag, warnings are errors, and the xcresult must contain tests
    with zero failures, skips, or expected failures. No current GitHub workflow

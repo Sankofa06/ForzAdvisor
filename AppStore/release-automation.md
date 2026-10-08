@@ -93,8 +93,8 @@ checks for an actual candidate.
 
 ### Verification runtime contract
 
-The exact-revision GitHub `Release Verify` workflow uses `macos-26`, macOS 26.6.1
-build `25G76`, Xcode 26.6 build `17F113`, and the iPhone 17 Pro simulator on
+The exact-revision GitHub `Release Verify` workflow uses `macos-26`, macOS 26.6.2
+build `25G83`, Xcode 26.6 build `17F113`, and the iPhone 17 Pro simulator on
 iOS 26.5. The current [GitHub macOS 26 runner image inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
 lists that Xcode, the iOS 26.5 simulator runtime, and the iPhone 17 Pro device.
 The workflow checks the host and Xcode versions and runs the complete

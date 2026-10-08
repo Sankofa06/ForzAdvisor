@@ -122,7 +122,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
     assert_equal "88", @config.fetch("release", "source_build_number")
     assert_equal "87", @config.fetch("release", "current_app_store_build_number")
-    assert_equal "release-1.41.2-testflight-88-1", @config.fetch("repository", "release_ref")
+    assert_equal "release-1.41.2-testflight-88-3", @config.fetch("repository", "release_ref")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
@@ -131,8 +131,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal "GITHUB_ACTIONS", @config.fetch("ci", "provider")
     assert_equal "VERIFICATION_ONLY", @config.fetch("ci", "authority")
     assert_equal ".github/workflows/release-verify.yml", @config.fetch("ci", "verify_workflow")
-    assert_equal "26.6.1", @config.fetch("ci", "runner_os_version")
-    assert_equal "25G76", @config.fetch("ci", "runner_os_build")
+    assert_equal "26.6.2", @config.fetch("ci", "runner_os_version")
+    assert_equal "25G83", @config.fetch("ci", "runner_os_build")
     refute @config.fetch("ci").key?("release_candidate_workflow")
     refute @config.fetch("ci").key?("release_candidate_mode")
     assert_equal "stable-xcode-26.3-intel", @config.fetch("stable_runner", "profile")
@@ -163,8 +163,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_includes workflow, 'test "$(git rev-parse HEAD)" = "$RELEASE_SHA"'
     assert_includes workflow, 'if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then'
     assert_includes workflow, 'if [[ "$GITHUB_SHA" != "$RELEASE_SHA" ]]; then'
-    assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.6.1"'
-    assert_includes workflow, 'test "$(sw_vers -buildVersion)" = "25G76"'
+    assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.6.2"'
+    assert_includes workflow, 'test "$(sw_vers -buildVersion)" = "25G83"'
     assert_includes workflow, 'test "$(xcodebuild -version | tail -1)" = "Build version 17F113"'
     assert_includes workflow, "-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'"
   end
