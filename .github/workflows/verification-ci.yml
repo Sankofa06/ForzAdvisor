@@ -49,14 +49,14 @@ jobs:
           xcodebuild -project forzadvisor.xcodeproj \
             -scheme forzadvisor \
             -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
             CODE_SIGNING_ALLOWED=NO build
       - name: Run unit tests
         run: |
           xcodebuild test \
             -project forzadvisor.xcodeproj \
             -scheme forzadvisor \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
             -only-testing:forzadvisorTests \
             -parallel-testing-enabled NO \
             -collect-test-diagnostics never
@@ -79,7 +79,7 @@ jobs:
             -project forzadvisor.xcodeproj \
             -scheme forzadvisor \
             -testPlan ReleaseVerify \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
             -only-testing:forzadvisorUITests \
             -parallel-testing-enabled NO \
             -collect-test-diagnostics never
@@ -103,7 +103,7 @@ jobs:
             -project forzadvisor.xcodeproj \
             -scheme forzadvisor \
             -testPlan ReleaseVerify \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
             -parallel-testing-enabled NO \
             -collect-test-diagnostics never \
             -resultBundlePath "$RUNNER_TEMP/ForzAdvisor-ReleaseVerify.xcresult" \

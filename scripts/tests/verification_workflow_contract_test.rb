@@ -69,6 +69,15 @@ class VerificationWorkflowContractTest < Minitest::Test
     assert_includes commands, "SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
   end
 
+  def test_all_manual_native_lanes_pin_ios_26_4_1_destinations
+    commands = %w[build-unit smoke full-regression].flat_map do |name|
+      @jobs.fetch(name).fetch("steps").map { |step| step["run"].to_s }
+    end.join("\n")
+
+    assert_equal 4, commands.scan(/-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26\.4\.1'/).length
+    refute_match(/OS=26\.5/, commands)
+  end
+
   def test_checkout_does_not_persist_credentials_and_workflow_has_no_secrets_or_release_steps
     checkout_steps = @jobs.values.flat_map { |job| job.fetch("steps") }
                            .select { |step| step["uses"].to_s.start_with?("actions/checkout@") }
