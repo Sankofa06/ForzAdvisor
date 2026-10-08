@@ -120,8 +120,9 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
-    assert_equal "87", @config.fetch("release", "source_build_number")
+    assert_equal "88", @config.fetch("release", "source_build_number")
     assert_equal "87", @config.fetch("release", "current_app_store_build_number")
+    assert_equal "release-1.41.2-testflight-88-1", @config.fetch("repository", "release_ref")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
@@ -130,6 +131,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal "GITHUB_ACTIONS", @config.fetch("ci", "provider")
     assert_equal "VERIFICATION_ONLY", @config.fetch("ci", "authority")
     assert_equal ".github/workflows/release-verify.yml", @config.fetch("ci", "verify_workflow")
+    assert_equal "26.6.1", @config.fetch("ci", "runner_os_version")
+    assert_equal "25G76", @config.fetch("ci", "runner_os_build")
     refute @config.fetch("ci").key?("release_candidate_workflow")
     refute @config.fetch("ci").key?("release_candidate_mode")
     assert_equal "stable-xcode-26.3-intel", @config.fetch("stable_runner", "profile")
@@ -158,9 +161,12 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_includes workflow, "runs-on: macos-26"
     assert_includes workflow, 'RELEASE_SHA: ${{ inputs.release_sha }}'
     assert_includes workflow, 'test "$(git rev-parse HEAD)" = "$RELEASE_SHA"'
-    assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.6.2"'
-    assert_includes workflow, 'test "$(sw_vers -buildVersion)" = "25G83"'
+    assert_includes workflow, 'if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then'
+    assert_includes workflow, 'if [[ "$GITHUB_SHA" != "$RELEASE_SHA" ]]; then'
+    assert_includes workflow, 'test "$(sw_vers -productVersion)" = "26.6.1"'
+    assert_includes workflow, 'test "$(sw_vers -buildVersion)" = "25G76"'
     assert_includes workflow, 'test "$(xcodebuild -version | tail -1)" = "Build version 17F113"'
+    assert_includes workflow, "-destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'"
   end
 
   def test_config_rejects_unapproved_ci_or_stable_runner_contract
@@ -246,7 +252,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal ForzAdvisorRelease::Preflight::CHECKS.sort, result["checks"].keys.sort
     assert result["checks"].values.all? { |check| check["passed"] }
     assert_equal @config.fetch("public_urls").values.sort, urls.urls.sort
-    assert_equal "87", result.dig("checks", "project", "evidence", "source_build_number")
+    assert_equal "88", result.dig("checks", "project", "evidence", "source_build_number")
     assert_equal 6, result.dig("checks", "screenshots", "evidence", "count")
   end
 
@@ -273,9 +279,16 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call
 
     assert_equal "1.41.2", result["marketing_version"]
-    assert_equal "87", result["source_build_number"]
+    assert_equal "88", result["source_build_number"]
     assert_equal %w[forzadvisorTests forzadvisorUITests], result["test_targets"]
     assert_equal ["forzadvisor.xcscheme", "forzadvisor Cloud.xcscheme"], result["schemes"]
+  end
+
+  def test_project_build_number_matches_the_proposed_release_build
+    project = File.read(File.join(ROOT, "forzadvisor.xcodeproj", "project.pbxproj"))
+
+    assert_equal 6, project.scan(/CURRENT_PROJECT_VERSION = #{@config.fetch("release", "source_build_number")};/).length
+    refute_includes project, "CURRENT_PROJECT_VERSION = 87;"
   end
 
   def test_metadata_inspector_enforces_store_limits_and_public_url_consistency
@@ -391,6 +404,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_includes workflow, "workflow_dispatch:"
     assert_includes workflow, "run-name: Verify ${{ inputs.release_ref }}"
     assert_includes workflow, "ref: ${{ inputs.release_sha }}"
+    assert_includes workflow, 'if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then'
+    assert_includes workflow, 'if [[ "$GITHUB_SHA" != "$RELEASE_SHA" ]]; then'
     assert_includes workflow, "SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"
     assert_includes workflow, "GCC_TREAT_WARNINGS_AS_ERRORS=YES"
     assert_includes workflow, "xcresulttool get test-results summary"
@@ -434,7 +449,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
         @calls << arguments
         @receipt
       end
-      api = FakeAPI.new(stable_candidate_responses)
+      api = FakeAPI.new(stable_upload_candidate_responses)
       coordinator = stable_coordinator(store: store, helper: helper, api: api, tag: tag, commit: commit)
       confirmation = coordinator.confirmation_token(commit)
       state = coordinator.start(ref: tag, verify_run_id: "42", upload: true, confirmation: confirmation)
@@ -457,7 +472,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
       store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
       receipt = release_receipt(commit: commit).merge("xcode_build" => "wrong")
       helper = FakeStableRunnerHelper.new(receipt)
-      api = FakeAPI.new(stable_candidate_responses)
+      api = FakeAPI.new(stable_upload_candidate_responses)
       coordinator = stable_coordinator(store: store, helper: helper, api: api, tag: tag, commit: commit)
       assert_raises(ForzAdvisorRelease::PreflightError) do
         coordinator.start(ref: tag, verify_run_id: "42", upload: true, confirmation: coordinator.confirmation_token(commit))
@@ -482,6 +497,183 @@ class ForzAdvisorReleaseTest < Minitest::Test
     refute external_api.requests.any? { |request| request[0] == "POST" }
   end
 
+  def test_candidate_start_rejects_existing_build_before_superseding_pending_candidate
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      previous = store.save(stable_identity.merge(
+        "schema_version" => 2,
+        "ref" => "release-1.41.2-testflight-87-1",
+        "commit" => "f" * 40,
+        "source_build_number" => "87",
+        "phase" => "human_verification_pending",
+        "build_id" => "build-87",
+        "release_receipt" => { "state" => "VALID", "build" => "87", "receipt_marker" => "preserve-exactly" }
+      ))
+      helper = FakeStableRunnerHelper.new(release_receipt(commit: "c" * 40))
+      api = FakeAPI.new(stable_candidate_responses)
+      coordinator = stable_coordinator(
+        store: store,
+        helper: helper,
+        api: api,
+        tag: @config.fetch("repository", "release_ref"),
+        commit: "c" * 40
+      )
+
+      error = assert_raises(ForzAdvisorRelease::PreflightError) do
+        coordinator.start(
+          ref: @config.fetch("repository", "release_ref"),
+          verify_run_id: "44",
+          upload: true,
+          confirmation: coordinator.confirmation_token("c" * 40)
+        )
+      end
+
+      assert_match(/matching App Store Connect build already exists/, error.message)
+      assert_equal previous, store.load
+      assert_empty Dir.glob(File.join(directory, "history", "*.json"))
+      assert_empty helper.calls
+      refute api.requests.any? { |request| %w[POST PATCH].include?(request[0]) }
+    end
+  end
+
+  def test_candidate_start_rejects_matching_build_on_a_later_app_store_page
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      previous = store.save(stable_identity.merge(
+        "schema_version" => 2,
+        "ref" => "release-1.41.2-testflight-87-1",
+        "commit" => "f" * 40,
+        "source_build_number" => "87",
+        "phase" => "human_verification_pending",
+        "build_id" => "build-87",
+        "release_receipt" => { "state" => "VALID", "build" => "87", "receipt_marker" => "preserve-exactly" }
+      ))
+      app = @config.fetch("app", "id")
+      next_page = "https://api.appstoreconnect.apple.com/v1/apps/#{app}/builds?cursor=page-2"
+      responses = stable_candidate_responses
+      responses["/v1/apps/#{app}/builds"] = {
+        "data" => Array.new(200) do |index|
+          { "id" => "older-build-#{index}", "attributes" => { "version" => "87" } }
+        end,
+        "links" => { "next" => next_page }
+      }
+      responses[next_page] = { "data" => [candidate_build] }
+      api = FakeAPI.new(responses)
+      helper = FakeStableRunnerHelper.new(release_receipt(commit: "c" * 40))
+      coordinator = stable_coordinator(
+        store: store,
+        helper: helper,
+        api: api,
+        tag: @config.fetch("repository", "release_ref"),
+        commit: "c" * 40
+      )
+
+      error = assert_raises(ForzAdvisorRelease::PreflightError) do
+        coordinator.start(
+          ref: @config.fetch("repository", "release_ref"),
+          verify_run_id: "46",
+          upload: true,
+          confirmation: coordinator.confirmation_token("c" * 40)
+        )
+      end
+
+      assert_match(/matching App Store Connect build already exists/, error.message)
+      assert_equal previous, store.load
+      assert_empty Dir.glob(File.join(directory, "history", "*.json"))
+      assert_empty helper.calls
+      assert_includes api.requests, [next_page, {}]
+      refute api.requests.any? { |request| %w[POST PATCH].include?(request[0]) }
+    end
+  end
+
+  def test_candidate_block_rejects_while_upload_operation_is_active
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      entered_upload = Queue.new
+      finish_upload = Queue.new
+      helper = Object.new
+      helper.define_singleton_method(:upload) do |**_arguments|
+        entered_upload << true
+        finish_upload.pop
+      end
+      api = FakeAPI.new(stable_upload_candidate_responses)
+      coordinator = stable_coordinator(
+        store: store,
+        helper: helper,
+        api: api,
+        tag: @config.fetch("repository", "release_ref"),
+        commit: "c" * 40
+      )
+      upload_thread = Thread.new do
+        coordinator.start(
+          ref: @config.fetch("repository", "release_ref"),
+          verify_run_id: "47",
+          upload: true,
+          confirmation: coordinator.confirmation_token("c" * 40)
+        )
+      end
+      entered_upload.pop
+
+      error = assert_raises(ForzAdvisorRelease::PreflightError) do
+        coordinator.block_candidate(notes: "Transport outcome was ambiguous")
+      end
+      assert_match(/upload operation is still active/, error.message)
+      assert_equal "upload_start_intent", store.load.fetch("phase")
+      finish_upload << release_receipt(commit: "c" * 40)
+      uploaded = upload_thread.value
+      assert_equal "human_verification_pending", uploaded.fetch("phase")
+      assert_equal "human_verification_pending", store.load.fetch("phase")
+    end
+  end
+
+  def test_app_store_collection_rejects_incomplete_page_and_cross_origin_pagination
+    app = @config.fetch("app", "id")
+    path = "/v1/apps/#{app}/builds"
+    missing_data = FakeAPI.new(path => {})
+    assert_raises(ForzAdvisorRelease::APIError) do
+      ForzAdvisorRelease::APICollection.fetch_all(api: missing_data, path: path, query: { "limit" => 200 })
+    end
+
+    credentials = Object.new
+    credentials.define_singleton_method(:token) { "test-token" }
+    transport = Object.new
+    transport.define_singleton_method(:start) { |*| flunk("cross-origin pagination link must not receive the App Store Connect token") }
+    client = ForzAdvisorRelease::APIClient.new(credentials: credentials, transport: transport)
+    assert_raises(ForzAdvisorRelease::APIError) { client.get("https://attacker.example/v1/apps/#{app}/builds") }
+  end
+
+  def test_github_verified_resume_rejects_existing_build_before_upload_intent
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      verified = store.save(stable_identity.merge(
+        "schema_version" => 2,
+        "phase" => "github_verified",
+        "github_verification" => { "conclusion" => "success" }
+      ))
+      helper = FakeStableRunnerHelper.new(release_receipt)
+      api = FakeAPI.new(stable_candidate_responses)
+      coordinator = stable_coordinator(
+        store: store,
+        helper: helper,
+        api: api,
+        tag: stable_identity.fetch("ref"),
+        commit: stable_identity.fetch("commit")
+      )
+
+      error = assert_raises(ForzAdvisorRelease::PreflightError) do
+        coordinator.resume(
+          upload: true,
+          confirmation: coordinator.confirmation_token(stable_identity.fetch("commit"))
+        )
+      end
+
+      assert_match(/matching App Store Connect build already exists/, error.message)
+      assert_equal verified, store.load
+      assert_empty helper.calls
+      refute api.requests.any? { |request| %w[POST PATCH].include?(request[0]) }
+    end
+  end
+
   def test_stable_state_is_separate_from_legacy_and_fails_closed_after_ambiguous_intent
     Dir.mktmpdir do |directory|
       legacy = ForzAdvisorRelease::StateStore.new(directory: File.join(directory, "legacy"))
@@ -500,7 +692,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
       store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
       store.save(stable_identity.merge("schema_version" => 2, "phase" => "github_verified", "github_verification" => { "conclusion" => "success" }))
       helper = FakeStableRunnerHelper.new(release_receipt)
-      coordinator = stable_coordinator(store: store, helper: helper, api: FakeAPI.new(stable_candidate_responses), tag: stable_identity["ref"], commit: stable_identity["commit"])
+      coordinator = stable_coordinator(store: store, helper: helper, api: FakeAPI.new(stable_upload_candidate_responses), tag: stable_identity["ref"], commit: stable_identity["commit"])
       assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume }
       assert_empty helper.calls
       state = coordinator.resume(upload: true, confirmation: coordinator.confirmation_token(stable_identity["commit"]))
@@ -588,6 +780,154 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
+  def test_pending_candidate_supersession_archives_build_87_without_inventing_human_result
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
+      previous = stable_identity.merge(
+        "config_fingerprint" => "e70cd2d84e94e491c5da2cc120d84b55f003f2cd0f194eb9907506a434150280",
+        "ref" => "release-1.41.2-testflight-87-1",
+        "commit" => "f3318c37dba4e745a31fda4e862468db75a11e16",
+        "source_build_number" => "87",
+        "schema_version" => 2,
+        "phase" => "human_verification_pending",
+        "build_id" => "54c5fe2d-bbd2-4287-83ac-40a76698e697",
+        "release_receipt" => { "state" => "VALID", "build" => "87", "receipt_marker" => "preserve-exactly" }
+      )
+      previous = store.save(previous)
+      candidate_commit = "c" * 40
+      candidate_tag = @config.fetch("repository", "release_ref")
+      helper = FakeStableRunnerHelper.new(release_receipt(commit: candidate_commit))
+      api = FakeAPI.new(stable_upload_candidate_responses)
+      github = stable_coordinator(store: store, helper: helper, api: api, tag: candidate_tag, commit: candidate_commit)
+      active = github.start(
+        ref: candidate_tag,
+        verify_run_id: "43",
+        upload: true,
+        confirmation: github.confirmation_token(candidate_commit)
+      )
+
+      assert_equal 1, helper.calls.length
+      assert_equal "build-88", active.fetch("build_id")
+      assert_equal "human_verification_pending", active.fetch("phase")
+      assert_equal 1, api.requests.count { |request| request[0] == "POST" }
+      active = store.load
+      assert_equal "human_verification_pending", active["phase"]
+      assert_equal "88", active["source_build_number"]
+      assert_equal candidate_commit, active["commit"]
+      refute active.key?("human_verification")
+      assert_equal candidate_commit, active.dig("release_receipt", "commit")
+      supersession = active.fetch("superseded_pending_candidate")
+      assert_equal "SUPERSEDED_PENDING", supersession.fetch("transition")
+      assert_equal "human_verification_pending", supersession.dig("previous_candidate", "phase")
+      assert_equal "87", supersession.dig("previous_candidate", "source_build_number")
+      assert_equal "54c5fe2d-bbd2-4287-83ac-40a76698e697", supersession.dig("previous_candidate", "build_id")
+
+      archives = Dir.glob(File.join(directory, "state", "history", "*.json"))
+      assert_equal 1, archives.length
+      assert_equal 0o600, File.stat(archives.first).mode & 0o777
+      assert_equal Digest::SHA256.file(archives.first).hexdigest, supersession.fetch("archive_sha256")
+      archived = JSON.parse(File.read(archives.first))
+      assert_equal previous, archived
+      assert_equal previous.fetch("release_receipt"), archived.fetch("release_receipt")
+      assert_equal "human_verification_pending", archived.fetch("phase")
+      refute archived.key?("human_verification")
+    end
+  end
+
+  def test_pending_candidate_supersession_rejects_same_or_lower_build_without_archiving
+    ["88", "89"].each do |previous_build|
+      Dir.mktmpdir do |directory|
+        store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+        previous = store.save(stable_identity.merge(
+          "schema_version" => 2,
+          "ref" => "release-prior-build-#{previous_build}",
+          "source_build_number" => previous_build,
+          "phase" => "human_verification_pending",
+          "release_receipt" => { "state" => "VALID", "build" => previous_build }
+        ))
+        coordinator = ForzAdvisorRelease::StableRunnerCoordinator.new(
+          config: @config,
+          git: FakeGitRepository.new(commit: "d" * 40),
+          store: store,
+          github_verification: ->(**) { flunk("GitHub evidence must not be read for a rejected rollover") },
+          helper: nil,
+          api: nil
+        )
+
+        assert_raises(ForzAdvisorRelease::PreflightError) do
+          coordinator.start(ref: @config.fetch("repository", "release_ref"), verify_run_id: "44", upload: false, confirmation: nil)
+        end
+        assert_equal previous, store.load
+        assert_empty Dir.glob(File.join(directory, "history", "*.json"))
+      end
+    end
+  end
+
+  def test_pending_candidate_supersession_requires_upload_confirmation_before_github_or_archive
+    [
+      { upload: false, confirmation: nil, message: /requires --upload/ },
+      { upload: true, confirmation: "wrong", message: /does not match the exact release identity/ }
+    ].each do |attempt|
+      Dir.mktmpdir do |directory|
+        store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+        previous = store.save(stable_identity.merge(
+          "schema_version" => 2,
+          "ref" => "release-1.41.2-testflight-87-1",
+          "commit" => "f" * 40,
+          "source_build_number" => "87",
+          "phase" => "human_verification_pending",
+          "release_receipt" => { "state" => "VALID", "build" => "87" }
+        ))
+        coordinator = ForzAdvisorRelease::StableRunnerCoordinator.new(
+          config: @config,
+          git: FakeGitRepository.new(commit: "c" * 40),
+          store: store,
+          github_verification: ->(**) { flunk("GitHub evidence must not be read before upload authorization") },
+          helper: nil,
+          api: nil
+        )
+
+        error = assert_raises(ForzAdvisorRelease::PreflightError) do
+          coordinator.start(
+            ref: @config.fetch("repository", "release_ref"),
+            verify_run_id: "45",
+            upload: attempt.fetch(:upload),
+            confirmation: attempt.fetch(:confirmation)
+          )
+        end
+        assert_match(attempt.fetch(:message), error.message)
+        assert_equal previous, store.load
+        assert_empty Dir.glob(File.join(directory, "history", "*.json"))
+      end
+    end
+  end
+
+  def test_stable_state_transition_rejects_stale_compare_and_save
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      original = store.save(stable_identity.merge("schema_version" => 2, "phase" => "human_verification_pending"))
+      first = store.transition(expected_state: original) do |current, _archive_path|
+        current.merge("phase" => "human_needs_fixes")
+      end.fetch("state")
+
+      assert_equal "human_needs_fixes", first.fetch("phase")
+      error = assert_raises(ForzAdvisorRelease::PreflightError) do
+        store.transition(expected_state: original) { |current, _archive_path| current.merge("phase" => "human_blocked") }
+      end
+      assert_match(/state changed/, error.message)
+      assert_equal first, store.load
+      assert_empty Dir.glob(File.join(directory, "history", "*.json"))
+    end
+  end
+
+  def test_cli_active_state_mutations_use_locked_compare_and_save
+    script = File.read(File.join(ROOT, "scripts", "release"))
+
+    assert_includes script, 'store.transition(expected_state: active)'
+    assert_includes script, 'store.transition(expected_state: state)'
+    refute_match(/\bstore\.save\(/, script)
+  end
+
   def test_human_result_records_accept_and_rejects_premature_or_unknown_results
     Dir.mktmpdir do |directory|
       store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
@@ -599,6 +939,38 @@ class ForzAdvisorReleaseTest < Minitest::Test
       assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.record_human_result(result: "MAYBE", notes: "observed", evidence: "log") }
       store.save(stable_identity.merge("schema_version" => 2, "phase" => "candidate_ready"))
       assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.record_human_result(result: "ACCEPT", notes: "observed", evidence: "log") }
+    end
+  end
+
+  def test_human_result_compare_and_save_does_not_overwrite_a_concurrent_state_change
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      store.save(stable_identity.merge(
+        "schema_version" => 2,
+        "phase" => "human_verification_pending",
+        "build_id" => candidate_build.fetch("id")
+      ))
+      transition = store.method(:transition)
+      concurrent_change_applied = false
+      store.define_singleton_method(:transition) do |expected_state:, archive_expected: false, &mutation|
+        unless concurrent_change_applied
+          concurrent_change_applied = true
+          transition.call(expected_state: expected_state) do |current, _archive_path|
+            current.merge("phase" => "human_blocked", "candidate_block" => { "kind" => "concurrent-owner-action" })
+          end
+        end
+        transition.call(expected_state: expected_state, archive_expected: archive_expected, &mutation)
+      end
+      coordinator = ForzAdvisorRelease::StableRunnerCoordinator.new(config: @config, git: nil, store: store, github_verification: nil, helper: nil, api: nil)
+
+      error = assert_raises(ForzAdvisorRelease::PreflightError) do
+        coordinator.record_human_result(result: "ACCEPT", notes: "Verified", evidence: "evidence-1")
+      end
+
+      assert_match(/state changed/, error.message)
+      assert_equal "human_blocked", store.load.fetch("phase")
+      assert_equal "concurrent-owner-action", store.load.dig("candidate_block", "kind")
+      refute store.load.key?("human_verification")
     end
   end
 
@@ -840,7 +1212,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::AppStoreStatus.new(config: @config, api: api).call
 
     assert_equal true, result["read_only"]
-    assert_equal "87", result["source_build_number"]
+    assert_equal "88", result["source_build_number"]
     assert_equal @config.fetch("release", "current_app_store_build_number"), result.dig("build", "number")
     assert_equal "READY_FOR_REVIEW", result.dig("version", "state")
     assert_equal 4, api.requests.length
@@ -1015,6 +1387,17 @@ class ForzAdvisorReleaseTest < Minitest::Test
     }
   end
 
+  def stable_upload_candidate_responses
+    responses = stable_candidate_responses
+    app = @config.fetch("app", "id")
+    reads = 0
+    responses["/v1/apps/#{app}/builds"] = proc do
+      reads += 1
+      { "data" => reads == 1 ? [] : [candidate_build] }
+    end
+    responses
+  end
+
   def stable_candidate_responses
     app = @config.fetch("app", "id")
     group = @config.fetch("testflight", "internal_group", "id")
@@ -1048,7 +1431,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     client = FakeGitHubClient.new(run: github_run(tag: tag, commit: commit), jobs: [github_job])
     ForzAdvisorRelease::StableRunnerCoordinator.new(
       config: @config,
-      git: FakeGitRepository.new,
+      git: FakeGitRepository.new(commit: commit),
       store: store,
       github_verification: ForzAdvisorRelease::GitHubVerificationEvidence.new(config: @config, client: client),
       helper: helper,

@@ -42,10 +42,13 @@ local gates
 4. Focused tests, a warning-free Release build, the complete local
    `ReleaseVerify` plan, and runtime evidence pass before immutable handoff.
 5. GitHub Actions verifies the exact immutable tag and SHA on its pinned
-   fresh-machine toolchain. Its dispatch ref and run head branch are the same
-   tag, warnings are errors, and the xcresult must contain tests with zero
-   failures, skips, or expected failures. No current GitHub workflow can access
-   release credentials, archive, export, or upload.
+   fresh-machine toolchain: `macos-26`, macOS 26.6.1 (`25G76`), Xcode 26.6
+   (`17F113`), and iPhone 17 Pro / iOS 26.5. Its dispatch ref and run head branch
+   are the same tag, warnings are errors, and the xcresult must contain tests
+   with zero failures, skips, or expected failures. No current GitHub workflow
+   can access release credentials, archive, export, or upload. The published
+   [macOS 26 runner inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
+   is the availability source for the pinned host, Xcode, and simulator.
 6. Only logical profile `stable-xcode-26.3-intel` may archive, export, or upload.
    The route rechecks its private profile, pinned public toolchain facts, signing
    prerequisites, exact committed configuration, archive identity, architectures,
@@ -97,8 +100,16 @@ local gates
 - An interrupted or failed candidate retains its exact source and evidence.
   `github_verified` may resume only with renewed explicit upload authorization;
   `upload_start_intent` is read-only reconciled and blocked, never retransmitted.
-  Correction uses a new commit and different version/build identity; terminal
-  evidence is archived mode `0600` and never silently replaced.
+  A candidate in `human_verification_pending` may be superseded only by a new
+  tag/commit for the same app, bundle, and marketing version with a strictly
+  higher numeric source build. The prior state and receipt are preserved in a
+  mode-`0600` archive; the new state records `SUPERSEDED_PENDING` with the prior
+  identity and archive SHA-256, and never invents a human result. Starting the
+  supersession also requires a successful exact-tag Release Verify run,
+  `--upload`, and the identity-bound upload confirmation token; a rejected
+  attempt leaves the pending state and receipt active without archiving. Other
+  corrections use a new commit and version/build identity; terminal evidence is
+  archived mode `0600` and never silently replaced.
 - The App Privacy questionnaire remains a dated human-attested gate because the
   public API does not expose the complete questionnaire.
 - Source build and observed App Store build remain separate facts.
@@ -141,8 +152,10 @@ Scoped → Implemented → Locally verified → GitHub verified
 
 `Human NEEDS_FIXES`, `Human BLOCKED`, `Ambiguous upload BLOCKED`,
 `App Review submitted`, and `Submission failed` are durable terminal records for
-that version/build. A different version/build may begin only after the previous
-terminal state is archived; no terminal result can be rewritten as acceptance.
+that version/build. A later candidate may begin after prior state is archived;
+pending-state supersession additionally requires the same app/version identity
+and a higher source build. No terminal result can be rewritten as acceptance,
+and a pending result remains pending in its archived record.
 
 Never report a higher state than the evidence actually reached.
 

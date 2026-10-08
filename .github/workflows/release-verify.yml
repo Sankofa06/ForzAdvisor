@@ -42,6 +42,14 @@ jobs:
             echo "release_sha must be an exact lowercase 40-character commit SHA" >&2
             exit 1
           fi
+          if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then
+            echo "workflow_dispatch ref must match the immutable release tag" >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_SHA" != "$RELEASE_SHA" ]]; then
+            echo "workflow_dispatch SHA must match release_sha" >&2
+            exit 1
+          fi
 
       - name: Check out exact tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,8 +86,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(sw_vers -productVersion)" = "26.6.2"
-          test "$(sw_vers -buildVersion)" = "25G83"
+          test "$(sw_vers -productVersion)" = "26.6.1"
+          test "$(sw_vers -buildVersion)" = "25G76"
           xcodebuild -version
           test "$(xcodebuild -version | head -1)" = "Xcode 26.6"
           test "$(xcodebuild -version | tail -1)" = "Build version 17F113"

@@ -78,7 +78,12 @@ begin
              evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call
              store = ForzAdvisorRelease::StableStateStore.new
              store.save_evidence(evidence)
-             store.save(store.load.merge("app_store_preflight" => evidence)) if store.active?
+             if store.active?
+               active = store.load
+               store.transition(expected_state: active) do |current, _archive_path|
+                 current.merge("app_store_preflight" => evidence)
+               end
+             end
              evidence
            when "candidate-start", "candidate-status", "candidate-resume", "candidate-reconcile", "candidate-block", "human-result"
              store = ForzAdvisorRelease::StableStateStore.new
@@ -139,21 +144,39 @@ begin
              if command == "stage"
                raise ForzAdvisorRelease::PreflightError, "human ACCEPT is required before staging" unless %w[human_accepted staged].include?(state["phase"])
                evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call(expected_build_id: state.fetch("build_id"), require_stageable: true, require_testflight_association: true)
-               state = store.save(state.merge("stage_intent" => { "recorded_at" => Time.now.utc.iso8601, "build_id" => state.fetch("build_id") }, "app_store_preflight" => evidence))
-               checkpoint = proc { |event, observed| state = store.save(state.merge("stage_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => observed })) }
+               state = store.transition(expected_state: state) do |current, _archive_path|
+                 raise ForzAdvisorRelease::PreflightError, "human ACCEPT is required before staging" unless %w[human_accepted staged].include?(current["phase"])
+                 current.merge("stage_intent" => { "recorded_at" => Time.now.utc.iso8601, "build_id" => current.fetch("build_id") }, "app_store_preflight" => evidence)
+               end.fetch("state")
+               checkpoint = proc do |event, observed|
+                 state = store.transition(expected_state: state) do |current, _archive_path|
+                   current.merge("stage_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => observed })
+                 end.fetch("state")
+               end
                stager = ForzAdvisorRelease::CandidateStager.new(config: config, api: client, checkpoint: checkpoint)
                staged = stager.call(build_id: state.fetch("build_id"))
                final_evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call(expected_build_id: state.fetch("build_id"), require_stageable: true, require_selected_build: true, require_testflight_association: true)
-               store.save(state.merge(staged).merge("app_store_preflight" => final_evidence))
+               store.transition(expected_state: state) do |current, _archive_path|
+                 current.merge(staged).merge("app_store_preflight" => final_evidence)
+               end.fetch("state")
              else
                raise ForzAdvisorRelease::PreflightError, "candidate must be staged before submission" unless %w[staged submission_intent].include?(state["phase"])
                evidence = ForzAdvisorRelease::AppStorePreflight.new(config: config, api: client).call(expected_build_id: state.fetch("build_id"), require_stageable: true, require_selected_build: true, require_testflight_association: true)
                expected_confirmation = coordinator.submission_confirmation_token(state)
                ForzAdvisorRelease::SubmissionGuard.authorize!(submit: options[:submit], acknowledge_irreversible_app_review_submission: options[:acknowledge], confirmation: options[:confirm_submit], expected_confirmation: expected_confirmation)
-               state = store.save(state.merge("phase" => "submission_intent", "submission_intent_at" => Time.now.utc.iso8601, "app_store_preflight" => evidence))
-               checkpoint = proc { |event, observed| state = store.save(state.merge("submission_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => observed })) }
+               state = store.transition(expected_state: state) do |current, _archive_path|
+                 raise ForzAdvisorRelease::PreflightError, "candidate must be staged before submission" unless %w[staged submission_intent].include?(current["phase"])
+                 current.merge("phase" => "submission_intent", "submission_intent_at" => Time.now.utc.iso8601, "app_store_preflight" => evidence)
+               end.fetch("state")
+               checkpoint = proc do |event, observed|
+                 state = store.transition(expected_state: state) do |current, _archive_path|
+                   current.merge("submission_checkpoint" => { "event" => event, "recorded_at" => Time.now.utc.iso8601, "evidence" => observed })
+                 end.fetch("state")
+               end
                result = ForzAdvisorRelease::CandidateStager.new(config: config, api: client, checkpoint: checkpoint).submit(submission_id: state.fetch("review_submission_id"), submit: options[:submit], acknowledge: options[:acknowledge], confirmation: options[:confirm_submit], expected_confirmation: expected_confirmation)
-               final = store.save(state.merge(result))
+               final = store.transition(expected_state: state) do |current, _archive_path|
+                 current.merge(result)
+               end.fetch("state")
                raise ForzAdvisorRelease::PreflightError, "App Review submission ended in #{final['submission_state']}" if final["phase"] == "submission_failed"
                final
              end

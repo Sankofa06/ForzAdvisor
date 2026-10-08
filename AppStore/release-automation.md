@@ -30,7 +30,8 @@ developer Mac.
 
 - App Store Connect app, bundle, team, version, review-draft, and review-item identifiers
 - canonical GitHub checkout, remote, and immutable release ref
-- marketing version `1.41.2`, source build `87`, and current App Store build `87`
+- marketing version `1.41.2`, proposed source build `88`, and current App Store
+  build `87`
 - Free pricing, explicit-human-approval submission policy, and `AFTER_APPROVAL` release timing
 - published privacy-label declaration and human attestation date
 - content-rights, age-rating, review-contact, and export-compliance attestations
@@ -89,6 +90,21 @@ scripts/release preflight --url-fixture /absolute/path/url-results.json
 
 Fixture results are test inputs, not current deployment evidence. Use live URL
 checks for an actual candidate.
+
+### Verification runtime contract
+
+The exact-revision GitHub `Release Verify` workflow uses `macos-26`, macOS 26.6.1
+build `25G76`, Xcode 26.6 build `17F113`, and the iPhone 17 Pro simulator on
+iOS 26.5. The current [GitHub macOS 26 runner image inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
+lists that Xcode, the iOS 26.5 simulator runtime, and the iPhone 17 Pro device.
+The workflow checks the host and Xcode versions and runs the complete
+`ReleaseVerify` plan with warnings as errors and no test exclusions.
+
+Local verification uses the installed iOS 26.5 iPhone 17 Pro destination selected
+through XcodeBuildMCP. The ReleaseVerify plan does not pin a local Xcode version;
+the local Xcode 27.0 installation is verification-only and never has archive or
+upload authority. The manual `verification-ci.yml` smoke/regression lanes remain
+on their separately installed iOS 26.4.1 destination.
 
 ## Current TestFlight Candidate Route
 
@@ -190,6 +206,16 @@ The blocked state is immutable evidence. A later candidate may roll over only
 after the configuration uses a different marketing version or build number; the
 old state is archived mode `0600` outside the repository before the new state is
 created.
+
+A pending TestFlight candidate may be superseded only by a different tag and
+commit for the same app, bundle, and marketing version with a strictly higher
+numeric source build. The old `human_verification_pending` state is archived
+with its receipt unchanged at mode `0600`; the new state records
+`SUPERSEDED_PENDING`, the prior identity, and the archive SHA-256. This does
+not record or infer a human result for either build. Starting that supersession
+requires the exact candidate tag's successful Release Verify run, `--upload`,
+and the identity-bound upload confirmation token; without them the pending
+state and receipt remain active and no archive is written.
 
 Upload transport success is not readiness. The coordinator must wait for the
 exact new build to become `VALID`, verify App Store eligibility and export
