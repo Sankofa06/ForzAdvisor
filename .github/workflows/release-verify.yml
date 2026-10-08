@@ -84,11 +84,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo 'Checkout status after portable tests (runner HOME):'
+          git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all
           preflight_home="$(mktemp -d "$RUNNER_TEMP/forzadvisor-preflight-home.XXXXXX")"
           mkdir -p "$preflight_home/Agents"
           ln -s "$GITHUB_WORKSPACE" "$preflight_home/Agents/ForzAdvisor"
-          echo 'Checkout status after portable tests (runner HOME):'
-          git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all
           echo 'Checkout status after temporary HOME setup (runner HOME):'
           git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all
           echo 'Checkout status after temporary HOME setup (isolated HOME):'

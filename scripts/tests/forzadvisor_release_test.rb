@@ -314,7 +314,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     PYTHON
 
     Dir.mktmpdir("forzadvisor-workspace-test") do |temp_root|
-      stdout, stderr, status = Open3.capture3("python3", "-c", python, allocator, temp_root)
+      stdout, stderr, status = Open3.capture3({ "PYTHONDONTWRITEBYTECODE" => "1" }, "python3", "-c", python, allocator, temp_root)
       assert status.success?, [stdout, stderr].reject(&:empty?).join("\n")
       assert_empty stdout
       assert_empty stderr
@@ -367,7 +367,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
     assert_equal "89", @config.fetch("release", "source_build_number")
     assert_equal "87", @config.fetch("release", "current_app_store_build_number")
-    assert_equal "release-1.41.2-testflight-89-5", @config.fetch("repository", "release_ref")
+    assert_equal "release-1.41.2-testflight-89-6", @config.fetch("repository", "release_ref")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
@@ -657,7 +657,17 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_includes workflow, "ref: ${{ inputs.release_sha }}"
     assert_includes workflow, 'if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then'
     assert_includes workflow, 'if [[ "$GITHUB_SHA" != "$RELEASE_SHA" ]]; then'
-    assert_includes workflow, 'preflight_home="$(mktemp -d "$RUNNER_TEMP/forzadvisor-preflight-home.XXXXXX")"'
+    status_after_tests_index = workflow.index("Checkout status after portable tests (runner HOME)")
+    preflight_home_index = workflow.index('preflight_home="$(mktemp -d "$RUNNER_TEMP/forzadvisor-preflight-home.XXXXXX")"')
+    isolated_home_status_index = workflow.index("Checkout status after temporary HOME setup (isolated HOME)")
+    preflight_index = workflow.index('if ! HOME="$preflight_home" scripts/release preflight --ref "$RELEASE_REF"; then')
+    refute_nil status_after_tests_index
+    refute_nil preflight_home_index
+    refute_nil isolated_home_status_index
+    refute_nil preflight_index
+    assert_operator status_after_tests_index, :<, preflight_home_index
+    assert_operator preflight_home_index, :<, isolated_home_status_index
+    assert_operator isolated_home_status_index, :<, preflight_index
     assert_includes workflow, 'ln -s "$GITHUB_WORKSPACE" "$preflight_home/Agents/ForzAdvisor"'
     assert_includes workflow, 'git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all'
     assert_includes workflow, 'HOME="$preflight_home" git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all'
