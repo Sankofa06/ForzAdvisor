@@ -657,20 +657,35 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_includes workflow, "ref: ${{ inputs.release_sha }}"
     assert_includes workflow, 'if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then'
     assert_includes workflow, 'if [[ "$GITHUB_SHA" != "$RELEASE_SHA" ]]; then'
+    profile_test_index = workflow.index("python3 scripts/tests/test_ios_profile_verifier.py")
+    clean_check_index = workflow.index("Require clean checkout after portable tests")
     status_after_tests_index = workflow.index("Checkout status after portable tests (runner HOME)")
     preflight_home_index = workflow.index('preflight_home="$(mktemp -d "$RUNNER_TEMP/forzadvisor-preflight-home.XXXXXX")"')
     isolated_home_status_index = workflow.index("Checkout status after temporary HOME setup (isolated HOME)")
     preflight_index = workflow.index('if ! HOME="$preflight_home" scripts/release preflight --ref "$RELEASE_REF"; then')
+    refute_nil profile_test_index
+    refute_nil clean_check_index
     refute_nil status_after_tests_index
     refute_nil preflight_home_index
     refute_nil isolated_home_status_index
     refute_nil preflight_index
+    assert_operator profile_test_index, :<, clean_check_index
+    assert_operator clean_check_index, :<, status_after_tests_index
     assert_operator status_after_tests_index, :<, preflight_home_index
     assert_operator preflight_home_index, :<, isolated_home_status_index
     assert_operator isolated_home_status_index, :<, preflight_index
+    clean_check_end_index = workflow.index("      - name: Repository release preflight", clean_check_index)
+    refute_nil clean_check_end_index
+    clean_check_block = workflow[clean_check_index...clean_check_end_index]
+    assert_includes clean_check_block, 'dirty_status="$(git status --porcelain --untracked-files=all)"'
+    assert_includes clean_check_block, 'if [[ -n "$dirty_status" ]]; then'
+    assert_includes clean_check_block, "exit 1"
+    assert_includes clean_check_block, 'printf \'%s\\n\' "$dirty_status" >&2'
     assert_includes workflow, 'ln -s "$GITHUB_WORKSPACE" "$preflight_home/Agents/ForzAdvisor"'
     assert_includes workflow, 'git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all'
     assert_includes workflow, 'HOME="$preflight_home" git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all'
+    assert_includes workflow, 'git status --porcelain --untracked-files=all'
+    assert_includes workflow, 'Portable tests left the release checkout dirty:'
     assert_includes workflow, 'HOME="$preflight_home" scripts/release preflight --ref "$RELEASE_REF"'
     refute_includes workflow, 'ln -s "$GITHUB_WORKSPACE" "$HOME/Agents/ForzAdvisor"'
     assert_includes workflow, "SWIFT_TREAT_WARNINGS_AS_ERRORS=YES"

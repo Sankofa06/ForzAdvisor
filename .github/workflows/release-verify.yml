@@ -80,6 +80,18 @@ jobs:
           set -euo pipefail
           python3 scripts/tests/test_ios_profile_verifier.py
 
+      - name: Require clean checkout after portable tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          dirty_status="$(git status --porcelain --untracked-files=all)"
+          if [[ -n "$dirty_status" ]]; then
+            echo "Portable tests left the release checkout dirty:" >&2
+            printf '%s\n' "$dirty_status" >&2
+            exit 1
+          fi
+          echo "PASS checkout remained clean after portable tests"
+
       - name: Repository release preflight
         shell: bash
         run: |
