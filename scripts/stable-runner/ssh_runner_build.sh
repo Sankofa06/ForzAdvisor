@@ -131,7 +131,8 @@ export_internal_testflight=$(jq -r 'if (.stable_runner.export? | type) == "objec
 
 [[ -n "$private_profile" && -n "$repo_profile" && "$repo_profile" == "$private_profile" ]] || { print "FAIL  repository runner profile does not match the configured private profile"; exit 1; }
 [[ -n "$ssh_host" && -n "$developer_dir" && -n "$expected_xcode_build" && -n "$expected_macos_build" ]] || { print "FAIL  private runner profile is incomplete"; exit 1; }
-[[ "$workspace_root" == /tmp/* && "$workspace_root" != /tmp && "$workspace_root" != */../* ]] || { print "FAIL  runner workspace root is unsafe"; exit 1; }
+[[ "$workspace_root" == /tmp/* && "$workspace_root" != /tmp && "$workspace_root" != */.. && "$workspace_root" != *'/../'* && "$workspace_root" != *'/./'* && "$workspace_root" != *$'\n'* ]] || { print "FAIL  runner workspace root is unsafe"; exit 1; }
+git -C "$repo_path" cat-file -e "${canonical_commit}:scripts/stable-runner/allocate_remote_task.py" 2>/dev/null || { print "FAIL  exact commit is missing the pinned remote workspace allocator"; exit 2; }
 [[ -n "$project" && -n "$scheme" && -n "$destination" && -n "$expected_bundle" ]] || { print "FAIL  committed release config is missing project, scheme, destination, or bundle ID"; exit 1; }
 [[ "$project" != /* && "$project" != *../* && "$project" == *.xcodeproj ]] || { print "FAIL  configured Xcode project path is unsafe"; exit 1; }
 [[ "$warning_policy" == global || "$warning_policy" == project ]] || { print "FAIL  stable runner warning policy must be global or project"; exit 1; }
@@ -180,7 +181,6 @@ fi
 repo_slug=$(basename "$repo_path" | tr -cd 'A-Za-z0-9._-')
 [[ -n "$repo_slug" ]] || repo_slug=AppleApp
 short_commit=${canonical_commit[1,12]}
-quoted_root=${(q)workspace_root}
 
 if ! git -C "$repo_path" cat-file -e "${canonical_commit}:$project" 2>/dev/null; then
   git -C "$repo_path" cat-file -e "${canonical_commit}:project.yml" 2>/dev/null || {
@@ -198,8 +198,24 @@ if ! git -C "$repo_path" cat-file -e "${canonical_commit}:$project" 2>/dev/null;
   print "PASS  generated the configured Xcode project from the exact commit"
 fi
 
-remote_dir=$(ssh -o LogLevel=QUIET "$ssh_host" "mkdir -p $quoted_root && mktemp -d $quoted_root/${repo_slug}-${short_commit}-XXXXXX")
-[[ "$remote_dir" == "$workspace_root"/${repo_slug}-${short_commit}-* && "$remote_dir" != *'/../'* && "$remote_dir" != *'/..' && "$remote_dir" != *$'\n'* ]] || { print "FAIL  runner returned an unexpected task directory"; exit 1; }
+remote_path_arguments=(allocate "$workspace_root" "$repo_slug" "$short_commit")
+quoted_path_arguments=()
+for argument in "${remote_path_arguments[@]}"; do
+  quoted_path_arguments+=("${(q)argument}")
+done
+remote_paths=$(git -C "$repo_path" show "${canonical_commit}:scripts/stable-runner/allocate_remote_task.py" | \
+  ssh -o LogLevel=QUIET "$ssh_host" "/usr/bin/python3 - ${(j: :)quoted_path_arguments}") || {
+  print "FAIL  runner could not safely allocate an exact-source task directory"
+  exit 1
+}
+print -r -- "$remote_paths" | jq -e 'type == "object" and (.workspaceRoot | type == "string" and length > 0 and startswith("/") and (contains("\n") | not)) and (.taskDir | type == "string" and length > 0 and startswith("/") and (contains("\n") | not))' >/dev/null || {
+  print "FAIL  runner returned invalid canonical task paths"
+  exit 1
+}
+remote_workspace_root=$(print -r -- "$remote_paths" | jq -r '.workspaceRoot')
+remote_dir=$(print -r -- "$remote_paths" | jq -r '.taskDir')
+[[ "$remote_workspace_root" == /* && "$remote_workspace_root" != *'/../'* && "$remote_workspace_root" != *'/..' && "$remote_dir" == "$remote_workspace_root"/${repo_slug}-${short_commit}-* && "$remote_dir" != *'/../'* && "$remote_dir" != *'/..' ]] || { print "FAIL  runner returned an unexpected canonical task directory"; exit 1; }
+workspace_root=$remote_workspace_root
 remote_task_id=$(basename "$remote_dir")
 print "INFO  allocated remote release task $remote_task_id"
 
@@ -282,7 +298,7 @@ export_internal_testflight=${35}
 platform=${36}
 installer_signing_certificate=${37}
 
-[[ "$workspace_root" == /tmp/* && "$task_dir" == "$workspace_root"/* && "$task_dir" != *'/../'* && "$task_dir" != *'/..' && "$task_dir" != *$'\n'* ]] || { print "FAIL  remote task ownership check failed"; exit 1; }
+python3 "$task_dir/scripts/stable-runner/allocate_remote_task.py" validate "$workspace_root" "$task_dir" || { print "FAIL  remote task ownership or canonical-root validation failed"; exit 1; }
 export DEVELOPER_DIR="$developer_dir"
 cd "$task_dir"
 
@@ -315,6 +331,7 @@ release_lock="$workspace_root/.archive-upload.lock"
 lock_owned=0
 credential_dir=
 keychain_path=
+keychain_unlocked=0
 original_keychains=()
 original_keychains_captured=0
 if ! mkdir "$release_lock" 2>/dev/null; then
@@ -335,7 +352,6 @@ check_archive_resources() {
   fabricon_process_count=$(ps -axo comm | awk 'tolower($0) ~ /fabricon/ && $0 !~ /\/Runner\.Listener$/ { count++ } END { print count + 0 }')
   [[ "$fabricon_process_count" == 0 ]] || { print "FAIL  a Fabricon process is active on the stable runner"; return 1; }
 }
-check_archive_resources || exit 1
 
 restore_keychain_context() {
   restore_status=0
@@ -354,9 +370,9 @@ restore_keychain_context() {
       restore_status=1
     fi
   fi
-  if [[ -n "$keychain_path" ]]; then
+  if (( keychain_unlocked == 1 )) && [[ -n "$keychain_path" ]]; then
     if security lock-keychain "$keychain_path" >/dev/null 2>&1; then
-      keychain_path=
+      keychain_unlocked=0
     else
       restore_status=1
     fi
@@ -384,6 +400,29 @@ exit [lindex $result 3]
 EXPECT
 }
 
+release_archive_lock_if_clean() {
+  local cleanup_failed=$1
+  local lock_owned=$2
+  local release_lock=$3
+  local workspace_root=$4
+  if (( cleanup_failed != 0 )); then
+    return 2
+  fi
+  if (( lock_owned != 1 )) || [[ "$release_lock" != "$workspace_root/.archive-upload.lock" ]]; then
+    return 0
+  fi
+  [[ -f "$release_lock/owner" && ! -L "$release_lock/owner" ]] || return 1
+  owner_value=$(<"$release_lock/owner")
+  if ! rm -f -- "$release_lock/owner"; then
+    return 1
+  fi
+  if ! rmdir "$release_lock" >/dev/null 2>&1; then
+    print -r -- "$owner_value" > "$release_lock/owner" 2>/dev/null || true
+    return 1
+  fi
+  return 0
+}
+
 cleanup_remote() {
   exit_status=$?
   cleanup_failed=0
@@ -396,9 +435,13 @@ cleanup_remote() {
       restore_keychain_context || cleanup_failed=1
     fi
   fi
-  if (( lock_owned == 1 )) && [[ "$release_lock" == "$workspace_root/.archive-upload.lock" ]]; then
-    rm -f -- "$release_lock/owner" || cleanup_failed=1
-    rmdir "$release_lock" >/dev/null 2>&1 || cleanup_failed=1
+  lock_release_status=0
+  release_archive_lock_if_clean "$cleanup_failed" "$lock_owned" "$release_lock" "$workspace_root" || lock_release_status=$?
+  if (( lock_release_status == 2 )); then
+    print "FAIL  archive lock preserved because sensitive cleanup did not complete" >&2
+  elif (( lock_release_status != 0 )); then
+    cleanup_failed=1
+    print "FAIL  archive lock could not be safely released and was preserved" >&2
   fi
   if (( cleanup_failed != 0 )); then
     print "FAIL  sensitive runner cleanup did not complete" >&2
@@ -411,6 +454,7 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+check_archive_resources || exit 1
 credentials_file="$HOME/.codex/secrets/app-store-connect.env"
 credential_dir=$(mktemp -d "$task_dir/.credentials-XXXXXX")
 chmod 700 "$credential_dir"
@@ -488,6 +532,11 @@ keychain_path=
 redaction_values="$credential_dir/signing-redactions"
 if [[ "$signing_mode" == manual ]]; then
   [[ "$platform" == iOS && "$signing_metadata_path" != /* && "$signing_metadata_path" != *../* ]] || { print "FAIL  private iOS signing metadata path is invalid"; exit 1; }
+  python3 "$task_dir/scripts/stable-runner/validate_ios_signing_metadata.py" \
+    --metadata-relative "$signing_metadata_path" --bundle-id "$expected_bundle" --platform "$platform" || {
+      print "FAIL  existing private signing metadata failed JSON, identity, or path validation"
+      exit 1
+    }
   signing_metadata="$HOME/$signing_metadata_path"
   [[ -f "$signing_metadata" && ! -L "$signing_metadata" && -r "$signing_metadata" && "$(stat -f '%Lp' "$signing_metadata" 2>/dev/null)" == 600 ]] || { print "FAIL  private signing metadata is unavailable"; exit 1; }
   private_signing=$(jq -c --arg platform "$platform" '.platforms[$platform] // .' "$signing_metadata")
@@ -518,8 +567,8 @@ if [[ "$signing_mode" == manual ]]; then
   decoded_profile="$credential_dir/selected-profile.plist"
   security cms -D -i "$profile_path" >"$decoded_profile" 2>/dev/null || { print "FAIL  selected App Store profile could not be decoded"; exit 1; }
   certificate_hashes=$(python3 "$profile_verifier" --profile "$decoded_profile" --bundle-id "$expected_bundle" --team-id "$team_id" --profile-uuid "$signing_profile_uuid" --profile-name "$signing_profile_name" --print-certificate-sha1s) || { print "FAIL  selected App Store profile failed bundle, team, distribution, or expiry verification"; exit 1; }
-  keychain_path=$(print -r -- "$signing_metadata" | jq -r '.keychainPath // empty')
-  password_file=$(print -r -- "$signing_metadata" | jq -r '.passwordFile // empty')
+  keychain_path=$(jq -r '.keychainPath // empty' "$signing_metadata")
+  password_file=$(jq -r '.passwordFile // empty' "$signing_metadata")
   [[ "$keychain_path" == "$HOME"/Library/Keychains/* && -f "$keychain_path" && ! -L "$keychain_path" && -r "$password_file" && -f "$password_file" && ! -L "$password_file" && "$(stat -f '%Lp' "$password_file" 2>/dev/null)" == 600 && "$(stat -f '%u' "$password_file" 2>/dev/null)" == "$(id -u)" ]] || { print "FAIL  existing release keychain or password metadata is unavailable"; exit 1; }
   identity_report=$(security find-identity -v -p codesigning "$keychain_path" 2>/dev/null) || { print "FAIL  existing distribution identity could not be inspected"; exit 1; }
   identity_count=$(print -r -- "$identity_report" | awk '/valid identities found/ {print $1}')
@@ -533,6 +582,7 @@ if [[ "$signing_mode" == manual ]]; then
   if [[ "$action" == validate-signing ]]; then
     [[ -x /usr/bin/expect ]] || { print "FAIL  secure existing-keychain unlock prompt handler is unavailable"; exit 1; }
     unlock_existing_keychain || { print "FAIL  existing release keychain could not be unlocked without changing its ACL"; exit 1; }
+    keychain_unlocked=1
     extraction_smoke_dir="$credential_dir/codesign-key-smoke"
     mkdir -m 700 "$extraction_smoke_dir"
     cp /usr/bin/true "$extraction_smoke_dir/signed-true" || { print "FAIL  temporary signing smoke input could not be prepared"; exit 1; }
@@ -564,6 +614,7 @@ if [[ "$signing_mode" == manual ]]; then
   original_keychains_captured=1
   [[ -x /usr/bin/expect ]] || { print "FAIL  secure existing-keychain unlock prompt handler is unavailable"; exit 1; }
   unlock_existing_keychain || { print "FAIL  existing release keychain could not be unlocked without changing its ACL"; exit 1; }
+  keychain_unlocked=1
   security list-keychains -d user -s "$keychain_path" >/dev/null || { print "FAIL  release keychain search-list selection failed"; exit 1; }
   manual_signing_arguments=(CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM="$team_id" CODE_SIGN_IDENTITY="$signing_certificate_hash" OTHER_CODE_SIGN_FLAGS="--keychain $keychain_path" PROVISIONING_PROFILE_SPECIFIER="$signing_profile_name")
   run_sensitive archive "$DEVELOPER_DIR/usr/bin/xcodebuild" "${archive_arguments[@]}" "${manual_signing_arguments[@]}" || { print "FAIL  signed archive failed"; exit 1; }
@@ -799,7 +850,7 @@ if (( keep_remote == 1 )); then
   exit 0
 fi
 
-if [[ "$remote_dir" == "$workspace_root"/${repo_slug}-${short_commit}-* ]]; then
+if [[ "$remote_dir" == "$remote_workspace_root"/${repo_slug}-${short_commit}-* ]]; then
   if ssh -o LogLevel=QUIET "$ssh_host" "rm -rf -- ${(q)remote_dir}"; then
     print "PASS  remote action completed and its task-owned resources were cleaned"
   else

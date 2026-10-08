@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "json"
+require "fileutils"
 require "minitest/autorun"
 require "open3"
 require "tmpdir"
@@ -135,10 +136,214 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert status.success?, [stdout, stderr].reject(&:empty?).join("\n")
   end
 
+  def test_private_signing_metadata_is_loaded_from_json_and_fails_closed_on_invalid_paths
+    helper = File.read(File.join(ROOT, "scripts", "stable-runner", "ssh_runner_build.sh"))
+    assert_includes helper, "validate_ios_signing_metadata.py"
+    assert_includes helper, %q{keychain_path=$(jq -r '.keychainPath // empty' "$signing_metadata")}
+    assert_includes helper, %q{password_file=$(jq -r '.passwordFile // empty' "$signing_metadata")}
+    refute_includes helper, %q{print -r -- "$signing_metadata" | jq}
+    assert_includes helper, "keychain_unlocked=0"
+    assert_includes helper, "if (( keychain_unlocked == 1 )) && [[ -n \"$keychain_path\" ]]; then"
+
+    validator = File.join(ROOT, "scripts", "stable-runner", "validate_ios_signing_metadata.py")
+    bundle_id = "com.michaelwilliams.forzadvisor"
+
+    Dir.mktmpdir("forzadvisor-signing-fixture") do |home|
+      metadata_directory = File.join(home, ".codex", "release-runners")
+      secrets_directory = File.join(home, ".codex", "secrets")
+      keychain_directory = File.join(home, "Library", "Keychains")
+      FileUtils.mkdir_p([metadata_directory, secrets_directory, keychain_directory])
+      metadata_path = File.join(metadata_directory, "signing.json")
+      keychain_path = File.join(keychain_directory, "release.keychain-db")
+      password_path = File.join(secrets_directory, "keychain-password")
+      File.write(keychain_path, "test-only keychain fixture")
+      File.write(password_path, "test-only password fixture")
+      File.chmod(0o600, keychain_path)
+      File.chmod(0o600, password_path)
+
+      fixture = {
+        "keychainPath" => keychain_path,
+        "passwordFile" => password_path,
+        "platforms" => {
+          "iOS" => {
+            "certificateId" => "fixture-certificate",
+            "certificateType" => "DISTRIBUTION",
+            "certificateExpirationDate" => "2099-12-31T23:59:59Z",
+            "profiles" => {
+              bundle_id => {
+                "profileId" => "fixture-profile",
+                "profileName" => "Fixture App Store Profile",
+                "profileUuid" => "00000000-0000-4000-8000-000000000089",
+                "profileType" => "IOS_APP_STORE",
+                "profileState" => "ACTIVE",
+                "profileExpirationDate" => "2099-12-31T23:59:59Z"
+              }
+            }
+          }
+        }
+      }
+      File.write(metadata_path, JSON.pretty_generate(fixture))
+      File.chmod(0o600, metadata_path)
+
+      command = [
+        "python3", validator,
+        "--metadata-relative", ".codex/release-runners/signing.json",
+        "--bundle-id", bundle_id,
+        "--platform", "iOS"
+      ]
+      stdout, stderr, status = Open3.capture3({ "HOME" => home }, *command)
+      assert status.success?, stderr
+      assert_empty stdout
+      assert_empty stderr
+
+      jq_stdout, jq_stderr, jq_status = Open3.capture3(
+        "jq", "-r", ".keychainPath // empty", metadata_path
+      )
+      assert jq_status.success?, jq_stderr
+      assert_equal keychain_path, jq_stdout.strip
+      _path_stdout, _path_stderr, path_as_json_status = Open3.capture3(
+        "jq", "-r", ".keychainPath // empty", stdin_data: metadata_path
+      )
+      refute path_as_json_status.success?, "a pathname passed as JSON must fail closed"
+
+      File.write(metadata_path, metadata_path + "\n")
+      _stdout, invalid_stderr, invalid_status = Open3.capture3({ "HOME" => home }, *command)
+      refute invalid_status.success?
+      assert_equal "signing metadata validation failed\n", invalid_stderr
+
+      escaped_keychain = File.join(home, "outside", "release.keychain-db")
+      FileUtils.mkdir_p(File.dirname(escaped_keychain))
+      File.write(escaped_keychain, "test-only outside keychain fixture")
+      File.chmod(0o600, escaped_keychain)
+      fixture["keychainPath"] = escaped_keychain
+      File.write(metadata_path, JSON.pretty_generate(fixture))
+      _stdout, escaped_keychain_stderr, escaped_keychain_status = Open3.capture3({ "HOME" => home }, *command)
+      refute escaped_keychain_status.success?
+      assert_equal "signing metadata validation failed\n", escaped_keychain_stderr
+
+      fixture["keychainPath"] = keychain_path
+      fixture["passwordFile"] = File.join(home, "outside", "password")
+      FileUtils.mkdir_p(File.dirname(fixture["passwordFile"]))
+      File.write(fixture["passwordFile"], "test-only outside password fixture")
+      File.chmod(0o600, fixture["passwordFile"])
+      File.write(metadata_path, JSON.pretty_generate(fixture))
+      _stdout, escaped_password_stderr, escaped_password_status = Open3.capture3({ "HOME" => home }, *command)
+      refute escaped_password_status.success?
+      assert_equal "signing metadata validation failed\n", escaped_password_stderr
+
+      fixture["passwordFile"] = password_path
+      keychain_root_backup = File.join(home, "Library", "Keychains-original")
+      FileUtils.mv(keychain_directory, keychain_root_backup)
+      FileUtils.ln_s(keychain_root_backup, keychain_directory)
+      File.write(metadata_path, JSON.pretty_generate(fixture))
+      _stdout, linked_keychain_root_stderr, linked_keychain_root_status = Open3.capture3({ "HOME" => home }, *command)
+      refute linked_keychain_root_status.success?
+      assert_equal "signing metadata validation failed\n", linked_keychain_root_stderr
+      FileUtils.rm_f(keychain_directory)
+      FileUtils.mv(keychain_root_backup, keychain_directory)
+
+      metadata_root_backup = File.join(home, ".codex", "release-runners-original")
+      FileUtils.mv(metadata_directory, metadata_root_backup)
+      FileUtils.ln_s(metadata_root_backup, metadata_directory)
+      _stdout, linked_metadata_root_stderr, linked_metadata_root_status = Open3.capture3({ "HOME" => home }, *command)
+      refute linked_metadata_root_status.success?
+      assert_equal "signing metadata validation failed\n", linked_metadata_root_stderr
+    end
+  end
+
+  def test_stable_runner_workspace_allocator_rejects_symlink_and_traversal_paths
+    helper = File.read(File.join(ROOT, "scripts", "stable-runner", "ssh_runner_build.sh"))
+    assert_includes helper, 'git -C "$repo_path" show "${canonical_commit}:scripts/stable-runner/allocate_remote_task.py"'
+    assert_includes helper, 'python3 "$task_dir/scripts/stable-runner/allocate_remote_task.py" validate'
+    allocator = File.join(ROOT, "scripts", "stable-runner", "allocate_remote_task.py")
+    python = <<~PYTHON
+      import importlib.util
+      import shutil
+      import sys
+      import tempfile
+      from pathlib import Path
+
+      spec = importlib.util.spec_from_file_location("workspace_allocator", sys.argv[1])
+      module = importlib.util.module_from_spec(spec)
+      spec.loader.exec_module(module)
+      base = Path(sys.argv[2]).resolve(strict=True)
+      root, task = module.allocate_remote_task(str(base / "valid-workspace"), "ForzAdvisor", "abcdef012345", base)
+      assert root == base / "valid-workspace"
+      assert task.parent == root and task.is_dir()
+      shutil.rmtree(task)
+
+      outside = Path(tempfile.mkdtemp(prefix="forzadvisor-outside-", dir=base.parent))
+      link = base / "workspace-link"
+      link.symlink_to(outside, target_is_directory=True)
+
+      def rejected(path):
+          try:
+              module.allocate_remote_task(str(path), "ForzAdvisor", "abcdef012345", base)
+          except module.UnsafeWorkspaceError:
+              return True
+          return False
+
+      assert rejected(link / "task")
+      assert rejected(base / "traversal" / ".." / "escape")
+      assert not list(outside.iterdir())
+      outside.rmdir()
+    PYTHON
+
+    Dir.mktmpdir("forzadvisor-workspace-test") do |temp_root|
+      stdout, stderr, status = Open3.capture3("python3", "-c", python, allocator, temp_root)
+      assert status.success?, [stdout, stderr].reject(&:empty?).join("\n")
+      assert_empty stdout
+      assert_empty stderr
+    end
+  end
+
+  def test_archive_lock_is_preserved_when_sensitive_cleanup_fails
+    helper = File.read(File.join(ROOT, "scripts", "stable-runner", "ssh_runner_build.sh"))
+    payload = helper.match(/<<'REMOTE_SCRIPT'\n(.*?)\nREMOTE_SCRIPT/m)
+    refute_nil payload
+    assert_includes payload[1], 'rm -rf -- "$credential_dir" || cleanup_failed=1'
+    assert_includes payload[1], 'restore_keychain_context || cleanup_failed=1'
+    assert_includes payload[1], 'release_archive_lock_if_clean "$cleanup_failed" "$lock_owned" "$release_lock" "$workspace_root" || lock_release_status=$?'
+
+    lock_function = payload[1].match(/^release_archive_lock_if_clean\(\) \{\n.*?^\}/m)
+    cleanup_function = payload[1].match(/^cleanup_remote\(\) \{\n.*?^\}/m)
+    refute_nil lock_function
+    refute_nil cleanup_function
+    zsh = ENV.fetch("PATH", "").split(File::PATH_SEPARATOR).map { |directory| File.join(directory, "zsh") }.find { |path| File.executable?(path) }
+    skip "zsh unavailable in this environment" unless zsh
+
+    Dir.mktmpdir("forzadvisor-archive-lock-test") do |workspace_root|
+      ["credential-directory removal failure", "keychain-context restoration failure"].each do |failure_case|
+        task_dir = File.join(workspace_root, "ForzAdvisor-abcdef012345-task")
+        lock_path = File.join(workspace_root, ".archive-upload.lock")
+        credential_dir = File.join(task_dir, ".credentials-test")
+        FileUtils.mkdir_p([lock_path, credential_dir])
+        File.write(File.join(lock_path, "owner"), "a" * 40)
+        File.write(File.join(credential_dir, "private-test-file"), "test only")
+        setup = if failure_case.start_with?("credential")
+          'rm() { return 1; }; original_keychains_captured=0; keychain_path=""'
+        else
+          'restore_keychain_context() { return 1; }; original_keychains_captured=1; keychain_path=""; credential_dir=""'
+        end
+        command = [lock_function[0], cleanup_function[0], setup,
+                   'task_dir="$1"; workspace_root="$2"; release_lock="$workspace_root/.archive-upload.lock"; lock_owned=1; true; cleanup_remote'].join("\n")
+        _stdout, _stderr, status = Open3.capture3(zsh, "-c", command, "lock-cleanup-test", task_dir, workspace_root)
+        assert_equal 1, status.exitstatus, failure_case
+        assert File.directory?(lock_path), failure_case
+        assert File.file?(File.join(lock_path, "owner")), failure_case
+        if failure_case.start_with?("credential")
+          assert File.directory?(credential_dir), failure_case
+        end
+        FileUtils.rm_rf(task_dir)
+        FileUtils.rm_rf(lock_path)
+      end
+    end
+  end
+
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
     assert_equal "89", @config.fetch("release", "source_build_number")
     assert_equal "87", @config.fetch("release", "current_app_store_build_number")
-    assert_equal "release-1.41.2-testflight-89-2", @config.fetch("repository", "release_ref")
+    assert_equal "release-1.41.2-testflight-89-3", @config.fetch("repository", "release_ref")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
