@@ -84,9 +84,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$HOME/Agents"
-          ln -s "$GITHUB_WORKSPACE" "$HOME/Agents/ForzAdvisor"
-          scripts/release preflight --ref "$RELEASE_REF"
+          preflight_home="$(mktemp -d "$RUNNER_TEMP/forzadvisor-preflight-home.XXXXXX")"
+          mkdir -p "$preflight_home/Agents"
+          ln -s "$GITHUB_WORKSPACE" "$preflight_home/Agents/ForzAdvisor"
+          HOME="$preflight_home" scripts/release preflight --ref "$RELEASE_REF"
 
       - name: Select Xcode
         shell: bash
