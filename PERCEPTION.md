@@ -8,7 +8,7 @@ This file is the replace-in-place record for one active goal. It describes curre
 - Refreshed: 2026-10-08
 - Goal: Complete the already-authorized ForzAdvisor 1.41.2 internal TestFlight build 89 through the pinned stable runner.
 - Authority: Existing owner authorization covers the internal TestFlight upload and association with the configured Internal group. App Review, public release, new testers, new credentials, and broader access changes remain unauthorized.
-- Source: Local main candidate for intended immutable tag release-1.41.2-testflight-89-4; publish only after fresh independent review and exact-tag verification.
+- Source: Local main candidate for intended immutable tag release-1.41.2-testflight-89-5; publish only after fresh independent review and exact-tag verification.
 - Preservation: Keep app source and unrelated work intact; use only task-owned runner resources and do not disturb existing simulators or jobs.
 
 ## Current evidence
@@ -25,11 +25,12 @@ This file is the replace-in-place record for one active goal. It describes curre
 - The latest exact-source review identified lexical workspace-root validation and lock release after cleanup errors. The correction now uses an exact-commit allocator to canonicalize the configured root under the real system temp directory, reject symlinked path components before source transfer, revalidate the task after transfer, and retain the archive lock on any sensitive cleanup failure; portable tests cover these paths.
 - The exact-source correction compares the local runner, preflight helper, and (in upload mode) waiter with their Git blobs before any SSH call; a regression test checks that ordering. Fresh blind code acceptance passed on commit 15e6e383183a71a91ceff5ca39f97dadf566f7c2. Its GitHub workflow preflight then failed for an unrelated dirty-checkout setup issue; the new workflow candidate still needs its own fresh acceptance.
 - Candidate release-1.41.2-testflight-89-3 at commit 15e6e383183a71a91ceff5ca39f97dadf566f7c2 passed fresh independent code acceptance and exact-tag repository preflight. GitHub Release Verify run 37859258375 failed its repository-preflight step before Xcode ran because the workflow's `ln -s` reused an existing `~/Agents/ForzAdvisor` symlink and created an untracked `workspace` symlink inside the checkout. Reproduced this against an isolated exact-source bundle. The next candidate uses a unique temporary HOME for canonical-root setup and has a workflow-contract regression assertion; tag 89-3 remains immutable failed evidence and will not be reused.
+- Candidate release-1.41.2-testflight-89-4 at commit 534935d83de5aadadf9b67c09f2aa4aa0c2fdabb passed independent code acceptance and exact-tag repository preflight. Exact GitHub Release Verify run 37859829576 passed tag/SHA proof and both portable test steps, then failed the repository-preflight step with `working tree has uncommitted changes` before Xcode ran. The runner log did not include dirty paths. The unique temporary HOME correction did not resolve the preflight failure, so the earlier symlink diagnosis is incomplete. Tag 89-4 remains immutable failed evidence and will not be reused. Candidate 89-5 adds status reporting after the portable tests under both runner and isolated HOME configurations, plus a failure-time report, to identify the exact path and ignore-rule context.
 
 ## Next gates
 
 1. Re-run local helper syntax and portable regression tests, then inspect the final diff and exact source.
 2. Have a fresh independent reviewer verify the corrected committed candidate, exact source bundle, and manifest before publication.
-3. After review, push main and immutable tag release-1.41.2-testflight-89-4; dispatch one exact-tag Release Verify run.
+3. After review, push main and immutable tag release-1.41.2-testflight-89-5; dispatch one exact-tag Release Verify run.
 4. After that run passes, rerun shared Pro preflight, exact-source warnings-as-errors build, and signing smoke serially. Then start the authorized archive/export/upload through the repository coordinator.
 5. Wait for build 89 to become VALID and verify association only with the existing Internal group. Commit and push the final release receipt; do not stage or submit for App Review.

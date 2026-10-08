@@ -87,7 +87,19 @@ jobs:
           preflight_home="$(mktemp -d "$RUNNER_TEMP/forzadvisor-preflight-home.XXXXXX")"
           mkdir -p "$preflight_home/Agents"
           ln -s "$GITHUB_WORKSPACE" "$preflight_home/Agents/ForzAdvisor"
-          HOME="$preflight_home" scripts/release preflight --ref "$RELEASE_REF"
+          echo 'Checkout status after portable tests (runner HOME):'
+          git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all
+          echo 'Checkout status after temporary HOME setup (runner HOME):'
+          git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all
+          echo 'Checkout status after temporary HOME setup (isolated HOME):'
+          HOME="$preflight_home" git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all
+          if ! HOME="$preflight_home" scripts/release preflight --ref "$RELEASE_REF"; then
+            echo 'Checkout status after failed release preflight (runner HOME):'
+            git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all
+            echo 'Checkout status after failed release preflight (isolated HOME):'
+            HOME="$preflight_home" git -C "$GITHUB_WORKSPACE" status --short --untracked-files=all
+            exit 1
+          fi
 
       - name: Select Xcode
         shell: bash
