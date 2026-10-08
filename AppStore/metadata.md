@@ -28,7 +28,7 @@ For FH5, ForzAdvisor creates a local build plan without numeric tuning settings.
 
 Save setups in a local garage, search by car, filter by discipline, copy eligible settings or plans, and preview Guided Refinement changes before applying them. Step Guide provides four deterministic, on-device workflow choices without a model, network request, or transcript.
 
-ForzAdvisor runs offline by default. Camera photos and imported screenshots are processed on device with Apple Vision OCR. Optional Apple on-device model assistance can help when available. Optional API mode lets advanced users provide their own Anthropic API key; confirmed car details, the selected discipline, current tune details, and player notes are sent only when that mode is selected.
+ForzAdvisor runs offline by default. Camera photos and imported screenshots are processed on device with Apple Vision OCR. Optional Apple on-device model assistance can help when available. Optional API mode lets advanced users provide their own Anthropic API key. In API mode, a new-tune request sends confirmed car details and the selected discipline; an adjustment sends the previous tune and requested adjustment. Saved player notes, camera photos, and imported screenshots are not sent in these requests.
 
 No account is required. The app includes no advertising or analytics SDKs.
 
