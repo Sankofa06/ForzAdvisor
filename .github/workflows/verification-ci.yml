@@ -1,0 +1,125 @@
+name: Verification CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: Native verification lane
+        required: true
+        type: choice
+        default: build-unit
+        options:
+          - build-unit
+          - smoke
+          - full-regression
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    if: github.event_name == 'pull_request'
+    name: Portable workflow contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check verification workflow contract
+        run: ruby scripts/tests/verification_workflow_contract_test.rb
+
+  build-unit:
+    if: github.event_name == 'workflow_dispatch' && inputs.lane == 'build-unit'
+    name: iOS build and unit tests
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build iOS app
+        run: |
+          xcodebuild -project forzadvisor.xcodeproj \
+            -scheme forzadvisor \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
+            CODE_SIGNING_ALLOWED=NO build
+      - name: Run unit tests
+        run: |
+          xcodebuild test \
+            -project forzadvisor.xcodeproj \
+            -scheme forzadvisor \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
+            -only-testing:forzadvisorTests \
+            -parallel-testing-enabled NO \
+            -collect-test-diagnostics never
+
+  smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.lane == 'smoke'
+    name: iOS UI smoke tests
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run UI smoke tests
+        run: |
+          xcodebuild test \
+            -project forzadvisor.xcodeproj \
+            -scheme forzadvisor \
+            -testPlan ReleaseVerify \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
+            -only-testing:forzadvisorUITests \
+            -parallel-testing-enabled NO \
+            -collect-test-diagnostics never
+
+  full-regression:
+    if: github.event_name == 'workflow_dispatch' && inputs.lane == 'full-regression'
+    name: Complete ReleaseVerify regression
+    runs-on: macos-26
+    timeout-minutes: 120
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run complete ReleaseVerify plan
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project forzadvisor.xcodeproj \
+            -scheme forzadvisor \
+            -testPlan ReleaseVerify \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4.1' \
+            -parallel-testing-enabled NO \
+            -collect-test-diagnostics never \
+            -resultBundlePath "$RUNNER_TEMP/ForzAdvisor-ReleaseVerify.xcresult" \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
+            GCC_TREAT_WARNINGS_AS_ERRORS=YES \
+            | tee "$RUNNER_TEMP/forzadvisor-release-verify.log"
+      - name: Require complete passing test summary
+        run: |
+          set -euo pipefail
+          summary="$RUNNER_TEMP/forzadvisor-release-verify-summary.json"
+          xcrun xcresulttool get test-results summary \
+            --path "$RUNNER_TEMP/ForzAdvisor-ReleaseVerify.xcresult" > "$summary"
+          jq -e '
+            (.totalTestCount | type) == "number" and
+            .totalTestCount > 0 and
+            .failedTests == 0 and
+            .skippedTests == 0 and
+            .expectedFailures == 0
+          ' "$summary" >/dev/null
