@@ -31,7 +31,17 @@ class VerificationWorkflowContractTest < Minitest::Test
 
     assert_equal "ubuntu-latest", job.fetch("runs-on")
     assert_equal "github.event_name == 'pull_request'", job.fetch("if")
-    commands = job.fetch("steps").map { |step| step["run"].to_s }.join("\n")
+    steps = job.fetch("steps")
+    checkout_index = steps.index { |step| step["name"] == "Check out source" }
+    framework_index = steps.index { |step| step["run"].to_s.include?("bash scripts/validate-agent-framework.sh") }
+    contract_index = steps.index { |step| step["run"].to_s.include?("ruby scripts/tests/verification_workflow_contract_test.rb") }
+    refute_nil checkout_index
+    refute_nil framework_index
+    refute_nil contract_index
+    assert_operator checkout_index, :<, framework_index
+    assert_operator framework_index, :<, contract_index
+    commands = steps.map { |step| step["run"].to_s }.join("\n")
+    assert_includes commands, "bash scripts/validate-agent-framework.sh"
     assert_includes commands, "ruby scripts/tests/verification_workflow_contract_test.rb"
     refute_includes commands, "xcodebuild"
   end

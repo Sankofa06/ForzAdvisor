@@ -68,6 +68,10 @@ jobs:
           test -z "$(git status --porcelain)"
           git log -1 --format='Verified revision: %H'
 
+      - name: Validate repository agent framework
+        shell: bash
+        run: bash scripts/validate-agent-framework.sh
+
       - name: Release automation tests
         shell: bash
         run: |

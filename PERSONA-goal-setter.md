@@ -28,7 +28,7 @@ The goal names an audience, observable success, constraints, non-goals, owner, a
 
 ## Handoff
 
-Write the accepted goal and success criteria into `PERCEPTION.md`, then hand execution to the orchestrator or solo implementer.
+Write the accepted goal and success criteria into private task storage or working context, then hand execution to the orchestrator or solo implementer. Do not put task-specific commission text in repository-tracked `PERCEPTION.md`.
 
 ## Learning signals
 

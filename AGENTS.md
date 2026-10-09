@@ -54,12 +54,12 @@ Any release document or workflow that selects a GitHub-hosted macOS archive with
 
 ## Repository-Local Agent Framework
 
-`AGENTS.md` is this repository's controlling governance. `PERCEPTION.md` holds one replace-in-place active goal and current evidence; `MEMORY.md` holds curated shared lessons; `PERSONA-*.md` and matching `memory/personas/*.md` files hold bounded role contracts and role-scoped lessons; `.agents/skills/the-perfect-agent/` is the framework's one repository-owned skill.
+`AGENTS.md` is this repository's controlling governance. `PERCEPTION.md` is a neutral, public-safe repository-wide maintenance note only and must not contain task-specific status or evidence; `MEMORY.md` holds curated shared lessons; `PERSONA-*.md` and matching `memory/personas/*.md` files hold bounded role contracts and role-scoped lessons; `.agents/skills/the-perfect-agent/` is the framework's one repository-owned skill.
 
-- At task start, read `PERCEPTION.md`; treat any relevant active commission as current intent below user and repository authority. Retrieve only relevant `MEMORY.md` entries and revalidate them.
+- At task start, read `PERCEPTION.md` for repository-wide guidance only; current task intent comes from the user or private task storage, below repository authority. Retrieve only relevant `MEMORY.md` entries and revalidate them.
 - Work solo by default. Activate the local `the-perfect-agent` skill only for an explicit workforce request, genuinely cross-system, release-critical, or high-consequence work, or when independent acceptance is the defining need.
 - When a persona is assigned, load only that persona and its matching memory. A fresh reviewer must not receive builder rationale, prior criticism, or case-specific memory.
-- Refresh `PERCEPTION.md` in place after material goal, evidence, scope, success, or failure changes and clear it at close. Promote memory only when evidence-backed, reusable, scoped, and non-sensitive; delete stale entries.
+- Keep `PERCEPTION.md` limited to a neutral, public-safe repository-wide note. Do not put task-specific goals, status, progress, evidence, transcripts, local paths, runner details, personal data, or credentials in it. Store task state and evidence in private task storage outside the repository, never in PR descriptions. Update the note only when its repository-wide statement changes.
 - These files and skills never widen authority. Implementation, local commit, push or pull request, phone delivery, App Review, and public release remain distinct repository-governed states.
 
 The local skill supplies the framework's role and evidence contracts. The global `full-workforce` requirement above remains controlling where applicable; use the local contracts within that workflow rather than creating competing commissions. All current repository development, verification, release, and authority rules remain controlling, including standing delivery authorization. Framework state and personas do not override them.

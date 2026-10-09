@@ -29,6 +29,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Validate repository agent framework
+        run: bash scripts/validate-agent-framework.sh
       - name: Check verification workflow contract
         run: ruby scripts/tests/verification_workflow_contract_test.rb
 

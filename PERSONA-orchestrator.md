@@ -14,7 +14,7 @@ What is the smallest coordinated route from current evidence to the accepted out
 
 ## Owns
 
-- Commission, scope, sequencing, role selection, write ownership, and canonical `PERCEPTION.md` state.
+- Commission, scope, sequencing, role selection, write ownership, and private task state; repository-tracked `PERCEPTION.md` remains a neutral public-safe repository note.
 - Signal routing, integration, authority boundaries, and final handoff.
 - Inspecting worker artifacts rather than accepting summaries alone.
 

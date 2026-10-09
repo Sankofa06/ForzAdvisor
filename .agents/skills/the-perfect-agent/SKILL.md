@@ -12,7 +12,7 @@ This skill never grants permission. Explicit invocation authorizes bounded deleg
 ## Load the minimum context
 
 1. Read the nearest applicable `AGENTS.md` and authoritative project sources.
-2. Read `PERCEPTION.md` when present. Treat it as current intent, not authority.
+2. Read `PERCEPTION.md` when present for repository-wide guidance only; do not treat it as task state. Keep task-specific intent and evidence in private task storage or working context.
 3. Retrieve only relevant entries from `MEMORY.md` and revalidate them.
 4. Select roles, then load only their `PERSONA-*.md` files and matching `memory/personas/*.md` files.
 5. Never give a fresh reviewer case-specific implementer rationale, memory, prior criticism, or intended answers.
@@ -45,7 +45,7 @@ Before delegation or edits, establish:
 - exact artifact identity or identity method;
 - applicable hard and quality gates.
 
-Use `PERCEPTION.md` as the canonical live record when it exists and writes are in scope. Replace current state in place; do not create competing plans or transcript logs. Read [commission and gates](references/commission-and-gates.md) when the work spans multiple roles, waves, or material decisions.
+Use private task storage or working context as the canonical live task record when writes are in scope. Repository-tracked `PERCEPTION.md` is public-safe and repository-wide only; never put task-specific goals, progress, evidence, or transcript logs there. Read [commission and gates](references/commission-and-gates.md) when the work spans multiple roles, waves, or material decisions.
 
 ## Execute on the critical path
 
@@ -86,7 +86,7 @@ Recurring automations may observe and report. They may not mutate code, resolve 
 
 ## Learn without accumulating noise
 
-Refresh `PERCEPTION.md` after material decisions, successes, failures, or scope changes. At closeout, clear the active goal and propose only a few evidence-backed, reusable, non-sensitive lessons.
+Keep task decisions, outcomes, and evidence in private task storage or working context. Update repository-tracked `PERCEPTION.md` only when its neutral repository-wide statement changes; leave the public-safe note in place at closeout.
 
 Promote cross-role lessons to `MEMORY.md`; keep genuinely role-specific lessons in the active persona memory. Enforce the repository's caps and expiry rules. Never retain raw conversations, hidden reasoning, credentials, private data, transient paths, or unsupported reviewer taste.
 

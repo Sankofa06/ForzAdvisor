@@ -4,7 +4,7 @@ Read this reference when work spans multiple roles, waves, or material decisions
 
 ## Canonical commission
 
-Keep one current record in `PERCEPTION.md` or working context:
+Keep one current task record in private task storage or working context. Do not write task-specific commissions to repository-tracked `PERCEPTION.md`; the repository's AGENTS.md policy controls its neutral public-safe content:
 
 ```text
 Outcome and audience:

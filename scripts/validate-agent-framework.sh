@@ -123,6 +123,23 @@ if [[ "$agents_routing_ok" == "1" ]]; then
   pass "AGENTS.md framework routing, precedence, and authority"
 fi
 
+if grep -Fq 'task-specific goals, status, progress, evidence, transcripts, local paths, runner details, personal data, or credentials' "$agents_file" \
+  && grep -Fq 'Store task state and evidence in private task storage outside the repository, never in PR descriptions.' "$agents_file"; then
+  pass "public task-state and evidence boundary"
+else
+  fail "AGENTS.md public task-state and evidence boundary is incomplete"
+fi
+
+if grep -Fq 'do not treat it as task state' "$framework_root/.agents/skills/the-perfect-agent/SKILL.md" \
+  && grep -Fq 'is public-safe and repository-wide only' "$framework_root/.agents/skills/the-perfect-agent/SKILL.md" \
+  && grep -Fq 'current task record in private task storage or working context' "$framework_root/.agents/skills/the-perfect-agent/references/commission-and-gates.md" \
+  && grep -Fq 'private task storage or working context' "$framework_root/PERSONA-goal-setter.md" \
+  && grep -Fq 'neutral public-safe repository note' "$framework_root/PERSONA-orchestrator.md"; then
+  pass "skill and persona task-record boundary"
+else
+  fail "skill or persona still routes task state into public PERCEPTION.md"
+fi
+
 goal_count="$(grep -c '^- Goal:' "$framework_root/PERCEPTION.md" || true)"
 status_count="$(grep -c '^- Status:' "$framework_root/PERCEPTION.md" || true)"
 refreshed_count="$(grep -c '^- Refreshed:' "$framework_root/PERCEPTION.md" || true)"
@@ -136,6 +153,22 @@ if grep -Fq 'repository rules remain controlling' "$framework_root/PERCEPTION.md
   pass "perception authority boundary"
 else
   fail "PERCEPTION.md authority boundary is incomplete"
+fi
+
+if cmp -s "$framework_root/PERCEPTION.md" <(printf '%s\n' \
+  '# Current Goal' \
+  '' \
+  '- Goal: Keep this file a concise, public-safe statement of repository-wide maintenance intent.' \
+  '- Status: No task-specific work status or private evidence is recorded here.' \
+  '- Refreshed: 2026-10-09.' \
+  '' \
+  '## Authority' \
+  '' \
+  'repository rules remain controlling.' \
+  'external effects require separate authority.'); then
+  pass "public perception note matches the neutral allowlist"
+else
+  fail "PERCEPTION.md must match the public-safe neutral template exactly"
 fi
 
 durable_count="$(awk '/^## Durable memory/{inside=1; next} /^## Working memory/{inside=0} inside && /^\|/ && !/^\|---/ && !/^\| ID /{count++} END{print count+0}' "$framework_root/MEMORY.md")"

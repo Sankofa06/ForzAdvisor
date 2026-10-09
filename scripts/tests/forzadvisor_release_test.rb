@@ -657,18 +657,27 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_includes workflow, "ref: ${{ inputs.release_sha }}"
     assert_includes workflow, 'if [[ "$GITHUB_REF" != "refs/tags/$RELEASE_REF" ]]; then'
     assert_includes workflow, 'if [[ "$GITHUB_SHA" != "$RELEASE_SHA" ]]; then'
+    tag_proof_index = workflow.index("- name: Prove tag and revision")
+    framework_index = workflow.index("bash scripts/validate-agent-framework.sh")
+    release_tests_index = workflow.index("ruby scripts/tests/forzadvisor_release_test.rb")
     profile_test_index = workflow.index("python3 scripts/tests/test_ios_profile_verifier.py")
     clean_check_index = workflow.index("Require clean checkout after portable tests")
     status_after_tests_index = workflow.index("Checkout status after portable tests (runner HOME)")
     preflight_home_index = workflow.index('preflight_home="$(mktemp -d "$RUNNER_TEMP/forzadvisor-preflight-home.XXXXXX")"')
     isolated_home_status_index = workflow.index("Checkout status after temporary HOME setup (isolated HOME)")
     preflight_index = workflow.index('if ! HOME="$preflight_home" scripts/release preflight --ref "$RELEASE_REF"; then')
+    refute_nil tag_proof_index
+    refute_nil framework_index
+    refute_nil release_tests_index
     refute_nil profile_test_index
     refute_nil clean_check_index
     refute_nil status_after_tests_index
     refute_nil preflight_home_index
     refute_nil isolated_home_status_index
     refute_nil preflight_index
+    assert_operator tag_proof_index, :<, framework_index
+    assert_operator framework_index, :<, release_tests_index
+    assert_operator release_tests_index, :<, profile_test_index
     assert_operator profile_test_index, :<, clean_check_index
     assert_operator clean_check_index, :<, status_after_tests_index
     assert_operator status_after_tests_index, :<, preflight_home_index
