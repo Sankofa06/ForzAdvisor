@@ -44,8 +44,12 @@ developer Mac.
   `testFlightInternalTestingOnly=false`
 - intended internal TestFlight group
 - metadata limits and exact screenshot order
-- retained legacy Xcode Cloud identifiers, which are historical and are not the
-  active archive or upload path
+- retained legacy Xcode Cloud identifiers marked `DISABLED_DO_NOT_USE`; this is
+  repository policy only and does not change settings in Xcode Cloud
+
+The active archive and upload path remains the configured stable SSH runner.
+The Xcode Cloud identifiers are retained for audit history and cannot be used
+as a fallback.
 
 The source build and observed App Store Connect build are different facts even
 when their values match. Never infer an uploaded build number from
@@ -312,8 +316,10 @@ version/build identity may start; history is never silently overwritten.
 
 The former `cloud-start`, `cloud-status`, and `cloud-resume` commands and the
 `legacy_xcode_cloud` configuration describe retained historical Xcode Cloud
-behavior. They are not exposed by the current delivery route and must not be
-used as a fallback for a failed or unavailable stable runner.
+behavior. Its `DISABLED_DO_NOT_USE` marker is repository policy only; it does
+not modify Xcode Cloud settings. The coordinator rejects start, status, and
+resume before Git, state, or API effects. These identifiers must not be used as
+a fallback for a failed or unavailable stable runner.
 
 Historical state is stored outside the repository under
 `~/.codex/state/forzadvisor-release/`. It remains separate from current

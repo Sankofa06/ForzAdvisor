@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "app": {
     "id": "6775224250",
     "name": "ForzAdvisor",
@@ -63,6 +63,7 @@
     "privacy_manifest": "forzadvisor/PrivacyInfo.xcprivacy"
   },
   "legacy_xcode_cloud": {
+    "status": "DISABLED_DO_NOT_USE",
     "product_id": "677a6ae7-8cf2-4f35-aeef-a35faa5580e8",
     "repository_id": "8967d135-e6fd-49af-a83e-3b03241a5fa1",
     "workflows": {

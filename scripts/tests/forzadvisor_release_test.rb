@@ -372,7 +372,8 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
     assert_equal false, @config.fetch("release", "privacy", "tracking")
-    assert_equal 2, @config.fetch("schema_version")
+    assert_equal 3, @config.fetch("schema_version")
+    assert_equal "DISABLED_DO_NOT_USE", @config.fetch("legacy_xcode_cloud", "status")
     assert_equal "GITHUB_ACTIONS", @config.fetch("ci", "provider")
     assert_equal "VERIFICATION_ONLY", @config.fetch("ci", "authority")
     assert_equal ".github/workflows/release-verify.yml", @config.fetch("ci", "verify_workflow")
@@ -416,6 +417,11 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_config_rejects_unapproved_ci_or_stable_runner_contract
     with_config do |data, path|
+      data["legacy_xcode_cloud"]["status"] = "ENABLED"
+      File.write(path, JSON.generate(data))
+      assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
+    end
+    with_config do |data, path|
       data["ci"]["provider"] = "UNTRUSTED_CI"
       File.write(path, JSON.generate(data))
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
@@ -452,6 +458,15 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
+  def test_disabled_cloud_marker_preserves_existing_candidate_config_fingerprint
+    legacy_identity = JSON.parse(JSON.generate(@config.data))
+    legacy_identity["schema_version"] = 2
+    legacy_identity["legacy_xcode_cloud"].delete("status")
+    expected = Digest::SHA256.hexdigest(JSON.generate(@config.send(:deep_sort, legacy_identity)))
+
+    assert_equal expected, @config.fingerprint
+  end
+
   def test_config_rejects_release_policy_that_can_publish_without_approval
     with_config do |data, path|
       data["release"]["submission_policy"] = "AUTOMATIC"
@@ -464,6 +479,11 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_config_rejects_unknown_content_rights_and_malformed_domains
     with_config do |data, path|
       data["release"]["content_rights"] = "MAYBE"
+      File.write(path, JSON.generate(data))
+      assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
+    end
+    with_config do |data, path|
+      data["legacy_xcode_cloud"].delete("status")
       File.write(path, JSON.generate(data))
       assert_raises(ForzAdvisorRelease::ConfigurationError) { ForzAdvisorRelease::Config.new(path) }
     end
@@ -707,25 +727,30 @@ class ForzAdvisorReleaseTest < Minitest::Test
     refute_match(/^\s+pull_request:/, workflow)
   end
 
-  def test_legacy_cloud_coordinator_remains_testable_but_is_not_exposed_by_cli
-    tag = "release-legacy"
-    repository_id = @config.fetch("legacy_xcode_cloud", "repository_id")
-    workflow_id = @config.fetch("legacy_xcode_cloud", "workflows", "verify", "id")
-    responses = {
-      "/v1/scmRepositories/#{repository_id}/gitReferences" => { "data" => [{ "id" => "legacy-ref", "attributes" => { "kind" => "TAG", "canonicalName" => "refs/tags/#{tag}" } }] },
-      "/v1/ciWorkflows/#{workflow_id}/buildRuns" => { "data" => [] },
-      ["POST", "/v1/ciBuildRuns"] => { "data" => { "id" => "legacy-run" } }
-    }
+  def test_legacy_cloud_coordinator_fails_closed_before_api_or_state_effects
+    api = FakeAPI.new({})
     Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StateStore.new(directory: directory)
+      initial = store.save("phase" => "candidate_start_intent", "ref" => "release-legacy")
       coordinator = ForzAdvisorRelease::CloudCoordinator.new(
         config: @config,
-        api: FakeAPI.new(responses),
+        api: api,
         git: FakeGitRepository.new,
-        store: ForzAdvisorRelease::StateStore.new(directory: directory)
+        store: store
       )
-      state = coordinator.start(ref: tag)
-      assert_equal "verify_running", state["phase"]
-      assert_equal "legacy-run", state["verify_run_id"]
+
+      [
+        -> { coordinator.start(ref: "release-legacy") },
+        -> { coordinator.status },
+        -> { coordinator.resume }
+      ].each do |operation|
+        error = assert_raises(ForzAdvisorRelease::PreflightError, &operation)
+        assert_match(/disabled by release policy/, error.message)
+      end
+
+      assert_empty api.requests
+      assert_equal initial, store.load
+      assert_equal "candidate_start_intent", store.load["phase"]
     end
   end
 
