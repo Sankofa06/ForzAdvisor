@@ -94,6 +94,7 @@ struct TuneResultStatusSection: View {
 }
 
 struct TuneResultActionSection: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let tune: TuneResult
     let presentation: TuneResultPresentation
     let onSave: () -> Void
@@ -199,10 +200,17 @@ struct TuneResultActionSection: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            if dynamicTypeSize.isAccessibilitySize {
+                Text(title)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            } else {
+                Label(title, systemImage: systemImage)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            }
         }
         .buttonStyle(ForzAdvisorActionButtonStyle(kind: kind))
+        .accessibilityLabel(title)
         .accessibilityIdentifier(identifier)
     }
 
