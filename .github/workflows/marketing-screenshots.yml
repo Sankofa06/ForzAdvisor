@@ -42,7 +42,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: marketing-screenshots-${{ github.event.pull_request.head.sha || github.sha }}
+          name: marketing-screenshots-${{ github.event.pull_request.head.sha || github.sha }}-attempt-${{ github.run_attempt }}
           if-no-files-found: warn
           path: |
             ${{ runner.temp }}/marketing-capture/screenshots
@@ -56,7 +56,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: marketing-xcresult-${{ github.event.pull_request.head.sha || github.sha }}
+          name: marketing-xcresult-${{ github.event.pull_request.head.sha || github.sha }}-attempt-${{ github.run_attempt }}
           if-no-files-found: warn
           retention-days: 14
           path: ${{ runner.temp }}/marketing-capture/MarketingScreenshots.xcresult
@@ -112,7 +112,7 @@ jobs:
               raise SystemExit(f'Expected exactly one available iPhone 17 Pro on iOS 26.5; found {len(devices)}')
           print(json.dumps(devices[0]), flush=True)
           subprocess.run(['xcrun', 'simctl', 'bootstatus', devices[0]['udid'], '-b'],
-                         check=True, timeout=240)
+                         check=True, timeout=600)
           PYREADY
       - name: Run complete ReleaseVerify plan
         shell: bash
@@ -151,7 +151,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: app-verification-${{ github.event.pull_request.head.sha || github.sha }}
+          name: app-verification-${{ github.event.pull_request.head.sha || github.sha }}-attempt-${{ github.run_attempt }}
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -163,7 +163,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: app-verification-xcresult-${{ github.event.pull_request.head.sha || github.sha }}
+          name: app-verification-xcresult-${{ github.event.pull_request.head.sha || github.sha }}-attempt-${{ github.run_attempt }}
           if-no-files-found: warn
           retention-days: 14
           path: ${{ runner.temp }}/app-verification/ReleaseVerify.xcresult

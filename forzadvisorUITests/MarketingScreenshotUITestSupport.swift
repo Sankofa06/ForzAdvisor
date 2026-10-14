@@ -83,9 +83,56 @@ extension MarketingScreenshotUITests {
     func marketingCapture(
         _ screen: String, appearance: String, in app: XCUIApplication
     ) {
+        let toolbarScreens = ["02-source", "03-manual", "04-discipline", "05-saved-plan"]
+        if toolbarScreens.contains(screen) {
+            var buttons = [app.buttons["copilotButton"]]
+            if screen == "05-saved-plan" {
+                buttons.append(app.buttons["editSavedTuneButton"])
+            }
+            marketingWaitForToolbarRendering(buttons, in: app)
+        }
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "marketing-\(screen)-\(appearance)"
         attachment.lifetime = .keepAlways
         add(attachment)
     }
+
+    @MainActor
+    private func marketingWaitForToolbarRendering(
+        _ buttons: [XCUIElement], in app: XCUIApplication
+    ) {
+        var previousFrames: [CGRect] = []
+        var stableSince: Date?
+        let settled = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in
+                let viewport = app.frame
+                guard buttons.allSatisfy({ button in
+                    button.exists && button.isHittable
+                        && button.frame.width > 0 && button.frame.height > 0
+                        && viewport.contains(button.frame)
+                }) else {
+                    stableSince = nil
+                    previousFrames = []
+                    return false
+                }
+                let frames = buttons.map(\.frame)
+                if frames != previousFrames {
+                    previousFrames = frames
+                    stableSince = Date()
+                    return false
+                }
+                // UIKit can expose toolbar accessibility before its symbols
+                // finish drawing. Require a full second of stable geometry
+                // while XCTest pumps the run loop before requesting pixels.
+                guard let stableSince else { return false }
+                return Date().timeIntervalSince(stableSince) >= 1
+            },
+            object: nil
+        )
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [settled], timeout: 6), .completed,
+            "Toolbar controls must exist, be hittable, remain inside the app, and settle before capture."
+        )
+    }
+
 }
