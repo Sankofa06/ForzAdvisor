@@ -53,7 +53,7 @@ https://apps.apple.com/us/app/forzadvisor/id6775224250
 
 ForzAdvisor is an unofficial companion and is not affiliated with the game’s creators or publishers.
 
-## Screenshot captions — pending real capture review
+## Screenshot captions — real seeded app captures
 
 1. Your Local Garage — Search, filter, and sort saved setups.
 2. Photo, Screenshot, or Manual — Choose how to add your car.
@@ -64,7 +64,7 @@ ForzAdvisor is an unofficial companion and is not affiliated with the game’s c
 
 This order matches `AppStore/screenshots-spec.md` and the metadata shot list: Garage, source, manual details, discipline, saved plan with withheld settings, and Step Guide. No refinement screen is included.
 
-Use captions only on real candidate app captures showing the corresponding behavior. Existing mock-drawn assets are illustrative previews, not fresh captures. Seed names and player notes may demonstrate Garage behavior; seeded game observations, grants, verified status, or numeric settings must not suggest genuine validation. The saved plan is a representative local seed, not proof of a live model response or verified numeric output. Preserve the plan and Step Guide prerequisite messaging. Runtime/capture owners must review both appearances and confirm the final screens before these captions are paired with assets.
+The canonical six dark screenshots are real Debug simulator app captures with deterministic local demonstration data; original light and dark captures remain in the capture output with provenance. Seed data is restricted to Debug simulator marketing capture. Production starts with user-owned data. Seed names and player notes demonstrate Garage behavior; they do not establish game observations, grants, verified status, or numeric tuning validation. The saved plan is a representative local seed, not proof of a live model response or verified numeric output. Preserve the plan and Step Guide prerequisite messaging, and review both appearances whenever captures are refreshed.
 
 ## Claim map
 
@@ -72,8 +72,8 @@ Use captions only on real candidate app captures showing the corresponding behav
 | --- | --- | --- |
 | Photo, import, manual; review before generation | `forzadvisor/Views/NewTuneStartView.swift`, `forzadvisor/Views/OCRConfirmationView.swift`, `forzadvisor/Views/ManualEntryView.swift` | OCR accuracy is not promised. |
 | On-device photo reading | `forzadvisor/Services/OCRService.swift`, `forzadvisor/Services/PhotoOCRImportController.swift` | Describes image reading, not optional API generation. |
-| Four-step progress | `forzadvisor/ForzAdvisorWorkflowProgress.swift` and its screen call sites | Candidate source change; runtime validation pending. |
-| Search cars/styles/notes, discipline filters, two sorts | `forzadvisor/Views/GarageHomeView.swift`, `forzadvisor/Views/GarageTuneSearch.swift` | Candidate source behavior; runtime validation pending. |
+| Four-step progress | `forzadvisor/ForzAdvisorWorkflowProgress.swift` and its screen call sites | Progress is shown in real simulator captures; final candidate acceptance is separate. |
+| Search cars/styles/notes, discipline filters, two sorts | `forzadvisor/Views/GarageHomeView.swift`, `forzadvisor/Views/GarageTuneSearch.swift` | Garage is shown in real simulator captures; capture does not certify every search or sorting interaction. |
 | FH5 local plan-only in every provider mode | `forzadvisor/Services/TuneProviderMode.swift`, `forzadvisor/Services/TuneOutputProjector.swift` | No numeric FH5 output is offered. |
 | FH6 evidence gates and withheld values | `forzadvisor/Services/TuneOutputProjector.swift`, `forzadvisor/Services/TuneCapabilityResolver.swift` | No complete tune, performance, or validation promise. |
 | Eligible refinement preview and reversible changes | `forzadvisor/Views/TuneRefinementSection.swift`, `forzadvisor/Services/TuneOutputProjector.swift` | Eligibility must pass; no universal availability claim. |

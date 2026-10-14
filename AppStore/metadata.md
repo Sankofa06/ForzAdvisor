@@ -69,7 +69,7 @@ Suggested review path:
 5. If genuine matching evidence makes settings eligible, review copy and Guided Refinement preview, Apply, Discard, and Undo. Do not create fictional observations to unlock these actions.
 6. Optionally import your own performance-screen screenshot. Review and correct detected values before continuing. Camera permission is requested only when Take Photo is chosen; import uses the system picker.
 
-Optional testing and research tools are separate from ordinary setup creation. Seeded demonstration garage entries are presentation fixtures, not validation evidence. Optional on-device and user-key API modes are selected in Settings; neither enables numeric FH5 output.
+Optional testing and research tools are separate from ordinary setup creation. Marketing screenshots use seeded demonstration garage entries only in the Debug simulator capture flow. Production starts with user-owned data. These presentation fixtures are not validation evidence. Optional on-device and user-key API modes are selected in Settings; neither enables numeric FH5 output.
 
 ## App Information
 

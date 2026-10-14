@@ -1,5 +1,32 @@
 # Release Notes
 
+## App Store What's New
+
+Draft for the next update; not a record of submission or release.
+
+Follow your setup with clearer four-step progress. Visible field labels, required-value guidance, and keyboard Done controls make car details easier to check. Find saved setups with Garage search, discipline filters, and sorting by car name or recent updates. Clearer save labels and feedback help you keep track of what is saved.
+
+FH5 remains plan-only. FH6 numeric settings and refinement remain subject to the existing evidence checks; unsupported values stay withheld.
+
+## TestFlight Notes
+
+Candidate test instructions; runtime verification is still required.
+
+- Follow New Tune through source selection, car-detail review, discipline selection, and result. Check progress and back navigation with manual entry and your own imported screenshot.
+- Check required-field guidance, keyboard behavior, VoiceOver descriptions, and large text on a supported iPhone.
+- Save several clearly labeled demo plans. Search across car names, styles, and notes; filter by discipline; compare Car name and Recently updated sorting. Check the empty-search state and deletion Undo.
+- Choose FH5 from manual entry. Confirm every provider mode keeps the result local and plan-only, with no numeric tune settings.
+- Choose FH6. Missing or mismatched evidence must keep affected values withheld. Only test eligible numeric output, copy, or Guided Refinement with genuine matching evidence; preview changes before Apply and check Discard and Undo.
+- Demo garage data and screenshot fixtures must never count as game observations, permissions, validation, or release approval.
+
+## Reviewer Notes
+
+No login or API key is required for the default offline workflow. Start at New Tune -> Enter Manually; select FH5, enter valid details, choose Road, generate, and save the plan. Reopen it from Garage and try search, filters, and sorting. FH5 has no numeric tuning output.
+
+Take Photo and Import Screenshot are alternative input routes; imported values must be reviewed before generation. There is no bundled car roster or Choose a Car route. FH6 settings are experimental and evidence-gated; a generated result may withhold numeric values. Guided Refinement is available only where verified settings are eligible.
+
+Optional testing and research workflows do not promote observations into validated tuning automatically. Demonstration seed data is not validation evidence. This text does not attest to runtime verification, upload, App Review submission, or public release of the candidate.
+
 ## Version 1.41.1 (Build 77) - 2026-08-16
 
 - Makes the photo, screenshot, and manual-entry path explicit, recoverable, and accessible at large text sizes.
@@ -418,33 +445,6 @@
 - Added offline-first tuning with optional on-device model assistance and optional Anthropic API mode for users who provide their own key.
 - Improved setup, provider configuration, settings flows, and saved-content reliability.
 - Added App Store-ready privacy, support, metadata, screenshot, and marketing materials for the TestFlight release path.
-
-## App Store What's New
-
-Draft for the next update; not a record of submission or release.
-
-Follow your setup from source to result with clearer four-step progress. Find saved setups with Garage search, discipline filters, and sorting by car name or recent updates. Input guidance makes required values easier to review.
-
-FH5 remains plan-only. FH6 numeric settings and refinement remain subject to the existing evidence checks; unsupported values stay withheld.
-
-## TestFlight Notes
-
-Candidate test instructions; runtime verification is still required.
-
-- Follow New Tune through source selection, car-detail review, discipline selection, and result. Check progress and back navigation with manual entry and your own imported screenshot.
-- Check required-field guidance, keyboard behavior, VoiceOver descriptions, and large text on a supported iPhone.
-- Save several clearly labeled demo plans. Search across car names, styles, and notes; filter by discipline; compare Car name and Recently updated sorting. Check the empty-search state and deletion Undo.
-- Choose FH5 from manual entry. Confirm every provider mode keeps the result local and plan-only, with no numeric tune settings.
-- Choose FH6. Missing or mismatched evidence must keep affected values withheld. Only test eligible numeric output, copy, or Guided Refinement with genuine matching evidence; preview changes before Apply and check Discard and Undo.
-- Demo garage data and screenshot fixtures must never count as game observations, permissions, validation, or release approval.
-
-## Reviewer Notes
-
-No login or API key is required for the default offline workflow. Start at New Tune -> Enter Manually; select FH5, enter valid details, choose Road, generate, and save the plan. Reopen it from Garage and try search, filters, and sorting. FH5 has no numeric tuning output.
-
-Take Photo and Import Screenshot are alternative input routes; imported values must be reviewed before generation. There is no bundled car roster or Choose a Car route. FH6 settings are experimental and evidence-gated; a generated result may withhold numeric values. Guided Refinement is available only where verified settings are eligible.
-
-Optional testing and research workflows do not promote observations into validated tuning automatically. Demonstration seed data is not validation evidence. This text does not attest to runtime verification, upload, App Review submission, or public release of the candidate.
 
 ## Previous TestFlight Notes
 

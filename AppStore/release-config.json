@@ -150,12 +150,12 @@
     "height": 2868,
     "require_opaque": true,
     "ordered_files": [
-      "01-build-a-tune-fast.png",
-      "02-photo-screenshot-or-manual.png",
-      "03-confirm-every-stat.png",
-      "04-tune-for-road-drift-drag.png",
-      "05-copy-complete-settings.png",
-      "06-refine-after-every-run.png"
+      "01-your-local-garage.png",
+      "02-choose-your-input.png",
+      "03-confirm-your-car.png",
+      "04-choose-your-discipline.png",
+      "05-your-saved-plan.png",
+      "06-guidance-for-next-step.png"
     ]
   }
 }
