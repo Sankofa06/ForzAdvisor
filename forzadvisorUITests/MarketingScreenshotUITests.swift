@@ -47,6 +47,15 @@ final class MarketingScreenshotUITests: XCTestCase {
             NSPredicate(format: "label CONTAINS %@", "Expected route")
         ).firstMatch
         XCTAssertTrue(marketingIsVisible(route, in: app))
+
+        // Verify the generation disclosure, then compose the capture around
+        // the player's car and selected discipline at the top of the screen.
+        let progress = app.descendants(matching: .any)["tuneWorkflowProgress-3"].firstMatch
+        marketingReveal(progress, in: app)
+        let road = app.buttons["disciplineButton-road"]
+        XCTAssertTrue(marketingIsVisible(progress, in: app))
+        XCTAssertTrue(marketingIsVisible(road, in: app))
+        XCTAssertEqual(road.value as? String, "Selected")
         marketingCapture("04-discipline", appearance: appearance, in: app)
 
         // Open the real saved plan through Garage instead of generating a

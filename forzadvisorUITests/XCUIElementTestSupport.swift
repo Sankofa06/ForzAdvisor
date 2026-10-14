@@ -6,49 +6,51 @@ extension XCUIElement {
         in app: XCUIApplication,
         timeout: TimeInterval = 5
     ) {
-        XCTAssertTrue(waitForExistence(timeout: timeout))
         let scrollView = app.collectionViews.firstMatch
-
-        for _ in 0..<12 where !isHittable {
-            scrollView.swipeUp(velocity: .slow)
-        }
-
-        let upperBound = app.frame.minY + app.frame.height * 0.22
-        let lowerBound = app.frame.minY + app.frame.height * 0.65
-        let upwardStart = scrollView.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.68)
-        )
-        let upwardEnd = scrollView.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48)
-        )
-        let downwardStart = scrollView.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.32)
-        )
-        let downwardEnd = scrollView.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.52)
-        )
-
-        for _ in 0..<6 {
-            let midpoint = frame.midY
-            if midpoint > lowerBound {
-                upwardStart.press(forDuration: 0.05, thenDragTo: upwardEnd)
-            } else if midpoint < upperBound {
-                downwardStart.press(forDuration: 0.05, thenDragTo: downwardEnd)
-            } else {
-                break
+        XCTAssertTrue(scrollView.waitForExistence(timeout: timeout))
+        // Missing lazy rows have no meaningful frame. Return toward the top
+        // before searching down, rather than assuming every target is below us.
+        if !exists {
+            for _ in 0..<8 {
+                scrollView.swipeDown(velocity: .fast)
+                if exists { break }
             }
         }
-
+        for _ in 0..<24 {
+            let viewport = interactionViewport(in: app)
+            if exists && isHittable && viewport.contains(frame) { return }
+            let above = exists && frame.height > 0 && frame.midY < viewport.midY
+            // Start gestures in visible content, never on the keyboard. Form
+            // scrolling dismisses it interactively; recompute bounds each time.
+            let start = CGPoint(x: viewport.midX,
+                                y: viewport.minY + viewport.height * (above ? 0.30 : 0.75))
+            let end = CGPoint(x: start.x,
+                              y: viewport.minY + viewport.height * (above ? 0.65 : 0.35))
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: start.x - app.frame.minX, dy: start.y - app.frame.minY))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: end.x - app.frame.minX, dy: end.y - app.frame.minY)))
+        }
         XCTAssertTrue(waitUntilInteractionReady(timeout: timeout))
+        XCTAssertTrue(interactionViewport(in: app).contains(frame),
+                      "\(identifier) must be above the keyboard and below navigation before interaction.")
     }
 
-    func enterText(_ text: String, focusTimeout: TimeInterval = 2) {
-        guard focusForTyping(timeout: focusTimeout) else {
-            XCTFail("\(identifier) did not receive keyboard focus before typing.")
-            return
-        }
+    @MainActor
+    private func interactionViewport(in app: XCUIApplication) -> CGRect {
+        let navigation = app.navigationBars.firstMatch
+        let top = navigation.exists ? navigation.frame.maxY + 8 : app.frame.minY + 60
+        let keyboard = app.keyboards.firstMatch
+        let bottom = keyboard.exists ? keyboard.frame.minY - 52 : app.frame.maxY - 40
+        return CGRect(x: app.frame.minX + 8, y: top,
+                      width: app.frame.width - 16, height: max(44, bottom - top))
+    }
 
-        typeTextAndVerifyValue(text)
+    @MainActor
+    func enterText(_ text: String, focusTimeout: TimeInterval = 2) {
+        // The target application is already running; this creates only its
+        // XCTest proxy and gives legacy callers the same keyboard-aware reveal.
+        enterText(text, in: XCUIApplication(), focusTimeout: focusTimeout)
     }
 
     @MainActor
@@ -57,26 +59,15 @@ extension XCUIElement {
         in app: XCUIApplication,
         focusTimeout: TimeInterval = 2
     ) {
-        let scrollView = app.collectionViews.firstMatch
-
-        for attempt in 0..<3 {
+        for _ in 0..<3 {
             scrollToInteractionViewport(in: app)
             if focusForTyping(timeout: focusTimeout) {
                 typeTextAndVerifyValue(text)
                 return
             }
-
-            guard attempt < 2 else { break }
-            let startY = attempt == 0 ? 0.58 : 0.42
-            let endY = attempt == 0 ? 0.48 : 0.52
-            scrollView.coordinate(
-                withNormalizedOffset: CGVector(dx: 0.5, dy: startY)
-            ).press(
-                forDuration: 0.05,
-                thenDragTo: scrollView.coordinate(
-                    withNormalizedOffset: CGVector(dx: 0.5, dy: endY)
-                )
-            )
+            // The keyboard can appear or change height during a focus attempt.
+            // Recompute the reveal instead of dragging through stale geometry.
+            // The next attempt recomputes the viewport before another tap.
         }
 
         XCTFail("\(identifier) did not receive keyboard focus before typing.")

@@ -26,10 +26,10 @@ final class TuneResultUITests: XCTestCase {
         XCTAssertTrue(save.isHittable)
 
         save.tap()
-        XCTAssertTrue(
-            app.descendants(matching: .any)["savedTuneStatus"]
-                .waitForExistence(timeout: 5)
-        )
+        let savedStatus = app.descendants(matching: .any)["savedTuneStatus"].firstMatch
+        revealSavedStatus(savedStatus, in: app)
+        XCTAssertTrue(savedStatus.waitForExistence(timeout: 5))
+        XCTAssertTrue(savedStatus.isHittable)
         XCTAssertFalse(app.buttons["Saved"].exists)
 
         app.buttons["editSavedTuneButton"].tap()
@@ -95,6 +95,19 @@ final class TuneResultUITests: XCTestCase {
             app.staticTexts["Hub: Verify Tire Pressures"]
                 .waitForExistence(timeout: 5)
         )
+    }
+
+    @MainActor
+    private func revealSavedStatus(_ status: XCUIElement, in app: XCUIApplication) {
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5))
+        // Save removes the new-result workflow row. Search toward the top
+        // from the retained offset instead of assuming the replacement is
+        // materialized in the same viewport as the tapped Save button.
+        for _ in 0..<12 where !status.exists || !status.isHittable {
+            list.swipeDown(velocity: .slow)
+        }
+        XCTAssertTrue(status.waitForExistence(timeout: 5))
     }
 
     @MainActor

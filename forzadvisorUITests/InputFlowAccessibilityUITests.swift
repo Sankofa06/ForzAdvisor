@@ -33,6 +33,21 @@ final class InputFlowAccessibilityUITests: XCTestCase {
     }
 
     @MainActor
+    func testManualIdentityFieldsRemainEditableWithKeyboardOpen() {
+        let app = launchManualEntry()
+        app.textFields["manualEntryYearField"].enterText("1997")
+        app.textFields["manualEntryMakeField"].enterText("Mazda")
+        // Do not dismiss between fields: the added persistent labels place
+        // Model farther down the form while the keyboard is still visible.
+        app.textFields["manualEntryModelField"].enterText("Miata")
+        XCTAssertEqual(app.textFields["manualEntryMakeField"].value as? String, "Mazda")
+        XCTAssertEqual(app.textFields["manualEntryModelField"].value as? String, "Miata")
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        app.buttons["manualEntryKeyboardDoneButton"].tap()
+        assertKeyboardDismissed(app)
+    }
+
+    @MainActor
     func testManualKeyboardDoneDismissesKeyboard() {
         let app = launchManualEntry()
         app.textFields["manualEntryYearField"].enterText("1997", in: app)

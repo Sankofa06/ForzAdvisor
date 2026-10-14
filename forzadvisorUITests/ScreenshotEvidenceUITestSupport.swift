@@ -30,7 +30,13 @@ extension ScreenshotEvidenceUITests {
         XCTAssertTrue(newTune.waitForExistence(timeout: 5))
         XCTAssertEqual(newTune.label, "Start First Tune")
         newTune.tap()
-        XCTAssertTrue(app.buttons["takePhotoPrimaryButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Tune Source"].waitForExistence(timeout: 5))
+        // At XXXL the workflow header can fill the initial lazy-list viewport.
+        // Reveal each real source action before asserting it is available.
+        let takePhoto = app.buttons["takePhotoPrimaryButton"]
+        scrollToHittable(takePhoto, in: app)
+        XCTAssertTrue(takePhoto.waitForExistence(timeout: 5))
+        XCTAssertTrue(takePhoto.isHittable)
         let importScreenshot = app.buttons["importScreenshotButton"].firstMatch
         let sourceList = app.collectionViews.firstMatch
         for _ in 0..<6 where !importScreenshot.exists { sourceList.swipeUp() }
@@ -148,10 +154,11 @@ extension ScreenshotEvidenceUITests {
         let save = app.buttons["saveTuneButton"]
         scrollBackwardToHittable(save, in: app)
         save.tap()
-        XCTAssertTrue(
-            app.descendants(matching: .any)["savedTuneStatus"]
-                .firstMatch.waitForExistence(timeout: 5)
-        )
+        let savedStatus = app.descendants(matching: .any)["savedTuneStatus"].firstMatch
+        // Saving removes the new-result progress row. SwiftUI can preserve
+        // the old list offset, placing the replacement status above it.
+        scrollBackwardToHittable(savedStatus, in: app)
+        XCTAssertTrue(savedStatus.waitForExistence(timeout: 5))
     }
 
     @MainActor
