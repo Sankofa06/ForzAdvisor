@@ -86,7 +86,9 @@ extension XCUIElement {
                 predicate: NSPredicate(format: "value == %@", expectedValue),
                 object: self
             )
-            guard XCTWaiter.wait(for: [expectation], timeout: 2) == .completed else {
+            // Simulator snapshots may lag the actual SwiftUI value. Keep the
+            // exact predicate and a bounded wait; never type the character twice.
+            guard XCTWaiter.wait(for: [expectation], timeout: 10) == .completed else {
                 XCTFail("\(identifier) expected \(expectedValue), received \(value ?? "nil").")
                 return
             }

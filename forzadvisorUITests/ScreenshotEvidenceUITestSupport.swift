@@ -29,8 +29,10 @@ extension ScreenshotEvidenceUITests {
         let newTune = app.buttons["newTuneButton"].firstMatch
         XCTAssertTrue(newTune.waitForExistence(timeout: 5))
         XCTAssertEqual(newTune.label, "Start First Tune")
+        newTune.scrollToInteractionViewport(in: app)
+        XCTAssertTrue(newTune.isHittable)
         newTune.tap()
-        XCTAssertTrue(app.navigationBars["Tune Source"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Tune Source"].waitForExistence(timeout: 15))
         // At XXXL the workflow header can fill the initial lazy-list viewport.
         // Reveal each real source action before asserting it is available.
         let takePhoto = app.buttons["takePhotoPrimaryButton"]

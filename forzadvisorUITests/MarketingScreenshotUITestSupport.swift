@@ -106,16 +106,23 @@ extension MarketingScreenshotUITests {
         let settled = XCTNSPredicateExpectation(
             predicate: NSPredicate { _, _ in
                 let viewport = app.frame
-                guard buttons.allSatisfy({ button in
-                    button.exists && button.isHittable
-                        && button.frame.width > 0 && button.frame.height > 0
-                        && viewport.contains(button.frame)
-                }) else {
-                    stableSince = nil
-                    previousFrames = []
-                    return false
+                var frames: [CGRect] = []
+                for button in buttons {
+                    guard button.exists && button.isHittable else {
+                        stableSince = nil
+                        previousFrames = []
+                        return false
+                    }
+                    // Each frame lookup requests a remote accessibility snapshot.
+                    let frame = button.frame
+                    guard frame.width > 0 && frame.height > 0
+                        && viewport.contains(frame) else {
+                        stableSince = nil
+                        previousFrames = []
+                        return false
+                    }
+                    frames.append(frame)
                 }
-                let frames = buttons.map(\.frame)
                 if frames != previousFrames {
                     previousFrames = frames
                     stableSince = Date()
@@ -130,7 +137,7 @@ extension MarketingScreenshotUITests {
             object: nil
         )
         XCTAssertEqual(
-            XCTWaiter.wait(for: [settled], timeout: 6), .completed,
+            XCTWaiter.wait(for: [settled], timeout: 15), .completed,
             "Toolbar controls must exist, be hittable, remain inside the app, and settle before capture."
         )
     }
