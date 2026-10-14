@@ -30,6 +30,7 @@ if not choices:
     raise SystemExit('Required available iPhone 17/16 Pro Max simulator not found (or UDID is wrong device)')
 runtime, device = sorted(choices, key=lambda pair: (pair[1]['name'], pair[0]), reverse=True)[0]
 (out/'simulator-udid.txt').write_text(device['udid'])
+(out/'simulator-original-state.txt').write_text(device['state'])
 metadata = {'sourceRevision': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
             'sourceStatus': subprocess.check_output(['git','status','--porcelain'], text=True),
             'xcodeVersion': (out/'xcode-version.txt').read_text(), 'simulator': device, 'runtime': runtime}
@@ -41,6 +42,41 @@ metadata['sourceFileSHA256'] = {f: hashlib.sha256(pathlib.Path(f).read_bytes()).
 (out/'capture-metadata.json').write_text(json.dumps(metadata, indent=2)+'\n')
 PY
 simulator_udid="$(cat "$output/simulator-udid.txt")"
+# Preserve an already running simulator; only shut down one this invocation boots.
+booted_by_capture=NO
+exported_diagnostics=NO
+export_diagnostics() {
+  [[ "$exported_diagnostics" == NO ]] || return 0
+  exported_diagnostics=YES
+  if [[ -d "$output/MarketingScreenshots.xcresult" ]]; then
+    xcrun xcresulttool get test-results summary --path "$output/MarketingScreenshots.xcresult" \
+      > "$output/test-summary.json" 2> "$output/summary-export.log" || true
+    xcrun xcresulttool export attachments --path "$output/MarketingScreenshots.xcresult" \
+      --output-path "$output/attachments" > "$output/attachment-export.log" 2>&1 || true
+  fi
+}
+cleanup() {
+  capture_exit=$?
+  trap - EXIT
+  export_diagnostics
+  if [[ "$booted_by_capture" == YES ]]; then
+    xcrun simctl shutdown "$simulator_udid" >> "$output/simulator-boot.log" 2>&1 || true
+  fi
+  exit "$capture_exit"
+}
+trap cleanup EXIT
+original_state="$(cat "$output/simulator-original-state.txt")"
+case "$original_state" in
+  Shutdown) booted_by_capture=YES ;;
+  Booted) ;;
+  *) echo "Simulator state $original_state is not ready for a safe capture" >&2; exit 1 ;;
+esac
+# bootstatus -b boots a shutdown device and waits for boot services to finish.
+python3 - "$simulator_udid" > "$output/simulator-boot.log" 2>&1 <<'PYBOOT'
+import subprocess, sys
+subprocess.run(['xcrun', 'simctl', 'bootstatus', sys.argv[1], '-b'], check=True, timeout=240)
+PYBOOT
+set +e
 xcodebuild test -project "$source_root/forzadvisor.xcodeproj" -scheme forzadvisor \
   -configuration Debug -testPlan ReleaseVerify \
   -destination "platform=iOS Simulator,id=$simulator_udid" \
@@ -49,6 +85,14 @@ xcodebuild test -project "$source_root/forzadvisor.xcodeproj" -scheme forzadviso
   -derivedDataPath "$output/DerivedData" -resultBundlePath "$output/MarketingScreenshots.xcresult" \
   SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES \
   CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$output/xcodebuild.log"
+test_pipeline_status=("${PIPESTATUS[@]}")
+set -e
+# Preserve partial screenshots and summary even when tests/build fail.
+export_diagnostics
+if [[ "${test_pipeline_status[0]}" != 0 || "${test_pipeline_status[1]}" != 0 ]]; then
+  echo 'Capture tests failed; partial attachments are diagnostic evidence only.' >&2
+  exit 1
+fi
 # Do not override status-bar settings on a user's simulator: simctl cannot read
 # and faithfully restore existing overrides. Real system chrome remains intact.
 python3 - "$output/capture-metadata.json" <<'PYVERIFY'
@@ -63,8 +107,6 @@ if (current != metadata['sourceFileSHA256'] or revision != metadata['sourceRevis
         or status != metadata['sourceStatus']):
     raise SystemExit('Capture rejected: source snapshot changed during tests')
 PYVERIFY
-xcrun xcresulttool get test-results summary --path "$output/MarketingScreenshots.xcresult" > "$output/test-summary.json"
-xcrun xcresulttool export attachments --path "$output/MarketingScreenshots.xcresult" --output-path "$output/attachments"
 python3 "$source_root/scripts/export_marketing_screenshots.py" --attachments "$output/attachments" \
   --output "$output/screenshots" --summary "$output/test-summary.json" --metadata "$output/capture-metadata.json"
 echo "Validated original screenshots and provenance: $output/screenshots"

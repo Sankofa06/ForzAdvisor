@@ -27,7 +27,8 @@ jobs:
           persist-credentials: false
       - name: Require Xcode 26.6
         run: |
-          test "$(xcodebuild -version | head -1)" = 'Xcode 26.6'
+          xcode_version="$(xcodebuild -version)"
+          test "${xcode_version%%$'\n'*}" = 'Xcode 26.6'
       - name: Install isolated image validation dependency
         run: |
           python3 -m venv "$RUNNER_TEMP/marketing-python"
@@ -37,7 +38,7 @@ jobs:
         run: python3 scripts/tests/test_marketing_screenshot_export.py
       - name: Capture app screenshots
         run: bash scripts/capture_marketing_screenshots.sh "$RUNNER_TEMP/marketing-capture"
-      - name: Upload screenshots and diagnostics
+      - name: Upload screenshots and small capture diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -45,10 +46,20 @@ jobs:
           if-no-files-found: warn
           path: |
             ${{ runner.temp }}/marketing-capture/screenshots
-            ${{ runner.temp }}/marketing-capture/MarketingScreenshots.xcresult
+            ${{ runner.temp }}/marketing-capture/attachments/**/*.png
+            ${{ runner.temp }}/marketing-capture/attachments/manifest.json
             ${{ runner.temp }}/marketing-capture/*.json
             ${{ runner.temp }}/marketing-capture/*.txt
             ${{ runner.temp }}/marketing-capture/*.log
+
+      - name: Upload full capture result bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: marketing-xcresult-${{ github.event.pull_request.head.sha || github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: ${{ runner.temp }}/marketing-capture/MarketingScreenshots.xcresult
 
   # PR engineering evidence only; immutable tagged Release Verify remains required.
   app-verification:
@@ -67,8 +78,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/app-verification"
-          xcodebuild -version | tee "$RUNNER_TEMP/app-verification/xcode-version.txt"
-          test "$(xcodebuild -version | head -1)" = 'Xcode 26.6'
+          xcode_version="$(xcodebuild -version)"
+          test "${xcode_version%%$'\n'*}" = 'Xcode 26.6'
+          printf '%s\n' "$xcode_version" > "$RUNNER_TEMP/app-verification/xcode-version.txt"
           sw_vers > "$RUNNER_TEMP/app-verification/system-version.txt"
           git rev-parse HEAD > "$RUNNER_TEMP/app-verification/source-revision.txt"
       - name: Clean Release simulator build
@@ -83,6 +95,25 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES \
             2>&1 | tee "$RUNNER_TEMP/app-verification/release-build.log"
+      - name: Wait for verification simulator readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This job runs only on the ephemeral GitHub-hosted verification runner.
+          python3 - > "$RUNNER_TEMP/app-verification/simulator-readiness.log" 2>&1 <<'PYREADY'
+          import json, subprocess
+          listing = json.loads(subprocess.check_output(
+              ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'], text=True))
+          devices = [device for runtime, entries in listing['devices'].items()
+                     if runtime == 'com.apple.CoreSimulator.SimRuntime.iOS-26-5'
+                     for device in entries
+                     if device.get('isAvailable') and device.get('name') == 'iPhone 17 Pro']
+          if len(devices) != 1:
+              raise SystemExit(f'Expected exactly one available iPhone 17 Pro on iOS 26.5; found {len(devices)}')
+          print(json.dumps(devices[0]), flush=True)
+          subprocess.run(['xcrun', 'simctl', 'bootstatus', devices[0]['udid'], '-b'],
+                         check=True, timeout=240)
+          PYREADY
       - name: Run complete ReleaseVerify plan
         shell: bash
         run: |
@@ -123,7 +154,15 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
-            ${{ runner.temp }}/app-verification/ReleaseVerify.xcresult
             ${{ runner.temp }}/app-verification/*.log
             ${{ runner.temp }}/app-verification/*.json
             ${{ runner.temp }}/app-verification/*.txt
+
+      - name: Upload full app verification result bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: app-verification-xcresult-${{ github.event.pull_request.head.sha || github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: ${{ runner.temp }}/app-verification/ReleaseVerify.xcresult

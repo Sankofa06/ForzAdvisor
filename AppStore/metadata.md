@@ -77,7 +77,7 @@ Optional testing and research tools are separate from ordinary setup creation. S
 - SKU: forzadvisor-ios
 - Current project version: 1.41.2
 - Current project build: 89
-- Current App Store Connect build: 87
+- Last recorded App Store Connect build: 87 (recheck live before release)
 - Copyright: 2026 Michael Williams
 - Marketing URL: https://Sankofa06.github.io/ForzAdvisor/
 

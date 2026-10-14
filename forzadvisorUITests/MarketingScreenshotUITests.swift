@@ -38,11 +38,15 @@ final class MarketingScreenshotUITests: XCTestCase {
         marketingTap(app.buttons["disciplineButton-road"], in: app)
         marketingReveal(app.buttons["startTuneGenerationButton"], in: app)
         XCTAssertTrue(app.buttons["startTuneGenerationButton"].isEnabled)
-        let disclosure = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label CONTAINS %@", "Preferred method")
-        ).firstMatch
+        let disclosure = app.staticTexts["Preferred method"].firstMatch
         marketingReveal(disclosure, in: app)
-        XCTAssertTrue(disclosure.isHittable)
+        XCTAssertTrue(marketingIsVisible(disclosure, in: app))
+        let readiness = app.staticTexts["Readiness"].firstMatch
+        XCTAssertTrue(marketingIsVisible(readiness, in: app))
+        let route = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS %@", "Expected route")
+        ).firstMatch
+        XCTAssertTrue(marketingIsVisible(route, in: app))
         marketingCapture("04-discipline", appearance: appearance, in: app)
 
         // Open the real saved plan through Garage instead of generating a
