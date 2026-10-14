@@ -27,9 +27,9 @@ class ScreenshotExportTests(unittest.TestCase):
                 name = f'{appearance}-{number}.png'
                 Image.new('RGB', (1320, 2868), (number, 20, 30)).save(self.attach / name)
                 self.items.append({'exportedFileName': name,
-                                   'suggestedHumanReadableName': f'marketing-{number:02}-{screen}-{appearance}',
+                                   'suggestedHumanReadableName': f'marketing-{number:02}-{screen}-{appearance}_0_361BC75C-3EBA-45F6-8D80-6BEF3D2759B5.png',
                                    'timestamp': 12345, 'isAssociatedWithFailure': False})
-        self.summary = dict(totalTestCount=2, passedTests=2, testResult='Passed',
+        self.summary = dict(totalTestCount=2, passedTests=2, result='Passed',
                             failedTests=0, skippedTests=0, expectedFailures=0)
         self.metadata = dict(sourceRevision='a'*40, xcodeVersion='Xcode 26.6')
 
@@ -50,6 +50,18 @@ class ScreenshotExportTests(unittest.TestCase):
         manifest = json.loads((self.root/'output/provenance.json').read_text())
         self.assertEqual(len(manifest['screenshots']), 12)
         self.assertEqual(manifest['sourceRevision'], 'a'*40)
+
+    def test_compatible_result_fields_must_agree(self):
+        module.validate_summary(dict(self.summary, testResult='Passed'))
+        legacy_only = dict(self.summary, testResult='Passed')
+        del legacy_only['result']
+        with self.assertRaises(ValueError):
+            module.validate_summary(legacy_only)
+
+    def test_malformed_attachment_suffix(self):
+        self.items[0]['suggestedHumanReadableName'] = 'marketing-01-garage-light_0_invalid.png'
+        with self.assertRaisesRegex(ValueError, 'all 12'):
+            self.run_export()
 
     def test_missing(self):
         self.items.pop()
@@ -79,14 +91,15 @@ class ScreenshotExportTests(unittest.TestCase):
     def test_unexecuted_failed_skipped_or_incomplete_summary(self):
         for field, value in [('totalTestCount', 0), ('failedTests', 1), ('skippedTests', 1),
                              ('expectedFailures', 1), ('failedTests', None),
-                             ('testResult', 'Failed'), ('testResult', 'Interrupted'),
-                             ('testResult', None), ('passedTests', None), ('passedTests', 0),
+                             ('result', 'Failed'), ('result', 'Interrupted'),
+                             ('result', None), ('testResult', 'Failed'),
+                             ('testResult', 'Interrupted'), ('testResult', None), ('passedTests', None), ('passedTests', 0),
                              ('passedTests', 1), ('passedTests', 3), ('passedTests', True)]:
             with self.subTest(field=field, value=value):
                 summary = dict(self.summary, **{field: value})
                 with self.assertRaises(ValueError):
                     module.validate_summary(summary)
-        for field in ('testResult', 'passedTests'):
+        for field in ('result', 'passedTests'):
             with self.subTest(missing=field):
                 summary = dict(self.summary)
                 del summary[field]

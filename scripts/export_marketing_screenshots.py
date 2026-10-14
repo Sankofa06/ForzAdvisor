@@ -12,7 +12,7 @@ from PIL import Image
 SCREENS = dict(zip(('garage', 'source', 'manual', 'discipline', 'saved-plan', 'step-guide'), (
     'your-local-garage', 'choose-your-input', 'confirm-your-car', 'choose-your-discipline',
     'your-saved-plan', 'guidance-for-next-step')))
-PATTERN = re.compile(r'marketing-(0[1-6])-(garage|source|manual|discipline|saved-plan|step-guide)-(light|dark)(?:\.png)?$')
+PATTERN = re.compile(r'marketing-(0[1-6])-(garage|source|manual|discipline|saved-plan|step-guide)-(light|dark)(?:_[0-9]+_[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12})?(?:\.png)?$')
 
 
 def attachments(value):
@@ -30,7 +30,9 @@ def validate_summary(summary):
     count = summary.get('totalTestCount')
     if type(count) is not int or count < 2:
         raise ValueError('Expected at least two executed screenshot tests')
-    if summary.get('testResult') != 'Passed':
+    # Xcode 26.6 get test-results summary uses `result`. Reject contradictory
+    # legacy fields rather than allowing one affirmative field to hide a failure.
+    if summary.get('result') != 'Passed' or ('testResult' in summary and summary['testResult'] != 'Passed'):
         raise ValueError('Test summary must explicitly report Passed')
     passed = summary.get('passedTests')
     if type(passed) is not int or passed < 2 or passed != count:

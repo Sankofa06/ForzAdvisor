@@ -138,7 +138,8 @@ jobs:
             --path "$RUNNER_TEMP/app-verification/ReleaseVerify.xcresult" > "$summary"
           jq -e '
             def integer: type == "number" and . == floor;
-            .testResult == "Passed" and
+            .result == "Passed" and
+            ((has("testResult") | not) or .testResult == "Passed") and
             (.totalTestCount | integer) and .totalTestCount > 0 and
             (.passedTests | integer) and .passedTests > 0 and
             .passedTests == .totalTestCount and
