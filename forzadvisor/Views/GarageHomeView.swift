@@ -14,6 +14,7 @@ struct GarageHomeView: View {
 
     @State private var searchText = ""
     @State private var disciplineFilter: DrivingDiscipline?
+    @State private var sortOrder: GarageSortOrder = .recent
     @State private var removalState = GarageRemovalState()
 
     private var uniqueTunes: [SavedTune] {
@@ -26,13 +27,23 @@ struct GarageHomeView: View {
     }
 
     private var filteredTunes: [SavedTune] {
-        visibleTunes.filter { tune in
-            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-            let matchesText = query.isEmpty
-                || tune.carName.localizedCaseInsensitiveContains(query)
+        let matches = visibleTunes.filter { tune in
+            let matchesText = GarageTuneSearch.matches(searchText, fields: [
+                tune.carName, tune.disciplineTitle,
+                "\(tune.performanceClassRawValue) \(tune.performanceIndex)",
+                tune.drivetrainRawValue, tune.playerNotes
+            ])
             let matchesDiscipline = disciplineFilter == nil
                 || tune.discipline == disciplineFilter
             return matchesText && matchesDiscipline
+        }
+        return matches.sorted { lhs, rhs in
+            if sortOrder == .carName {
+                let comparison = lhs.carName.localizedStandardCompare(rhs.carName)
+                if comparison != .orderedSame { return comparison == .orderedAscending }
+            }
+            if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt > rhs.updatedAt }
+            return lhs.id.uuidString < rhs.id.uuidString
         }
     }
 
@@ -63,7 +74,7 @@ struct GarageHomeView: View {
             garageList.searchable(
                 text: $searchText,
                 placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Search saved tunes"
+                prompt: "Search cars, styles, or notes"
             )
         }
     }
@@ -77,6 +88,18 @@ struct GarageHomeView: View {
                 savedTuneSection
             }
 
+            if let failure = removalState.failureMessage {
+                Section {
+                    ForzAdvisorInlineMessage(
+                        title: "Your tune was restored",
+                        message: failure,
+                        kind: .error
+                    )
+                    .accessibilityIdentifier("garageRemovalError")
+                }
+                .forzAdvisorRowBackground()
+            }
+
             GarageOptionalTestingRow(
                 missionCount: betaMissionCount,
                 action: onBetaMissions
@@ -85,10 +108,24 @@ struct GarageHomeView: View {
     }
 
     private var savedTuneSection: some View {
-        Section("Garage") {
+        Section {
             GarageDisciplinePicker(selection: $disciplineFilter)
+                .forzAdvisorRowBackground()
+            Picker("Sort tunes", selection: $sortOrder) {
+                ForEach(GarageSortOrder.allCases, id: \.self) { order in
+                    Text(order.rawValue).tag(order)
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("garageSortOrder")
+            .forzAdvisorRowBackground()
 
-            if filteredTunes.isEmpty {
+            if visibleTunes.isEmpty, removalState.pending != nil {
+                Label("Tune removed. Use Undo below to bring it back.", systemImage: "arrow.uturn.backward")
+                    .font(.subheadline)
+                    .foregroundStyle(ForzAdvisorTheme.secondaryText)
+                    .forzAdvisorRowBackground()
+            } else if filteredTunes.isEmpty {
                 GarageNoResultsView(
                     searchText: searchText,
                     discipline: disciplineFilter,
@@ -101,6 +138,10 @@ struct GarageHomeView: View {
                         GarageTuneRow(tune: tune)
                     }
                     .accessibilityIdentifier("savedTuneRow")
+                    .accessibilityHint("Opens saved settings and setup details")
+                    .accessibilityAction(named: Text("Remove tune")) {
+                        stageRemoval(of: tune)
+                    }
                     .buttonStyle(.plain)
                     .swipeActions {
                         Button("Remove", role: .destructive) {
@@ -110,6 +151,8 @@ struct GarageHomeView: View {
                     .forzAdvisorRowBackground()
                 }
             }
+        } header: {
+            Text("Garage · \(filteredTunes.count) of \(visibleTunes.count)")
         }
     }
 

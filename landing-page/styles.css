@@ -12,3 +12,17 @@
 @media(max-width:920px){.hero,.evidence,.output-grid,.roadmap-heading,.position{grid-template-columns:1fr}.hero{min-height:0}.section-heading{grid-template-columns:1fr}.runbook ol{grid-template-columns:repeat(2,1fr)}.runbook li:nth-child(3n){border-right:1px solid #11150d}.runbook li:nth-child(2n){border-right:0}.runbook li:nth-child(4){border-bottom:1px solid #11150d}.roadmap-grid{grid-template-columns:1fr}.roadmap-grid article{border-right:0;border-bottom:1px solid var(--line)}.roadmap-grid article:last-child{border-bottom:0}}
 @media(max-width:650px){.shell{width:min(calc(100% - 28px),var(--max))}.site-header{padding-inline:14px}nav>a:not(.github){display:none}.brand span{display:none}.hero{gap:45px;padding-block:65px}h1{font-size:clamp(4rem,18vw,6rem)}.hero-dashboard{min-height:440px}.dial{width:220px;height:220px}.telemetry{min-width:135px}.runbook,.evidence,.output,.roadmap,.position{padding-block:78px}.runbook ol{grid-template-columns:1fr}.runbook li{border-right:0!important;border-bottom:1px solid #11150d!important}.runbook li:last-child{border-bottom:0!important}.phone-wrap{min-height:580px;padding-inline:20px}.phone{width:67%}.callout{right:8px}.evidence,.output-grid{gap:55px}.roadmap-grid h3{margin-top:48px}.decision{grid-template-columns:1fr;gap:12px}.position{gap:30px}.site-footer{align-items:flex-start;flex-direction:column;gap:20px}.site-footer>div:last-child{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+
+/* Keep the original app captures fully visible at every screen size. */
+.hero-copy,.evidence-copy,.output-copy,.roadmap-heading>div{min-width:0}
+h1{overflow-wrap:normal;font-size:clamp(3.5rem,5.4vw,5rem)}
+.phone-wrap{min-height:0;padding:32px 24px 24px;flex-direction:column;align-items:center;gap:22px}
+.phone{width:min(100%,330px);flex:none;border:1px solid #38413b;border-radius:0;box-shadow:0 14px 36px #0005}
+.phone img{width:100%;height:auto}
+.callout{position:static;align-self:flex-end;background:transparent;border:0;padding:0}
+.roadmap-heading h2{overflow-wrap:normal}
+.capture-note{font-size:.78rem;color:var(--muted);line-height:1.6}
+a:focus-visible{outline:3px solid var(--orange);outline-offset:5px}
+@media(max-width:650px){h1{font-size:clamp(3.1rem,13.5vw,5.2rem)}.phone-wrap{padding:24px 18px 18px}.phone{width:min(100%,310px)}.hero-dashboard{min-height:400px}.telemetry.one{top:28px;left:20px}.telemetry.two{right:16px;bottom:55px}.telemetry.three{left:20px;bottom:20px}.site-header{position:relative}}
+
+@media(max-width:650px){.roadmap-heading h2{font-size:clamp(2.2rem,11vw,3rem)}}

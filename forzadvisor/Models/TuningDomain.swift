@@ -99,7 +99,7 @@ enum DrivingDiscipline: String, CaseIterable, Codable, Identifiable, Sendable {
         case .road: "road.lanes"
         case .touge: "mountain.2"
         case .drift: "arrow.triangle.2.circlepath"
-        case .dirt: "cloud.dust"
+        case .dirt: "sun.dust"
         case .crossCountry: "suv.side"
         case .drag: "flag.checkered"
         }

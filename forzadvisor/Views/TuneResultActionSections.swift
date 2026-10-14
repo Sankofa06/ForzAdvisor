@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct TuneResultStatusSection: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let tune: TuneResult
     let presentation: TuneResultPresentation
     let thumbnailData: Data?
@@ -9,7 +10,7 @@ struct TuneResultStatusSection: View {
 
     var body: some View {
         Section {
-            HStack(alignment: .top, spacing: 12) {
+            statusLayout {
                 TuneResultThumbnail(
                     data: thumbnailData,
                     fallbackSymbol: tune.request.discipline.symbolName
@@ -17,6 +18,7 @@ struct TuneResultStatusSection: View {
                 VStack(alignment: .leading, spacing: 7) {
                     Text(tune.request.car.displayName)
                         .font(.title2.weight(.bold))
+                        .accessibilityAddTraits(.isHeader)
                     Text("\(tune.request.discipline.title) · \(tune.request.car.performanceClass.rawValue) \(tune.request.car.performanceIndex) · \(tune.request.car.drivetrain.rawValue)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -40,6 +42,7 @@ struct TuneResultStatusSection: View {
 
             if presentation.completion == .incomplete {
                 Button("Cancel generation", role: .cancel, action: onCancelStreaming)
+                    .forzAdvisorMinimumTouchTarget()
                     .accessibilityIdentifier("cancelStreamingTuneGenerationButton")
             }
         }
@@ -48,11 +51,29 @@ struct TuneResultStatusSection: View {
         .accessibilityIdentifier("tuneResultStatus")
         .onAppear {
             guard presentation.completion == .incomplete else { return }
-            UIAccessibility.post(
-                notification: .announcement,
-                argument: presentation.statusDetail
-            )
+            announceStatus()
         }
+        .onChange(of: presentation.completion) { oldValue, newValue in
+            guard oldValue == .incomplete, newValue != .incomplete else { return }
+            announceStatus()
+        }
+    }
+
+    private var statusLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+    }
+
+    private func announceStatus() {
+        let provider = TuneActualProviderPresentation(
+            tune: tune,
+            isComplete: presentation.completion != .incomplete
+        )
+        UIAccessibility.post(
+            notification: .announcement,
+            argument: "\(presentation.statusTitle). \(presentation.statusDetail) \(provider.title)."
+        )
     }
 
     private var statusSymbol: String {
@@ -73,6 +94,7 @@ struct TuneResultStatusSection: View {
 }
 
 struct TuneResultActionSection: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let tune: TuneResult
     let presentation: TuneResultPresentation
     let onSave: () -> Void
@@ -82,12 +104,17 @@ struct TuneResultActionSection: View {
     var body: some View {
         Section("Apply in game") {
             if presentation.allowsSave {
+                if !presentation.isSaved {
+                    saveButton
+                }
+
                 if presentation.allowsCopy,
                    let text = TuneClipboardFormatter.verifiedSettingsText(for: tune) {
                     actionButton(
                         title: "Copy available settings",
                         systemImage: "doc.on.doc",
-                        identifier: "copyVerifiedSettingsButton"
+                        identifier: "copyVerifiedSettingsButton",
+                        kind: presentation.isSaved ? .primary : .secondary
                     ) {
                         UIPasteboard.general.string = text
                         announce("Available settings copied")
@@ -98,7 +125,8 @@ struct TuneResultActionSection: View {
                     actionButton(
                         title: "Copy setup plan",
                         systemImage: "doc.on.doc",
-                        identifier: "copyBuildPlanButton"
+                        identifier: "copyBuildPlanButton",
+                        kind: .secondary
                     ) {
                         UIPasteboard.general.string = text
                         announce("Setup plan copied")
@@ -106,31 +134,18 @@ struct TuneResultActionSection: View {
                 }
 
                 if presentation.isSaved {
-                    Label(
-                        presentation.hasAvailableSettings
-                            ? "Saved locally"
-                            : "Saved setup",
-                        systemImage: "checkmark.circle.fill"
-                    )
-                        .foregroundStyle(ForzAdvisorTheme.success)
-                        .accessibilityIdentifier("savedTuneStatus")
-                } else {
-                    actionButton(
-                        title: tune.purpose == .fh5BuildPlan
-                            ? "Save Plan"
-                            : presentation.hasAvailableSettings
-                                ? "Save"
-                                : "Save Setup",
-                        systemImage: "square.and.arrow.down",
-                        identifier: "saveTuneButton"
-                    ) {
-                        onSave()
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .accessibilityHidden(true)
+                        Text(presentation.hasAvailableSettings ? "Saved locally" : "Saved setup")
+                            .accessibilityIdentifier("savedTuneStatus")
                     }
+                    .foregroundStyle(ForzAdvisorTheme.success)
                 }
 
                 if !presentation.hasAvailableSettings {
                     Label(
-                        "No numeric settings are available. Copy and refinement remain unavailable.",
+                        "No numeric settings are available. Copying numeric settings and refinement remain unavailable.",
                         systemImage: "slider.horizontal.3"
                     )
                     .font(.subheadline)
@@ -165,17 +180,37 @@ struct TuneResultActionSection: View {
         .forzAdvisorRowBackground()
     }
 
+    private var saveButton: some View {
+        actionButton(
+            title: tune.purpose == .fh5BuildPlan
+                ? "Save Plan"
+                : presentation.hasAvailableSettings ? "Save" : "Save Setup",
+            systemImage: "square.and.arrow.down",
+            identifier: "saveTuneButton",
+            kind: .primary,
+            action: onSave
+        )
+    }
+
     private func actionButton(
         title: String,
         systemImage: String,
         identifier: String,
+        kind: ForzAdvisorActionKind,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            if dynamicTypeSize.isAccessibilitySize {
+                Text(title)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            } else {
+                Label(title, systemImage: systemImage)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            }
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(ForzAdvisorActionButtonStyle(kind: kind))
+        .accessibilityLabel(title)
         .accessibilityIdentifier(identifier)
     }
 
