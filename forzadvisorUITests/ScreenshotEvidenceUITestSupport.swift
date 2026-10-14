@@ -154,11 +154,13 @@ extension ScreenshotEvidenceUITests {
         let save = app.buttons["saveTuneButton"]
         scrollBackwardToHittable(save, in: app)
         save.tap()
-        let savedStatus = app.descendants(matching: .any)["savedTuneStatus"].firstMatch
+        let savedStatus = app.staticTexts["savedTuneStatus"]
         // Saving removes the new-result progress row. SwiftUI can preserve
         // the old list offset, placing the replacement status above it.
         scrollBackwardToHittable(savedStatus, in: app)
         XCTAssertTrue(savedStatus.waitForExistence(timeout: 5))
+        XCTAssertEqual(savedStatus.label, "Saved setup")
+        XCTAssertTrue(savedStatus.isHittable)
     }
 
     @MainActor

@@ -26,9 +26,10 @@ final class TuneResultUITests: XCTestCase {
         XCTAssertTrue(save.isHittable)
 
         save.tap()
-        let savedStatus = app.descendants(matching: .any)["savedTuneStatus"].firstMatch
+        let savedStatus = app.staticTexts["savedTuneStatus"]
         revealSavedStatus(savedStatus, in: app)
         XCTAssertTrue(savedStatus.waitForExistence(timeout: 5))
+        XCTAssertEqual(savedStatus.label, "Saved setup")
         XCTAssertTrue(savedStatus.isHittable)
         XCTAssertFalse(app.buttons["Saved"].exists)
 

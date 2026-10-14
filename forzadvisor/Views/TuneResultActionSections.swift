@@ -133,14 +133,13 @@ struct TuneResultActionSection: View {
                 }
 
                 if presentation.isSaved {
-                    Label(
-                        presentation.hasAvailableSettings
-                            ? "Saved locally"
-                            : "Saved setup",
-                        systemImage: "checkmark.circle.fill"
-                    )
-                        .foregroundStyle(ForzAdvisorTheme.success)
-                        .accessibilityIdentifier("savedTuneStatus")
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .accessibilityHidden(true)
+                        Text(presentation.hasAvailableSettings ? "Saved locally" : "Saved setup")
+                            .accessibilityIdentifier("savedTuneStatus")
+                    }
+                    .foregroundStyle(ForzAdvisorTheme.success)
                 }
 
                 if !presentation.hasAvailableSettings {
