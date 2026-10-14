@@ -70,7 +70,11 @@ extension MarketingScreenshotUITests {
     func marketingTap(_ element: XCUIElement, in app: XCUIApplication) {
         // Toolbar buttons are outside the list viewport and must not scroll.
         if !element.isHittable { marketingReveal(element, in: app) }
-        XCTAssertTrue(element.waitUntilHittable(timeout: 5))
+        let hittable = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND isHittable == true"),
+            object: element
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [hittable], timeout: 5), .completed)
         XCTAssertTrue(element.isEnabled)
         element.tap()
     }
