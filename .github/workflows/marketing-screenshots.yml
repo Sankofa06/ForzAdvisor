@@ -4,6 +4,7 @@ on:
     paths:
       - 'forzadvisor/**'
       - 'forzadvisorUITests/**'
+      - 'forzadvisorTests/**'
       - 'forzadvisor.xcodeproj/**'
       - 'ReleaseVerify.xctestplan'
       - 'scripts/*marketing*screenshot*'
@@ -48,3 +49,81 @@ jobs:
             ${{ runner.temp }}/marketing-capture/*.json
             ${{ runner.temp }}/marketing-capture/*.txt
             ${{ runner.temp }}/marketing-capture/*.log
+
+  # PR engineering evidence only; immutable tagged Release Verify remains required.
+  app-verification:
+    name: Verify release build and complete app tests
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record verification environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/app-verification"
+          xcodebuild -version | tee "$RUNNER_TEMP/app-verification/xcode-version.txt"
+          test "$(xcodebuild -version | head -1)" = 'Xcode 26.6'
+          sw_vers > "$RUNNER_TEMP/app-verification/system-version.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/app-verification/source-revision.txt"
+      - name: Clean Release simulator build
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild clean build \
+            -project forzadvisor.xcodeproj -scheme forzadvisor \
+            -configuration Release \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -derivedDataPath "$RUNNER_TEMP/app-verification/ReleaseDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES \
+            2>&1 | tee "$RUNNER_TEMP/app-verification/release-build.log"
+      - name: Run complete ReleaseVerify plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The complete plan includes DEBUG-only deterministic marketing seed tests.
+          xcodebuild test \
+            -project forzadvisor.xcodeproj -scheme forzadvisor \
+            -configuration Debug -testPlan ReleaseVerify \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -derivedDataPath "$RUNNER_TEMP/app-verification/TestDerivedData" \
+            -parallel-testing-enabled NO -collect-test-diagnostics never \
+            -resultBundlePath "$RUNNER_TEMP/app-verification/ReleaseVerify.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES \
+            2>&1 | tee "$RUNNER_TEMP/app-verification/release-verify.log"
+      - name: Require affirmative complete passing summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          summary="$RUNNER_TEMP/app-verification/test-summary.json"
+          xcrun xcresulttool get test-results summary \
+            --path "$RUNNER_TEMP/app-verification/ReleaseVerify.xcresult" > "$summary"
+          jq -e '
+            def integer: type == "number" and . == floor;
+            .testResult == "Passed" and
+            (.totalTestCount | integer) and .totalTestCount > 0 and
+            (.passedTests | integer) and .passedTests > 0 and
+            .passedTests == .totalTestCount and
+            (.failedTests | integer) and .failedTests == 0 and
+            (.skippedTests | integer) and .skippedTests == 0 and
+            (.expectedFailures | integer) and .expectedFailures == 0
+          ' "$summary" >/dev/null
+      - name: Upload app verification diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: app-verification-${{ github.event.pull_request.head.sha || github.sha }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/app-verification/ReleaseVerify.xcresult
+            ${{ runner.temp }}/app-verification/*.log
+            ${{ runner.temp }}/app-verification/*.json
+            ${{ runner.temp }}/app-verification/*.txt

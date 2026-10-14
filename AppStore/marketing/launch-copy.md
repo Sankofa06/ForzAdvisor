@@ -55,14 +55,16 @@ ForzAdvisor is an unofficial companion and is not affiliated with the game’s c
 
 ## Screenshot captions — pending real capture review
 
-1. Your next setup starts here — Photo, screenshot, or manual entry.
-2. Check the facts first — Review your car details before generation.
-3. Pick your drive style — Keep the discipline with your setup.
-4. See what is supported — FH5 plans; evidence-gated FH6 values.
-5. Keep your garage organized — Search, filter, and sort saved setups.
-6. Review before you apply — Refinement only where verified settings permit it.
+1. Your Local Garage — Search, filter, and sort saved setups.
+2. Photo, Screenshot, or Manual — Choose how to add your car.
+3. Confirm Your Car — Review manually entered details before generation.
+4. Choose Your Discipline — Keep your drive style with the setup.
+5. Review Your Saved Plan — Missing evidence keeps numeric settings withheld.
+6. Guidance for the Next Step — Open Step Guide for local workflow guidance.
 
-Use captions only on real candidate app captures showing the corresponding behavior. Existing mock-drawn assets are illustrative previews, not fresh captures. Seed names and player notes may demonstrate Garage behavior; seeded game observations, grants, verified status, or numeric settings must not suggest genuine validation. Omit the refinement shot unless genuine matching evidence makes the shown workflow eligible. An empty or withheld result is honest product behavior. Runtime/capture owners must confirm the final screens before these captions are paired with assets.
+This order matches `AppStore/screenshots-spec.md` and the metadata shot list: Garage, source, manual details, discipline, saved plan with withheld settings, and Step Guide. No refinement screen is included.
+
+Use captions only on real candidate app captures showing the corresponding behavior. Existing mock-drawn assets are illustrative previews, not fresh captures. Seed names and player notes may demonstrate Garage behavior; seeded game observations, grants, verified status, or numeric settings must not suggest genuine validation. The saved plan is a representative local seed, not proof of a live model response or verified numeric output. Preserve the plan and Step Guide prerequisite messaging. Runtime/capture owners must review both appearances and confirm the final screens before these captions are paired with assets.
 
 ## Claim map
 
