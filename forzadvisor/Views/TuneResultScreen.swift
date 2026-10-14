@@ -119,6 +119,13 @@ struct TuneResultScreen: View {
 
     var body: some View {
         List {
+            if !isSaved && !isStreaming {
+                Section {
+                    ForzAdvisorWorkflowProgress(step: .result)
+                }
+                .forzAdvisorRowBackground()
+            }
+
             TuneResultStatusSection(
                 tune: tune,
                 presentation: presentation,

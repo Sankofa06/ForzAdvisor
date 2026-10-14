@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct TuneLoadingView: View {
     let request: TuneRequest
@@ -27,40 +28,50 @@ struct TuneGenerationStatusView: View {
     var onBack: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: 18) {
-            phaseIcon
+        ScrollView {
+            VStack(spacing: 18) {
+                phaseIcon
 
-            Text(phase.title)
-                .font(.title3.weight(.semibold))
-                .multilineTextAlignment(.center)
+                Text(phase.title)
+                    .font(.title3.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+                    .multilineTextAlignment(.center)
 
-            Text("\(request.car.displayName) · \(request.discipline.title)")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(ForzAdvisorTheme.disciplineColor(request.discipline))
-                .multilineTextAlignment(.center)
+                Text("\(request.car.displayName) · \(request.discipline.title)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(ForzAdvisorTheme.disciplineColor(request.discipline))
+                    .multilineTextAlignment(.center)
 
-            Text(phase.detail)
-                .font(.subheadline)
-                .foregroundStyle(ForzAdvisorTheme.secondaryText)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 360)
+                Text(phase.detail)
+                    .font(.subheadline)
+                    .foregroundStyle(ForzAdvisorTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 360)
 
-            if phase.showsRecovery {
-                recoveryActions
+                if phase.showsRecovery {
+                    recoveryActions
+                }
+
+                if phase.showsCancel {
+                    Button("Cancel", role: .cancel, action: onCancel)
+                        .forzAdvisorMinimumTouchTarget()
+                        .accessibilityIdentifier("cancelTuneGenerationButton")
+                }
             }
-
-            if phase.showsCancel {
-                Button("Cancel", role: .cancel, action: onCancel)
-                    .forzAdvisorMinimumTouchTarget()
-                    .accessibilityIdentifier("cancelTuneGenerationButton")
-            }
+            .padding(24)
+            .frame(maxWidth: .infinity)
         }
-        .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(ForzAdvisorTheme.screenBackground.ignoresSafeArea())
         .tint(ForzAdvisorTheme.accent)
         .navigationTitle("Generation")
         .accessibilityElement(children: .contain)
+        .onChange(of: phase) { _, newPhase in
+            UIAccessibility.post(
+                notification: .announcement,
+                argument: "\(newPhase.title). \(newPhase.detail)"
+            )
+        }
     }
 
     @ViewBuilder
@@ -91,14 +102,14 @@ struct TuneGenerationStatusView: View {
     private var recoveryActions: some View {
         VStack(spacing: 10) {
             Button(DisciplineGenerationCopy.retryTitle, action: onRetry)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(ForzAdvisorActionButtonStyle(kind: .primary))
                 .forzAdvisorMinimumTouchTarget()
                 .accessibilityIdentifier("retryTuneGenerationButton")
             Button(
                 DisciplineGenerationCopy.changeDisciplineTitle,
                 action: onChangeDiscipline
             )
-                .buttonStyle(.bordered)
+                .buttonStyle(ForzAdvisorActionButtonStyle(kind: .secondary))
                 .forzAdvisorMinimumTouchTarget()
                 .accessibilityIdentifier("changeGenerationDisciplineButton")
             Button(DisciplineGenerationCopy.backTitle, action: onBack)

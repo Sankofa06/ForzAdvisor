@@ -39,7 +39,7 @@ extension ScreenshotEvidenceUITests {
         )
         XCTAssertEqual(
             importScreenshot.label,
-            "Import Screenshot, Run on-device Vision OCR, then confirm every value."
+            "Import Screenshot, Choose a saved image. Reading stays on this device."
         )
         let manualEntry = app.buttons["manualEntryButton"]
         for _ in 0..<6 where !manualEntry.exists { sourceList.swipeUp() }

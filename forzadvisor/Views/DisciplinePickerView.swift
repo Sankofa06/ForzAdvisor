@@ -80,7 +80,7 @@ struct DisciplinePickerView: View {
                     guard let selection = selectionState.startIntent else { return }
                     onStart(selection)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(ForzAdvisorActionButtonStyle(kind: .primary))
                 .frame(maxWidth: .infinity, alignment: .center)
                 .forzAdvisorMinimumTouchTarget()
                 .disabled(selectionState.startIntent == nil)
@@ -104,10 +104,12 @@ struct DisciplinePickerView: View {
 }
 
 private struct CarSummaryHeader: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let car: CarInput
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
+            ForzAdvisorWorkflowProgress(step: .discipline)
             HStack(alignment: .top, spacing: 12) {
                 ForzAdvisorIcon(systemName: "car.side", tint: ForzAdvisorTheme.warmAccent, size: 40)
 
@@ -120,22 +122,17 @@ private struct CarSummaryHeader: View {
                 }
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForzAdvisorPill(title: car.game.shortTitle, tint: ForzAdvisorTheme.accent)
-                    ForzAdvisorPill(title: "\(car.performanceClass.rawValue) \(car.performanceIndex)")
-                    ForzAdvisorPill(title: car.drivetrain.rawValue, tint: ForzAdvisorTheme.warmAccent)
-                    ForzAdvisorPill(title: "\(car.weightPounds) lb")
-                    ForzAdvisorPill(
-                        title: "\(car.frontWeightPercent.formatted(.number.precision(.fractionLength(1))))% front",
-                        tint: ForzAdvisorTheme.success
-                    )
-                    if let peakHorsepower = car.peakHorsepower {
-                        ForzAdvisorPill(title: "\(peakHorsepower) hp", tint: ForzAdvisorTheme.warmAccent)
-                    }
-                    if let peakTorqueFootPounds = car.peakTorqueFootPounds {
-                        ForzAdvisorPill(title: "\(peakTorqueFootPounds) lb-ft")
-                    }
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    summaryFacts
+                }
+            } else {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 120), alignment: .leading)],
+                    alignment: .leading,
+                    spacing: 8
+                ) {
+                    summaryFacts
                 }
             }
 
@@ -145,6 +142,26 @@ private struct CarSummaryHeader: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private var summaryFacts: some View {
+        ForzAdvisorPill(title: car.game.shortTitle, tint: ForzAdvisorTheme.accent)
+        ForzAdvisorPill(title: "\(car.performanceClass.rawValue) \(car.performanceIndex)")
+            .accessibilityLabel("Class \(car.performanceClass.rawValue), PI \(car.performanceIndex)")
+        ForzAdvisorPill(title: car.drivetrain.rawValue, tint: ForzAdvisorTheme.warmAccent)
+        ForzAdvisorPill(title: "\(car.weightPounds) lb")
+            .accessibilityLabel("Weight, \(car.weightPounds) pounds")
+        ForzAdvisorPill(
+            title: "\(car.frontWeightPercent.formatted(.number.precision(.fractionLength(1))))% front",
+            tint: ForzAdvisorTheme.success
+        )
+        if let horsepower = car.peakHorsepower {
+            ForzAdvisorPill(title: "\(horsepower) hp", tint: ForzAdvisorTheme.warmAccent)
+        }
+        if let torque = car.peakTorqueFootPounds {
+            ForzAdvisorPill(title: "\(torque) lb-ft")
+        }
     }
 }
 

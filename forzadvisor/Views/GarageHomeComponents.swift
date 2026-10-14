@@ -5,24 +5,49 @@ struct GarageFirstTuneView: View {
 
     var body: some View {
         Section {
-            VStack(alignment: .leading, spacing: 14) {
-                Label("Create your first tune", systemImage: "wrench.and.screwdriver.fill")
-                    .font(.title3.bold())
+            VStack(alignment: .leading, spacing: 18) {
+                ForzAdvisorScreenHeader(
+                    title: "Create your first tune",
+                    subtitle: "Bring your car. Find your driving style.",
+                    systemImage: "car.side",
+                    tint: ForzAdvisorTheme.warmAccent
+                )
                 Button(action: action) {
-                    Text("Start First Tune")
-                        .frame(maxWidth: .infinity)
-                        .forzAdvisorMinimumTouchTarget()
+                    Label("Start First Tune", systemImage: "arrow.right")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(ForzAdvisorActionButtonStyle())
+                .accessibilityLabel("Start First Tune")
                 .accessibilityHint("Shows photo, screenshot, and manual entry options")
                 .accessibilityIdentifier("newTuneButton")
-                Text("Start from a car photo, a screenshot, or manual entry. You will confirm the car facts before choosing how you drive.")
-                    .foregroundStyle(.secondary)
+                Text("Start with a photo, screenshot, or the values from your game. You stay in control of every detail.")
+                    .font(.subheadline)
+                    .foregroundStyle(ForzAdvisorTheme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 12) {
+                    firstTuneStep("1", title: "Add your car")
+                    firstTuneStep("2", title: "Check car details")
+                    firstTuneStep("3", title: "Choose your driving style")
+                    firstTuneStep("4", title: "Review and save your setup")
+                }
             }
             .padding(.vertical, 8)
             .listRowBackground(ForzAdvisorTheme.heroRowBackground)
         }
+    }
+
+    private func firstTuneStep(_ number: String, title: String) -> some View {
+        HStack(spacing: 10) {
+            Text(number)
+                .font(.caption.weight(.bold).monospacedDigit())
+                .foregroundStyle(ForzAdvisorTheme.accent)
+                .frame(width: 26, height: 26)
+                .background(ForzAdvisorTheme.accent.opacity(0.12), in: Circle())
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -32,17 +57,21 @@ struct GarageNewTuneRow: View {
     var body: some View {
         Section {
             Button(action: action) {
-                Label {
+                HStack(spacing: 12) {
+                    ForzAdvisorIcon(systemName: "plus", tint: ForzAdvisorTheme.warmAccent, size: 42)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("New Tune").font(.headline)
                         Text("Photo, screenshot, or manual entry")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                } icon: {
-                    ForzAdvisorIcon(systemName: "plus", tint: ForzAdvisorTheme.warmAccent, size: 42)
+                    Spacer(minLength: 4)
+                    Image(systemName: "arrow.right")
+                        .foregroundStyle(ForzAdvisorTheme.accent)
+                        .accessibilityHidden(true)
                 }
                 .padding(.vertical, 8)
+                .contentShape(Rectangle())
             }
             .accessibilityIdentifier("newTuneButton")
             .buttonStyle(.plain)

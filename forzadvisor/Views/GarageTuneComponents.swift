@@ -57,15 +57,21 @@ struct GarageNoResultsView: View {
 
 struct GarageTuneRow: View {
     let tune: SavedTune
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+        layout {
             ForzAdvisorIcon(
                 systemName: tune.disciplineSymbolName,
                 tint: disciplineTint
             )
             VStack(alignment: .leading, spacing: 5) {
-                Text(tune.carName).font(.headline)
+                Text(tune.carName)
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(metadata)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -80,13 +86,15 @@ struct GarageTuneRow: View {
                         .lineLimit(2)
                 }
             }
-            Spacer(minLength: 8)
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
         .accessibilityElement(children: .combine)
     }
 

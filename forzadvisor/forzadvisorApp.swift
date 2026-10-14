@@ -23,6 +23,7 @@ struct forzadvisorApp: App {
 
         do {
             modelContainer = try Self.makeModelContainer()
+            try MarketingScreenshotSeed.install(in: modelContainer)
         } catch {
             fatalError("Could not create model container: \(error)")
         }
