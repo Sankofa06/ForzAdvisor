@@ -3,10 +3,12 @@
 require "json"
 require "fileutils"
 require "minitest/autorun"
+require "minitest/mock"
 require "open3"
 require "tmpdir"
 require "zlib"
 require_relative "../lib/forzadvisor_release"
+require_relative "../lib/forzadvisor_release_pilot"
 
 class FakeGitRepository
   attr_accessor :error, :commit
@@ -511,12 +513,14 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_full_preflight_passes_current_repository_artifacts_with_injected_urls_and_git
     urls = FakeURLChecker.new
-    result = ForzAdvisorRelease::Preflight.new(
-      root: ROOT,
-      config: @config,
-      url_checker: urls,
-      git: FakeGitRepository.new
-    ).run
+    result = with_project_build_settings do
+      ForzAdvisorRelease::Preflight.new(
+        root: ROOT,
+        config: @config,
+        url_checker: urls,
+        git: FakeGitRepository.new
+      ).run
+    end
 
     assert_equal true, result["ready"]
     assert_equal ForzAdvisorRelease::Preflight::CHECKS.sort, result["checks"].keys.sort
@@ -530,12 +534,14 @@ class ForzAdvisorReleaseTest < Minitest::Test
     git = FakeGitRepository.new
     git.error = ForzAdvisorRelease::PreflightError.new("working tree has uncommitted changes")
     result_error = assert_raises(ForzAdvisorRelease::PreflightError) do
-      ForzAdvisorRelease::Preflight.new(
-        root: ROOT,
-        config: @config,
-        url_checker: FakeURLChecker.new(status: 404),
-        git: git
-      ).run
+      with_project_build_settings do
+        ForzAdvisorRelease::Preflight.new(
+          root: ROOT,
+          config: @config,
+          url_checker: FakeURLChecker.new(status: 404),
+          git: git
+        ).run
+      end
     end
 
     assert_equal false, result_error.result["ready"]
@@ -546,7 +552,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_project_inspector_checks_versions_signing_schemes_and_both_test_targets
-    result = ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call
+    result = with_project_build_settings { ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call }
 
     assert_equal "1.41.2", result["marketing_version"]
     assert_equal "89", result["source_build_number"]
@@ -560,6 +566,14 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
     assert_equal 6, project.scan(/CURRENT_PROJECT_VERSION = #{@config.fetch("release", "source_build_number")};/).length
     refute_includes project, "CURRENT_PROJECT_VERSION = 87;"
+  end
+
+  def test_project_inspector_rejects_drift_in_injected_build_settings
+    %w[MARKETING_VERSION CURRENT_PROJECT_VERSION DEVELOPMENT_TEAM PRODUCT_BUNDLE_IDENTIFIER CODE_SIGN_STYLE CODE_SIGN_IDENTITY INFOPLIST_KEY_ITSAppUsesNonExemptEncryption].each do |key|
+      assert_raises(ForzAdvisorRelease::PreflightError) do
+        with_project_build_settings(overrides: { key => "incorrect" }) { ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call }
+      end
+    end
   end
 
   def test_metadata_inspector_enforces_store_limits_and_public_url_consistency
@@ -1733,7 +1747,206 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal ["SUBMIT", "IOS", state["app_id"], state["bundle_id"], state["marketing_version"], state["source_build_number"], state["commit"], "submission-1"].join(":"), coordinator.submission_confirmation_token(state)
   end
 
+  def test_daily_pilot_skips_unchanged_and_documentation_only_without_reserving_native_slot
+    [[], ["README.md", "AppStore/release-automation.md"]].each do |paths|
+      with_daily_pilot(paths: paths) do |pilot, fixture, directory|
+        output = pilot.call(fixture: fixture, state_directory: directory)
+        assert_equal "skipped", output.dig("simulation", "stage")
+        refute File.exist?(File.join(directory, "dispatch.json"))
+        refute output.dig("portal", "install_ready")
+      end
+    end
+  end
+
+  def test_daily_pilot_requires_every_exact_revision_gate_and_complete_test_summary
+    ForzAdvisorRelease::DailyPilot::GATES.each do |gate|
+      with_daily_pilot do |pilot, fixture, directory|
+        fixture["gates"][gate]["commit"] = "b" * 40
+        assert_includes pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "blockers"), gate
+        refute File.exist?(File.join(directory, "dispatch.json"))
+      end
+    end
+    with_daily_pilot do |pilot, fixture, directory|
+      fixture["gates"]["local_release_verify"]["summary"]["skips"] = 1
+      assert_includes pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "blockers"), "local_release_verify"
+      fixture["github"]["run"]["head_sha"] = "b" * 40
+      assert_includes pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "blockers"), "github_release_verify"
+    end
+  end
+
+  def test_daily_pilot_binds_fixture_and_notes_to_immutable_candidate
+    with_daily_pilot do |pilot, fixture, directory|
+      identity = pilot.call.dig("portal", "identity")
+      assert_raises(FrozenError) { identity["commit"].replace("b" * 40) }
+      assert_raises(FrozenError) { identity["commit"] = "b" * 40 }
+      fixture["candidate_id"] = "b" * 64
+      assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+      fixture["candidate_id"] = pilot.candidate_id
+      fixture["change_plan"]["commit"] = "b" * 40
+      assert_includes pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "blockers"), "version_specific_test_plan"
+    end
+  end
+
+  def test_daily_pilot_serializes_handoffs_and_reconciles_repeated_dispatch_intent
+    with_daily_pilot do |pilot, fixture, directory|
+      assert_equal "would_dispatch_native", pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "next_action")
+      assert_equal "reconcile_native_dispatch", pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "next_action")
+      path = File.join(directory, "dispatch.json")
+      assert_equal 0o600, File.stat(path).mode & 0o777
+      before = File.binread(path)
+      other = ForzAdvisorRelease::DailyPilot.new(config: @config, ref: stable_identity["ref"], commit: "b" * 40, baseline: "c" * 40, paths: ["forzadvisor/App.swift"])
+      assert_equal "native_slot_busy", ForzAdvisorRelease::DailyPilotSlot.new(directory).claim(other.candidate_id)
+      assert_equal before, File.binread(path)
+    end
+  end
+
+  def test_daily_pilot_upload_uncertainty_never_dispatches_or_retransmits
+    with_daily_pilot do |pilot, fixture, directory|
+      fixture["stable_state"] = stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent")
+      output = pilot.call(fixture: fixture, state_directory: directory)
+      assert_equal "reconcile_upload_read_only", output.dig("simulation", "next_action")
+      refute File.exist?(File.join(directory, "dispatch.json"))
+      refute output.dig("simulation", "install_ready")
+    end
+  end
+
+  def test_daily_pilot_requires_fresh_apple_processing_group_and_unexpired_exact_build
+    with_daily_pilot do |pilot, fixture, directory|
+      add_daily_uploaded_fixture(fixture)
+      output = pilot.call(fixture: fixture, state_directory: directory)
+      assert_equal "install_ready", output.dig("simulation", "stage")
+      refute output.dig("portal", "install_ready"), "fixtures must never establish real availability"
+      assert_equal "proposed", output.dig("portal", "stage")
+      assert_equal "1.41.2", output.dig("simulation", "test_plan", "identity", "marketing_version")
+      fixture["apple_observed_at"] = "2000-01-01T00:00:00Z"
+      assert_equal "refresh_apple_read_only", pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "next_action")
+      fixture["apple_observed_at"] = Time.now.utc.iso8601
+      group = @config.fetch("testflight", "internal_group", "id")
+      fixture["apple"]["/v1/betaGroups/#{group}/builds"] = { "data" => [] }
+      refute pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "install_ready")
+    end
+  end
+
+  def test_daily_pilot_rejects_processing_wrong_receipt_and_historical_state
+    with_daily_pilot do |pilot, fixture, directory|
+      add_daily_uploaded_fixture(fixture)
+      build = fixture["apple"]["/v1/builds/#{candidate_build['id']}"]["data"]
+      build["attributes"]["processingState"] = "PROCESSING"
+      assert_equal "uploaded", pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "stage")
+      build["attributes"]["processingState"] = "VALID"
+      build["attributes"]["expired"] = true
+      refute pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "install_ready")
+      fixture["stable_state"]["commit"] = "b" * 40
+      assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+    end
+  end
+
+  def test_daily_pilot_requires_receipt_integrity_and_unique_exact_apple_build
+    %w[archive_sha256 package_sha256 signing_verification commit asc_build_id].each do |key|
+      with_daily_pilot do |pilot, fixture, directory|
+        add_daily_uploaded_fixture(fixture)
+        fixture["stable_state"]["release_receipt"][key] = "invalid"
+        if key == "asc_build_id"
+          refute pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "install_ready")
+        else
+          assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+        end
+      end
+    end
+    with_daily_pilot do |pilot, fixture, directory|
+      add_daily_uploaded_fixture(fixture)
+      fixture["apple"]["/v1/apps/#{@config.fetch('app', 'id')}/builds"]["data"] *= 2
+      refute pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "install_ready")
+    end
+  end
+
+  def test_daily_pilot_concurrent_handoffs_reserve_one_slot_and_reject_unsafe_storage
+    Dir.mktmpdir("forzadvisor-slot-test") do |directory|
+      outcomes = %w[a b].map do |key|
+        Thread.new { ForzAdvisorRelease::DailyPilotSlot.new(directory).claim(key * 64) }
+      end.map(&:value)
+      assert_equal 1, outcomes.count("would_dispatch_native")
+      assert_equal 1, outcomes.count("native_slot_busy")
+      FileUtils.chmod(0o755, directory)
+      assert_raises(ForzAdvisorRelease::PreflightError) { ForzAdvisorRelease::DailyPilotSlot.new(directory).claim("c" * 64) }
+    end
+  end
+
+  def test_daily_pilot_source_and_cli_read_exact_tag_config_without_remote_or_native_work
+    Dir.mktmpdir("forzadvisor-source-test") do |root|
+      git = lambda do |*args|
+        out, err, status = Open3.capture3("git", "-C", root, *args)
+        assert status.success?, err
+        out.strip
+      end
+      git.call("init", "--quiet")
+      git.call("config", "user.name", "Fixture")
+      git.call("config", "user.email", "fixture@example.com")
+      git.call("remote", "add", "origin", @config.fetch("repository", "remote_url"))
+      FileUtils.mkdir_p(File.join(root, "AppStore"))
+      config_path = File.join(root, "AppStore", "release-config.json")
+      File.write(config_path, JSON.generate(@config.data))
+      git.call("add", ".")
+      git.call("commit", "--quiet", "-m", "Fixture baseline")
+      baseline = git.call("rev-parse", "HEAD")
+      File.write(File.join(root, "App.swift"), "// Fixture source\n")
+      git.call("add", ".")
+      git.call("commit", "--quiet", "-m", "Fixture change")
+      tag = @config.fetch("repository", "release_ref")
+      git.call("tag", "-a", tag, "-m", "Fixture candidate")
+      source = ForzAdvisorRelease::DailyPilotSource.new(root: root)
+      pilot = source.call(ref: tag, baseline: baseline)
+      File.write(config_path, "dirty invalid config")
+      assert_equal pilot.candidate_id, source.call(ref: tag, baseline: baseline).candidate_id
+      stdout, stderr, status = Open3.capture3("ruby", File.join(ROOT, "scripts", "release-daily"), "--root", root, "--ref", tag, "--baseline", baseline)
+      assert status.success?, stderr
+      assert_equal ["App.swift"], JSON.parse(stdout).dig("simulation", "changed_paths")
+      refute JSON.parse(stdout)["native_execution_enabled"]
+      assert_equal "skipped", source.call(ref: tag, baseline: git.call("rev-parse", "HEAD")).call.dig("portal", "stage")
+      git.call("tag", "release-lightweight")
+      assert_raises(ForzAdvisorRelease::PreflightError) { source.call(ref: "release-lightweight", baseline: baseline) }
+      git.call("remote", "set-url", "origin", "https://github.com/example/other.git")
+      assert_raises(ForzAdvisorRelease::PreflightError) { source.call(ref: tag, baseline: baseline) }
+    end
+  end
+
   private
+
+  # Unit observations only; the workflow's separate real preflight still resolves Xcode settings.
+  def with_project_build_settings(overrides: {})
+    settings = { "MARKETING_VERSION" => "1.41.2", "CURRENT_PROJECT_VERSION" => "89", "DEVELOPMENT_TEAM" => "5RGU344VJR",
+      "PRODUCT_BUNDLE_IDENTIFIER" => "com.michaelwilliams.forzadvisor", "CODE_SIGN_STYLE" => "Manual",
+      "CODE_SIGN_IDENTITY" => "Apple Distribution", "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption" => "NO" }.merge(overrides)
+    observation = lambda do |*command, **_options|
+      assert_equal ["xcodebuild", "-project"], command.first(2)
+      assert_includes command, "-showBuildSettings"
+      assert_includes command, "-json"
+      refute_includes command, "test"
+      refute_includes command, "archive"
+      [JSON.generate([{ "target" => "forzadvisor", "buildSettings" => settings }]), "", Struct.new(:success?).new(true)]
+    end
+    Open3.stub(:capture3, observation) { yield }
+  end
+
+  def with_daily_pilot(paths: ["forzadvisor/App.swift"])
+    pilot = ForzAdvisorRelease::DailyPilot.new(config: @config, ref: stable_identity["ref"], commit: "a" * 40, baseline: "c" * 40, paths: paths)
+    fixture = { "kind" => "fixture", "candidate_id" => pilot.candidate_id,
+      "gates" => ForzAdvisorRelease::DailyPilot::GATES.to_h { |gate| [gate, { "result" => "PASS", "commit" => "a" * 40, "warnings" => 0 }] },
+      "github" => { "run_id" => "123", "run" => github_run(tag: stable_identity["ref"], commit: "a" * 40), "jobs" => [github_job] },
+      "change_plan" => { "commit" => "a" * 40, "baseline_commit" => "c" * 40, "summary" => "Fixture change", "scenarios" => [{ "steps" => ["Exercise the changed behavior"], "expected" => "The candidate-specific result is observed" }] } }
+    fixture["gates"]["local_release_verify"]["summary"] = { "tests" => 1, "failures" => 0, "skips" => 0, "expected_failures" => 0, "warnings" => 0 }
+    Dir.mktmpdir("forzadvisor-daily-test") { |directory| yield pilot, fixture, directory }
+  end
+
+  def add_daily_uploaded_fixture(fixture)
+    fixture["stable_state"] = stable_identity.merge("schema_version" => 2, "phase" => "human_verification_pending", "release_receipt" => release_receipt)
+    responses = candidate_validation_responses(candidate_build["id"])
+    build = responses["/v1/builds/#{candidate_build['id']}"]["data"]
+    build["attributes"].merge!("expired" => false, "expirationDate" => (Time.now + 3600).utc.iso8601)
+    responses["/v1/apps/#{@config.fetch('app', 'id')}/builds"] = { "data" => [build] }
+    fixture["apple"] = responses
+    fixture["apple_observed_at"] = Time.now.utc.iso8601
+  end
 
   def github_run(tag:, commit:)
     {

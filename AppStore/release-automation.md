@@ -26,6 +26,87 @@ developer Mac.
 
 ## Source of Truth
 
+### Cloud planning pilot — disabled
+
+`ruby scripts/release-daily` is a portable, offline planning pilot around the
+existing coordinator. It cannot dispatch GitHub or native jobs, connect to the
+runner or Apple, upload, associate testers, stage, or submit. No schedule is
+installed. A future daily opportunity observes and proposes eligible work;
+native execution remains a separately reviewed and authorized handoff.
+
+Inspect one local annotated release tag against an explicit prior candidate SHA:
+
+```sh
+ruby scripts/release-daily --ref RELEASE_TAG --baseline EXACT_40_CHARACTER_SHA
+```
+
+The baseline must be an available ancestor. Choose the prior considered candidate
+deliberately; a failed attempt must not silently become the successful-release
+baseline. The planner reads configuration and changed paths from Git objects,
+checks the configured remote, and binds app, bundle, platform, version/build,
+tag, commit, configuration fingerprint, and stable profile into a candidate ID.
+It rechecks the tag after reading. Unchanged candidates and changes limited to
+Markdown in `docs/`, `forzadvisorDocs/`, `AppStore/`, or the root `README.md`
+are skipped. Other paths conservatively require all gates.
+
+For a disconnected simulation, provide private fixture observations and a new
+private directory outside the checkout:
+
+```sh
+ruby scripts/release-daily --ref RELEASE_TAG --baseline EXACT_40_CHARACTER_SHA \
+  --fixture /absolute/private/observations.json \
+  --state-dir /absolute/private/pilot-fixture-state
+```
+
+Fixture JSON uses `kind: "fixture"` and the exact `candidate_id` from the first
+command. `gates` maps every `DailyPilot::GATES` entry to `result: "PASS"` and
+the exact `commit`; clean-build evidence also requires zero `warnings`.
+The local release gate requires `summary` with a positive `tests` count and
+zero `failures`, `skips`, `expected_failures`, and `warnings`. `github` supplies
+`run_id`, raw `run`, and `jobs` to the existing exact-revision verifier.
+These fixture declarations never satisfy an actual engineering or release gate.
+
+`change_plan` binds `commit` and `baseline_commit` to a version-specific
+`summary` and numbered `scenarios`, each with nonempty `steps` and `expected`.
+The output carries the exact version/build/SHA, changed paths, regression checks,
+stop conditions, per-scenario response fields, and overall human-result choices.
+Missing expected behavior blocks a simulated handoff instead of inventing a
+test plan. See the dependency-light suite's `with_daily_pilot` fixture builder.
+
+Optional `stable_state` is a snapshot of the existing v2 coordinator state,
+never the historical Xcode Cloud state. `apple` maps read-only API paths to
+fixture responses, including collection pagination; `apple_observed_at` must
+be within the previous 15 minutes. The planner reuses `UploadedBuildResolver`
+and `CandidateBuildValidator`, requires the exact eligible `VALID` build and
+current internal-group association, and rejects expired builds. A receipt by
+itself cannot establish availability. Missing, stale, removed, or ambiguous
+Apple observations keep the simulated build below install-ready.
+
+The fixture outbox reserves one native handoff under a file lock and persists
+intent before returning `would_dispatch_native`. Repetition returns
+`reconcile_native_dispatch`; another candidate sees `native_slot_busy`.
+There is no timeout-based takeover or automatic reset. An existing
+`upload_start_intent` always requests read-only reconciliation, never another
+upload. Even an absent Apple build is not proof that an uncertain upload failed.
+Reconcile and explicitly block through the existing coordinator, preserving its
+receipt/history and requiring a new build identity where its policy requires it.
+The runner's existing shared archive/upload lock remains authoritative.
+
+Private portal consumers must distinguish `proposed`, `verified`, `uploaded`,
+and `install_ready`, and keep work in PRs separate from release availability.
+In this pilot, these transitions appear **only under `simulation`**.
+The publishable `portal` projection always has `install_ready: false` and
+`availability: "UNVERIFIED"`; `work_in_pr: null` means the PR connection is
+unverified, not that there are no PRs. Do not copy simulated readiness to the
+portal. No live portal integration or current-build availability is claimed.
+
+Operational activation requires independent review, the existing exact-commit
+full local and GitHub release gates, verification of the private portal and
+durable state connections, and the existing stable profile, signing, ASC access,
+internal-group membership, and per-candidate upload authorization. Keep signing
+and runner connections external. This pilot adds no hosted-signing path or
+credentials and does not alter the coordinator's release policy.
+
 `AppStore/release-config.json` records non-secret release facts:
 
 - App Store Connect app, bundle, team, version, review-draft, and review-item identifiers
