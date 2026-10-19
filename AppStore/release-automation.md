@@ -51,14 +51,20 @@ are skipped. Other paths conservatively require all gates.
 Skipping applies only to new work without an active candidate snapshot; an
 existing candidate still needs identity validation and ongoing observation.
 
-For a disconnected simulation, provide private fixture observations and a new
-private directory outside the checkout:
+For a disconnected simulation, provide private fixture observations and an
+already provisioned, durable private state directory outside the checkout:
 
 ```sh
 ruby scripts/release-daily --ref RELEASE_TAG --baseline EXACT_40_CHARACTER_SHA \
   --fixture /absolute/private/observations.json \
   --state-dir /absolute/private/pilot-fixture-state
 ```
+
+The caller must establish the state directory's durability, including its parent
+directory entry, before requesting a handoff. The directory must already exist
+without group/world permissions. The planner fails closed if it is missing and
+never creates state directories or ancestors; directory provisioning is outside
+this pilot's scope.
 
 Fixture JSON uses `kind: "fixture"` and the exact `candidate_id` from the first
 command. `gates` maps every `DailyPilot::GATES` entry to `result: "PASS"` and

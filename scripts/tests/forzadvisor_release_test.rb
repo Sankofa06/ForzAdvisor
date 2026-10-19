@@ -1923,6 +1923,19 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
+  def test_daily_pilot_rejects_missing_state_directory_without_creating_ancestors
+    Dir.mktmpdir("forzadvisor-missing-state-test") do |parent|
+      missing = File.join(parent, "not-provisioned")
+      [missing, File.join(missing, "nested-state")].each do |directory|
+        error = assert_raises(ForzAdvisorRelease::PreflightError) do
+          ForzAdvisorRelease::DailyPilotSlot.new(directory).claim("a" * 64)
+        end
+        assert_match(/state directory must already exist/, error.message)
+        refute File.exist?(missing), "claim must not provision any state directory or ancestor"
+      end
+    end
+  end
+
   def test_daily_pilot_directory_sync_failure_preserves_intent_and_fails_closed
     Dir.mktmpdir("forzadvisor-directory-sync-failure-test") do |directory|
       slot = ForzAdvisorRelease::DailyPilotSlot.new(directory)

@@ -12,7 +12,9 @@ module ForzAdvisorRelease
 
     def claim(candidate_id)
       raise PreflightError, "fixture state directory cannot be a symlink" if File.symlink?(@directory)
-      FileUtils.mkdir_p(@directory, mode: 0o700)
+      unless File.directory?(@directory)
+        raise PreflightError, "fixture state directory must already exist and be durably provisioned"
+      end
       raise PreflightError, "fixture state directory must be private" unless File.stat(@directory).mode & 0o077 == 0
       File.open(File.join(@directory, "dispatch.lock"), File::RDWR | File::CREAT, 0o600) do |lock|
         return "native_slot_busy" unless lock.flock(File::LOCK_EX | File::LOCK_NB)
