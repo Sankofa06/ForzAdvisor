@@ -48,6 +48,8 @@ tag, commit, configuration fingerprint, and stable profile into a candidate ID.
 It rechecks the tag after reading. Unchanged candidates and changes limited to
 Markdown in `docs/`, `forzadvisorDocs/`, `AppStore/`, or the root `README.md`
 are skipped. Other paths conservatively require all gates.
+Skipping applies only to new work without an active candidate snapshot; an
+existing candidate still needs identity validation and ongoing observation.
 
 For a disconnected simulation, provide private fixture observations and a new
 private directory outside the checkout:
@@ -83,11 +85,16 @@ itself cannot establish availability. Missing, stale, removed, or ambiguous
 Apple observations keep the simulated build below install-ready.
 
 The fixture outbox reserves one native handoff under a file lock and persists
-intent before returning `would_dispatch_native`. Repetition returns
+intent before returning `would_dispatch_native`. It syncs the intent file and
+the containing directory after rename while holding the lock. A directory-sync
+failure stops readiness and retains the intent for reconciliation. Repetition returns
 `reconcile_native_dispatch`; another candidate sees `native_slot_busy`.
 There is no timeout-based takeover or automatic reset. An existing
 `upload_start_intent` always requests read-only reconciliation, never another
-upload. Even an absent Apple build is not proof that an uncertain upload failed.
+upload. A matching snapshot is validated before unchanged/doc-only skipping and
+new-candidate gate or test-plan checks. Missing new-candidate evidence cannot
+hide an uncertain upload or imply that those gates passed. Even an absent Apple
+build is not proof that an uncertain upload failed.
 Reconcile and explicitly block through the existing coordinator, preserving its
 receipt/history and requiring a new build identity where its policy requires it.
 The runner's existing shared archive/upload lock remains authoritative.

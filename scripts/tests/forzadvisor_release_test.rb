@@ -1810,6 +1810,42 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
+  def test_daily_pilot_reconciles_upload_intent_before_unchanged_skip
+    assert_daily_upload_recovery_precedes_skip(paths: [])
+  end
+
+  def test_daily_pilot_reconciles_upload_intent_before_documentation_only_skip
+    assert_daily_upload_recovery_precedes_skip(paths: ["README.md", "AppStore/release-automation.md"])
+  end
+
+  def test_daily_pilot_reconciles_upload_intent_without_new_candidate_evidence
+    assert_daily_upload_recovery_precedes_skip(paths: ["forzadvisor/App.swift"])
+  end
+
+  def test_daily_pilot_validates_active_snapshot_before_skipping_no_new_source
+    [[], ["README.md"]].each do |paths|
+      with_daily_pilot(paths: paths) do |pilot, fixture, directory|
+        fixture["stable_state"] = stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent", "commit" => "b" * 40)
+        assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+        refute File.exist?(File.join(directory, "dispatch.json"))
+      end
+    end
+  end
+
+  def test_daily_pilot_monitors_existing_uploaded_candidate_without_new_source
+    [[], ["README.md"]].each do |paths|
+      with_daily_pilot(paths: paths) do |pilot, fixture, directory|
+        add_daily_uploaded_fixture(fixture)
+        fixture.delete("apple_observed_at")
+        output = pilot.call(fixture: fixture, state_directory: directory)
+        assert_equal "uploaded", output.dig("simulation", "stage")
+        assert_equal "refresh_apple_read_only", output.dig("simulation", "next_action")
+        refute output.dig("portal", "install_ready")
+        refute File.exist?(File.join(directory, "dispatch.json"))
+      end
+    end
+  end
+
   def test_daily_pilot_requires_fresh_apple_processing_group_and_unexpired_exact_build
     with_daily_pilot do |pilot, fixture, directory|
       add_daily_uploaded_fixture(fixture)
@@ -1872,6 +1908,36 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
+  def test_daily_pilot_syncs_renamed_dispatch_intent_before_returning_readiness
+    Dir.mktmpdir("forzadvisor-directory-sync-test") do |directory|
+      events = []
+      sync = lambda do
+        state = JSON.parse(File.read(File.join(directory, "dispatch.json")))
+        assert_equal "a" * 64, state["candidate_id"]
+        events << "directory_fsync"
+      end
+      with_daily_directory_sync(directory, sync) do
+        events << ForzAdvisorRelease::DailyPilotSlot.new(directory).claim("a" * 64)
+      end
+      assert_equal ["directory_fsync", "would_dispatch_native"], events
+    end
+  end
+
+  def test_daily_pilot_directory_sync_failure_preserves_intent_and_fails_closed
+    Dir.mktmpdir("forzadvisor-directory-sync-failure-test") do |directory|
+      slot = ForzAdvisorRelease::DailyPilotSlot.new(directory)
+      with_daily_directory_sync(directory, -> { raise Errno::EIO, "fixture directory sync failure" }) do
+        error = assert_raises(ForzAdvisorRelease::PreflightError) { slot.claim("a" * 64) }
+        assert_match(/dispatch intent.*reconcile/, error.message)
+      end
+      path = File.join(directory, "dispatch.json")
+      before = File.binread(path)
+      assert_equal "reconcile_native_dispatch", slot.claim("a" * 64)
+      assert_equal "native_slot_busy", slot.claim("b" * 64)
+      assert_equal before, File.binread(path)
+    end
+  end
+
   def test_daily_pilot_source_and_cli_read_exact_tag_config_without_remote_or_native_work
     Dir.mktmpdir("forzadvisor-source-test") do |root|
       git = lambda do |*args|
@@ -1911,6 +1977,39 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   private
+
+  def with_daily_directory_sync(directory, sync)
+    original_open = File.method(:open)
+    observation = lambda do |path, *arguments, **keywords, &block|
+      if path == directory
+        stream = Object.new
+        stream.define_singleton_method(:fsync) { sync.call }
+        block.call(stream)
+      else
+        original_open.call(path, *arguments, **keywords, &block)
+      end
+    end
+    File.stub(:open, observation) { yield }
+  end
+
+  def assert_daily_upload_recovery_precedes_skip(paths:)
+    with_daily_pilot(paths: paths) do |pilot, fixture, directory|
+      state = stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent")
+      fixture["stable_state"] = state
+      original = JSON.generate(state)
+      [fixture, fixture.slice("kind", "candidate_id", "stable_state"), fixture.merge("gates" => {}, "change_plan" => {})].each do |observations|
+        output = pilot.call(fixture: observations, state_directory: directory)
+        assert_equal "reconcile_upload_read_only", output.dig("simulation", "next_action")
+        assert_equal "proposed", output.dig("simulation", "stage")
+        assert_includes output.dig("simulation", "blockers"), "unresolved_upload_intent"
+        refute output.dig("simulation", "install_ready")
+        refute output.dig("portal", "install_ready")
+        refute output["native_execution_enabled"]
+        refute File.exist?(File.join(directory, "dispatch.json"))
+        assert_equal original, JSON.generate(state)
+      end
+    end
+  end
 
   # Unit observations only; the workflow's separate real preflight still resolves Xcode settings.
   def with_project_build_settings(overrides: {})

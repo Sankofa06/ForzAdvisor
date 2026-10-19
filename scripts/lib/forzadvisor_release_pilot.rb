@@ -27,7 +27,12 @@ module ForzAdvisorRelease
           file.write(JSON.generate("kind" => "fixture_dispatch_intent", "candidate_id" => candidate_id))
           file.flush
           file.fsync
-          File.rename(file.path, path)
+          begin
+            File.rename(file.path, path)
+            File.open(@directory, File::RDONLY) { |directory| directory.fsync }
+          rescue SystemCallError, IOError
+            raise PreflightError, "fixture dispatch intent durability is uncertain; reconcile before retry"
+          end
         end
         "would_dispatch_native"
       end
@@ -64,12 +69,21 @@ module ForzAdvisorRelease
       if fixture && (!fixture.is_a?(Hash) || fixture["kind"] != "fixture" || fixture["candidate_id"] != candidate_id)
         raise PreflightError, "fixture does not match the immutable candidate"
       end
-      if @paths.empty? || @paths.all? { |path| path.match?(DOCUMENTATION) }
+      state = fixture && fixture["stable_state"]
+      if fixture && fixture.key?("stable_state")
+        raise PreflightError, "invalid fixture section: stable_state" unless state.is_a?(Hash)
+        validate_stable_snapshot!(state)
+        if state["phase"] == "upload_start_intent"
+          simulation.merge!("next_action" => "reconcile_upload_read_only", "blockers" => ["unresolved_upload_intent"])
+          return result
+        end
+      end
+      if !state && (@paths.empty? || @paths.all? { |path| path.match?(DOCUMENTATION) })
         portal["stage"] = "skipped"
         return result.merge("simulation" => simulation.merge("stage" => "skipped", "next_action" => (@paths.empty? ? "unchanged" : "documentation_only")))
       end
       return result unless fixture
-      %w[gates github change_plan stable_state apple].each do |key|
+      %w[gates github change_plan apple].each do |key|
         raise PreflightError, "invalid fixture section: #{key}" if fixture.key?(key) && !fixture[key].is_a?(Hash)
       end
       blockers = GATES.reject do |gate|
@@ -99,17 +113,12 @@ module ForzAdvisorRelease
           "regression" => ["Launch and navigation", "Existing saved data and persistence"],
           "response_fields" => %w[Actual Result Evidence Notes], "overall_result" => %w[ACCEPT NEEDS_FIXES BLOCKED],
           "stop_conditions" => ["Crash", "Data loss", "Privacy or signing concern"] })
-      state = fixture["stable_state"]
       unless state
         simulation["next_action"] = DailyPilotSlot.new(state_directory).claim(candidate_id) if state_directory
         return result
       end
-      coordinator = StableRunnerCoordinator.new(config: @config, git: nil, store: nil, github_verification: nil, helper: nil, api: nil)
-      coordinator.validate_state_identity!(state)
-      raise PreflightError, "stable snapshot does not match candidate tag/commit" unless state["schema_version"] == 2 && %w[ref commit].all? { |key| state[key] == @identity[key] }
       simulation["next_action"] = case state["phase"]
       when "github_verified" then "await_explicit_candidate_upload_authorization"
-      when "upload_start_intent" then "reconcile_upload_read_only"
       when "upload_valid", "candidate_ready", "testflight_attach_intent", "human_verification_pending", "human_accepted"
         observe_uploaded(simulation, fixture, state, now)
       else "blocked_candidate_requires_human_review"
@@ -118,6 +127,12 @@ module ForzAdvisorRelease
     end
 
     private
+
+    def validate_stable_snapshot!(state)
+      coordinator = StableRunnerCoordinator.new(config: @config, git: nil, store: nil, github_verification: nil, helper: nil, api: nil)
+      coordinator.validate_state_identity!(state)
+      raise PreflightError, "stable snapshot does not match candidate tag/commit" unless state["schema_version"] == 2 && %w[ref commit].all? { |key| state[key] == @identity[key] }
+    end
 
     def complete_summary?(summary)
       summary.is_a?(Hash) && summary["tests"].is_a?(Integer) && summary["tests"].positive? &&
