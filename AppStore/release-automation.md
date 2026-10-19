@@ -26,6 +26,157 @@ developer Mac.
 
 ## Source of Truth
 
+### Cloud planning pilot — disabled
+
+`ruby scripts/release-daily` is a portable, offline planning pilot around the
+existing coordinator. It cannot dispatch GitHub or native jobs, connect to the
+runner or Apple, upload, associate testers, stage, or submit. No schedule is
+installed. A future daily opportunity observes and proposes eligible work;
+native execution remains a separately reviewed and authorized handoff.
+
+Inspect one local annotated release tag against an explicit prior candidate SHA:
+
+```sh
+ruby scripts/release-daily --ref RELEASE_TAG --baseline EXACT_40_CHARACTER_SHA
+```
+
+The baseline must be an available ancestor. Choose the prior considered candidate
+deliberately; a failed attempt must not silently become the successful-release
+baseline. The planner reads configuration and changed paths from Git objects,
+checks the configured remote, privately freezes the configuration snapshot,
+and binds app, bundle, platform, version/build,
+tag, commit, configuration fingerprint, and stable profile into a candidate ID.
+It rechecks the tag after reading. Unchanged candidates and changes limited to
+Markdown in `docs/`, `forzadvisorDocs/`, `AppStore/`, or the root `README.md`
+are skipped. Other paths conservatively require all gates.
+Skipping applies only to new work without an active candidate snapshot; an
+existing candidate still needs identity validation and ongoing observation.
+
+For a disconnected simulation, provide private fixture observations and an
+already provisioned, durable private state directory outside the checkout:
+
+```sh
+ruby scripts/release-daily --ref RELEASE_TAG --baseline EXACT_40_CHARACTER_SHA \
+  --fixture /absolute/private/observations.json \
+  --state-dir /absolute/private/pilot-fixture-state
+```
+
+The caller must establish the state directory's durability, including its parent
+directory entry, before requesting a handoff. The directory must already exist
+without group/world permissions. The planner fails closed if it is missing and
+never creates state directories or ancestors; directory provisioning is outside
+this pilot's scope.
+
+The authoritative `StableStateStore` likewise requires an already durable,
+private root at the existing controller's `FORZADVISOR_STABLE_RELEASE_STATE_DIR`.
+Active-state, evidence, and history writes sync file contents before rename and
+the containing directory afterward. History-directory creation syncs its parent.
+A sync failure stops the operation; an upload intent left after rename remains
+uncertain and must be reconciled rather than retried. The store never provisions
+the state root or its ancestors.
+
+Fixture JSON uses `kind: "fixture"` and the exact `candidate_id` from the first
+command. `gates` maps every `DailyPilot::GATES` entry to `result: "PASS"` and
+the exact `commit`; clean-build evidence also requires zero `warnings`.
+The local release gate requires `summary` with a positive `tests` count and
+zero `failures`, `skips`, `expected_failures`, and `warnings`. `github` supplies
+`run_id`, raw `run`, and `jobs` to the existing exact-revision verifier.
+These fixture declarations never satisfy an actual engineering or release gate.
+
+`change_plan` binds `commit` and `baseline_commit` to a version-specific
+`summary` and numbered `scenarios`, each with nonempty `steps` and `expected`.
+The output carries the exact version/build/SHA, changed paths, regression checks,
+stop conditions, per-scenario response fields, and overall human-result choices.
+Missing expected behavior blocks a simulated handoff instead of inventing a
+test plan. See the dependency-light suite's `with_daily_pilot` fixture builder.
+
+Optional `stable_state` is a snapshot of the existing v2 coordinator state,
+never the historical Xcode Cloud state. `apple` maps read-only API paths to
+fixture responses, including collection pagination; `apple_observed_at` must
+be within the previous 15 minutes. The planner reuses `UploadedBuildResolver`
+and `CandidateBuildValidator`, requires the exact eligible `VALID` build and
+current internal-group association, and rejects expired builds. A receipt by
+itself cannot establish availability. Missing, stale, removed, or ambiguous
+Apple observations keep the simulated build below install-ready.
+
+The fixture outbox reserves one native handoff under a file lock and persists
+intent before returning `would_dispatch_native`. It syncs the intent file and
+the containing directory after rename while holding the lock. A directory-sync
+failure stops readiness and retains the intent for reconciliation. Repetition returns
+`reconcile_native_dispatch`; another candidate sees `native_slot_busy`.
+There is no timeout-based takeover or automatic reset. An existing
+`upload_start_intent` always requests read-only reconciliation, never another
+upload. A matching snapshot is validated before unchanged/doc-only skipping and
+new-candidate gate or test-plan checks. Missing new-candidate evidence cannot
+hide an uncertain upload or imply that those gates passed. Even an absent Apple
+build is not proof that an uncertain upload failed.
+Reconcile and explicitly block through the existing coordinator, preserving its
+receipt/history and requiring a new build identity where its policy requires it.
+The runner's existing shared archive/upload lock remains authoritative.
+
+Private portal consumers must distinguish `proposed`, `verified`, `uploaded`,
+and `install_ready`, and keep work in PRs separate from release availability.
+In this pilot, these transitions appear **only under `simulation`**.
+The publishable `portal` projection always has `install_ready: false` and
+`availability: "UNVERIFIED"`; `work_in_pr: null` means the PR connection is
+unverified, not that there are no PRs. Do not copy simulated readiness to the
+portal. No live portal integration or current-build availability is claimed.
+
+#### Read-only observer adapter — unconnected
+
+`scripts/lib/forzadvisor_release_observer.rb` supplies a stateless
+`ReleaseObserver` around the existing validators. It does not select candidates,
+allocate versions, persist a second release state, or dispatch work. Construct
+it with `config: pilot.config` and `identity: pilot.identity` from
+`DailyPilotSource#call`; no controller or state path is guessed.
+
+Every reader is explicitly injected and receives `identity:`. Missing readers,
+identity mismatches, transport failures, and stale observations produce blocker
+codes without exposing raw errors or state. Reader envelopes require
+`evidence_kind` (`fixture` or `live`) and the exact `candidate_id`:
+
+| Adapter | Required observations |
+|---|---|
+| `gate_reader` | Exact `commit`, `config_fingerprint`, `baseline_commit`, all `gates`, `verify_run_id`, and candidate-specific `change_plan` |
+| `github` | Existing `GitHubClient`-compatible `run` and `jobs` reads; checked by `GitHubVerificationEvidence` |
+| `state_reader` | Fresh `observed_at` plus `state: null` for confirmed absence, or the authoritative v2 coordinator snapshot |
+| `apple_reader` | Fresh `observed_at` plus the existing API client's `get` interface |
+| `pr_reader` | Fresh `observed_at`, exact `repository`, and the GitHub `pull_requests` collection |
+
+`ReleaseGateCollector` shares the pilot's gate and change-plan checks. It never
+runs tests or manufactures attestations. An existing uncertain upload takes
+precedence over collecting new gate/Apple evidence. Receipt checking uses the
+coordinator's public, read-only `validate_candidate_receipt!` entry point.
+Apple observation reuses the exact-build resolver and internal-group validator,
+then requires a non-expired build. Readiness expires at the earlier of the build
+expiration or 15 minutes after either controller or Apple observation. Controller
+timestamps describe when authoritative state was read, not when it last changed;
+missing, stale, future-dated, or malformed state blocks handoff. Configuration is
+privately copied and deeply frozen at construction to preserve candidate identity
+throughout observation. PR observations remain independent of release availability.
+
+`ReleaseObserver#call` returns an allowlisted projection: immutable identity,
+verified run identifier, curated version-specific plan, build/group/expiry facts,
+blocker codes, and PR number/URL/head SHA/draft status. It omits raw snapshots,
+receipt internals, notes, logs, review contact data, and PR bodies/titles.
+Default `evidence_kind: :fixture` places computed states only in `simulation`;
+the portal projection stays unverified. Explicit programmatic `:live` mode
+requires matching live provenance on every injected envelope. This is an adapter
+contract, not evidence that any live connection has been configured.
+
+The CLI remains offline. No live clients are constructed automatically; no
+publisher or schedule is included. The existing private portal destination and
+controller connection details belong in private operational configuration,
+outside the repository. `publication_enabled`, `schedule_enabled`, and
+`native_execution_enabled` remain false in observer output.
+
+Operational activation requires independent review, the existing exact-commit
+full local and GitHub release gates, verification of the private portal and
+durable state connections, and the existing stable profile, signing, ASC access,
+internal-group membership, and per-candidate upload authorization. Keep signing
+and runner connections external. This pilot adds no hosted-signing path or
+credentials and does not alter the coordinator's release policy.
+
 `AppStore/release-config.json` records non-secret release facts:
 
 - App Store Connect app, bundle, team, version, review-draft, and review-item identifiers

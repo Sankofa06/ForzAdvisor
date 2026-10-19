@@ -3,10 +3,13 @@
 require "json"
 require "fileutils"
 require "minitest/autorun"
+require "minitest/mock"
 require "open3"
 require "tmpdir"
 require "zlib"
 require_relative "../lib/forzadvisor_release"
+require_relative "../lib/forzadvisor_release_pilot"
+require_relative "../lib/forzadvisor_release_observer"
 
 class FakeGitRepository
   attr_accessor :error, :commit
@@ -511,12 +514,14 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_full_preflight_passes_current_repository_artifacts_with_injected_urls_and_git
     urls = FakeURLChecker.new
-    result = ForzAdvisorRelease::Preflight.new(
-      root: ROOT,
-      config: @config,
-      url_checker: urls,
-      git: FakeGitRepository.new
-    ).run
+    result = with_project_build_settings do
+      ForzAdvisorRelease::Preflight.new(
+        root: ROOT,
+        config: @config,
+        url_checker: urls,
+        git: FakeGitRepository.new
+      ).run
+    end
 
     assert_equal true, result["ready"]
     assert_equal ForzAdvisorRelease::Preflight::CHECKS.sort, result["checks"].keys.sort
@@ -530,12 +535,14 @@ class ForzAdvisorReleaseTest < Minitest::Test
     git = FakeGitRepository.new
     git.error = ForzAdvisorRelease::PreflightError.new("working tree has uncommitted changes")
     result_error = assert_raises(ForzAdvisorRelease::PreflightError) do
-      ForzAdvisorRelease::Preflight.new(
-        root: ROOT,
-        config: @config,
-        url_checker: FakeURLChecker.new(status: 404),
-        git: git
-      ).run
+      with_project_build_settings do
+        ForzAdvisorRelease::Preflight.new(
+          root: ROOT,
+          config: @config,
+          url_checker: FakeURLChecker.new(status: 404),
+          git: git
+        ).run
+      end
     end
 
     assert_equal false, result_error.result["ready"]
@@ -546,7 +553,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_project_inspector_checks_versions_signing_schemes_and_both_test_targets
-    result = ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call
+    result = with_project_build_settings { ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call }
 
     assert_equal "1.41.2", result["marketing_version"]
     assert_equal "89", result["source_build_number"]
@@ -560,6 +567,14 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
     assert_equal 6, project.scan(/CURRENT_PROJECT_VERSION = #{@config.fetch("release", "source_build_number")};/).length
     refute_includes project, "CURRENT_PROJECT_VERSION = 87;"
+  end
+
+  def test_project_inspector_rejects_drift_in_injected_build_settings
+    %w[MARKETING_VERSION CURRENT_PROJECT_VERSION DEVELOPMENT_TEAM PRODUCT_BUNDLE_IDENTIFIER CODE_SIGN_STYLE CODE_SIGN_IDENTITY INFOPLIST_KEY_ITSAppUsesNonExemptEncryption].each do |key|
+      assert_raises(ForzAdvisorRelease::PreflightError) do
+        with_project_build_settings(overrides: { key => "incorrect" }) { ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call }
+      end
+    end
   end
 
   def test_metadata_inspector_enforces_store_limits_and_public_url_consistency
@@ -994,6 +1009,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     Dir.mktmpdir do |directory|
       legacy = ForzAdvisorRelease::StateStore.new(directory: File.join(directory, "legacy"))
       legacy.save("phase" => "staged", "build_id" => "old")
+      FileUtils.mkdir_p(File.join(directory, "stable"), mode: 0o700)
       stable = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "stable"))
       refute stable.active?
       stable.save(stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent"))
@@ -1018,6 +1034,80 @@ class ForzAdvisorReleaseTest < Minitest::Test
       store.save(stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent"))
       assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume(upload: true, confirmation: coordinator.confirmation_token(stable_identity["commit"])) }
       assert_equal 1, helper.calls.length
+    end
+  end
+
+  def test_stable_state_save_requires_preexisting_private_durable_root
+    Dir.mktmpdir do |parent|
+      missing = File.join(parent, "missing", "state")
+      store = ForzAdvisorRelease::StableStateStore.new(directory: missing)
+      assert_raises(ForzAdvisorRelease::PreflightError) { store.save(stable_identity.merge("schema_version" => 2)) }
+      refute File.exist?(File.join(parent, "missing"))
+    end
+  end
+
+  def test_stable_state_save_syncs_directory_after_rename_before_returning
+    Dir.mktmpdir do |directory|
+      events = []
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      with_daily_directory_sync(directory, -> { events << store.load.fetch("phase") }) do
+        store.save(stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent"))
+        events << "returned"
+      end
+      assert_equal ["upload_start_intent", "returned"], events
+    end
+  end
+
+  def test_stable_state_archive_syncs_new_history_parent_and_renamed_entry
+    Dir.mktmpdir do |directory|
+      events = []
+      history = File.join(directory, "history")
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      original_open = File.method(:open)
+      observation = lambda do |path, *arguments, **keywords, &block|
+        if [directory, history].include?(path)
+          events << (path == directory ? "root" : "history")
+        end
+        original_open.call(path, *arguments, **keywords, &block)
+      end
+      File.stub(:open, observation) do
+        store.archive(stable_identity.merge("schema_version" => 2, "phase" => "human_blocked"))
+      end
+      assert_equal ["root", "history"], events
+    end
+  end
+
+  def test_stable_state_file_sync_failure_preserves_previous_state
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      state = store.save(stable_identity.merge("schema_version" => 2, "phase" => "github_verified"))
+      original_create = Tempfile.method(:create)
+      failing_create = lambda do |*arguments, **keywords, &block|
+        original_create.call(*arguments, **keywords) do |file|
+          file.stub(:fsync, -> { raise Errno::EIO }) { block.call(file) }
+        end
+      end
+      Tempfile.stub(:create, failing_create) do
+        assert_raises(ForzAdvisorRelease::PreflightError) { store.save(state.merge("phase" => "upload_start_intent")) }
+      end
+      assert_equal state, store.load
+      assert_equal ["active-v2.json"], Dir.children(directory)
+    end
+  end
+
+  def test_stable_state_directory_sync_failure_prevents_upload_and_preserves_uncertainty
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      store.save(stable_identity.merge("schema_version" => 2, "phase" => "github_verified"))
+      helper = FakeStableRunnerHelper.new(release_receipt)
+      coordinator = stable_coordinator(store: store, helper: helper, api: FakeAPI.new(stable_upload_candidate_responses), tag: stable_identity["ref"], commit: stable_identity["commit"])
+      with_daily_directory_sync(directory, -> { raise Errno::EIO }) do
+        assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume(upload: true, confirmation: coordinator.confirmation_token(stable_identity["commit"])) }
+      end
+      assert_equal "upload_start_intent", store.load["phase"]
+      assert_empty helper.calls
+      assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume(upload: true, confirmation: coordinator.confirmation_token(stable_identity["commit"])) }
+      assert_empty helper.calls
     end
   end
 
@@ -1060,6 +1150,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_terminal_rollover_archives_once_and_establishes_new_github_verified_identity
     Dir.mktmpdir do |directory|
+      FileUtils.mkdir_p(File.join(directory, "state"), mode: 0o700)
       store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
       store.save(stable_identity.merge("schema_version" => 2, "source_build_number" => "79", "phase" => "human_blocked"))
       data = JSON.parse(File.read(CONFIG_PATH))
@@ -1085,6 +1176,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_build_88_blocked_state_and_prior_receipt_are_archived_exactly_for_build_89
     Dir.mktmpdir do |directory|
       state_dir = File.join(directory, "state")
+      FileUtils.mkdir_p(state_dir, mode: 0o700)
       store = ForzAdvisorRelease::StableStateStore.new(directory: state_dir)
       previous = stable_identity.merge(
         "ref" => "release-1.41.2-testflight-88-3",
@@ -1148,6 +1240,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_pending_candidate_supersession_archives_build_87_before_build_89_without_inventing_human_result
     Dir.mktmpdir do |directory|
+      FileUtils.mkdir_p(File.join(directory, "state"), mode: 0o700)
       store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
       previous = stable_identity.merge(
         "config_fingerprint" => "e70cd2d84e94e491c5da2cc120d84b55f003f2cd0f194eb9907506a434150280",
@@ -1733,7 +1826,580 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal ["SUBMIT", "IOS", state["app_id"], state["bundle_id"], state["marketing_version"], state["source_build_number"], state["commit"], "submission-1"].join(":"), coordinator.submission_confirmation_token(state)
   end
 
+  def test_daily_pilot_skips_unchanged_and_documentation_only_without_reserving_native_slot
+    [[], ["README.md", "AppStore/release-automation.md"]].each do |paths|
+      with_daily_pilot(paths: paths) do |pilot, fixture, directory|
+        output = pilot.call(fixture: fixture, state_directory: directory)
+        assert_equal "skipped", output.dig("simulation", "stage")
+        refute File.exist?(File.join(directory, "dispatch.json"))
+        refute output.dig("portal", "install_ready")
+      end
+    end
+  end
+
+  def test_daily_pilot_requires_every_exact_revision_gate_and_complete_test_summary
+    ForzAdvisorRelease::DailyPilot::GATES.each do |gate|
+      with_daily_pilot do |pilot, fixture, directory|
+        fixture["gates"][gate]["commit"] = "b" * 40
+        assert_includes pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "blockers"), gate
+        refute File.exist?(File.join(directory, "dispatch.json"))
+      end
+    end
+    with_daily_pilot do |pilot, fixture, directory|
+      fixture["gates"]["local_release_verify"]["summary"]["skips"] = 1
+      assert_includes pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "blockers"), "local_release_verify"
+      fixture["github"]["run"]["head_sha"] = "b" * 40
+      assert_includes pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "blockers"), "github_release_verify"
+    end
+  end
+
+  def test_daily_pilot_binds_fixture_and_notes_to_immutable_candidate
+    with_daily_pilot do |pilot, fixture, directory|
+      identity = pilot.call.dig("portal", "identity")
+      assert_raises(FrozenError) { identity["commit"].replace("b" * 40) }
+      assert_raises(FrozenError) { identity["commit"] = "b" * 40 }
+      fixture["candidate_id"] = "b" * 64
+      assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+      fixture["candidate_id"] = pilot.candidate_id
+      fixture["change_plan"]["commit"] = "b" * 40
+      assert_includes pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "blockers"), "version_specific_test_plan"
+    end
+  end
+
+  def test_daily_pilot_serializes_handoffs_and_reconciles_repeated_dispatch_intent
+    with_daily_pilot do |pilot, fixture, directory|
+      assert_equal "would_dispatch_native", pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "next_action")
+      assert_equal "reconcile_native_dispatch", pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "next_action")
+      path = File.join(directory, "dispatch.json")
+      assert_equal 0o600, File.stat(path).mode & 0o777
+      before = File.binread(path)
+      other = ForzAdvisorRelease::DailyPilot.new(config: @config, ref: stable_identity["ref"], commit: "b" * 40, baseline: "c" * 40, paths: ["forzadvisor/App.swift"])
+      assert_equal "native_slot_busy", ForzAdvisorRelease::DailyPilotSlot.new(directory).claim(other.candidate_id)
+      assert_equal before, File.binread(path)
+    end
+  end
+
+  def test_daily_pilot_upload_uncertainty_never_dispatches_or_retransmits
+    with_daily_pilot do |pilot, fixture, directory|
+      fixture["stable_state"] = stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent")
+      output = pilot.call(fixture: fixture, state_directory: directory)
+      assert_equal "reconcile_upload_read_only", output.dig("simulation", "next_action")
+      refute File.exist?(File.join(directory, "dispatch.json"))
+      refute output.dig("simulation", "install_ready")
+    end
+  end
+
+  def test_daily_pilot_reconciles_upload_intent_before_unchanged_skip
+    assert_daily_upload_recovery_precedes_skip(paths: [])
+  end
+
+  def test_daily_pilot_reconciles_upload_intent_before_documentation_only_skip
+    assert_daily_upload_recovery_precedes_skip(paths: ["README.md", "AppStore/release-automation.md"])
+  end
+
+  def test_daily_pilot_reconciles_upload_intent_without_new_candidate_evidence
+    assert_daily_upload_recovery_precedes_skip(paths: ["forzadvisor/App.swift"])
+  end
+
+  def test_daily_pilot_validates_active_snapshot_before_skipping_no_new_source
+    [[], ["README.md"]].each do |paths|
+      with_daily_pilot(paths: paths) do |pilot, fixture, directory|
+        fixture["stable_state"] = stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent", "commit" => "b" * 40)
+        assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+        refute File.exist?(File.join(directory, "dispatch.json"))
+      end
+    end
+  end
+
+  def test_daily_pilot_monitors_existing_uploaded_candidate_without_new_source
+    [[], ["README.md"]].each do |paths|
+      with_daily_pilot(paths: paths) do |pilot, fixture, directory|
+        add_daily_uploaded_fixture(fixture)
+        fixture.delete("apple_observed_at")
+        output = pilot.call(fixture: fixture, state_directory: directory)
+        assert_equal "uploaded", output.dig("simulation", "stage")
+        assert_equal "refresh_apple_read_only", output.dig("simulation", "next_action")
+        refute output.dig("portal", "install_ready")
+        refute File.exist?(File.join(directory, "dispatch.json"))
+      end
+    end
+  end
+
+  def test_daily_pilot_requires_fresh_apple_processing_group_and_unexpired_exact_build
+    with_daily_pilot do |pilot, fixture, directory|
+      add_daily_uploaded_fixture(fixture)
+      output = pilot.call(fixture: fixture, state_directory: directory)
+      assert_equal "install_ready", output.dig("simulation", "stage")
+      refute output.dig("portal", "install_ready"), "fixtures must never establish real availability"
+      assert_equal "proposed", output.dig("portal", "stage")
+      assert_equal "1.41.2", output.dig("simulation", "test_plan", "identity", "marketing_version")
+      fixture["apple_observed_at"] = "2000-01-01T00:00:00Z"
+      assert_equal "refresh_apple_read_only", pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "next_action")
+      fixture["apple_observed_at"] = Time.now.utc.iso8601
+      group = @config.fetch("testflight", "internal_group", "id")
+      fixture["apple"]["/v1/betaGroups/#{group}/builds"] = { "data" => [] }
+      refute pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "install_ready")
+    end
+  end
+
+  def test_daily_pilot_rejects_processing_wrong_receipt_and_historical_state
+    with_daily_pilot do |pilot, fixture, directory|
+      add_daily_uploaded_fixture(fixture)
+      build = fixture["apple"]["/v1/builds/#{candidate_build['id']}"]["data"]
+      build["attributes"]["processingState"] = "PROCESSING"
+      assert_equal "uploaded", pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "stage")
+      build["attributes"]["processingState"] = "VALID"
+      build["attributes"]["expired"] = true
+      refute pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "install_ready")
+      fixture["stable_state"]["commit"] = "b" * 40
+      assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+    end
+  end
+
+  def test_daily_pilot_requires_receipt_integrity_and_unique_exact_apple_build
+    %w[archive_sha256 package_sha256 signing_verification commit asc_build_id].each do |key|
+      with_daily_pilot do |pilot, fixture, directory|
+        add_daily_uploaded_fixture(fixture)
+        fixture["stable_state"]["release_receipt"][key] = "invalid"
+        if key == "asc_build_id"
+          refute pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "install_ready")
+        else
+          assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+        end
+      end
+    end
+    with_daily_pilot do |pilot, fixture, directory|
+      add_daily_uploaded_fixture(fixture)
+      fixture["apple"]["/v1/apps/#{@config.fetch('app', 'id')}/builds"]["data"] *= 2
+      refute pilot.call(fixture: fixture, state_directory: directory).dig("simulation", "install_ready")
+    end
+  end
+
+  def test_daily_pilot_concurrent_handoffs_reserve_one_slot_and_reject_unsafe_storage
+    Dir.mktmpdir("forzadvisor-slot-test") do |directory|
+      outcomes = %w[a b].map do |key|
+        Thread.new { ForzAdvisorRelease::DailyPilotSlot.new(directory).claim(key * 64) }
+      end.map(&:value)
+      assert_equal 1, outcomes.count("would_dispatch_native")
+      assert_equal 1, outcomes.count("native_slot_busy")
+      FileUtils.chmod(0o755, directory)
+      assert_raises(ForzAdvisorRelease::PreflightError) { ForzAdvisorRelease::DailyPilotSlot.new(directory).claim("c" * 64) }
+    end
+  end
+
+  def test_daily_pilot_syncs_renamed_dispatch_intent_before_returning_readiness
+    Dir.mktmpdir("forzadvisor-directory-sync-test") do |directory|
+      events = []
+      sync = lambda do
+        state = JSON.parse(File.read(File.join(directory, "dispatch.json")))
+        assert_equal "a" * 64, state["candidate_id"]
+        events << "directory_fsync"
+      end
+      with_daily_directory_sync(directory, sync) do
+        events << ForzAdvisorRelease::DailyPilotSlot.new(directory).claim("a" * 64)
+      end
+      assert_equal ["directory_fsync", "would_dispatch_native"], events
+    end
+  end
+
+  def test_daily_pilot_rejects_missing_state_directory_without_creating_ancestors
+    Dir.mktmpdir("forzadvisor-missing-state-test") do |parent|
+      missing = File.join(parent, "not-provisioned")
+      [missing, File.join(missing, "nested-state")].each do |directory|
+        error = assert_raises(ForzAdvisorRelease::PreflightError) do
+          ForzAdvisorRelease::DailyPilotSlot.new(directory).claim("a" * 64)
+        end
+        assert_match(/state directory must already exist/, error.message)
+        refute File.exist?(missing), "claim must not provision any state directory or ancestor"
+      end
+    end
+  end
+
+  def test_daily_pilot_directory_sync_failure_preserves_intent_and_fails_closed
+    Dir.mktmpdir("forzadvisor-directory-sync-failure-test") do |directory|
+      slot = ForzAdvisorRelease::DailyPilotSlot.new(directory)
+      with_daily_directory_sync(directory, -> { raise Errno::EIO, "fixture directory sync failure" }) do
+        error = assert_raises(ForzAdvisorRelease::PreflightError) { slot.claim("a" * 64) }
+        assert_match(/dispatch intent.*reconcile/, error.message)
+      end
+      path = File.join(directory, "dispatch.json")
+      before = File.binread(path)
+      assert_equal "reconcile_native_dispatch", slot.claim("a" * 64)
+      assert_equal "native_slot_busy", slot.claim("b" * 64)
+      assert_equal before, File.binread(path)
+    end
+  end
+
+  def test_daily_pilot_pins_configuration_before_caller_mutation
+    with_daily_pilot do |pilot, fixture, directory|
+      group_name = pilot.config.fetch("testflight", "internal_group", "name")
+      assert pilot.config.data.frozen?
+      assert_raises(FrozenError) { group_name.replace("Changed Internal") }
+      @config.data["testflight"]["internal_group"]["name"].replace("Changed Internal")
+      assert_equal "Internal", group_name
+      assert_equal pilot.identity["config_fingerprint"], pilot.config.fingerprint
+      refute_equal @config.fingerprint, pilot.config.fingerprint
+      add_daily_uploaded_fixture(fixture)
+      group = @config.fetch("testflight", "internal_group", "id")
+      fixture["apple"]["/v1/betaGroups/#{group}"]["data"]["attributes"]["name"] = "Changed Internal"
+      assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+      assert_empty Dir.children(directory)
+    end
+  end
+
+  def test_release_observer_missing_connections_are_blocked_without_side_effects
+    with_daily_pilot do |pilot, _fixture, directory|
+      output = ForzAdvisorRelease::ReleaseObserver.new(config: @config, identity: pilot.identity).call
+      assert_includes output.dig("simulation", "blockers"), "controller_state_observer_unconfigured"
+      assert_includes output.dig("simulation", "blockers"), "controller_gate_observer_unconfigured"
+      assert_equal "refresh_controller_evidence_read_only", output.dig("simulation", "next_action")
+      assert_nil output.dig("portal", "work_in_pr")
+      refute output["native_execution_enabled"]
+      refute output["publication_enabled"]
+      assert_empty Dir.children(directory)
+    end
+  end
+
+  def test_release_observer_pins_configuration_before_caller_mutation
+    with_release_observer do |build, data, api, _directory|
+      data.each_value { |envelope| envelope["evidence_kind"] = "live" }
+      observer = build.call(evidence_kind: :live)
+      build_id = data["state"]["state"]["release_receipt"]["asc_build_id"]
+      @config.data["release"]["source_build_number"].replace("90")
+      state = data["state"]["state"]
+      state["source_build_number"] = "90"
+      state["config_fingerprint"] = @config.fingerprint
+      state["release_receipt"]["build_number"] = "90"
+      api.get("/v1/builds/#{build_id}")["data"]["attributes"]["version"] = "90"
+      projected = observer.call.fetch("portal")
+      assert_equal "89", projected.dig("identity", "source_build_number")
+      refute projected["install_ready"]
+      assert_equal "UNVERIFIED", projected["availability"]
+      assert_includes projected["blockers"], "controller_state_or_receipt_unverified"
+    end
+  end
+
+  def test_release_observer_requires_fresh_controller_reads_for_state_and_confirmed_absence
+    [nil, "2000-01-01T00:00:00Z", (Time.now + 3600).utc.iso8601].each do |observed_at|
+      [true, false].each do |state_present|
+        with_release_observer do |build, data, api, _directory|
+          data["state"]["observed_at"] = observed_at
+          data["state"]["state"] = nil unless state_present
+          output = build.call.call.fetch("simulation")
+          refute output["install_ready"]
+          assert_equal "refresh_controller_evidence_read_only", output["next_action"]
+          assert_includes output["blockers"], "controller_state_or_receipt_unverified"
+          assert_empty api.requests
+        end
+      end
+    end
+  end
+
+  def test_release_observer_rejects_malformed_state_and_unavailable_handoff
+    [false, [], "not a snapshot"].each do |state|
+      with_release_observer do |build, data, _api, _directory|
+        data["state"]["state"] = state
+        output = build.call.call.fetch("simulation")
+        refute output["install_ready"]
+        assert_equal "refresh_controller_evidence_read_only", output["next_action"]
+        refute_empty output["blockers"]
+      end
+    end
+    with_release_observer do |build, _data, _api, _directory|
+      output = build.call(state_reader: nil).call.fetch("simulation")
+      assert_equal "verified", output["stage"]
+      assert_equal "refresh_controller_evidence_read_only", output["next_action"]
+      assert_includes output["blockers"], "controller_state_observer_unconfigured"
+    end
+  end
+
+  def test_release_observer_readiness_expires_with_controller_observation
+    with_release_observer do |build, data, _api, _directory|
+      now = Time.now.utc
+      data["state"]["observed_at"] = (now - 800).iso8601
+      output = build.call.call(now: now).fetch("simulation")
+      assert output["install_ready"]
+      assert_equal (Time.iso8601(data["state"]["observed_at"]) + 900).iso8601, output["valid_until"]
+
+      current_time = now
+      reader = ->(**_arguments) do
+        current_time += 200
+        data["prs"]
+      end
+      # A projection whose observation expires while collecting PRs is not ready.
+      Time.stub(:now, -> { current_time }) do
+        expired = build.call(pr_reader: reader).call.fetch("simulation")
+        refute expired["install_ready"]
+        assert_equal "uploaded", expired["stage"]
+        assert_includes expired["blockers"], "availability_observation_expired"
+      end
+    end
+  end
+
+  def test_release_observer_fresh_exact_build_is_fixture_only_and_output_is_allowlisted
+    with_release_observer do |build, data, api, directory|
+      output = build.call.call
+      assert_equal "install_ready", output.dig("simulation", "stage")
+      refute output.dig("portal", "install_ready")
+      assert_equal "proposed", output.dig("portal", "stage")
+      assert_equal ["number", "url", "head_sha", "draft"].sort, output.dig("simulation", "work_in_pr", 0).keys.sort
+      refute_includes JSON.generate(output), "PRIVATE_COORDINATION_NOTE"
+      refute api.requests.any? { |request| %w[POST PATCH].include?(request[0]) }
+      assert_empty Dir.children(directory)
+      data.each_value { |envelope| envelope["evidence_kind"] = "live" }
+      projected = build.call(evidence_kind: :live).call.fetch("portal")
+      assert projected["install_ready"] # Synthetic adapters exercise the live projection, never live services.
+      assert_equal "VALID", projected.dig("apple", "processing_state")
+    end
+  end
+
+  def test_release_observer_rejects_stale_future_expired_and_removed_group_observations
+    with_release_observer do |build, data, _api, _directory|
+      data["apple"]["observed_at"] = "2000-01-01T00:00:00Z"
+      refute build.call.call.dig("simulation", "install_ready")
+      data["apple"]["observed_at"] = (Time.now + 3600).utc.iso8601
+      refute build.call.call.dig("simulation", "install_ready")
+      data["apple"]["observed_at"] = Time.now.utc.iso8601
+      apple_api = data["apple"]["api"]
+      build_record = apple_api.get("/v1/builds/#{candidate_build['id']}")["data"]
+      build_record["attributes"]["expired"] = true
+      refute build.call.call.dig("simulation", "install_ready")
+      build_record["attributes"]["expired"] = false
+      group = @config.fetch("testflight", "internal_group", "id")
+      apple_api.get("/v1/betaGroups/#{group}/builds")["data"].clear
+      refute build.call.call.dig("simulation", "install_ready")
+    end
+  end
+
+  def test_release_observer_requires_every_exact_sha_gate_plan_and_github_run
+    ForzAdvisorRelease::DailyPilot::GATES.each do |gate|
+      with_release_observer do |build, data, _api, _directory|
+        data["gates"]["gates"][gate]["commit"] = "b" * 40
+        output = build.call.call
+        assert_includes output.dig("simulation", "blockers"), gate
+        refute output.dig("simulation", "install_ready")
+      end
+    end
+    with_release_observer do |build, data, _api, _directory|
+      data["gates"]["change_plan"]["commit"] = "b" * 40
+      assert_includes build.call.call.dig("simulation", "blockers"), "version_specific_test_plan"
+      data["gates"]["commit"] = "b" * 40
+      assert_includes build.call.call.dig("simulation", "blockers"), "controller_gate_identity_mismatch"
+      data["gates"]["commit"] = "a" * 40
+      bad = FakeGitHubClient.new(run: github_run(tag: stable_identity["ref"], commit: "b" * 40), jobs: [github_job])
+      assert_includes build.call(github: bad).call.dig("simulation", "blockers"), "github_release_verify"
+    end
+  end
+
+  def test_release_observer_upload_uncertainty_precedes_new_gate_or_apple_reads
+    with_release_observer do |build, data, api, _directory|
+      data["state"]["state"]["phase"] = "upload_start_intent"
+      unexpected = ->(**_arguments) { flunk "uncertain upload must not collect new-dispatch evidence" }
+      original = JSON.generate(data["state"]["state"])
+      output = build.call(gate_reader: unexpected, apple_reader: unexpected).call
+      assert_equal "reconcile_upload_read_only", output.dig("simulation", "next_action")
+      refute output.dig("simulation", "install_ready")
+      assert_empty api.requests
+      assert_equal original, JSON.generate(data["state"]["state"])
+    end
+  end
+
+  def test_release_observer_rejects_mismatched_state_receipt_and_fixture_provenance
+    with_release_observer do |build, data, _api, _directory|
+      data["state"]["state"]["commit"] = "b" * 40
+      refute build.call.call.dig("simulation", "install_ready")
+      data["state"]["state"]["commit"] = "a" * 40
+      data["state"]["state"]["release_receipt"]["package_sha256"] = "invalid"
+      refute build.call.call.dig("simulation", "install_ready")
+      data["state"]["state"]["release_receipt"] = release_receipt
+      refute build.call(evidence_kind: :live).call.dig("portal", "install_ready")
+      data.each_value { |envelope| envelope["evidence_kind"] = "live" }
+      data["apple"]["evidence_kind"] = "fixture"
+      projected = build.call(evidence_kind: :live).call.fetch("portal")
+      refute projected["install_ready"]
+      assert_includes projected["blockers"], "apple_observer_unverified"
+      data.each_value { |envelope| envelope["evidence_kind"] = "fixture" }
+      data["prs"]["pull_requests"][0]["html_url"] = "https://example.com/private"
+      assert_nil build.call.call.dig("simulation", "work_in_pr")
+    end
+  end
+
+  def test_release_observer_rejects_incomplete_test_summaries_and_unconfigured_clients
+    ["tests", "failures", "skips", "expected_failures", "warnings"].each do |key|
+      with_release_observer do |build, data, _api, _directory|
+        data["gates"]["gates"]["local_release_verify"]["summary"][key] = key == "tests" ? 0 : 1
+        output = build.call.call
+        assert_includes output.dig("simulation", "blockers"), "local_release_verify"
+        refute output.dig("simulation", "install_ready")
+      end
+    end
+    with_release_observer do |build, _data, _api, _directory|
+      assert_includes build.call(github: nil).call.dig("simulation", "blockers"), "github_observer_unconfigured"
+      assert_includes build.call(apple_reader: nil).call.dig("simulation", "blockers"), "apple_observer_unconfigured"
+    end
+  end
+
+  def test_release_observer_rejects_processing_failure_wrong_eligibility_and_ambiguous_builds
+    [{ "processingState" => "PROCESSING" }, { "processingState" => "INVALID" }, { "processingState" => "FAILED" },
+      { "usesNonExemptEncryption" => true }, { "buildAudienceType" => "INTERNAL_ONLY" }, { "expirationDate" => nil }].each do |attributes|
+      with_release_observer do |build, _data, api, _directory|
+        api.get("/v1/builds/#{candidate_build['id']}")["data"]["attributes"].merge!(attributes)
+        output = build.call.call
+        assert_equal "uploaded", output.dig("simulation", "stage")
+        refute output.dig("simulation", "install_ready")
+      end
+    end
+    with_release_observer do |build, _data, api, _directory|
+      api.get("/v1/apps/#{@config.fetch('app', 'id')}/builds")["data"] *= 2
+      refute build.call.call.dig("simulation", "install_ready")
+    end
+  end
+
+  def test_release_observer_pr_observation_does_not_promote_or_erase_build_availability
+    with_release_observer do |build, data, _api, _directory|
+      data["prs"]["observed_at"] = "2000-01-01T00:00:00Z"
+      output = build.call.call
+      assert output.dig("simulation", "install_ready")
+      assert_nil output.dig("simulation", "work_in_pr")
+      assert_includes output.dig("simulation", "pr_blockers"), "pull_request_evidence_unverified"
+      data["state"]["state"] = nil
+      output = build.call.call
+      assert_equal "verified", output.dig("simulation", "stage")
+      refute output.dig("simulation", "install_ready")
+      assert_equal "await_authorized_existing_coordinator_handoff", output.dig("simulation", "next_action")
+    end
+  end
+
+  def test_daily_pilot_source_and_cli_read_exact_tag_config_without_remote_or_native_work
+    Dir.mktmpdir("forzadvisor-source-test") do |root|
+      git = lambda do |*args|
+        out, err, status = Open3.capture3("git", "-C", root, *args)
+        assert status.success?, err
+        out.strip
+      end
+      git.call("init", "--quiet")
+      git.call("config", "user.name", "Fixture")
+      git.call("config", "user.email", "fixture@example.com")
+      git.call("remote", "add", "origin", @config.fetch("repository", "remote_url"))
+      FileUtils.mkdir_p(File.join(root, "AppStore"))
+      config_path = File.join(root, "AppStore", "release-config.json")
+      File.write(config_path, JSON.generate(@config.data))
+      git.call("add", ".")
+      git.call("commit", "--quiet", "-m", "Fixture baseline")
+      baseline = git.call("rev-parse", "HEAD")
+      File.write(File.join(root, "App.swift"), "// Fixture source\n")
+      git.call("add", ".")
+      git.call("commit", "--quiet", "-m", "Fixture change")
+      tag = @config.fetch("repository", "release_ref")
+      git.call("tag", "-a", tag, "-m", "Fixture candidate")
+      source = ForzAdvisorRelease::DailyPilotSource.new(root: root)
+      pilot = source.call(ref: tag, baseline: baseline)
+      File.write(config_path, "dirty invalid config")
+      assert_equal pilot.candidate_id, source.call(ref: tag, baseline: baseline).candidate_id
+      stdout, stderr, status = Open3.capture3("ruby", File.join(ROOT, "scripts", "release-daily"), "--root", root, "--ref", tag, "--baseline", baseline)
+      assert status.success?, stderr
+      assert_equal ["App.swift"], JSON.parse(stdout).dig("simulation", "changed_paths")
+      refute JSON.parse(stdout)["native_execution_enabled"]
+      assert_equal "skipped", source.call(ref: tag, baseline: git.call("rev-parse", "HEAD")).call.dig("portal", "stage")
+      git.call("tag", "release-lightweight")
+      assert_raises(ForzAdvisorRelease::PreflightError) { source.call(ref: "release-lightweight", baseline: baseline) }
+      git.call("remote", "set-url", "origin", "https://github.com/example/other.git")
+      assert_raises(ForzAdvisorRelease::PreflightError) { source.call(ref: tag, baseline: baseline) }
+    end
+  end
+
   private
+
+  def with_release_observer
+    with_daily_pilot do |pilot, fixture, directory|
+      add_daily_uploaded_fixture(fixture)
+      api = FakeAPI.new(fixture["apple"])
+      envelope = { "evidence_kind" => "fixture", "candidate_id" => pilot.candidate_id, "notes" => "PRIVATE_COORDINATION_NOTE" }
+      data = {
+        "gates" => envelope.merge("commit" => "a" * 40, "config_fingerprint" => @config.fingerprint, "baseline_commit" => "c" * 40,
+          "gates" => fixture["gates"], "verify_run_id" => "123", "change_plan" => fixture["change_plan"]),
+        "state" => envelope.merge("observed_at" => Time.now.utc.iso8601, "state" => fixture["stable_state"].merge("notes" => "PRIVATE_COORDINATION_NOTE")),
+        "apple" => envelope.merge("observed_at" => Time.now.utc.iso8601, "api" => api),
+        "prs" => envelope.merge("observed_at" => Time.now.utc.iso8601, "repository" => "Sankofa06/ForzAdvisor", "pull_requests" => [
+          { "number" => 14, "html_url" => "https://github.com/Sankofa06/ForzAdvisor/pull/14", "draft" => true, "state" => "open",
+            "head" => { "sha" => "b" * 40 }, "body" => "PRIVATE_COORDINATION_NOTE" }])
+      }
+      adapters = { gate_reader: ->(**_arguments) { data["gates"] }, state_reader: ->(**_arguments) { data["state"] },
+        apple_reader: ->(**_arguments) { data["apple"] }, pr_reader: ->(**_arguments) { data["prs"] },
+        github: FakeGitHubClient.new(run: github_run(tag: stable_identity["ref"], commit: "a" * 40), jobs: [github_job]) }
+      build = ->(**overrides) { ForzAdvisorRelease::ReleaseObserver.new(config: @config, identity: pilot.identity, **adapters.merge(overrides)) }
+      yield build, data, api, directory
+    end
+  end
+
+  def with_daily_directory_sync(directory, sync)
+    original_open = File.method(:open)
+    observation = lambda do |path, *arguments, **keywords, &block|
+      if path == directory
+        stream = Object.new
+        stream.define_singleton_method(:fsync) { sync.call }
+        block.call(stream)
+      else
+        original_open.call(path, *arguments, **keywords, &block)
+      end
+    end
+    File.stub(:open, observation) { yield }
+  end
+
+  def assert_daily_upload_recovery_precedes_skip(paths:)
+    with_daily_pilot(paths: paths) do |pilot, fixture, directory|
+      state = stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent")
+      fixture["stable_state"] = state
+      original = JSON.generate(state)
+      [fixture, fixture.slice("kind", "candidate_id", "stable_state"), fixture.merge("gates" => {}, "change_plan" => {})].each do |observations|
+        output = pilot.call(fixture: observations, state_directory: directory)
+        assert_equal "reconcile_upload_read_only", output.dig("simulation", "next_action")
+        assert_equal "proposed", output.dig("simulation", "stage")
+        assert_includes output.dig("simulation", "blockers"), "unresolved_upload_intent"
+        refute output.dig("simulation", "install_ready")
+        refute output.dig("portal", "install_ready")
+        refute output["native_execution_enabled"]
+        refute File.exist?(File.join(directory, "dispatch.json"))
+        assert_equal original, JSON.generate(state)
+      end
+    end
+  end
+
+  # Unit observations only; the workflow's separate real preflight still resolves Xcode settings.
+  def with_project_build_settings(overrides: {})
+    settings = { "MARKETING_VERSION" => "1.41.2", "CURRENT_PROJECT_VERSION" => "89", "DEVELOPMENT_TEAM" => "5RGU344VJR",
+      "PRODUCT_BUNDLE_IDENTIFIER" => "com.michaelwilliams.forzadvisor", "CODE_SIGN_STYLE" => "Manual",
+      "CODE_SIGN_IDENTITY" => "Apple Distribution", "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption" => "NO" }.merge(overrides)
+    observation = lambda do |*command, **_options|
+      assert_equal ["xcodebuild", "-project"], command.first(2)
+      assert_includes command, "-showBuildSettings"
+      assert_includes command, "-json"
+      refute_includes command, "test"
+      refute_includes command, "archive"
+      [JSON.generate([{ "target" => "forzadvisor", "buildSettings" => settings }]), "", Struct.new(:success?).new(true)]
+    end
+    Open3.stub(:capture3, observation) { yield }
+  end
+
+  def with_daily_pilot(paths: ["forzadvisor/App.swift"])
+    pilot = ForzAdvisorRelease::DailyPilot.new(config: @config, ref: stable_identity["ref"], commit: "a" * 40, baseline: "c" * 40, paths: paths)
+    fixture = { "kind" => "fixture", "candidate_id" => pilot.candidate_id,
+      "gates" => ForzAdvisorRelease::DailyPilot::GATES.to_h { |gate| [gate, { "result" => "PASS", "commit" => "a" * 40, "warnings" => 0 }] },
+      "github" => { "run_id" => "123", "run" => github_run(tag: stable_identity["ref"], commit: "a" * 40), "jobs" => [github_job] },
+      "change_plan" => { "commit" => "a" * 40, "baseline_commit" => "c" * 40, "summary" => "Fixture change", "scenarios" => [{ "steps" => ["Exercise the changed behavior"], "expected" => "The candidate-specific result is observed" }] } }
+    fixture["gates"]["local_release_verify"]["summary"] = { "tests" => 1, "failures" => 0, "skips" => 0, "expected_failures" => 0, "warnings" => 0 }
+    Dir.mktmpdir("forzadvisor-daily-test") { |directory| yield pilot, fixture, directory }
+  end
+
+  def add_daily_uploaded_fixture(fixture)
+    fixture["stable_state"] = stable_identity.merge("schema_version" => 2, "phase" => "human_verification_pending", "release_receipt" => release_receipt)
+    responses = candidate_validation_responses(candidate_build["id"])
+    build = responses["/v1/builds/#{candidate_build['id']}"]["data"]
+    build["attributes"].merge!("expired" => false, "expirationDate" => (Time.now + 3600).utc.iso8601)
+    responses["/v1/apps/#{@config.fetch('app', 'id')}/builds"] = { "data" => [build] }
+    fixture["apple"] = responses
+    fixture["apple_observed_at"] = Time.now.utc.iso8601
+  end
 
   def github_run(tag:, commit:)
     {
