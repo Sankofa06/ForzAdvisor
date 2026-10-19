@@ -66,6 +66,7 @@ module ForzAdvisorRelease
     def initialize(config:, ref:, commit:, baseline:, paths:)
       raise PreflightError, "pilot requires exact commit and baseline SHAs" unless [commit, baseline].all? { |sha| sha.to_s.match?(/\A[0-9a-f]{40}\z/) }
       raise PreflightError, "pilot requires a release tag" unless ref.to_s.match?(/\Arelease-[A-Za-z0-9._-]+\z/)
+      config = config.immutable_snapshot
       @config = config
       @paths = paths.map { |path| path.dup.freeze }.sort.uniq.freeze
       @baseline = baseline.dup.freeze

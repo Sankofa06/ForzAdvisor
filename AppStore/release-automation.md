@@ -43,7 +43,8 @@ ruby scripts/release-daily --ref RELEASE_TAG --baseline EXACT_40_CHARACTER_SHA
 The baseline must be an available ancestor. Choose the prior considered candidate
 deliberately; a failed attempt must not silently become the successful-release
 baseline. The planner reads configuration and changed paths from Git objects,
-checks the configured remote, and binds app, bundle, platform, version/build,
+checks the configured remote, privately freezes the configuration snapshot,
+and binds app, bundle, platform, version/build,
 tag, commit, configuration fingerprint, and stable profile into a candidate ID.
 It rechecks the tag after reading. Unchanged candidates and changes limited to
 Markdown in `docs/`, `forzadvisorDocs/`, `AppStore/`, or the root `README.md`

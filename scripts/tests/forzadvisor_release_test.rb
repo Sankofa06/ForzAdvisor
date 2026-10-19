@@ -2030,6 +2030,23 @@ class ForzAdvisorReleaseTest < Minitest::Test
     end
   end
 
+  def test_daily_pilot_pins_configuration_before_caller_mutation
+    with_daily_pilot do |pilot, fixture, directory|
+      group_name = pilot.config.fetch("testflight", "internal_group", "name")
+      assert pilot.config.data.frozen?
+      assert_raises(FrozenError) { group_name.replace("Changed Internal") }
+      @config.data["testflight"]["internal_group"]["name"].replace("Changed Internal")
+      assert_equal "Internal", group_name
+      assert_equal pilot.identity["config_fingerprint"], pilot.config.fingerprint
+      refute_equal @config.fingerprint, pilot.config.fingerprint
+      add_daily_uploaded_fixture(fixture)
+      group = @config.fetch("testflight", "internal_group", "id")
+      fixture["apple"]["/v1/betaGroups/#{group}"]["data"]["attributes"]["name"] = "Changed Internal"
+      assert_raises(ForzAdvisorRelease::PreflightError) { pilot.call(fixture: fixture, state_directory: directory) }
+      assert_empty Dir.children(directory)
+    end
+  end
+
   def test_release_observer_missing_connections_are_blocked_without_side_effects
     with_daily_pilot do |pilot, _fixture, directory|
       output = ForzAdvisorRelease::ReleaseObserver.new(config: @config, identity: pilot.identity).call
