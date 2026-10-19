@@ -138,7 +138,7 @@ codes without exposing raw errors or state. Reader envelopes require
 |---|---|
 | `gate_reader` | Exact `commit`, `config_fingerprint`, `baseline_commit`, all `gates`, `verify_run_id`, and candidate-specific `change_plan` |
 | `github` | Existing `GitHubClient`-compatible `run` and `jobs` reads; checked by `GitHubVerificationEvidence` |
-| `state_reader` | `state: null` for confirmed absence, or the authoritative v2 coordinator snapshot |
+| `state_reader` | Fresh `observed_at` plus `state: null` for confirmed absence, or the authoritative v2 coordinator snapshot |
 | `apple_reader` | Fresh `observed_at` plus the existing API client's `get` interface |
 | `pr_reader` | Fresh `observed_at`, exact `repository`, and the GitHub `pull_requests` collection |
 
@@ -148,8 +148,11 @@ precedence over collecting new gate/Apple evidence. Receipt checking uses the
 coordinator's public, read-only `validate_candidate_receipt!` entry point.
 Apple observation reuses the exact-build resolver and internal-group validator,
 then requires a non-expired build. Readiness expires at the earlier of the build
-expiration or 15 minutes after observation. PR observations remain independent
-of release availability.
+expiration or 15 minutes after either controller or Apple observation. Controller
+timestamps describe when authoritative state was read, not when it last changed;
+missing, stale, future-dated, or malformed state blocks handoff. Configuration is
+privately copied and deeply frozen at construction to preserve candidate identity
+throughout observation. PR observations remain independent of release availability.
 
 `ReleaseObserver#call` returns an allowlisted projection: immutable identity,
 verified run identifier, curated version-specific plan, build/group/expiry facts,

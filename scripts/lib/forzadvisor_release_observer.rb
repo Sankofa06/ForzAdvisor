@@ -49,6 +49,7 @@ module ForzAdvisorRelease
 
     def initialize(config:, identity:, gate_reader: nil, github: nil, state_reader: nil, apple_reader: nil, pr_reader: nil, evidence_kind: :fixture)
       raise PreflightError, "unknown observer evidence kind" unless %i[fixture live].include?(evidence_kind)
+      config = config.immutable_snapshot
       pilot = DailyPilot.new(config: config, ref: identity.fetch("ref"), commit: identity.fetch("commit"), baseline: identity.fetch("commit"), paths: [])
       raise PreflightError, "observer source identity mismatch" unless identity == pilot.identity
       @identity, @candidate_id, @config, @kind = pilot.identity, pilot.candidate_id, config, evidence_kind.to_s
@@ -61,7 +62,9 @@ module ForzAdvisorRelease
     def call(now: nil)
       record = base_record(now || Time.now.utc)
       state_envelope = read_envelope(@state_reader, record["blockers"], "controller_state_observer")
+      state_observed_at = fresh_time(state_envelope.fetch("observed_at"), now) if state_envelope
       state = state_envelope && state_envelope.fetch("state")
+      raise PreflightError, "invalid controller state" unless state.nil? || state.is_a?(Hash)
       if state
         @coordinator.validate_state_identity!(state)
         unless state["schema_version"] == 2 && %w[ref commit].all? { |key| state[key] == @identity[key] }
@@ -76,16 +79,18 @@ module ForzAdvisorRelease
       record["blockers"].concat(gates["blockers"])
       record["stage"] = "verified" if gates["verified"]
       record.merge!(gates.slice("test_plan", "github_run_id"))
+      fresh_time(state_envelope["observed_at"], now) if state_envelope
       if state && RECEIPT_PHASES.include?(state["phase"])
         @coordinator.validate_candidate_receipt!(state)
         record["stage"] = "uploaded"
-        observe_apple(record, state, gates["verified"], now)
+        observe_apple(record, state, gates["verified"], state_observed_at, now)
       elsif state && state["phase"] != "github_verified"
         record["blockers"] << "candidate_requires_human_review"
         record["next_action"] = "blocked_candidate_requires_human_review"
-      elsif gates["verified"]
+      elsif gates["verified"] && state_envelope && record["blockers"].empty?
         record["next_action"] = "await_authorized_existing_coordinator_handoff"
       end
+      record["next_action"] = "refresh_controller_evidence_read_only" unless state_envelope
       render(record, now)
     rescue StandardError
       record ||= base_record(now || Time.now.utc)
@@ -123,7 +128,7 @@ module ForzAdvisorRelease
       time
     end
 
-    def observe_apple(record, state, gates_verified, now)
+    def observe_apple(record, state, gates_verified, state_observed_at, now)
       record["next_action"] = "refresh_apple_read_only"
       envelope = read_envelope(@apple_reader, record["blockers"], "apple_observer")
       return unless envelope
@@ -136,12 +141,13 @@ module ForzAdvisorRelease
       expires_at = Time.iso8601(build.fetch("expiration_date"))
       completed_at = now || Time.now.utc
       fresh_time(envelope["observed_at"], completed_at)
+      fresh_time(state_observed_at.utc.iso8601, completed_at)
       raise PreflightError, "build is expired or expiration is unverified" unless build["expired"] == false && expires_at > completed_at
       record["apple"] = build.slice("build_id", "build_number", "marketing_version", "platform", "processing_state", "testflight_group_id", "testflight_associated", "expired", "expiration_date")
       record["apple"]["observed_at"] = observed_at.utc.iso8601
       return unless gates_verified && record["blockers"].empty?
       record.merge!("stage" => "install_ready", "install_ready" => true, "availability" => (@kind == "live" ? "VERIFIED" : "FIXTURE_ONLY"),
-        "valid_until" => [observed_at + 900, expires_at].min.utc.iso8601, "next_action" => "await_human_live_verification")
+        "valid_until" => [state_observed_at + 900, observed_at + 900, expires_at].min.utc.iso8601, "next_action" => "await_human_live_verification")
     rescue StandardError
       record["blockers"] << "current_apple_build_and_internal_group"
     end
@@ -166,6 +172,10 @@ module ForzAdvisorRelease
 
     def render(record, now)
       observe_prs(record, now)
+      if record["install_ready"] && Time.iso8601(record.fetch("valid_until")) <= (now || Time.now.utc)
+        record.merge!("stage" => "uploaded", "install_ready" => false, "availability" => "UNVERIFIED", "next_action" => "refresh_controller_evidence_read_only")
+        record["blockers"] << "availability_observation_expired"
+      end
       result = { "schema_version" => 1, "read_only" => true, "schedule_enabled" => false, "native_execution_enabled" => false, "publication_enabled" => false }
       if @kind == "fixture"
         result.merge("portal" => base_record(now || Time.now.utc).merge("blockers" => ["fixture_only"]), "simulation" => record)

@@ -125,7 +125,24 @@ module ForzAdvisorRelease
       Digest::SHA256.hexdigest(JSON.generate(deep_sort(fingerprint_data)))
     end
 
+    # Keep observation validators bound to the same values as their candidate.
+    # Do not freeze the caller's configuration or read a possibly changed file.
+    def immutable_snapshot
+      copy = dup
+      copy.instance_variable_set(:@path, path.dup.freeze)
+      copy.instance_variable_set(:@data, deep_freeze(JSON.parse(JSON.generate(data))))
+      copy.freeze
+    end
+
     private
+
+    def deep_freeze(value)
+      case value
+      when Hash then value.each { |key, item| deep_freeze(key); deep_freeze(item) }
+      when Array then value.each { |item| deep_freeze(item) }
+      end
+      value.freeze
+    end
 
     def validate!
       raise ConfigurationError, "unsupported release config schema" unless data["schema_version"] == 3

@@ -2035,10 +2035,87 @@ class ForzAdvisorReleaseTest < Minitest::Test
       output = ForzAdvisorRelease::ReleaseObserver.new(config: @config, identity: pilot.identity).call
       assert_includes output.dig("simulation", "blockers"), "controller_state_observer_unconfigured"
       assert_includes output.dig("simulation", "blockers"), "controller_gate_observer_unconfigured"
+      assert_equal "refresh_controller_evidence_read_only", output.dig("simulation", "next_action")
       assert_nil output.dig("portal", "work_in_pr")
       refute output["native_execution_enabled"]
       refute output["publication_enabled"]
       assert_empty Dir.children(directory)
+    end
+  end
+
+  def test_release_observer_pins_configuration_before_caller_mutation
+    with_release_observer do |build, data, api, _directory|
+      data.each_value { |envelope| envelope["evidence_kind"] = "live" }
+      observer = build.call(evidence_kind: :live)
+      build_id = data["state"]["state"]["release_receipt"]["asc_build_id"]
+      @config.data["release"]["source_build_number"].replace("90")
+      state = data["state"]["state"]
+      state["source_build_number"] = "90"
+      state["config_fingerprint"] = @config.fingerprint
+      state["release_receipt"]["build_number"] = "90"
+      api.get("/v1/builds/#{build_id}")["data"]["attributes"]["version"] = "90"
+      projected = observer.call.fetch("portal")
+      assert_equal "89", projected.dig("identity", "source_build_number")
+      refute projected["install_ready"]
+      assert_equal "UNVERIFIED", projected["availability"]
+      assert_includes projected["blockers"], "controller_state_or_receipt_unverified"
+    end
+  end
+
+  def test_release_observer_requires_fresh_controller_reads_for_state_and_confirmed_absence
+    [nil, "2000-01-01T00:00:00Z", (Time.now + 3600).utc.iso8601].each do |observed_at|
+      [true, false].each do |state_present|
+        with_release_observer do |build, data, api, _directory|
+          data["state"]["observed_at"] = observed_at
+          data["state"]["state"] = nil unless state_present
+          output = build.call.call.fetch("simulation")
+          refute output["install_ready"]
+          assert_equal "refresh_controller_evidence_read_only", output["next_action"]
+          assert_includes output["blockers"], "controller_state_or_receipt_unverified"
+          assert_empty api.requests
+        end
+      end
+    end
+  end
+
+  def test_release_observer_rejects_malformed_state_and_unavailable_handoff
+    [false, [], "not a snapshot"].each do |state|
+      with_release_observer do |build, data, _api, _directory|
+        data["state"]["state"] = state
+        output = build.call.call.fetch("simulation")
+        refute output["install_ready"]
+        assert_equal "refresh_controller_evidence_read_only", output["next_action"]
+        refute_empty output["blockers"]
+      end
+    end
+    with_release_observer do |build, _data, _api, _directory|
+      output = build.call(state_reader: nil).call.fetch("simulation")
+      assert_equal "verified", output["stage"]
+      assert_equal "refresh_controller_evidence_read_only", output["next_action"]
+      assert_includes output["blockers"], "controller_state_observer_unconfigured"
+    end
+  end
+
+  def test_release_observer_readiness_expires_with_controller_observation
+    with_release_observer do |build, data, _api, _directory|
+      now = Time.now.utc
+      data["state"]["observed_at"] = (now - 800).iso8601
+      output = build.call.call(now: now).fetch("simulation")
+      assert output["install_ready"]
+      assert_equal (Time.iso8601(data["state"]["observed_at"]) + 900).iso8601, output["valid_until"]
+
+      current_time = now
+      reader = ->(**_arguments) do
+        current_time += 200
+        data["prs"]
+      end
+      # A projection whose observation expires while collecting PRs is not ready.
+      Time.stub(:now, -> { current_time }) do
+        expired = build.call(pr_reader: reader).call.fetch("simulation")
+        refute expired["install_ready"]
+        assert_equal "uploaded", expired["stage"]
+        assert_includes expired["blockers"], "availability_observation_expired"
+      end
     end
   end
 
@@ -2224,7 +2301,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
       data = {
         "gates" => envelope.merge("commit" => "a" * 40, "config_fingerprint" => @config.fingerprint, "baseline_commit" => "c" * 40,
           "gates" => fixture["gates"], "verify_run_id" => "123", "change_plan" => fixture["change_plan"]),
-        "state" => envelope.merge("state" => fixture["stable_state"].merge("notes" => "PRIVATE_COORDINATION_NOTE")),
+        "state" => envelope.merge("observed_at" => Time.now.utc.iso8601, "state" => fixture["stable_state"].merge("notes" => "PRIVATE_COORDINATION_NOTE")),
         "apple" => envelope.merge("observed_at" => Time.now.utc.iso8601, "api" => api),
         "prs" => envelope.merge("observed_at" => Time.now.utc.iso8601, "repository" => "Sankofa06/ForzAdvisor", "pull_requests" => [
           { "number" => 14, "html_url" => "https://github.com/Sankofa06/ForzAdvisor/pull/14", "draft" => true, "state" => "open",
