@@ -11,6 +11,7 @@ require "open3"
 require "pathname"
 require "rexml/document"
 require "tmpdir"
+require "tempfile"
 require "time"
 require "uri"
 require "zlib"
@@ -974,28 +975,21 @@ module ForzAdvisorRelease
 
     def save(state)
       raise Error, "refusing to save non-v2 stable-runner state" unless state["schema_version"] == SCHEMA_VERSION
-      FileUtils.mkdir_p(@directory)
-      temporary = "#{path}.#{Process.pid}.tmp"
-      File.write(temporary, JSON.pretty_generate(state.merge("updated_at" => Time.now.utc.iso8601)) + "\n", perm: 0o600)
-      File.rename(temporary, path)
+      durable_write(path, JSON.pretty_generate(state.merge("updated_at" => Time.now.utc.iso8601)) + "\n")
       JSON.parse(File.read(path))
-    ensure
-      File.delete(temporary) if defined?(temporary) && temporary && File.file?(temporary)
     end
 
     def save_evidence(evidence)
-      FileUtils.mkdir_p(@directory)
-      temporary = "#{evidence_path}.#{Process.pid}.tmp"
-      File.write(temporary, JSON.pretty_generate(evidence) + "\n", perm: 0o600)
-      File.rename(temporary, evidence_path)
+      durable_write(evidence_path, JSON.pretty_generate(evidence) + "\n")
       evidence
-    ensure
-      File.delete(temporary) if defined?(temporary) && File.file?(temporary)
     end
 
     def archive(state)
       raise Error, "refusing to archive non-v2 stable-runner state" unless state["schema_version"] == SCHEMA_VERSION
-      FileUtils.mkdir_p(history_directory)
+      require_state_directory!
+      raise PreflightError, "stable-runner history cannot be a symlink" if File.symlink?(history_directory)
+      FileUtils.mkdir_p(history_directory, mode: 0o700)
+      sync_path(@directory)
       identity = %w[app_id bundle_id marketing_version source_build_number commit phase].map { |key| state.fetch(key).to_s }.join("\0")
       digest = Digest::SHA256.hexdigest(identity)[0, 20]
       archive_path = File.join(history_directory, "#{digest}.json")
@@ -1003,15 +997,12 @@ module ForzAdvisorRelease
       if File.file?(archive_path)
         raise Error, "stable-runner history collision" unless File.read(archive_path) == payload
         File.chmod(0o600, archive_path)
+        sync_path(archive_path)
+        sync_path(history_directory)
         return archive_path
       end
-      temporary = "#{archive_path}.#{Process.pid}.tmp"
-      File.write(temporary, payload, perm: 0o600)
-      File.rename(temporary, archive_path)
-      File.chmod(0o600, archive_path)
+      durable_write(archive_path, payload)
       archive_path
-    ensure
-      File.delete(temporary) if defined?(temporary) && temporary && File.file?(temporary)
     end
 
     def transition(expected_state:, archive_expected: false)
@@ -1037,12 +1028,38 @@ module ForzAdvisorRelease
 
     private
 
+    def require_state_directory!
+      unless File.directory?(@directory) && !File.symlink?(@directory) && File.stat(@directory).mode & 0o077 == 0
+        raise PreflightError, "stable release state root must already exist, be private, and be durably provisioned"
+      end
+    end
+
+    def sync_path(path)
+      File.open(path, File::RDONLY) { |file| file.fsync }
+    rescue SystemCallError, IOError
+      raise PreflightError, "stable release state durability is uncertain; reconcile before retry"
+    end
+
+    def durable_write(target, payload)
+      require_state_directory!
+      Tempfile.create(["release-state-", ".tmp"], File.dirname(target)) do |file|
+        file.chmod(0o600)
+        file.write(payload)
+        file.flush
+        file.fsync
+        File.rename(file.path, target)
+        sync_path(File.dirname(target))
+      end
+    rescue SystemCallError, IOError
+      raise PreflightError, "stable release state durability is uncertain; reconcile before retry"
+    end
+
     def with_lock
       with_file_lock("active-v2.lock") { yield }
     end
 
     def with_file_lock(name, wait: true)
-      FileUtils.mkdir_p(@directory)
+      require_state_directory!
       lock_path = File.join(@directory, name)
       File.open(lock_path, File::RDWR | File::CREAT, 0o600) do |lock_file|
         File.chmod(0o600, lock_path)

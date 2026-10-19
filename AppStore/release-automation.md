@@ -66,6 +66,14 @@ without group/world permissions. The planner fails closed if it is missing and
 never creates state directories or ancestors; directory provisioning is outside
 this pilot's scope.
 
+The authoritative `StableStateStore` likewise requires an already durable,
+private root at the existing controller's `FORZADVISOR_STABLE_RELEASE_STATE_DIR`.
+Active-state, evidence, and history writes sync file contents before rename and
+the containing directory afterward. History-directory creation syncs its parent.
+A sync failure stops the operation; an upload intent left after rename remains
+uncertain and must be reconciled rather than retried. The store never provisions
+the state root or its ancestors.
+
 Fixture JSON uses `kind: "fixture"` and the exact `candidate_id` from the first
 command. `gates` maps every `DailyPilot::GATES` entry to `result: "PASS"` and
 the exact `commit`; clean-build evidence also requires zero `warnings`.

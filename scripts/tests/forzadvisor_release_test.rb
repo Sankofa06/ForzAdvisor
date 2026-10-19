@@ -1008,6 +1008,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     Dir.mktmpdir do |directory|
       legacy = ForzAdvisorRelease::StateStore.new(directory: File.join(directory, "legacy"))
       legacy.save("phase" => "staged", "build_id" => "old")
+      FileUtils.mkdir_p(File.join(directory, "stable"), mode: 0o700)
       stable = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "stable"))
       refute stable.active?
       stable.save(stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent"))
@@ -1032,6 +1033,80 @@ class ForzAdvisorReleaseTest < Minitest::Test
       store.save(stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent"))
       assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume(upload: true, confirmation: coordinator.confirmation_token(stable_identity["commit"])) }
       assert_equal 1, helper.calls.length
+    end
+  end
+
+  def test_stable_state_save_requires_preexisting_private_durable_root
+    Dir.mktmpdir do |parent|
+      missing = File.join(parent, "missing", "state")
+      store = ForzAdvisorRelease::StableStateStore.new(directory: missing)
+      assert_raises(ForzAdvisorRelease::PreflightError) { store.save(stable_identity.merge("schema_version" => 2)) }
+      refute File.exist?(File.join(parent, "missing"))
+    end
+  end
+
+  def test_stable_state_save_syncs_directory_after_rename_before_returning
+    Dir.mktmpdir do |directory|
+      events = []
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      with_daily_directory_sync(directory, -> { events << store.load.fetch("phase") }) do
+        store.save(stable_identity.merge("schema_version" => 2, "phase" => "upload_start_intent"))
+        events << "returned"
+      end
+      assert_equal ["upload_start_intent", "returned"], events
+    end
+  end
+
+  def test_stable_state_archive_syncs_new_history_parent_and_renamed_entry
+    Dir.mktmpdir do |directory|
+      events = []
+      history = File.join(directory, "history")
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      original_open = File.method(:open)
+      observation = lambda do |path, *arguments, **keywords, &block|
+        if [directory, history].include?(path)
+          events << (path == directory ? "root" : "history")
+        end
+        original_open.call(path, *arguments, **keywords, &block)
+      end
+      File.stub(:open, observation) do
+        store.archive(stable_identity.merge("schema_version" => 2, "phase" => "human_blocked"))
+      end
+      assert_equal ["root", "history"], events
+    end
+  end
+
+  def test_stable_state_file_sync_failure_preserves_previous_state
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      state = store.save(stable_identity.merge("schema_version" => 2, "phase" => "github_verified"))
+      original_create = Tempfile.method(:create)
+      failing_create = lambda do |*arguments, **keywords, &block|
+        original_create.call(*arguments, **keywords) do |file|
+          file.stub(:fsync, -> { raise Errno::EIO }) { block.call(file) }
+        end
+      end
+      Tempfile.stub(:create, failing_create) do
+        assert_raises(ForzAdvisorRelease::PreflightError) { store.save(state.merge("phase" => "upload_start_intent")) }
+      end
+      assert_equal state, store.load
+      assert_equal ["active-v2.json"], Dir.children(directory)
+    end
+  end
+
+  def test_stable_state_directory_sync_failure_prevents_upload_and_preserves_uncertainty
+    Dir.mktmpdir do |directory|
+      store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
+      store.save(stable_identity.merge("schema_version" => 2, "phase" => "github_verified"))
+      helper = FakeStableRunnerHelper.new(release_receipt)
+      coordinator = stable_coordinator(store: store, helper: helper, api: FakeAPI.new(stable_upload_candidate_responses), tag: stable_identity["ref"], commit: stable_identity["commit"])
+      with_daily_directory_sync(directory, -> { raise Errno::EIO }) do
+        assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume(upload: true, confirmation: coordinator.confirmation_token(stable_identity["commit"])) }
+      end
+      assert_equal "upload_start_intent", store.load["phase"]
+      assert_empty helper.calls
+      assert_raises(ForzAdvisorRelease::PreflightError) { coordinator.resume(upload: true, confirmation: coordinator.confirmation_token(stable_identity["commit"])) }
+      assert_empty helper.calls
     end
   end
 
@@ -1074,6 +1149,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_terminal_rollover_archives_once_and_establishes_new_github_verified_identity
     Dir.mktmpdir do |directory|
+      FileUtils.mkdir_p(File.join(directory, "state"), mode: 0o700)
       store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
       store.save(stable_identity.merge("schema_version" => 2, "source_build_number" => "79", "phase" => "human_blocked"))
       data = JSON.parse(File.read(CONFIG_PATH))
@@ -1099,6 +1175,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_build_88_blocked_state_and_prior_receipt_are_archived_exactly_for_build_89
     Dir.mktmpdir do |directory|
       state_dir = File.join(directory, "state")
+      FileUtils.mkdir_p(state_dir, mode: 0o700)
       store = ForzAdvisorRelease::StableStateStore.new(directory: state_dir)
       previous = stable_identity.merge(
         "ref" => "release-1.41.2-testflight-88-3",
@@ -1162,6 +1239,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_pending_candidate_supersession_archives_build_87_before_build_89_without_inventing_human_result
     Dir.mktmpdir do |directory|
+      FileUtils.mkdir_p(File.join(directory, "state"), mode: 0o700)
       store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
       previous = stable_identity.merge(
         "config_fingerprint" => "e70cd2d84e94e491c5da2cc120d84b55f003f2cd0f194eb9907506a434150280",
