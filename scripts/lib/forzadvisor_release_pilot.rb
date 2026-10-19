@@ -44,7 +44,24 @@ module ForzAdvisorRelease
   class DailyPilot
     GATES = %w[repository_preflight focused_tests clean_release_build local_release_verify changed_flow_evidence diff_review diff_check secret_scan pushed_release_tag].freeze
     DOCUMENTATION = %r{\A(?:README\.md|docs/.*\.md|forzadvisorDocs/.*\.md|AppStore/.*\.md)\z}
-    attr_reader :candidate_id
+    attr_reader :candidate_id, :identity, :config
+
+    def self.gate_blockers(gates, commit:)
+      GATES.reject do |gate|
+        evidence = gates.is_a?(Hash) ? gates[gate] : nil
+        summary = evidence.is_a?(Hash) ? evidence["summary"] : nil
+        complete = summary.is_a?(Hash) && summary["tests"].is_a?(Integer) && summary["tests"].positive? &&
+          %w[failures skips expected_failures warnings].all? { |key| summary[key] == 0 }
+        evidence.is_a?(Hash) && evidence["result"] == "PASS" && evidence["commit"] == commit &&
+          (gate != "clean_release_build" || evidence["warnings"] == 0) && (gate != "local_release_verify" || complete)
+      end
+    end
+
+    def self.valid_change_plan?(plan, commit:, baseline:)
+      plan.is_a?(Hash) && plan["commit"] == commit && plan["baseline_commit"] == baseline &&
+        plan["summary"].is_a?(String) && !plan["summary"].strip.empty? && plan["scenarios"].is_a?(Array) && !plan["scenarios"].empty? &&
+        plan["scenarios"].all? { |item| item.is_a?(Hash) && item["steps"].is_a?(Array) && !item["steps"].empty? && item["steps"].all? { |step| step.is_a?(String) && !step.strip.empty? } && item["expected"].is_a?(String) && !item["expected"].strip.empty? }
+    end
 
     def initialize(config:, ref:, commit:, baseline:, paths:)
       raise PreflightError, "pilot requires exact commit and baseline SHAs" unless [commit, baseline].all? { |sha| sha.to_s.match?(/\A[0-9a-f]{40}\z/) }
@@ -88,12 +105,7 @@ module ForzAdvisorRelease
       %w[gates github change_plan apple].each do |key|
         raise PreflightError, "invalid fixture section: #{key}" if fixture.key?(key) && !fixture[key].is_a?(Hash)
       end
-      blockers = GATES.reject do |gate|
-        evidence = fixture.fetch("gates", {})[gate] || {}
-        evidence.is_a?(Hash) && evidence["result"] == "PASS" && evidence["commit"] == @identity["commit"] &&
-          (gate != "clean_release_build" || evidence["warnings"] == 0) &&
-          (gate != "local_release_verify" || complete_summary?(evidence["summary"]))
-      end
+      blockers = self.class.gate_blockers(fixture["gates"], commit: @identity["commit"])
       begin
         github = fixture.fetch("github", {})
         client = Struct.new(:response, :job_list) { def run(_id); response; end; def jobs(_id); job_list; end }.new(github["run"], github["jobs"])
@@ -103,8 +115,7 @@ module ForzAdvisorRelease
       end
       plan = fixture.fetch("change_plan", {})
       scenarios = plan["scenarios"]
-      unless plan["commit"] == @identity["commit"] && plan["baseline_commit"] == @baseline && !plan["summary"].to_s.strip.empty? && scenarios.is_a?(Array) && !scenarios.empty? &&
-          scenarios.all? { |item| item.is_a?(Hash) && item["steps"].is_a?(Array) && !item["steps"].empty? && item["steps"].all? { |step| step.is_a?(String) && !step.strip.empty? } && !item["expected"].to_s.strip.empty? }
+      unless self.class.valid_change_plan?(plan, commit: @identity["commit"], baseline: @baseline)
         blockers << "version_specific_test_plan"
       end
       simulation.merge!("blockers" => blockers, "next_action" => "complete_repository_gates")
@@ -134,11 +145,6 @@ module ForzAdvisorRelease
       coordinator = StableRunnerCoordinator.new(config: @config, git: nil, store: nil, github_verification: nil, helper: nil, api: nil)
       coordinator.validate_state_identity!(state)
       raise PreflightError, "stable snapshot does not match candidate tag/commit" unless state["schema_version"] == 2 && %w[ref commit].all? { |key| state[key] == @identity[key] }
-    end
-
-    def complete_summary?(summary)
-      summary.is_a?(Hash) && summary["tests"].is_a?(Integer) && summary["tests"].positive? &&
-        %w[failures skips expected_failures warnings].all? { |key| summary[key] == 0 }
     end
 
     def observe_uploaded(simulation, fixture, state, now)

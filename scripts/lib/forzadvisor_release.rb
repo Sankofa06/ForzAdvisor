@@ -1119,6 +1119,8 @@ module ForzAdvisorRelease
         "platform" => prerelease.dig("attributes", "platform"),
         "processing_state" => attributes["processingState"],
         "uses_non_exempt_encryption" => attributes["usesNonExemptEncryption"],
+        "expired" => attributes["expired"],
+        "expiration_date" => attributes["expirationDate"],
         "testflight_group_id" => group_id,
         "testflight_associated" => associated
       }
@@ -1382,6 +1384,14 @@ module ForzAdvisorRelease
       mismatch = expected.find { |key, value| state[key] != value }
       raise PreflightError, "stable-runner state identity mismatch: #{mismatch.first}" if mismatch
       true
+    end
+
+    def validate_candidate_receipt!(state)
+      validate_state_identity!(state)
+      raise PreflightError, "candidate state schema mismatch" unless state["schema_version"] == StableStateStore::SCHEMA_VERSION
+      validate_receipt!(state.fetch("release_receipt"), state.fetch("commit"))
+    rescue KeyError
+      raise PreflightError, "candidate receipt evidence is incomplete"
     end
 
     private

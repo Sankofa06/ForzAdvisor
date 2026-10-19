@@ -121,6 +121,51 @@ The publishable `portal` projection always has `install_ready: false` and
 unverified, not that there are no PRs. Do not copy simulated readiness to the
 portal. No live portal integration or current-build availability is claimed.
 
+#### Read-only observer adapter — unconnected
+
+`scripts/lib/forzadvisor_release_observer.rb` supplies a stateless
+`ReleaseObserver` around the existing validators. It does not select candidates,
+allocate versions, persist a second release state, or dispatch work. Construct
+it with `config: pilot.config` and `identity: pilot.identity` from
+`DailyPilotSource#call`; no controller or state path is guessed.
+
+Every reader is explicitly injected and receives `identity:`. Missing readers,
+identity mismatches, transport failures, and stale observations produce blocker
+codes without exposing raw errors or state. Reader envelopes require
+`evidence_kind` (`fixture` or `live`) and the exact `candidate_id`:
+
+| Adapter | Required observations |
+|---|---|
+| `gate_reader` | Exact `commit`, `config_fingerprint`, `baseline_commit`, all `gates`, `verify_run_id`, and candidate-specific `change_plan` |
+| `github` | Existing `GitHubClient`-compatible `run` and `jobs` reads; checked by `GitHubVerificationEvidence` |
+| `state_reader` | `state: null` for confirmed absence, or the authoritative v2 coordinator snapshot |
+| `apple_reader` | Fresh `observed_at` plus the existing API client's `get` interface |
+| `pr_reader` | Fresh `observed_at`, exact `repository`, and the GitHub `pull_requests` collection |
+
+`ReleaseGateCollector` shares the pilot's gate and change-plan checks. It never
+runs tests or manufactures attestations. An existing uncertain upload takes
+precedence over collecting new gate/Apple evidence. Receipt checking uses the
+coordinator's public, read-only `validate_candidate_receipt!` entry point.
+Apple observation reuses the exact-build resolver and internal-group validator,
+then requires a non-expired build. Readiness expires at the earlier of the build
+expiration or 15 minutes after observation. PR observations remain independent
+of release availability.
+
+`ReleaseObserver#call` returns an allowlisted projection: immutable identity,
+verified run identifier, curated version-specific plan, build/group/expiry facts,
+blocker codes, and PR number/URL/head SHA/draft status. It omits raw snapshots,
+receipt internals, notes, logs, review contact data, and PR bodies/titles.
+Default `evidence_kind: :fixture` places computed states only in `simulation`;
+the portal projection stays unverified. Explicit programmatic `:live` mode
+requires matching live provenance on every injected envelope. This is an adapter
+contract, not evidence that any live connection has been configured.
+
+The CLI remains offline. No live clients are constructed automatically; no
+publisher or schedule is included. The existing private portal destination and
+controller connection details belong in private operational configuration,
+outside the repository. `publication_enabled`, `schedule_enabled`, and
+`native_execution_enabled` remain false in observer output.
+
 Operational activation requires independent review, the existing exact-commit
 full local and GitHub release gates, verification of the private portal and
 durable state connections, and the existing stable profile, signing, ASC access,
