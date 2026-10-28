@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+require_relative "lib/forzadvisor_release_pilot"
+
+options = { root: File.expand_path("..", __dir__) }
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: ruby scripts/release-daily --ref ANNOTATED_RELEASE_TAG --baseline EXACT_SHA [--fixture JSON --state-dir PRIVATE_SCRATCH]"
+  opts.on("--ref TAG") { |value| options[:ref] = value }
+  opts.on("--baseline SHA") { |value| options[:baseline] = value }
+  opts.on("--fixture JSON") { |value| options[:fixture] = value }
+  opts.on("--state-dir PATH") { |value| options[:state_directory] = File.expand_path(value) }
+  opts.on("--root PATH") { |value| options[:root] = File.realpath(value) }
+end
+
+begin
+  parser.parse!
+  raise ForzAdvisorRelease::PreflightError, "unexpected arguments" unless ARGV.empty?
+  if options[:state_directory]
+    target = if File.exist?(options[:state_directory])
+               File.realpath(options[:state_directory])
+             else
+               File.join(File.realpath(File.dirname(options[:state_directory])), File.basename(options[:state_directory]))
+             end
+    root = File.realpath(options[:root])
+    if target == root || target.start_with?(root + File::SEPARATOR)
+      raise ForzAdvisorRelease::PreflightError, "fixture state must stay outside the repository"
+    end
+  end
+  pilot = ForzAdvisorRelease::DailyPilotSource.new(root: options[:root]).call(ref: options[:ref], baseline: options[:baseline])
+  fixture = JSON.parse(File.read(options[:fixture])) if options[:fixture]
+  puts JSON.pretty_generate(pilot.call(fixture: fixture, state_directory: options[:state_directory]))
+rescue ForzAdvisorRelease::Error, OptionParser::ParseError, JSON::ParserError, SystemCallError => error
+  warn "release-daily: #{ForzAdvisorRelease::Redactor.call(error.message)}"
+  exit 1
+end
