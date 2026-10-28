@@ -23,6 +23,6 @@ h1{overflow-wrap:normal;font-size:clamp(3.5rem,5.4vw,5rem)}
 .roadmap-heading h2{overflow-wrap:normal}
 .capture-note{font-size:.78rem;color:var(--muted);line-height:1.6}
 a:focus-visible{outline:3px solid var(--orange);outline-offset:5px}
-@media(max-width:650px){h1{font-size:clamp(3.1rem,13.5vw,5.2rem)}.phone-wrap{padding:24px 18px 18px}.phone{width:min(100%,310px)}.hero-dashboard{min-height:400px}.telemetry.one{top:28px;left:20px}.telemetry.two{right:16px;bottom:55px}.telemetry.three{left:20px;bottom:20px}.site-header{position:relative}}
+@media(max-width:650px){h1{font-size:clamp(3.1rem,13.5vw,5.2rem)}.phone-wrap{padding:24px 18px 18px}.phone{width:min(100%,310px)}.hero-dashboard{min-height:400px}.telemetry.one{top:28px;left:20px}.telemetry.two{left:16px;right:auto;bottom:100px}.telemetry.three{left:auto;right:16px;bottom:16px}.site-header{position:relative}}
 
 @media(max-width:650px){.roadmap-heading h2{font-size:clamp(2.2rem,11vw,3rem)}}

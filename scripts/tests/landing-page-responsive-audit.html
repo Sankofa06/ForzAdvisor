@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ForzAdvisor responsive audit</title>
+    <style>
+      :root { color-scheme: light; font: 15px/1.5 ui-monospace, monospace; }
+      body { max-width: 900px; margin: 40px auto; padding: 0 20px; color: #172018; }
+      h1 { font: 700 1.6rem/1.2 system-ui, sans-serif; }
+      #status { padding: 12px; background: #eee; }
+      #status[data-result="PASS"] { color: #075e2b; background: #e6f6eb; }
+      #status[data-result="FAIL"] { color: #921b13; background: #fff0ee; }
+      pre { overflow: auto; padding: 16px; background: #f4f5f2; }
+      iframe.audit-frame { position: fixed; top: 0; left: 0; z-index: -1; box-sizing: border-box; border: 0; opacity: .01; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Landing page responsive geometry</h1>
+    <p>Serve the repository root with <code>python3 -m http.server 8765 --bind 127.0.0.1</code>. Add <code>git rev-parse HEAD</code> as <code>revision</code> and <code>git rev-parse HEAD^{tree}</code> as <code>tree</code> query values.</p>
+    <p id="status" data-result="RUNNING" role="status" aria-live="polite">Measuring the landing page…</p>
+    <pre id="evidence">Waiting for the browser measurements.</pre>
+    <script>
+      const widths = [320, 390, 768, 1440];
+      const params = new URLSearchParams(location.search);
+      const sourceRevision = params.get('revision') || '';
+      const sourceTree = params.get('tree') || '';
+      const status = document.querySelector('#status');
+      const evidence = document.querySelector('#evidence');
+      const sha1 = /^[0-9a-f]{40}$/;
+      const intersects = (a, b) => a.left < b.right && b.left < a.right &&
+        a.top < b.bottom && b.top < a.bottom;
+      const box = rect => ({
+        left: Math.round(rect.left * 100) / 100,
+        top: Math.round(rect.top * 100) / 100,
+        right: Math.round(rect.right * 100) / 100,
+        bottom: Math.round(rect.bottom * 100) / 100,
+      });
+      const finish = report => {
+        status.dataset.result = report.result;
+        status.textContent = `${report.result}: ${report.errors.length ? report.errors.join('; ') : 'all viewports pass'}`;
+        evidence.textContent = JSON.stringify(report, null, 2);
+      };
+
+      async function audit() {
+        const report = {
+          result: 'PASS',
+          sourceRevision,
+          sourceTree,
+          browser: navigator.userAgent,
+          viewports: [],
+          errors: [],
+        };
+        if (!sha1.test(sourceRevision) || !sha1.test(sourceTree)) {
+          report.result = 'FAIL';
+          report.errors.push('Provide exact 40-character Git revision and tree query parameters.');
+          finish(report);
+          return;
+        }
+        try {
+          for (const width of widths) {
+            const frame = document.createElement('iframe');
+            frame.className = 'audit-frame';
+            frame.width = width;
+            frame.height = 12000;
+            frame.scrolling = 'no';
+            frame.src = '/landing-page/';
+            document.body.appendChild(frame);
+            const frameDeadline = performance.now() + 15000;
+            while ((!frame.contentDocument || frame.contentDocument.readyState !== 'complete' ||
+                    !frame.contentDocument.querySelector('.telemetry.two')) && performance.now() < frameDeadline) {
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            if (!frame.contentDocument || !frame.contentDocument.querySelector('.telemetry.two')) {
+              throw new Error(`Landing page timed out at ${width}px`);
+            }
+            const view = frame.contentWindow;
+            const doc = view.document;
+            const input = doc.querySelector('.telemetry.two').getBoundingClientRect();
+            const output = doc.querySelector('.telemetry.three').getBoundingClientRect();
+            const viewportWidth = view.innerWidth;
+            const pageWidth = Math.max(doc.documentElement.scrollWidth, doc.body.scrollWidth);
+            const overlap = intersects(input, output);
+            const overflow = pageWidth > viewportWidth + 1;
+            const sample = {
+              viewportWidth,
+              documentWidth: pageWidth,
+              horizontalOverflow: overflow,
+              input: box(input),
+              output: box(output),
+              calloutsOverlap: overlap,
+            };
+            report.viewports.push(sample);
+            if (viewportWidth !== width) report.errors.push(`Expected ${width}px viewport, got ${viewportWidth}px.`);
+            if (overflow) report.errors.push(`${width}px viewport has horizontal page overflow (${pageWidth}px).`);
+            if (overlap) report.errors.push(`${width}px viewport has overlapping INPUT and OUTPUT telemetry callouts.`);
+            frame.remove();
+          }
+        } catch (error) {
+          report.errors.push(String(error));
+        }
+        if (report.errors.length) report.result = 'FAIL';
+        finish(report);
+      }
+      audit();
+    </script>
+  </body>
+</html>
