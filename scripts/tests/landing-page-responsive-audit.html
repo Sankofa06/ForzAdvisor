@@ -22,6 +22,7 @@
     <pre id="evidence">Waiting for the browser measurements.</pre>
     <script>
       const widths = [320, 390, 768, 1440];
+      const expectedHeadlineLines = 3;
       const params = new URLSearchParams(location.search);
       const sourceRevision = params.get('revision') || '';
       const sourceTree = params.get('tree') || '';
@@ -36,6 +37,28 @@
         right: Math.round(rect.right * 100) / 100,
         bottom: Math.round(rect.bottom * 100) / 100,
       });
+      const isWithin = (inner, outer) => inner.left >= outer.left - 1 &&
+        inner.top >= outer.top - 1 && inner.right <= outer.right + 1 &&
+        inner.bottom <= outer.bottom + 1;
+      const renderedLineBounds = element => {
+        const range = element.ownerDocument.createRange();
+        range.selectNodeContents(element);
+        const fragments = [...range.getClientRects()].filter(rect => rect.width > 0 && rect.height > 0);
+        const lines = [];
+        for (const fragment of fragments) {
+          let line = lines.find(candidate => Math.abs(candidate.top - fragment.top) <= 1);
+          if (!line) {
+            line = { left: fragment.left, top: fragment.top, right: fragment.right, bottom: fragment.bottom };
+            lines.push(line);
+          } else {
+            line.left = Math.min(line.left, fragment.left);
+            line.top = Math.min(line.top, fragment.top);
+            line.right = Math.max(line.right, fragment.right);
+            line.bottom = Math.max(line.bottom, fragment.bottom);
+          }
+        }
+        return { fragments, lines: lines.sort((a, b) => a.top - b.top).map(box) };
+      };
       const finish = report => {
         status.dataset.result = report.result;
         status.textContent = `${report.result}: ${report.errors.length ? report.errors.join('; ') : 'all viewports pass'}`;
@@ -68,20 +91,36 @@
             document.body.appendChild(frame);
             const frameDeadline = performance.now() + 15000;
             while ((!frame.contentDocument || frame.contentDocument.readyState !== 'complete' ||
-                    !frame.contentDocument.querySelector('.telemetry.two')) && performance.now() < frameDeadline) {
+                    !frame.contentDocument.querySelector('.telemetry.two') ||
+                    !frame.contentDocument.querySelector('.telemetry.three') ||
+                    !frame.contentDocument.querySelector('.hero-copy h1')) && performance.now() < frameDeadline) {
               await new Promise(resolve => setTimeout(resolve, 50));
             }
-            if (!frame.contentDocument || !frame.contentDocument.querySelector('.telemetry.two')) {
+            if (!frame.contentDocument || !frame.contentDocument.querySelector('.telemetry.two') ||
+                !frame.contentDocument.querySelector('.telemetry.three') ||
+                !frame.contentDocument.querySelector('.hero-copy h1')) {
               throw new Error(`Landing page timed out at ${width}px`);
             }
             const view = frame.contentWindow;
             const doc = view.document;
             const input = doc.querySelector('.telemetry.two').getBoundingClientRect();
             const output = doc.querySelector('.telemetry.three').getBoundingClientRect();
+            const heroCopy = doc.querySelector('.hero-copy');
+            const headline = doc.querySelector('.hero-copy h1');
+            const heroCopyBounds = heroCopy.getBoundingClientRect();
+            const headlineBounds = headline.getBoundingClientRect();
+            const headlineGeometry = renderedLineBounds(headline);
+            const headlineLineCount = headlineGeometry.lines.length;
             const viewportWidth = view.innerWidth;
             const pageWidth = Math.max(doc.documentElement.scrollWidth, doc.body.scrollWidth);
             const overlap = intersects(input, output);
             const overflow = pageWidth > viewportWidth + 1;
+            const headlineFits = headlineLineCount === expectedHeadlineLines &&
+              isWithin(headlineBounds, heroCopyBounds) &&
+              headlineGeometry.fragments.every(rect => isWithin(rect, headlineBounds) &&
+                isWithin(rect, heroCopyBounds)) &&
+              headline.scrollWidth <= headline.clientWidth + 1 &&
+              headline.scrollHeight <= headline.clientHeight + 1;
             const sample = {
               viewportWidth,
               documentWidth: pageWidth,
@@ -89,11 +128,24 @@
               input: box(input),
               output: box(output),
               calloutsOverlap: overlap,
+              heroCopyBounds: box(heroCopyBounds),
+              headlineBounds: box(headlineBounds),
+              headlineLineBounds: headlineGeometry.lines,
+              headlineLineCount,
+              headlineScrollWidth: headline.scrollWidth,
+              headlineClientWidth: headline.clientWidth,
+              headlineScrollHeight: headline.scrollHeight,
+              headlineClientHeight: headline.clientHeight,
+              headlineFits,
             };
             report.viewports.push(sample);
             if (viewportWidth !== width) report.errors.push(`Expected ${width}px viewport, got ${viewportWidth}px.`);
             if (overflow) report.errors.push(`${width}px viewport has horizontal page overflow (${pageWidth}px).`);
             if (overlap) report.errors.push(`${width}px viewport has overlapping INPUT and OUTPUT telemetry callouts.`);
+            if (headlineLineCount !== expectedHeadlineLines) {
+              report.errors.push(`${width}px headline rendered ${headlineLineCount} lines; expected ${expectedHeadlineLines}.`);
+            }
+            if (!headlineFits) report.errors.push(`${width}px headline escapes or clips within .hero-copy bounds.`);
             frame.remove();
           }
         } catch (error) {
