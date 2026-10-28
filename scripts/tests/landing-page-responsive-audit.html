@@ -23,6 +23,8 @@
     <script>
       const widths = [320, 390, 768, 1440];
       const expectedHeadlineLines = 3;
+      // Half a CSS pixel absorbs subpixel layout noise; a full pixel escape must fail.
+      const geometryTolerance = 0.5;
       const params = new URLSearchParams(location.search);
       const sourceRevision = params.get('revision') || '';
       const sourceTree = params.get('tree') || '';
@@ -37,16 +39,54 @@
         right: Math.round(rect.right * 100) / 100,
         bottom: Math.round(rect.bottom * 100) / 100,
       });
-      const isWithin = (inner, outer) => inner.left >= outer.left - 1 &&
-        inner.top >= outer.top - 1 && inner.right <= outer.right + 1 &&
-        inner.bottom <= outer.bottom + 1;
+      const isWithin = (inner, outer) => inner.left >= outer.left - geometryTolerance &&
+        inner.top >= outer.top - geometryTolerance && inner.right <= outer.right + geometryTolerance &&
+        inner.bottom <= outer.bottom + geometryTolerance;
+      const clippingOverflow = new Set(['hidden', 'clip', 'auto', 'scroll', 'overlay']);
+      const elementLabel = element => `${element.tagName.toLowerCase()}` +
+        `${element.id ? `#${element.id}` : ''}` +
+        [...element.classList].map(name => `.${name}`).join('');
+      const clipBounds = element => {
+        const rect = element.getBoundingClientRect();
+        return {
+          left: rect.left + element.clientLeft,
+          top: rect.top + element.clientTop,
+          right: rect.left + element.clientLeft + element.clientWidth,
+          bottom: rect.top + element.clientTop + element.clientHeight,
+        };
+      };
+      const clippingAncestors = (element, fragments, view) => {
+        // Keep the full path so the validator can reject omitted clipping ancestors.
+        const ancestors = [];
+        for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+          const style = view.getComputedStyle(ancestor);
+          const clipsX = clippingOverflow.has(style.overflowX);
+          const clipsY = clippingOverflow.has(style.overflowY);
+          const clip = clipBounds(ancestor);
+          const axes = [];
+          if (clipsX && fragments.some(fragment =>
+            fragment.left < clip.left - geometryTolerance ||
+            fragment.right > clip.right + geometryTolerance)) axes.push('x');
+          if (clipsY && fragments.some(fragment =>
+            fragment.top < clip.top - geometryTolerance ||
+            fragment.bottom > clip.bottom + geometryTolerance)) axes.push('y');
+          ancestors.push({
+            element: elementLabel(ancestor),
+            overflowX: style.overflowX,
+            overflowY: style.overflowY,
+            axes,
+            bounds: box(clip),
+          });
+        }
+        return ancestors;
+      };
       const renderedLineBounds = element => {
         const range = element.ownerDocument.createRange();
         range.selectNodeContents(element);
         const fragments = [...range.getClientRects()].filter(rect => rect.width > 0 && rect.height > 0);
         const lines = [];
         for (const fragment of fragments) {
-          let line = lines.find(candidate => Math.abs(candidate.top - fragment.top) <= 1);
+          let line = lines.find(candidate => Math.abs(candidate.top - fragment.top) <= geometryTolerance);
           if (!line) {
             line = { left: fragment.left, top: fragment.top, right: fragment.right, bottom: fragment.bottom };
             lines.push(line);
@@ -109,20 +149,33 @@
             const headline = doc.querySelector('.hero-copy h1');
             const heroCopyBounds = heroCopy.getBoundingClientRect();
             const headlineBounds = headline.getBoundingClientRect();
+            const headlineStyle = view.getComputedStyle(headline);
             const headlineGeometry = renderedLineBounds(headline);
             const headlineLineCount = headlineGeometry.lines.length;
             const viewportWidth = view.innerWidth;
+            const viewportBounds = { left: 0, top: 0, right: viewportWidth, bottom: view.innerHeight };
             const pageWidth = Math.max(doc.documentElement.scrollWidth, doc.body.scrollWidth);
             const overlap = intersects(input, output);
-            const overflow = pageWidth > viewportWidth + 1;
+            const overflow = pageWidth > viewportWidth;
+            const headlineClipAncestors = clippingAncestors(headline, headlineGeometry.fragments, view);
+            const headlineClipped = headlineClipAncestors.some(ancestor => ancestor.axes.length > 0) ||
+              ((clippingOverflow.has(headlineStyle.overflowX) &&
+                headline.scrollWidth > headline.clientWidth + geometryTolerance) ||
+               (clippingOverflow.has(headlineStyle.overflowY) &&
+                headline.scrollHeight > headline.clientHeight + geometryTolerance));
+            const headlineWithinHeroCopy = isWithin(headlineBounds, heroCopyBounds) &&
+              headlineGeometry.fragments.every(rect => isWithin(rect, heroCopyBounds));
+            const headlineWithinViewport = isWithin(headlineBounds, viewportBounds) &&
+              headlineGeometry.fragments.every(rect => isWithin(rect, viewportBounds));
+            const headlineTextOutgrowsElement =
+              !headlineGeometry.fragments.every(rect => isWithin(rect, headlineBounds)) ||
+              headline.scrollWidth > headline.clientWidth + geometryTolerance ||
+              headline.scrollHeight > headline.clientHeight + geometryTolerance;
             const headlineFits = headlineLineCount === expectedHeadlineLines &&
-              isWithin(headlineBounds, heroCopyBounds) &&
-              headlineGeometry.fragments.every(rect => isWithin(rect, headlineBounds) &&
-                isWithin(rect, heroCopyBounds)) &&
-              headline.scrollWidth <= headline.clientWidth + 1 &&
-              headline.scrollHeight <= headline.clientHeight + 1;
+              headlineWithinHeroCopy && headlineWithinViewport && !headlineClipped;
             const sample = {
               viewportWidth,
+              viewportHeight: view.innerHeight,
               documentWidth: pageWidth,
               horizontalOverflow: overflow,
               input: box(input),
@@ -130,7 +183,16 @@
               calloutsOverlap: overlap,
               heroCopyBounds: box(heroCopyBounds),
               headlineBounds: box(headlineBounds),
+              headlineClipBounds: box(clipBounds(headline)),
+              headlineOverflowX: headlineStyle.overflowX,
+              headlineOverflowY: headlineStyle.overflowY,
               headlineLineBounds: headlineGeometry.lines,
+              headlineWithinHeroCopy,
+              headlineWithinViewport,
+              headlineAncestorCount: headlineClipAncestors.length,
+              headlineClipAncestors,
+              headlineClipped,
+              headlineTextOutgrowsElement,
               headlineLineCount,
               headlineScrollWidth: headline.scrollWidth,
               headlineClientWidth: headline.clientWidth,
@@ -145,7 +207,12 @@
             if (headlineLineCount !== expectedHeadlineLines) {
               report.errors.push(`${width}px headline rendered ${headlineLineCount} lines; expected ${expectedHeadlineLines}.`);
             }
-            if (!headlineFits) report.errors.push(`${width}px headline escapes or clips within .hero-copy bounds.`);
+            if (!headlineWithinHeroCopy) report.errors.push(`${width}px headline or rendered text escapes .hero-copy bounds.`);
+            if (!headlineWithinViewport) report.errors.push(`${width}px headline or rendered text escapes the viewport.`);
+            if (headlineClipped) {
+              const containers = headlineClipAncestors.map(ancestor => ancestor.element).join(', ');
+              report.errors.push(`${width}px headline text is clipped by CSS overflow at ${containers}.`);
+            }
             frame.remove();
           }
         } catch (error) {

@@ -21,6 +21,14 @@ from urllib.parse import urlencode
 ROOT = Path(__file__).resolve().parents[2]
 WIDTHS = [320, 390, 768, 1440]
 EXPECTED_HEADLINE_LINES = 3
+# Keep this path aligned with landing-page/index.html so omitted ancestors fail closed.
+EXPECTED_HEADLINE_ANCESTORS = (
+    "h1", "div.hero-copy", "section.hero.shell", "main#main", "body", "html",
+)
+# Half a CSS pixel absorbs subpixel layout noise; a full pixel escape must fail.
+GEOMETRY_TOLERANCE = 0.5
+CLIPPING_OVERFLOW = {"hidden", "clip", "auto", "scroll", "overlay"}
+COMPUTED_OVERFLOW = CLIPPING_OVERFLOW | {"visible"}
 IDENTIFIER = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -77,13 +85,39 @@ def is_rect(rect):
     return rect["right"] >= rect["left"] and rect["bottom"] >= rect["top"]
 
 
+def has_area(rect):
+    return (is_rect(rect) and rect["right"] > rect["left"] and
+            rect["bottom"] > rect["top"])
+
+
 def rect_fits_within(inner, outer):
-    tolerance = 1
     return (is_rect(inner) and is_rect(outer) and
-            inner["left"] >= outer["left"] - tolerance and
-            inner["top"] >= outer["top"] - tolerance and
-            inner["right"] <= outer["right"] + tolerance and
-            inner["bottom"] <= outer["bottom"] + tolerance)
+            inner["left"] >= outer["left"] - GEOMETRY_TOLERANCE and
+            inner["top"] >= outer["top"] - GEOMETRY_TOLERANCE and
+            inner["right"] <= outer["right"] + GEOMETRY_TOLERANCE and
+            inner["bottom"] <= outer["bottom"] + GEOMETRY_TOLERANCE)
+
+
+def rects_match(first, second):
+    return (is_rect(first) and is_rect(second) and
+            all(abs(first[key] - second[key]) <= GEOMETRY_TOLERANCE
+                for key in ("left", "top", "right", "bottom")))
+
+
+def rects_overlap(first, second):
+    return (has_area(first) and has_area(second) and
+            first["left"] < second["right"] and second["left"] < first["right"] and
+            first["top"] < second["bottom"] and second["top"] < first["bottom"])
+
+
+def rect_exceeds_axis(rect, bounds, axis):
+    if not is_rect(rect) or not is_rect(bounds):
+        return False
+    if axis == "x":
+        return (rect["left"] < bounds["left"] - GEOMETRY_TOLERANCE or
+                rect["right"] > bounds["right"] + GEOMETRY_TOLERANCE)
+    return (rect["top"] < bounds["top"] - GEOMETRY_TOLERANCE or
+            rect["bottom"] > bounds["bottom"] + GEOMETRY_TOLERANCE)
 
 
 def validate_audit(status, audit, revision, tree):
@@ -99,9 +133,8 @@ def validate_audit(status, audit, revision, tree):
         errors.extend(str(error) for error in audit_errors)
     elif audit_errors:
         errors.append("Responsive audit returned an invalid errors field.")
-    if audit.get("result") != "PASS":
-        if not audit_errors:
-            errors.append("Responsive audit did not report PASS.")
+    if audit.get("result") != "PASS" and not audit_errors:
+        errors.append("Responsive audit did not report PASS.")
 
     viewports = audit.get("viewports", [])
     if not isinstance(viewports, list):
@@ -111,21 +144,44 @@ def validate_audit(status, audit, revision, tree):
                        for sample in viewports]
     if measured_widths != WIDTHS:
         errors.append(f"Expected measurements for widths {WIDTHS} in order.")
+
     for width, sample in zip(WIDTHS, viewports):
         if not isinstance(sample, dict):
             errors.append(f"{width}px viewport measurement is invalid.")
             continue
         if sample.get("viewportWidth") != width:
             errors.append(f"Viewport measurement does not match {width}px.")
+
         document_width = sample.get("documentWidth")
-        if (not is_number(document_width) or
-                document_width > width + 1 or sample.get("horizontalOverflow") is not False):
-            errors.append(f"{width}px viewport has horizontal overflow.")
-        if sample.get("calloutsOverlap") is not False:
+        if not is_number(document_width):
+            errors.append(f"{width}px document width is invalid.")
+        else:
+            measured_overflow = document_width > width
+            if sample.get("horizontalOverflow") is not measured_overflow:
+                errors.append(f"{width}px horizontal-overflow flag contradicts document width.")
+            if measured_overflow:
+                errors.append(f"{width}px viewport has horizontal overflow.")
+
+        input_bounds = sample.get("input")
+        output_bounds = sample.get("output")
+        if not has_area(input_bounds) or not has_area(output_bounds):
+            errors.append(f"{width}px INPUT/OUTPUT callout geometry is invalid.")
+        else:
+            measured_overlap = rects_overlap(input_bounds, output_bounds)
+            callouts_overlap = sample.get("calloutsOverlap")
+            if not isinstance(callouts_overlap, bool):
+                errors.append(f"{width}px callout-overlap result is invalid.")
+            elif callouts_overlap != measured_overlap:
+                errors.append(f"{width}px callout-overlap flag contradicts measured rectangles.")
+            if measured_overlap:
+                errors.append(f"{width}px viewport has overlapping INPUT and OUTPUT callouts.")
+        if sample.get("calloutsOverlap") is True:
             errors.append(f"{width}px viewport has overlapping INPUT and OUTPUT callouts.")
 
         headline_line_count = sample.get("headlineLineCount")
-        if (not isinstance(headline_line_count, int) or isinstance(headline_line_count, bool)):
+        valid_line_count = (isinstance(headline_line_count, int) and
+                            not isinstance(headline_line_count, bool))
+        if not valid_line_count:
             errors.append(f"{width}px headline line count is invalid.")
         elif headline_line_count != EXPECTED_HEADLINE_LINES:
             errors.append(
@@ -134,28 +190,139 @@ def validate_audit(status, audit, revision, tree):
             )
 
         headline_line_bounds = sample.get("headlineLineBounds")
-        if not isinstance(headline_line_bounds, list) or len(headline_line_bounds) != EXPECTED_HEADLINE_LINES:
+        if (not isinstance(headline_line_bounds, list) or
+                len(headline_line_bounds) != EXPECTED_HEADLINE_LINES):
             errors.append(f"{width}px headline must retain geometry for {EXPECTED_HEADLINE_LINES} lines.")
-            headline_line_bounds = headline_line_bounds if isinstance(headline_line_bounds, list) else []
-        if (isinstance(headline_line_count, int) and not isinstance(headline_line_count, bool) and
-                headline_line_count != len(headline_line_bounds)):
+            headline_line_bounds = (headline_line_bounds if isinstance(headline_line_bounds, list)
+                                    else [])
+        if valid_line_count and headline_line_count != len(headline_line_bounds):
             errors.append(f"{width}px headline line count does not match its retained line geometry.")
+        line_rectangles = []
+        for line_bounds in headline_line_bounds:
+            if not has_area(line_bounds):
+                errors.append(f"{width}px headline line geometry is invalid or empty.")
+            else:
+                line_rectangles.append(line_bounds)
 
         hero_copy_bounds = sample.get("heroCopyBounds")
         headline_bounds = sample.get("headlineBounds")
-        if not is_rect(hero_copy_bounds):
+        headline_clip_bounds = sample.get("headlineClipBounds")
+        viewport_height = sample.get("viewportHeight")
+        viewport_bounds = None
+        if not is_number(viewport_height) or viewport_height <= 0:
+            errors.append(f"{width}px viewport height is invalid.")
+        else:
+            viewport_bounds = {"left": 0, "top": 0, "right": width, "bottom": viewport_height}
+        if not has_area(hero_copy_bounds):
             errors.append(f"{width}px hero-copy bounds are invalid.")
-        if not is_rect(headline_bounds):
+        if not has_area(headline_bounds):
             errors.append(f"{width}px headline bounds are invalid.")
-        elif not rect_fits_within(headline_bounds, hero_copy_bounds):
-            errors.append(f"{width}px headline bounds escape .hero-copy.")
-        for line_bounds in headline_line_bounds:
-            if not is_rect(line_bounds):
-                errors.append(f"{width}px headline line geometry is invalid.")
-            elif not rect_fits_within(line_bounds, hero_copy_bounds):
+        if not has_area(headline_clip_bounds):
+            errors.append(f"{width}px headline clip bounds are invalid.")
+        elif is_rect(headline_bounds) and not rect_fits_within(headline_clip_bounds, headline_bounds):
+            errors.append(f"{width}px headline clip bounds escape the headline box.")
+
+        headline_overflow_x = sample.get("headlineOverflowX")
+        headline_overflow_y = sample.get("headlineOverflowY")
+        for axis, overflow in (("x", headline_overflow_x), ("y", headline_overflow_y)):
+            if not isinstance(overflow, str) or overflow not in COMPUTED_OVERFLOW:
+                errors.append(f"{width}px headline computed overflow-{axis} is invalid.")
+
+        line_geometry_valid = (len(line_rectangles) == EXPECTED_HEADLINE_LINES and
+                               len(line_rectangles) == len(headline_line_bounds))
+        measured_within_hero = (line_geometry_valid and has_area(headline_bounds) and
+                                has_area(hero_copy_bounds) and
+                                rect_fits_within(headline_bounds, hero_copy_bounds) and
+                                all(rect_fits_within(line, hero_copy_bounds)
+                                    for line in line_rectangles))
+        if sample.get("headlineWithinHeroCopy") is not measured_within_hero:
+            errors.append(f"{width}px .hero-copy fit flag contradicts measured headline geometry.")
+        if not measured_within_hero:
+            errors.append(f"{width}px headline does not fit within .hero-copy bounds.")
+        for line_bounds in line_rectangles:
+            if not rect_fits_within(line_bounds, hero_copy_bounds):
                 errors.append(f"{width}px headline line escapes .hero-copy.")
-            elif not rect_fits_within(line_bounds, headline_bounds):
-                errors.append(f"{width}px headline line escapes its own bounds.")
+
+        measured_within_viewport = (line_geometry_valid and has_area(headline_bounds) and
+                                    viewport_bounds is not None and
+                                    rect_fits_within(headline_bounds, viewport_bounds) and
+                                    all(rect_fits_within(line, viewport_bounds)
+                                        for line in line_rectangles))
+        if sample.get("headlineWithinViewport") is not measured_within_viewport:
+            errors.append(f"{width}px viewport-fit flag contradicts measured headline geometry.")
+        if not measured_within_viewport:
+            errors.append(f"{width}px headline does not fit within the viewport.")
+        if viewport_bounds is not None:
+            for line_bounds in line_rectangles:
+                if not rect_fits_within(line_bounds, viewport_bounds):
+                    errors.append(f"{width}px headline line escapes the viewport.")
+
+        clipping_ancestors = sample.get("headlineClipAncestors")
+        if not isinstance(clipping_ancestors, list):
+            errors.append(f"{width}px headline clipping-ancestor data is invalid.")
+            clipping_ancestors = []
+        ancestor_count = sample.get("headlineAncestorCount")
+        if (not isinstance(ancestor_count, int) or isinstance(ancestor_count, bool) or
+                ancestor_count != len(clipping_ancestors)):
+            errors.append(f"{width}px headline ancestor count does not match retained clip geometry.")
+        ancestor_path = tuple(ancestor.get("element") if isinstance(ancestor, dict) else None
+                              for ancestor in clipping_ancestors)
+        if ancestor_path != EXPECTED_HEADLINE_ANCESTORS:
+            errors.append(f"{width}px headline overflow-ancestor path is incomplete or unexpected.")
+
+        geometry_clipped = False
+        valid_ancestors = []
+        for ancestor in clipping_ancestors:
+            if not isinstance(ancestor, dict):
+                errors.append(f"{width}px headline clipping-ancestor geometry is invalid.")
+                continue
+            axes = ancestor.get("axes")
+            overflow_x = ancestor.get("overflowX")
+            overflow_y = ancestor.get("overflowY")
+            bounds = ancestor.get("bounds")
+            valid_axes = (isinstance(axes, list) and len(axes) == len(set(axes)) and
+                          all(axis in ("x", "y") for axis in axes))
+            valid_styles = (isinstance(overflow_x, str) and overflow_x in COMPUTED_OVERFLOW and
+                            isinstance(overflow_y, str) and overflow_y in COMPUTED_OVERFLOW)
+            if (not isinstance(ancestor.get("element"), str) or not ancestor.get("element") or
+                    not valid_axes or not valid_styles or not has_area(bounds)):
+                errors.append(f"{width}px headline clipping-ancestor geometry is invalid.")
+                continue
+
+            expected_axes = []
+            if overflow_x in CLIPPING_OVERFLOW and any(
+                    rect_exceeds_axis(line, bounds, "x") for line in line_rectangles):
+                expected_axes.append("x")
+            if overflow_y in CLIPPING_OVERFLOW and any(
+                    rect_exceeds_axis(line, bounds, "y") for line in line_rectangles):
+                expected_axes.append("y")
+            if axes != expected_axes:
+                errors.append(f"{width}px clipping axes contradict line geometry and overflow styles.")
+            if expected_axes:
+                geometry_clipped = True
+            valid_ancestors.append(ancestor)
+
+        if not valid_ancestors:
+            errors.append(f"{width}px headline is missing its own overflow-ancestor evidence.")
+        else:
+            own_ancestor = valid_ancestors[0]
+            own_tag = own_ancestor["element"].split("#", 1)[0].split(".", 1)[0]
+            if own_tag != "h1":
+                errors.append(f"{width}px first overflow ancestor is not the headline element.")
+            if (own_ancestor["overflowX"] != headline_overflow_x or
+                    own_ancestor["overflowY"] != headline_overflow_y):
+                errors.append(f"{width}px headline overflow styles contradict its ancestor evidence.")
+            if not rects_match(own_ancestor["bounds"], headline_clip_bounds):
+                errors.append(f"{width}px headline clip bounds contradict its ancestor evidence.")
+
+        headline_clipped = sample.get("headlineClipped")
+        if not isinstance(headline_clipped, bool):
+            errors.append(f"{width}px headline clipping result is invalid.")
+        else:
+            if headline_clipped != geometry_clipped:
+                errors.append(f"{width}px headline clipping result contradicts measured ancestor geometry.")
+            if headline_clipped:
+                errors.append(f"{width}px headline text is clipped by a CSS overflow ancestor.")
 
         dimensions = (
             sample.get("headlineScrollWidth"),
@@ -165,12 +332,33 @@ def validate_audit(status, audit, revision, tree):
         )
         if not all(is_number(value) for value in dimensions):
             errors.append(f"{width}px headline scroll geometry is invalid.")
-        elif (dimensions[0] > dimensions[1] + 1 or dimensions[2] > dimensions[3] + 1):
-            errors.append(f"{width}px headline text is clipped by its own bounds.")
-        if sample.get("headlineFits") is not True:
-            errors.append(f"{width}px headline does not fit within .hero-copy bounds.")
-    return list(dict.fromkeys(errors))
+        else:
+            geometry_outgrows = (has_area(headline_bounds) and
+                                 any(not rect_fits_within(line, headline_bounds)
+                                     for line in line_rectangles))
+            dimension_overflows = (dimensions[0] > dimensions[1] + GEOMETRY_TOLERANCE or
+                                   dimensions[2] > dimensions[3] + GEOMETRY_TOLERANCE)
+            measured_outgrows = geometry_outgrows or dimension_overflows
+            if sample.get("headlineTextOutgrowsElement") is not measured_outgrows:
+                errors.append(f"{width}px headline overdraw diagnostic contradicts its geometry.")
 
+            for style, axis in ((headline_overflow_x, "x"), (headline_overflow_y, "y")):
+                axis_overflow = (dimensions[0] > dimensions[1] + GEOMETRY_TOLERANCE
+                                 if axis == "x" else
+                                 dimensions[2] > dimensions[3] + GEOMETRY_TOLERANCE)
+                if (style in CLIPPING_OVERFLOW and
+                        (axis_overflow or any(rect_exceeds_axis(line, headline_clip_bounds, axis)
+                                              for line in line_rectangles))):
+                    errors.append(f"{width}px headline overflows its own CSS clipping bounds on {axis}.")
+
+        measured_headline_fits = (headline_line_count == EXPECTED_HEADLINE_LINES and
+                                  measured_within_hero and measured_within_viewport and
+                                  not geometry_clipped)
+        if sample.get("headlineFits") is not measured_headline_fits:
+            errors.append(f"{width}px headline-fit flag contradicts its measured criteria.")
+        if not measured_headline_fits:
+            errors.append(f"{width}px headline fails its line-count, viewport, hero-copy, or clipping criteria.")
+    return list(dict.fromkeys(errors))
 
 def main():
     parser = ArgumentParser(description=__doc__)
