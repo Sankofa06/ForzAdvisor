@@ -33,7 +33,7 @@ class MarketingScreenshotCaptureTests(unittest.TestCase):
             'POOL_VALIDATED': str(self.pool_validated),
             'XCODEBUILD_ARGS': str(self.xcode_args),
             'RUNTIME_CALLS': str(self.runtime_calls),
-            'SIMULATOR_POOL_ROLE': 'phone-standard',
+            'SIMULATOR_POOL_ROLE': 'phone-large',
             'SIMULATOR_POOL_LEASE': 'test-only-lease',
             'SIMULATOR_UDID': 'test-device-id',
             'SIMULATOR_DESTINATION': 'platform=iOS Simulator,id=test-device-id',
@@ -76,7 +76,7 @@ exit 99
 
     def test_live_lease_validation_and_exact_destination_reach_xcode(self):
         self.pool_helper.write_text('''import os, pathlib, sys
-expected = ['validate-lease', '--role', 'phone-standard', '--repo', str(pathlib.Path(sys.argv[-1]).resolve())]
+expected = ['validate-lease', '--role', 'phone-large', '--repo', str(pathlib.Path(sys.argv[-1]).resolve())]
 if sys.argv[1:] != expected or not os.environ.get('SIMULATOR_POOL_LEASE'):
     raise SystemExit('lease validation arguments were not preserved')
 if os.environ.get('SIMULATOR_UDID') != 'test-device-id' or os.environ.get('SIMULATOR_DESTINATION') != 'platform=iOS Simulator,id=test-device-id':

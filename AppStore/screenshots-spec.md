@@ -9,7 +9,7 @@ python3 -m venv /tmp/forzadvisor-marketing-python
 /tmp/forzadvisor-marketing-python/bin/python -m pip install Pillow==11.3.0
 PATH="/tmp/forzadvisor-marketing-python/bin:$PATH" \
   python3 "$HOME/.codex/scripts/simulator-pool.py" run \
-  --role phone-standard --repo "$PWD" --task "${CODEX_THREAD_ID:-manual}" --boot -- \
+  --role phone-large --repo "$PWD" --task "${CODEX_THREAD_ID:-manual}" --boot -- \
   bash scripts/capture_marketing_screenshots.sh /tmp/forzadvisor-marketing-capture
 ```
 
