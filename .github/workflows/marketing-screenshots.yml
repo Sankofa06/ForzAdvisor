@@ -1,0 +1,295 @@
+name: Marketing screenshot tooling
+on:
+  pull_request:
+    paths:
+      - 'forzadvisor/**'
+      - 'forzadvisorUITests/**'
+      - 'forzadvisorTests/**'
+      - 'forzadvisor.xcodeproj/**'
+      - 'ReleaseVerify.xctestplan'
+      - 'scripts/*marketing*screenshot*'
+      - 'scripts/tests/test_marketing_screenshot_export.py'
+      - 'scripts/tests/test_marketing_screenshot_capture.py'
+      - '.github/workflows/marketing-screenshots.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    name: Test screenshot capture and exporter contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Install isolated image validation dependency
+        run: |
+          python3 -m venv "$RUNNER_TEMP/marketing-python"
+          "$RUNNER_TEMP/marketing-python/bin/python" -m pip install Pillow==11.3.0
+          echo "$RUNNER_TEMP/marketing-python/bin" >> "$GITHUB_PATH"
+      - name: Test screenshot exporter
+        run: python3 scripts/tests/test_marketing_screenshot_export.py
+      - name: Test capture lease contract
+        run: python3 scripts/tests/test_marketing_screenshot_capture.py
+
+  # PR engineering evidence only; immutable tagged Release Verify remains required.
+  app-verification:
+    name: Verify release build and complete app tests
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record verification environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/app-verification"
+          xcode_version="$(xcodebuild -version)"
+          test "${xcode_version%%$'\n'*}" = 'Xcode 26.6'
+          printf '%s\n' "$xcode_version" > "$RUNNER_TEMP/app-verification/xcode-version.txt"
+          sw_vers > "$RUNNER_TEMP/app-verification/system-version.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/app-verification/source-revision.txt"
+      - name: Clean Release simulator build
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild clean build \
+            -project forzadvisor.xcodeproj -scheme forzadvisor \
+            -configuration Release \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -derivedDataPath "$RUNNER_TEMP/app-verification/ReleaseDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES \
+            2>&1 | tee "$RUNNER_TEMP/app-verification/release-build.log"
+      - name: Wait for verification simulator readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This job runs only on the ephemeral GitHub-hosted verification runner.
+          python3 - > "$RUNNER_TEMP/app-verification/simulator-readiness.log" 2>&1 <<'PYREADY'
+          import json, subprocess
+          listing = json.loads(subprocess.check_output(
+              ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'], text=True))
+          devices = [device for runtime, entries in listing['devices'].items()
+                     if runtime == 'com.apple.CoreSimulator.SimRuntime.iOS-26-5'
+                     for device in entries
+                     if device.get('isAvailable') and device.get('name') == 'iPhone 17 Pro']
+          if len(devices) != 1:
+              raise SystemExit(f'Expected exactly one available iPhone 17 Pro on iOS 26.5; found {len(devices)}')
+          print(json.dumps(devices[0]), flush=True)
+          subprocess.run(['xcrun', 'simctl', 'bootstatus', devices[0]['udid'], '-b'],
+                         check=True, timeout=600)
+          PYREADY
+      - name: Run complete ReleaseVerify plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The complete plan includes DEBUG-only deterministic marketing seed tests.
+          xcodebuild test \
+            -project forzadvisor.xcodeproj -scheme forzadvisor \
+            -configuration Debug -testPlan ReleaseVerify \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -derivedDataPath "$RUNNER_TEMP/app-verification/TestDerivedData" \
+            -parallel-testing-enabled NO -collect-test-diagnostics never \
+            -resultBundlePath "$RUNNER_TEMP/app-verification/ReleaseVerify.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES \
+            2>&1 | tee "$RUNNER_TEMP/app-verification/release-verify.log"
+      - name: Require affirmative complete passing summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          summary="$RUNNER_TEMP/app-verification/test-summary.json"
+          xcrun xcresulttool get test-results summary \
+            --path "$RUNNER_TEMP/app-verification/ReleaseVerify.xcresult" > "$summary"
+          jq -e '
+            def integer: type == "number" and . == floor;
+            .result == "Passed" and
+            ((has("testResult") | not) or .testResult == "Passed") and
+            (.totalTestCount | integer) and .totalTestCount > 0 and
+            (.passedTests | integer) and .passedTests > 0 and
+            .passedTests == .totalTestCount and
+            (.failedTests | integer) and .failedTests == 0 and
+            (.skippedTests | integer) and .skippedTests == 0 and
+            (.expectedFailures | integer) and .expectedFailures == 0
+          ' "$summary" >/dev/null
+      - name: Upload app verification diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: app-verification-${{ github.event.pull_request.head.sha || github.sha }}-attempt-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/app-verification/*.log
+            ${{ runner.temp }}/app-verification/*.json
+            ${{ runner.temp }}/app-verification/*.txt
+
+      - name: Upload full app verification result bundle
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: app-verification-xcresult-${{ github.event.pull_request.head.sha || github.sha }}-attempt-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: ${{ runner.temp }}/app-verification/ReleaseVerify.xcresult
+
+  # Focused feedback only; this job does not replace the complete app-verification gate.
+  result-regression:
+    name: Verify three result screen regressions
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record focused verification environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/result-regression"
+          git rev-parse HEAD > "$RUNNER_TEMP/result-regression/source-revision.txt"
+          sw_vers > "$RUNNER_TEMP/result-regression/system-version.txt" 2>&1
+          xcodebuild -version > "$RUNNER_TEMP/result-regression/xcode-version.txt" 2>&1
+          xcode_version="$(cat "$RUNNER_TEMP/result-regression/xcode-version.txt")"
+          test "${xcode_version%%$'\n'*}" = 'Xcode 26.6'
+      - name: Wait for regression simulator readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This job runs only on the ephemeral GitHub-hosted verification runner.
+          python3 - > "$RUNNER_TEMP/result-regression/simulator-readiness.log" 2>&1 <<'PYREADY'
+          import json, subprocess
+          listing = json.loads(subprocess.check_output(
+              ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'], text=True))
+          devices = [device for runtime, entries in listing['devices'].items()
+                     if runtime == 'com.apple.CoreSimulator.SimRuntime.iOS-26-5'
+                     for device in entries
+                     if device.get('isAvailable') and device.get('name') == 'iPhone 17 Pro']
+          if len(devices) != 1:
+              raise SystemExit(f'Expected exactly one available iPhone 17 Pro on iOS 26.5; found {len(devices)}')
+          print(json.dumps(devices[0]), flush=True)
+          subprocess.run(['xcrun', 'simctl', 'bootstatus', devices[0]['udid'], '-b'],
+                         check=True, timeout=600)
+          PYREADY
+      - name: Run only three result regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild test \
+            -project forzadvisor.xcodeproj -scheme forzadvisor \
+            -configuration Debug -testPlan ReleaseVerify \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' \
+            -derivedDataPath "$RUNNER_TEMP/result-regression/DerivedData" \
+            -parallel-testing-enabled NO -collect-test-diagnostics never \
+            -resultBundlePath "$RUNNER_TEMP/result-regression/ResultRegression.xcresult" \
+            -only-testing:forzadvisorUITests/ScreenshotEvidenceUITests/testAccessibilityXXXLGarageNewTuneAndResultScreenshotEvidence \
+            -only-testing:forzadvisorUITests/ScreenshotEvidenceUITests/testSupportedManualFlowScreenshotEvidence \
+            -only-testing:forzadvisorUITests/TuneResultUITests/testResultHierarchySaveStatusAndMetadataEditAction \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES GCC_TREAT_WARNINGS_AS_ERRORS=YES \
+            2>&1 | tee "$RUNNER_TEMP/result-regression/result-regression.log"
+      - name: Preserve summary and require all three regressions to pass
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          summary="$RUNNER_TEMP/result-regression/test-summary.json"
+          xcrun xcresulttool get test-results summary \
+            --path "$RUNNER_TEMP/result-regression/ResultRegression.xcresult" > "$summary"
+          jq -e '
+            def integer: type == "number" and . == floor;
+            .result == "Passed" and
+            ((has("testResult") | not) or .testResult == "Passed") and
+            (.totalTestCount | integer) and .totalTestCount == 3 and
+            (.passedTests | integer) and .passedTests == 3 and
+            (.failedTests | integer) and .failedTests == 0 and
+            (.skippedTests | integer) and .skippedTests == 0 and
+            (.expectedFailures | integer) and .expectedFailures == 0
+          ' "$summary" >/dev/null
+      - name: Export selected original result screenshots
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/result-regression"
+          python3 - > "$RUNNER_TEMP/result-regression/screenshot-export.log" 2>&1 <<'PYSHOTS'
+          import hashlib, json, os, pathlib, re, shutil, stat, subprocess
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'result-regression'
+          exported = root / 'attachments'
+          selected = []
+          approved = (
+              'result-regression-before-save', 'result-regression-after-save',
+              '16-result-top-accessibility-xxxl',
+              '17-result-withheld-settings-title-accessibility-xxxl',
+              '18-result-withheld-settings-explanation-accessibility-xxxl',
+          )
+          pattern = re.compile(r'(?:' + '|'.join(map(re.escape, approved)) +
+                               r')(?:_[0-9]+_[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12})?(?:\.png)?$')
+          def attachments(value):
+              if isinstance(value, dict):
+                  if 'exportedFileName' in value and 'suggestedHumanReadableName' in value:
+                      yield value
+                  for child in value.values():
+                      yield from attachments(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      yield from attachments(child)
+          try:
+              subprocess.run(['xcrun', 'xcresulttool', 'export', 'attachments',
+                              '--path', str(root / 'ResultRegression.xcresult'),
+                              '--output-path', str(exported)], check=True, timeout=120)
+              manifest = json.loads((exported / 'manifest.json').read_text())
+              output = root / 'screenshots'
+              output.mkdir(exist_ok=True)
+              seen = set()
+              for item in attachments(manifest):
+                  name = item.get('suggestedHumanReadableName')
+                  if not isinstance(name, str) or not pattern.fullmatch(name):
+                      continue
+                  try:
+                      filename = pathlib.Path(item['exportedFileName'])
+                      original = exported / filename
+                      path = original.resolve()
+                      if (filename.is_absolute() or '..' in filename.parts or
+                              original.is_symlink() or not path.is_relative_to(exported.resolve()) or
+                              not stat.S_ISREG(path.stat().st_mode) or path.suffix.lower() != '.png'):
+                          raise ValueError('Attachment must be a confined regular PNG')
+                      data = path.read_bytes()
+                      if not data.startswith(b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR'):
+                          raise ValueError('Attachment is not a PNG with an IHDR header')
+                      if path.name in seen:
+                          raise ValueError('Duplicate diagnostic output filename')
+                      seen.add(path.name)
+                      shutil.copyfile(path, output / path.name)
+                      selected.append(dict(item, selectedFile='screenshots/' + path.name,
+                                           sha256=hashlib.sha256(data).hexdigest()))
+                  except (OSError, TypeError, ValueError) as error:
+                      print(f'Rejected diagnostic attachment {name}: {error}', flush=True)
+          except (OSError, ValueError, subprocess.SubprocessError) as error:
+              print(f'Diagnostic screenshot export unavailable: {error}', flush=True)
+          (root / 'selected-screenshot-manifest.json').write_text(json.dumps(selected, indent=2) + '\n')
+          print(f'Selected {len(selected)} original diagnostic screenshots; this does not indicate test success.')
+          PYSHOTS
+      - name: Upload focused regression diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: result-regression-${{ github.event.pull_request.head.sha || github.sha }}-attempt-${{ github.run_attempt }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/result-regression/*.log
+            ${{ runner.temp }}/result-regression/*.json
+            ${{ runner.temp }}/result-regression/*.txt
+            ${{ runner.temp }}/result-regression/screenshots/*.png

@@ -45,9 +45,10 @@ struct NewTuneStartView: View {
     var body: some View {
         List {
             Section {
+                ForzAdvisorWorkflowProgress(step: .source)
                 ForzAdvisorScreenHeader(
                     title: "New Tune",
-                    subtitle: "Take or import a performance screenshot, then confirm every value before tuning.",
+                    subtitle: "Choose how to add your car. You can check and edit every value before tuning.",
                     systemImage: "camera.metering.matrix",
                     tint: ForzAdvisorTheme.warmAccent
                 )
@@ -58,7 +59,12 @@ struct NewTuneStartView: View {
 
             Section("Start") {
                 if draftSession?.isMeaningful == true {
-                    Button("Resume New Tune", action: onResume)
+                    Button(action: onResume) {
+                        Label("Resume New Tune", systemImage: "arrow.uturn.forward.circle.fill")
+                            .frame(maxWidth: .infinity, minHeight: ForzAdvisorTheme.minimumTouchTarget, alignment: .leading)
+                    }
+                        .buttonStyle(ForzAdvisorActionButtonStyle(kind: .secondary))
+                        .accessibilityHint("Continue the car details you already entered.")
                         .accessibilityIdentifier("resumeNewTuneButton")
                 }
                 Button {
@@ -70,7 +76,9 @@ struct NewTuneStartView: View {
                         systemImage: "camera"
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(ForzAdvisorActionButtonStyle(kind: .primary))
+                .accessibilityElement(children: .combine)
+                .accessibilityHint("Opens the camera to photograph your car’s performance screen.")
                 .disabled(photoImport.isProcessingPhoto)
                 .accessibilityIdentifier("takePhotoPrimaryButton")
                 .forzAdvisorRowBackground()
@@ -80,7 +88,7 @@ struct NewTuneStartView: View {
                 } label: {
                     StartRow(
                         title: "Import Screenshot",
-                        subtitle: "Run on-device Vision OCR, then confirm every value.",
+                        subtitle: "Choose a saved image. Reading stays on this device.",
                         systemImage: "photo.badge.plus"
                     )
                 }
@@ -92,7 +100,7 @@ struct NewTuneStartView: View {
                 Button { request(.manual) } label: {
                     StartRow(
                         title: "Enter Manually",
-                        subtitle: "Type weight, front %, PI, class, and drivetrain.",
+                        subtitle: "Type the values shown on your car’s performance screen.",
                         systemImage: "keyboard"
                     )
                 }
@@ -241,85 +249,4 @@ private enum NewTuneSource {
     case camera
     case screenshot
     case manual
-}
-
-private struct PrimaryStartCard: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: systemImage)
-                .font(.title3.weight(.bold))
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 10)
-        .contentShape(Rectangle())
-    }
-}
-
-private struct CaptureGuideSection: View {
-    private let fields = [
-        ("Weight", "lb or kg"),
-        ("Front weight", "%"),
-        ("PI / Class", "A 750, S1 900"),
-        ("Drivetrain", "FWD, RWD, AWD"),
-        ("Power / Torque", "optional")
-    ]
-
-    var body: some View {
-        Section("Capture Guide") {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(fields, id: \.0) { field, hint in
-                    HStack(spacing: 10) {
-                        ForzAdvisorIcon(
-                            systemName: "checkmark",
-                            tint: ForzAdvisorTheme.success,
-                            size: 28
-                        )
-                        Text(field)
-                            .font(.subheadline.weight(.semibold))
-                        Spacer()
-                        Text(hint)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .padding(.vertical, 4)
-        }
-        .forzAdvisorRowBackground()
-    }
-}
-
-private struct StartRow: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ForzAdvisorIcon(systemName: systemImage)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.vertical, 6)
-        .contentShape(Rectangle())
-    }
 }

@@ -1,62 +1,35 @@
-# ForzAdvisor Screenshot Specification
+# ForzAdvisor screenshot specification
 
-Last updated: 2026-06-15
+Canonical assets: six real Debug simulator app captures with deterministic local demonstration data, using the dark appearance. Original light and dark captures remain available in the capture output alongside their provenance. These images show the app; seeded content does not establish tuning validation or distribution of a release candidate.
 
-## Required App Store Set
-
-ForzAdvisor is currently prepared as an iPhone app. App Store Connect accepts one to ten screenshots per localization in PNG, JPEG, or JPG format. Apple's current screenshot reference lists `1320 x 2868` portrait as an accepted 6.9-inch iPhone screenshot size, matching the generated upload set.
-
-Source: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
-
-## Suggested Upload Order
-
-Use the six generated marketing screenshots in `AppStore/screenshots/`:
-
-1. `01-build-a-tune-fast.png` - Start Tunes Faster
-2. `02-photo-screenshot-or-manual.png` - Scan, Import, or Type
-3. `03-confirm-every-stat.png` - Confirm Every Stat
-4. `04-tune-for-road-drift-drag.png` - Pick the Drive Style
-5. `05-copy-complete-settings.png` - Copy Menu-Order Settings
-6. `06-refine-after-every-run.png` - Refine After Every Run
-
-Each image is `1320 x 2868` pixels, portrait, PNG, and designed for the iPhone 6.9-inch screenshot slot.
-
-## Production Notes
-
-Regenerate the screenshot set with:
+Capture the actual Debug simulator app with its deterministic, local marketing seed. Both light and dark appearances must pass `MarketingScreenshotUITests`; each produces six `app.screenshot()` attachments. No remote generation, credentials, official game imagery, or personal data is needed.
 
 ```sh
-swift scripts/generate_marketing_screenshots.swift
+python3 -m venv /tmp/forzadvisor-marketing-python
+/tmp/forzadvisor-marketing-python/bin/python -m pip install Pillow==11.3.0
+PATH="/tmp/forzadvisor-marketing-python/bin:$PATH" \
+  python3 "$HOME/.codex/scripts/simulator-pool.py" run \
+  --role phone-large --repo "$PWD" --task "${CODEX_THREAD_ID:-manual}" --boot -- \
+  bash scripts/capture_marketing_screenshots.sh /tmp/forzadvisor-marketing-capture
 ```
 
-The generator writes App Store upload images to `AppStore/screenshots/` and supporting marketing notes to `AppStore/marketing/`.
+Capture requires a live shared-pool lease. The helper supplies and validates the simulator role, UDID, and exact Xcode destination; the script does not discover, boot, or shut down simulators. It derives the checkout from its own location, requires a new output directory outside the checkout, and fails before Xcode runs if the lease or required tools are unavailable.
 
-## Creative Direction
+The six dark captures are selected in `AppStore/screenshots/` and `release-config.json`, in this order. Original captures appear under `screenshots/raw/light/` and `screenshots/raw/dark/` in the capture output:
 
-- Lead with the actual app workflow rather than a generic racing graphic.
-- Use short, high-contrast headlines that fit comfortably on iPhone App Store previews.
-- Keep the device mockup large enough to inspect the relevant UI state.
-- Use a restrained racing utility palette with teal, orange, gold, green, blue, and graphite accents.
-- Keep the copy focused on outcomes: start faster, confirm values, choose discipline, copy settings, refine after testing.
+1. `01-your-local-garage.png`
+2. `02-choose-your-input.png`
+3. `03-confirm-your-car.png`
+4. `04-choose-your-discipline.png`
+5. `05-your-saved-plan.png`
+6. `06-guidance-for-next-step.png`
 
-## Visual QA
+Every file must be an opaque, portrait 1320 × 2868 PNG. The exporter copies the original XCTest PNG bytes without resizing, drawing, compositing, or other editing. It rejects missing or duplicate captures, invalid dimensions, transparency, unsafe paths, and incomplete or unsuccessful test summaries. Pillow 11.3.0 validates image decoding; it does not write the screenshots.
 
-- Confirm every generated image is `1320 x 2868`.
-- Confirm the headline, phone mockup, row text, and footer do not overlap.
-- Confirm text is readable at App Store thumbnail scale.
-- Confirm the screenshot set tells a sequential story from starting a tune through refining a saved tune.
-- Confirm the final upload folder contains only the six intended PNG files.
+`provenance.json` records source revision and tree, working-tree status and input hashes, Xcode version, the leased simulator role/UDID/exact destination, test summary, original attachment names, and SHA-256 hashes. Preserve the result bundle, export manifest, logs, and provenance with the screenshots. A dirty local tree is explicitly identified; release acceptance requires evidence for the intended immutable revision.
 
-## Safe Sample Data
+Review both appearances for readable labels, clipping, keyboards, unintended dialogs, and truthful content. The saved plan is a representative local seed, not proof of a live AI response. The plan and guidance screens must preserve the app's evidence and prerequisite messaging; do not imply verified numeric settings when evidence is absent. Capture tests and image checks do not replace visual review.
 
-No secrets, API keys, private hostnames, private IP addresses, personal messages, unreleased customer data, or private support conversations may appear in screenshots.
+The verification-only `Marketing screenshot tooling` workflow runs on pull requests and manual dispatch. Its hosted job tests the exporter and the capture lease contract; it does not launch a simulator or produce screenshot artifacts because real capture requires the host's shared simulator pool. A separate job performs a clean Release simulator build and the complete Debug `ReleaseVerify` plan, retaining small `app-verification-<sha>-attempt-<n>` diagnostics and a separate `app-verification-xcresult-<sha>-attempt-<n>` bundle. This PR evidence does not replace the immutable-tag release gate. The workflow does not archive, sign, upload to App Store Connect, or change canonical assets. For future refreshes, require successful host-pool capture and visual acceptance before replacing the selected dark canonical screenshots. Final candidate acceptance remains separate from screenshot capture.
 
-Use representative car and tune details only. Do not show Microsoft, Xbox, Turn 10, Playground Games, Forza logos, or official game UI. Keep the unofficial companion app disclosure in metadata, public pages, and Settings.
-
-## What Not To Show
-
-- Real API keys or placeholder strings that resemble keys.
-- Real user notes, personal names, or private messages.
-- Official game logos, storefront badges, or platform marks.
-- Apple device chrome beyond the generated neutral phone mockup.
-- Claims that depend on App Review approval or unverified remote service behavior.
+Apple screenshot size reference: https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/
