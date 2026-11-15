@@ -83,8 +83,8 @@
     "verify_workflow": ".github/workflows/release-verify.yml",
     "verify_job": "Xcode 26.6 ReleaseVerify",
     "runner": "macos-26",
-    "runner_os_version": "26.6.2",
-    "runner_os_build": "25G83",
+    "runner_os_version": "26.7.2",
+    "runner_os_build": "25G332",
     "xcode_version": "26.6",
     "xcode_build": "17F113"
   },

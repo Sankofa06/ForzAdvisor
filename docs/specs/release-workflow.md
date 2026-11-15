@@ -42,13 +42,16 @@ local gates
 4. Focused tests, a warning-free Release build, the complete local
    `ReleaseVerify` plan, and runtime evidence pass before immutable handoff.
 5. GitHub Actions verifies the exact immutable tag and SHA on its pinned
-   fresh-machine toolchain: `macos-26`, macOS 26.6.2 (`25G83`), Xcode 26.6
+   fresh-machine toolchain: `macos-26`, macOS 26.7.2 (`25G332`), Xcode 26.6
    (`17F113`), and iPhone 17 Pro / iOS 26.5. Its dispatch ref and run head branch
    are the same tag, warnings are errors, and the xcresult must contain tests
    with zero failures, skips, or expected failures. No current GitHub workflow
    can access release credentials, archive, export, or upload. The published
    [macOS 26 runner inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
    is the availability source for the pinned host, Xcode, and simulator.
+   The observed image is `macos-26-arm64` version `20261102.0473.1`; its
+   [exact software inventory](https://github.com/actions/runner-images/blob/macos-26-arm64/20261102.0473/images/macos/macos-26-arm64-Readme.md)
+   records the matching toolchain. The `macos-26` label currently selects ARM64.
 6. Only logical profile stable-xcode-26.3-intel may archive, export, or upload.
    The tracked scripts/stable-runner/ssh_runner_build.sh rechecks its private
    runner profile and pinned public toolchain facts. For manual distribution
