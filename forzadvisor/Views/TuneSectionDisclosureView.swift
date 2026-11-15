@@ -87,6 +87,7 @@ private struct TuneLineCopyRow: View {
                         lineText
                         HStack(alignment: .firstTextBaseline, spacing: 10) {
                             lineValue
+                            Spacer(minLength: 8)
                             copyIcon
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -104,6 +105,7 @@ private struct TuneLineCopyRow: View {
             }
             .contentShape(Rectangle())
             .padding(.vertical, 8)
+            .frame(minHeight: ForzAdvisorTheme.minimumTouchTarget)
         }
         .buttonStyle(.plain)
         .disabled(isStreaming || !allowsCopy)
@@ -133,10 +135,12 @@ private struct TuneLineCopyRow: View {
             Text(line.value)
                 .font(.system(.title3, design: .monospaced).weight(.semibold))
                 .foregroundStyle(ForzAdvisorTheme.accent)
+                .fixedSize(horizontal: false, vertical: true)
             if !line.unit.isEmpty {
                 Text(line.unit)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -144,7 +148,7 @@ private struct TuneLineCopyRow: View {
     private var copyIcon: some View {
         Image(systemName: copiedLineID == line.id ? "checkmark" : "doc.on.doc")
             .font(.caption.weight(.semibold))
-            .foregroundColor(copiedLineID == line.id ? .green : .gray)
+            .foregroundStyle(copiedLineID == line.id ? ForzAdvisorTheme.success : ForzAdvisorTheme.secondaryText)
             .frame(width: 16)
             .accessibilityHidden(true)
     }
@@ -165,7 +169,7 @@ private struct TuneLineCopyRow: View {
             return "Values are still streaming."
         }
         if !allowsCopy {
-            return "This legacy value is unverified and cannot be copied."
+            return "This setting is unavailable for copying until the result meets the required checks."
         }
         if copiedLineID == line.id {
             return "Copied to clipboard."

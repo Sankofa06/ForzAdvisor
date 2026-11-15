@@ -94,9 +94,13 @@ struct ForzAdvisorInlineValidation: View {
 struct ForzAdvisorUndoBanner: View {
     let message: String
     let undo: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        HStack(spacing: 12) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 12))
+        layout {
             Image(systemName: "arrow.uturn.backward.circle.fill")
                 .foregroundStyle(ForzAdvisorTheme.accent)
                 .accessibilityHidden(true)
@@ -181,35 +185,44 @@ enum ForzAdvisorActionKind: Equatable, Sendable {
 
 struct ForzAdvisorActionButtonStyle: ButtonStyle {
     var kind: ForzAdvisorActionKind = .primary
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
             .frame(maxWidth: .infinity)
             .forzAdvisorMinimumTouchTarget()
-            .padding(.horizontal, 12)
             .foregroundStyle(foregroundColor)
-            .background(backgroundColor.opacity(configuration.isPressed ? 0.78 : 1))
+            .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay {
-                if kind == .secondary {
+                if kind == .secondary || !isEnabled {
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(ForzAdvisorTheme.accent, lineWidth: 1)
+                        .stroke(isEnabled ? ForzAdvisorTheme.accent : ForzAdvisorTheme.separator, lineWidth: 1)
+                } else if configuration.isPressed {
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(ForzAdvisorTheme.onStrongColorText.opacity(0.5), lineWidth: 2)
                 }
             }
     }
 
     private var foregroundColor: Color {
-        kind == .secondary
+        guard isEnabled else { return ForzAdvisorTheme.secondaryText }
+        return kind == .secondary
             ? ForzAdvisorTheme.accent
             : ForzAdvisorTheme.onStrongColorText
     }
 
     private var backgroundColor: Color {
+        guard isEnabled else { return ForzAdvisorTheme.mutedSurface }
         switch kind {
-        case .primary: ForzAdvisorTheme.accent
-        case .secondary: ForzAdvisorTheme.surface
-        case .destructive: ForzAdvisorTheme.destructive
+        case .primary: return ForzAdvisorTheme.accent
+        case .secondary: return ForzAdvisorTheme.surface
+        case .destructive: return ForzAdvisorTheme.destructive
         }
     }
 }

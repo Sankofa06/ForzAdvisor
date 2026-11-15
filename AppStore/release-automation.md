@@ -248,9 +248,10 @@ checks for an actual candidate.
 
 ### Verification runtime contract
 
-The exact-revision GitHub `Release Verify` workflow uses `macos-26`, macOS 26.6.2
-build `25G83`, Xcode 26.6 build `17F113`, and the iPhone 17 Pro simulator on
-iOS 26.5. The current [GitHub macOS 26 runner image inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
+The exact-revision GitHub `Release Verify` workflow uses `macos-26`, macOS 26.7.2
+build `25G332`, Xcode 26.6 build `17F113`, and the iPhone 17 Pro simulator on
+iOS 26.5. The observed `macos-26-arm64` image is version `20261102.0473.1`;
+`macos-26` currently selects ARM64. The [exact GitHub runner image inventory](https://github.com/actions/runner-images/blob/macos-26-arm64/20261102.0473/images/macos/macos-26-arm64-Readme.md)
 lists that Xcode, the iOS 26.5 simulator runtime, and the iPhone 17 Pro device.
 The workflow checks the host and Xcode versions and runs the complete
 `ReleaseVerify` plan with warnings as errors and no test exclusions.

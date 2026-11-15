@@ -29,8 +29,16 @@ extension ScreenshotEvidenceUITests {
         let newTune = app.buttons["newTuneButton"].firstMatch
         XCTAssertTrue(newTune.waitForExistence(timeout: 5))
         XCTAssertEqual(newTune.label, "Start First Tune")
+        newTune.scrollToInteractionViewport(in: app)
+        XCTAssertTrue(newTune.isHittable)
         newTune.tap()
-        XCTAssertTrue(app.buttons["takePhotoPrimaryButton"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Tune Source"].waitForExistence(timeout: 15))
+        // At XXXL the workflow header can fill the initial lazy-list viewport.
+        // Reveal each real source action before asserting it is available.
+        let takePhoto = app.buttons["takePhotoPrimaryButton"]
+        scrollToHittable(takePhoto, in: app)
+        XCTAssertTrue(takePhoto.waitForExistence(timeout: 5))
+        XCTAssertTrue(takePhoto.isHittable)
         let importScreenshot = app.buttons["importScreenshotButton"].firstMatch
         let sourceList = app.collectionViews.firstMatch
         for _ in 0..<6 where !importScreenshot.exists { sourceList.swipeUp() }
@@ -39,7 +47,7 @@ extension ScreenshotEvidenceUITests {
         )
         XCTAssertEqual(
             importScreenshot.label,
-            "Import Screenshot, Run on-device Vision OCR, then confirm every value."
+            "Import Screenshot, Choose a saved image. Reading stays on this device."
         )
         let manualEntry = app.buttons["manualEntryButton"]
         for _ in 0..<6 where !manualEntry.exists { sourceList.swipeUp() }
@@ -148,10 +156,13 @@ extension ScreenshotEvidenceUITests {
         let save = app.buttons["saveTuneButton"]
         scrollBackwardToHittable(save, in: app)
         save.tap()
-        XCTAssertTrue(
-            app.descendants(matching: .any)["savedTuneStatus"]
-                .firstMatch.waitForExistence(timeout: 5)
-        )
+        let savedStatus = app.staticTexts["savedTuneStatus"]
+        // Saving removes the new-result progress row. SwiftUI can preserve
+        // the old list offset, placing the replacement status above it.
+        scrollBackwardToHittable(savedStatus, in: app)
+        XCTAssertTrue(savedStatus.waitForExistence(timeout: 5))
+        XCTAssertEqual(savedStatus.label, "Saved setup")
+        XCTAssertTrue(savedStatus.isHittable)
     }
 
     @MainActor

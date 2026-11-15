@@ -9,7 +9,7 @@ struct OCRConfirmationView: View {
 
     @State private var draft: OCRConfirmationDraft
     @State private var frontWeightText: String
-    @FocusState private var focusedField: OCRConfirmationUnresolvedField?
+    @FocusState private var focusedField: InputFieldFocus?
 
     init(
         draft: OCRConfirmationDraft,
@@ -31,36 +31,45 @@ struct OCRConfirmationView: View {
     }
 
     var body: some View {
-        Form {
-            reviewSummary
-            OCRSourceEvidenceView(
-                imageData: draft.thumbnailData,
-                region: relevantEvidenceRegion
-            )
-            carSection
-            performanceSection
-            optionalSection
-            Section {
-                Button("Enter manually instead") { onUseManualEntry(draft) }
+        ScrollViewReader { scrollProxy in
+            Form {
+                reviewSummary
+                OCRSourceEvidenceView(
+                    imageData: draft.thumbnailData,
+                    region: relevantEvidenceRegion
+                )
+                carSection
+                performanceSection
+                optionalSection
+                Section {
+                    Button("Enter manually instead") { onUseManualEntry(draft) }
+                }
+                .forzAdvisorRowBackground()
             }
-            .forzAdvisorRowBackground()
-        }
-        .onChange(of: draft) { _, newDraft in onDraftChanged(newDraft) }
-        .navigationTitle("Confirm Inputs")
-        .forzAdvisorScreenChrome()
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Back", action: onBack)
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Next", action: submit)
-                    .accessibilityIdentifier("ocrConfirmationNextButton")
+            .onChange(of: draft) { _, newDraft in onDraftChanged(newDraft) }
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle("Confirm Inputs")
+            .forzAdvisorScreenChrome()
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { focusedField = nil }
+                        .accessibilityIdentifier("ocrConfirmationKeyboardDoneButton")
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Back", action: onBack)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Next") { submit(scrollProxy) }
+                        .accessibilityIdentifier("ocrConfirmationNextButton")
+                }
             }
         }
     }
 
     private var reviewSummary: some View {
         Section {
+            ForzAdvisorWorkflowProgress(step: .details)
             if let unresolved = draft.firstUnresolvedField {
                 Label(
                     "Check \(unresolved.title) before continuing.",
@@ -89,13 +98,19 @@ struct OCRConfirmationView: View {
                 .keyboardType(.numberPad)
                 .focused($focusedField, equals: .year)
                 .accessibilityIdentifier("ocrConfirmationYearField")
+                .inputFieldLabel("Year · Required")
+                .id(InputFieldFocus.year)
             TextField("Make", text: $draft.make)
                 .textInputAutocapitalization(.words)
-                .focused($focusedField, equals: .identity)
+                .focused($focusedField, equals: .make)
                 .accessibilityIdentifier("ocrConfirmationMakeField")
+                .inputFieldLabel("Make · Required if model is blank")
+                .id(InputFieldFocus.make)
             TextField("Model", text: $draft.model)
                 .textInputAutocapitalization(.words)
-                .focused($focusedField, equals: .identity)
+                .focused($focusedField, equals: .model)
+                .inputFieldLabel("Model · Required if make is blank")
+                .id(InputFieldFocus.model)
         }
         .forzAdvisorRowBackground()
     }
@@ -103,10 +118,10 @@ struct OCRConfirmationView: View {
     private var performanceSection: some View {
         Section("Required Performance") {
             intField(.weightPounds, placeholder: "lb", value: $draft.weightPounds)
-            frontWeightField
+            frontWeightField.id(InputFieldFocus.frontWeightPercent)
             intField(.performanceIndex, placeholder: "100-999", value: $draft.performanceIndex)
-            classPicker
-            drivetrainPicker
+            classPicker.id(InputFieldFocus.performanceClass)
+            drivetrainPicker.id(InputFieldFocus.drivetrain)
         }
     }
 
@@ -151,6 +166,9 @@ struct OCRConfirmationView: View {
                     text: optionalNumberText($draft.peakHorsepower, correctedField: .horsepower)
                 )
                 .keyboardType(.numberPad)
+                .focused($focusedField, equals: .horsepower)
+                .accessibilityIdentifier("Horsepower · Optional")
+                .inputFieldLabel("Horsepower (hp) · Optional")
             }
             if draft.evidence[.torque] != nil {
                 intField(.torque, placeholder: "lb-ft", value: $draft.peakTorqueFootPounds)
@@ -160,6 +178,9 @@ struct OCRConfirmationView: View {
                     text: optionalNumberText($draft.peakTorqueFootPounds, correctedField: .torque)
                 )
                 .keyboardType(.numberPad)
+                .focused($focusedField, equals: .torque)
+                .accessibilityIdentifier("Torque · Optional")
+                .inputFieldLabel("Torque (lb-ft) · Optional")
             }
             Text("OCR accepts explicit hp and lb-ft values. Explicit kW and Nm readings are converted for your confirmation. Ambiguous values stay blank for manual correction.")
                 .font(.caption)
@@ -186,13 +207,14 @@ struct OCRConfirmationView: View {
             state: draft.reviewState(for: field),
             candidates: draft.candidates(for: field),
             focus: $focusedField,
-            focusValue: field.unresolvedField,
+            focusValue: InputFieldFocus(ocr: field.unresolvedField),
             onConfirm: { draft.confirm(field) },
             onCandidate: {
                 value.wrappedValue = Int($0.filter(\.isNumber))
                 draft.markCorrected(field)
             }
         )
+        .id(InputFieldFocus(ocr: field.unresolvedField))
     }
 
     private var frontWeightField: some View {
@@ -205,7 +227,7 @@ struct OCRConfirmationView: View {
             state: draft.reviewState(for: field),
             candidates: draft.candidates(for: field),
             focus: $focusedField,
-            focusValue: field.unresolvedField,
+            focusValue: InputFieldFocus(ocr: field.unresolvedField),
             onConfirm: { draft.confirm(field) },
             onCandidate: {
                 frontWeightText = $0
@@ -226,8 +248,8 @@ struct OCRConfirmationView: View {
         let state = draft.reviewState(for: field)
         return VStack(alignment: .leading, spacing: 8) {
             content()
-            OCRReviewStatusRow(state: state) { draft.confirm(field) }
-            OCRCandidateChipRow(candidates: draft.candidates(for: field)) { value in
+            OCRReviewStatusRow(state: state, fieldTitle: field.title) { draft.confirm(field) }
+            OCRCandidateChipRow(fieldTitle: field.title, candidates: draft.candidates(for: field)) { value in
                 if field == .performanceClass { draft.performanceClass = PerformanceClass(rawValue: value) }
                 if field == .drivetrain { draft.drivetrain = Drivetrain(rawValue: value) }
                 draft.markCorrected(field)
@@ -248,9 +270,11 @@ struct OCRConfirmationView: View {
         }
     }
 
-    private func submit() {
+    private func submit(_ scrollProxy: ScrollViewProxy) {
         if let unresolved = draft.firstUnresolvedField {
-            focusedField = unresolved
+            let target = InputFieldFocus(ocr: unresolved)
+            focusedField = unresolved == .performanceClass || unresolved == .drivetrain ? nil : target
+            scrollProxy.scrollTo(target, anchor: .top)
             UIAccessibility.post(
                 notification: .announcement,
                 argument: "Check \(unresolved.title)."

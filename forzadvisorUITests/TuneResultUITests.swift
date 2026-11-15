@@ -23,13 +23,26 @@ final class TuneResultUITests: XCTestCase {
         XCTAssertTrue(evidenceHeading.waitForExistence(timeout: 5))
 
         for _ in 0..<8 where !save.isHittable { app.swipeDown() }
+        // A partially exposed row can be hittable underneath the navigation
+        // chrome after the full-screen swipe. Match the passing screenshot
+        // journey by centering Save before its single, consequential tap.
+        centerSaveForInteraction(save, in: app)
         XCTAssertTrue(save.isHittable)
+        XCTAssertTrue(save.isEnabled)
 
+        captureSaveDiagnostic("result-regression-before-save", in: app)
         save.tap()
-        XCTAssertTrue(
-            app.descendants(matching: .any)["savedTuneStatus"]
-                .waitForExistence(timeout: 5)
-        )
+        captureSaveDiagnostic("result-regression-after-save", in: app)
+        // Edit is independent of lazy list materialization and proves the
+        // app entered its saved state before searching for its status row.
+        let edit = app.buttons["editSavedTuneButton"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 5),
+                      "Save did not expose Edit after one tap. Save exists=\(save.exists), frame=\(save.exists ? save.frame : .zero); inline error=\(app.descendants(matching: .any)["saveTuneInlineError"].firstMatch.exists).")
+        let savedStatus = app.staticTexts["savedTuneStatus"]
+        revealSavedStatus(savedStatus, in: app)
+        XCTAssertTrue(savedStatus.waitForExistence(timeout: 5))
+        XCTAssertEqual(savedStatus.label, "Saved setup")
+        XCTAssertTrue(savedStatus.isHittable)
         XCTAssertFalse(app.buttons["Saved"].exists)
 
         app.buttons["editSavedTuneButton"].tap()
@@ -95,6 +108,42 @@ final class TuneResultUITests: XCTestCase {
             app.staticTexts["Hub: Verify Tire Pressures"]
                 .waitForExistence(timeout: 5)
         )
+    }
+
+    @MainActor
+    private func centerSaveForInteraction(_ save: XCUIElement, in app: XCUIApplication) {
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5))
+        let safeArea = CGRect(
+            x: app.frame.minX + 8, y: app.frame.minY + app.frame.height * 0.22,
+            width: app.frame.width - 16, height: app.frame.height * 0.43
+        )
+        for _ in 0..<12 {
+            if save.exists && save.isHittable && safeArea.contains(save.frame) { return }
+            let above = save.exists && save.frame.midY < safeArea.midY
+            let start = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: above ? 0.32 : 0.68))
+            let end = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: above ? 0.52 : 0.48))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTAssertTrue(save.exists && save.isHittable && safeArea.contains(save.frame),
+                      "Save must be fully visible in the content viewport before tapping.")
+    }
+
+    @MainActor
+    private func revealSavedStatus(_ status: XCUIElement, in app: XCUIApplication) {
+        // Shared bounded search handles a missing lazy row, either side of
+        // the viewport, and navigation chrome after the saved-state transition.
+        status.scrollToInteractionViewport(in: app)
+        XCTAssertTrue(status.exists && status.isHittable,
+                      "Saved status not revealed. exists=\(status.exists), hittable=\(status.isHittable), frame=\(status.exists ? status.frame : .zero), app=\(app.frame).")
+    }
+
+    @MainActor
+    private func captureSaveDiagnostic(_ name: String, in app: XCUIApplication) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor

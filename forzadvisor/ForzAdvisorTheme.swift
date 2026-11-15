@@ -156,6 +156,7 @@ struct ForzAdvisorIcon: View {
                 .foregroundStyle(tint)
         }
         .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
 
@@ -172,6 +173,7 @@ struct ForzAdvisorScreenHeader: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.title2.weight(.bold))
+                    .accessibilityAddTraits(.isHeader)
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -190,8 +192,7 @@ struct ForzAdvisorPill: View {
         Text(title)
             .font(.caption.weight(.semibold))
             .foregroundStyle(tint)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
+            .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
             .background(tint.opacity(0.13), in: Capsule())

@@ -8,28 +8,30 @@ struct OCRReviewNumberField: View {
     let evidence: OCRFieldEvidence
     let state: OCRFieldReviewState
     let candidates: [OCRFieldCandidate]
-    let focus: FocusState<OCRConfirmationUnresolvedField?>.Binding
-    let focusValue: OCRConfirmationUnresolvedField
+    let focus: FocusState<InputFieldFocus?>.Binding
+    let focusValue: InputFieldFocus
     let onConfirm: () -> Void
     let onCandidate: (String) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            LabeledContent(title) {
+            LabeledContent("\(title) (\(placeholder))") {
                 TextField(placeholder, text: text)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .focused(focus, equals: focusValue)
+                    .accessibilityLabel("\(title), \(placeholder)")
             }
             OCRReviewStatusRow(
                 state: state,
+                fieldTitle: title,
                 rawText: evidence.rawText,
                 normalizedValue: evidence.normalizedValue,
                 normalizedUnit: placeholder,
                 requiresManualCorrection: evidence.requiresManualCorrection,
                 onConfirm: onConfirm
             )
-            OCRCandidateChipRow(candidates: candidates, onSelect: onCandidate)
+            OCRCandidateChipRow(fieldTitle: title, candidates: candidates, onSelect: onCandidate)
         }
         .ocrReviewRow(state: state)
     }
@@ -37,6 +39,7 @@ struct OCRReviewNumberField: View {
 
 struct OCRReviewStatusRow: View {
     let state: OCRFieldReviewState
+    let fieldTitle: String
     var rawText: String?
     var normalizedValue: String?
     var normalizedUnit: String?
@@ -45,6 +48,7 @@ struct OCRReviewStatusRow: View {
 
     init(
         state: OCRFieldReviewState,
+        fieldTitle: String,
         rawText: String? = nil,
         normalizedValue: String? = nil,
         normalizedUnit: String? = nil,
@@ -52,6 +56,7 @@ struct OCRReviewStatusRow: View {
         onConfirm: @escaping () -> Void
     ) {
         self.state = state
+        self.fieldTitle = fieldTitle
         self.rawText = rawText
         self.normalizedValue = normalizedValue
         self.normalizedUnit = normalizedUnit
@@ -61,13 +66,12 @@ struct OCRReviewStatusRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 Label(state.rawValue, systemImage: statusImage)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(state == .needsCheck ? ForzAdvisorTheme.warning : ForzAdvisorTheme.success)
-                Spacer()
                 if state == .needsCheck && !requiresManualCorrection {
-                    Button("Confirm", action: onConfirm)
+                    Button("Confirm \(fieldTitle)", action: onConfirm)
                         .font(.caption.weight(.semibold))
                         .frame(minHeight: ForzAdvisorTheme.minimumTouchTarget)
                 }
@@ -98,6 +102,8 @@ struct OCRReviewStatusRow: View {
 }
 
 struct OCRCandidateChipRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    let fieldTitle: String
     let candidates: [OCRFieldCandidate]
     let onSelect: (String) -> Void
 
@@ -108,10 +114,13 @@ struct OCRCandidateChipRow: View {
 
     var body: some View {
         if !uniqueCandidates.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+            Group {
+                LazyVGrid(columns: dynamicTypeSize.isAccessibilitySize ? [GridItem(.flexible())] : [GridItem(.adaptive(minimum: 100))], alignment: .leading, spacing: 6) {
                     ForEach(uniqueCandidates) { candidate in
                         Button(candidate.value) { onSelect(candidate.value) }
+                            .accessibilityLabel("Use \(candidate.value) for \(fieldTitle)")
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
                             .font(.caption.weight(.semibold))
                             .frame(minHeight: ForzAdvisorTheme.minimumTouchTarget)
                             .padding(.horizontal, 8)

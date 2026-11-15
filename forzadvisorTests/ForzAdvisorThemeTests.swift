@@ -11,6 +11,15 @@ import XCTest
 @testable import forzadvisor
 
 final class ForzAdvisorThemeTests: XCTestCase {
+    func testDisciplineIconsResolveOnTheCurrentPlatform() {
+        for discipline in DrivingDiscipline.allCases {
+            XCTAssertNotNil(
+                UIImage(systemName: discipline.symbolName),
+                "Missing system symbol for \(discipline.title)"
+            )
+        }
+    }
+
     func testSemanticTextColorsMeetNormalTextContrastInBothAppearances() {
         let semanticColors = [
             ForzAdvisorTheme.accent,

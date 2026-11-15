@@ -1,0 +1,39 @@
+name: Landing page responsive audit
+
+on:
+  pull_request:
+    paths:
+      - 'landing-page/**'
+      - 'scripts/tests/landing-page-responsive-audit.html'
+      - 'scripts/tests/run_landing_page_responsive_audit.py'
+      - 'scripts/tests/verification_workflow_contract_test.rb'
+      - '.github/workflows/landing-page-responsive-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Audit 320, 390, 768, and 1440 px layouts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Run browser-backed responsive audit
+        run: |
+          python3 scripts/tests/run_landing_page_responsive_audit.py \
+            --revision "$(git rev-parse HEAD)" \
+            --tree "$(git rev-parse HEAD^{tree})" \
+            --output "$RUNNER_TEMP/landing-page-responsive-audit.json"
+      - name: Retain machine-readable viewport results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: landing-page-responsive-audit-${{ github.event.pull_request.head.sha || github.sha }}-attempt-${{ github.run_attempt }}
+          if-no-files-found: error
+          retention-days: 14
+          path: ${{ runner.temp }}/landing-page-responsive-audit.json

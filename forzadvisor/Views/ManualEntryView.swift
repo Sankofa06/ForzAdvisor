@@ -19,7 +19,8 @@ struct ManualEntryView: View {
     @State private var draft: ManualEntryDraft
     @State private var formState = ManualEntryFormState()
     @State private var frontWeightText: String
-    @FocusState private var focusedField: ManualEntryField?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @FocusState private var focusedField: InputFieldFocus?
 
     init(
         draft: ManualEntryDraft,
@@ -29,9 +30,11 @@ struct ManualEntryView: View {
         onCancel: @escaping () -> Void,
         onContinue: @escaping (CarInput) -> Void
     ) {
-        self._draft = State(initialValue: draft)
+        let initialDraft = MarketingScreenshotSeed.isEnabled && draft == .empty
+            ? MarketingScreenshotSeed.manualDraft : draft
+        self._draft = State(initialValue: initialDraft)
         self._frontWeightText = State(
-            initialValue: draft.frontWeightPercent.map {
+            initialValue: initialDraft.frontWeightPercent.map {
                 LocalizedNumberText.editableFormat($0, maximumFractionDigits: 1)
             } ?? ""
         )
@@ -43,121 +46,147 @@ struct ManualEntryView: View {
     }
 
     var body: some View {
-        Form {
-            Section("Car") {
-                ForzaGamePicker(
-                    selection: $draft.game,
-                    accessibilityPrefix: "manualEntryGame"
-                )
-                TextField("Year · Required", text: optionalNumberText($draft.year, field: .year))
-                    .keyboardType(.numberPad)
-                    .focused($focusedField, equals: .year)
-                    .accessibilityIdentifier("manualEntryYearField")
-                TextField("Make", text: trackedText($draft.make, field: .identity))
-                    .textInputAutocapitalization(.words)
-                    .focused($focusedField, equals: .identity)
-                    .accessibilityIdentifier("manualEntryMakeField")
-                TextField("Model", text: trackedText($draft.model, field: .identity))
-                    .textInputAutocapitalization(.words)
-                    .focused($focusedField, equals: .identity)
-                    .accessibilityIdentifier("manualEntryModelField")
-            }
-            .forzAdvisorRowBackground()
-
-            Section("Performance") {
-                LabeledContent("Weight") {
-                    TextField("lb", text: optionalNumberText($draft.weightPounds, field: .weight))
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                        .focused($focusedField, equals: .weight)
-                        .accessibilityIdentifier("manualEntryWeightField")
-                }
-
-                LabeledContent("Front weight") {
-                    TextField("%", text: $frontWeightText)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .focused($focusedField, equals: .frontWeight)
-                        .accessibilityIdentifier("manualEntryFrontWeightField")
-                        .onChange(of: frontWeightText) { _, newValue in
-                            formState.markTouched(.frontWeight)
-                            draft.frontWeightPercent = LocalizedNumberText.parse(newValue)
-                        }
-                }
-
-                HStack {
-                    Text("PI")
-                        .accessibilityHidden(true)
-                    Spacer()
-                    TextField("100-999", text: optionalNumberText($draft.performanceIndex, field: .performanceIndex))
-                        .frame(minWidth: 120, idealWidth: 120)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                        .focused($focusedField, equals: .performanceIndex)
-                        .accessibilityLabel("PI")
-                        .accessibilityIdentifier("manualEntryPerformanceIndexField")
-                }
-
-                classPicker
-                drivetrainPicker
-            }
-            .forzAdvisorRowBackground()
-
-            Section("Optional Performance") {
-                TextField("Horsepower · Optional", text: optionalNumberText($draft.peakHorsepower, field: .horsepower))
-                    .keyboardType(.numberPad)
-                    .focused($focusedField, equals: .horsepower)
-                TextField("Torque · Optional", text: optionalNumberText($draft.peakTorqueFootPounds, field: .torque))
-                    .keyboardType(.numberPad)
-                    .focused($focusedField, equals: .torque)
-            }
-            .forzAdvisorRowBackground()
-
-            let visibleIssues = formState.visibleIssues(for: draft)
-            if visibleIssues.isEmpty {
-                Section("Before you continue") {
-                    Label(
-                        "Enter the required performance values shown in Forza. Optional power and torque can stay blank.",
-                        systemImage: "info.circle"
+        ScrollViewReader { scrollProxy in
+            Form {
+                Section { ForzAdvisorWorkflowProgress(step: .details) }
+                    .forzAdvisorRowBackground()
+                Section("Car") {
+                    ForzaGamePicker(
+                        selection: $draft.game,
+                        accessibilityPrefix: "manualEntryGame"
                     )
-                    .foregroundStyle(.secondary)
+                    TextField("Year · Required", text: optionalNumberText($draft.year, field: .year))
+                        .keyboardType(.numberPad)
+                        .focused($focusedField, equals: .year)
+                        .accessibilityIdentifier("manualEntryYearField")
+                        .inputFieldLabel("Year · Required")
+                        .id(InputFieldFocus.year)
+                    inlineIssues(for: .year)
+                    TextField("Make", text: trackedText($draft.make, field: .identity))
+                        .textInputAutocapitalization(.words)
+                        .focused($focusedField, equals: .make)
+                        .accessibilityIdentifier("manualEntryMakeField")
+                        .inputFieldLabel("Make · Required if model is blank")
+                        .id(InputFieldFocus.make)
+                    TextField("Model", text: trackedText($draft.model, field: .identity))
+                        .textInputAutocapitalization(.words)
+                        .focused($focusedField, equals: .model)
+                        .accessibilityIdentifier("manualEntryModelField")
+                        .inputFieldLabel("Model · Required if make is blank")
+                        .id(InputFieldFocus.model)
+                    inlineIssues(for: .identity)
                 }
                 .forzAdvisorRowBackground()
-            } else {
-                Section("Fix before tuning") {
-                    ForEach(visibleIssues) { issue in
-                        Label(issue.message, systemImage: "exclamationmark.triangle.fill")
+
+                Section("Performance") {
+                    LabeledContent("Weight (lb)") {
+                        TextField("lb", text: optionalNumberText($draft.weightPounds, field: .weight))
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .focused($focusedField, equals: .weight)
+                            .accessibilityIdentifier("manualEntryWeightField")
+                            .accessibilityLabel("Weight in pounds")
+                    }
+                    .id(InputFieldFocus.weight)
+                    inlineIssues(for: .weight)
+
+                    LabeledContent("Front weight (%)") {
+                        TextField("%", text: $frontWeightText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .focused($focusedField, equals: .frontWeight)
+                            .accessibilityIdentifier("manualEntryFrontWeightField")
+                            .accessibilityLabel("Front weight percentage")
+                            .onChange(of: frontWeightText) { _, newValue in
+                                formState.markTouched(.frontWeight)
+                                draft.frontWeightPercent = LocalizedNumberText.parse(newValue)
+                            }
+                    }
+                    .id(InputFieldFocus.frontWeight)
+                    inlineIssues(for: .frontWeight)
+
+                    HStack {
+                        Text("PI")
+                            .accessibilityHidden(true)
+                        Spacer()
+                        TextField("100-999", text: optionalNumberText($draft.performanceIndex, field: .performanceIndex))
+                            .frame(minWidth: 120, idealWidth: 120)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .focused($focusedField, equals: .performanceIndex)
+                            .accessibilityLabel("PI")
+                            .accessibilityIdentifier("manualEntryPerformanceIndexField")
+                    }
+
+                    .id(InputFieldFocus.performanceIndex)
+                    inlineIssues(for: .performanceIndex)
+                    classPicker.id(InputFieldFocus.performanceClass)
+                    inlineIssues(for: .performanceClass)
+                    drivetrainPicker.id(InputFieldFocus.drivetrain)
+                    inlineIssues(for: .drivetrain)
+                }
+                .forzAdvisorRowBackground()
+
+                Section("Optional Performance") {
+                    TextField("Horsepower · Optional", text: optionalNumberText($draft.peakHorsepower, field: .horsepower))
+                        .keyboardType(.numberPad)
+                        .focused($focusedField, equals: .horsepower)
+                        .inputFieldLabel("Horsepower (hp) · Optional")
+                    TextField("Torque · Optional", text: optionalNumberText($draft.peakTorqueFootPounds, field: .torque))
+                        .keyboardType(.numberPad)
+                        .focused($focusedField, equals: .torque)
+                        .inputFieldLabel("Torque (lb-ft) · Optional")
+                }
+                .forzAdvisorRowBackground()
+
+                let visibleIssues = formState.visibleIssues(for: draft)
+                if visibleIssues.isEmpty {
+                    Section("Before you continue") {
+                        Label(
+                            "Enter the required performance values shown in Forza. Optional power and torque can stay blank.",
+                            systemImage: "info.circle"
+                        )
+                        .foregroundStyle(.secondary)
+                    }
+                    .forzAdvisorRowBackground()
+                } else {
+                    Section("Fix before tuning") {
+                        Label("\(visibleIssues.count) fields need attention. Tap Next to go to the first field.",
+                              systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(ForzAdvisorTheme.warning)
                     }
-                }
-                .forzAdvisorRowBackground()
-            }
-        }
-        .onChange(of: draft) { _, newDraft in
-            onDraftChanged(newDraft)
-        }
-        .navigationTitle("Manual Entry")
-        .scrollDismissesKeyboard(.interactively)
-        .forzAdvisorScreenChrome()
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Cancel") {
-                    focusedField = nil
-                    onCancel()
+                    .forzAdvisorRowBackground()
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Next") {
-                    submit()
-                }
-                .accessibilityIdentifier("manualEntryNextButton")
+            .onAppear {
+                if MarketingScreenshotSeed.isEnabled { onDraftChanged(draft) }
             }
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    focusedField = nil
+            .onChange(of: draft) { _, newDraft in
+                onDraftChanged(newDraft)
+            }
+            .navigationTitle("Manual Entry")
+            .scrollDismissesKeyboard(.interactively)
+            .forzAdvisorScreenChrome()
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") {
+                        focusedField = nil
+                        onCancel()
+                    }
                 }
-                .accessibilityIdentifier("manualEntryKeyboardDoneButton")
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Next") {
+                        submit(scrollProxy)
+                    }
+                    .accessibilityIdentifier("manualEntryNextButton")
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        focusedField = nil
+                    }
+                    .accessibilityIdentifier("manualEntryKeyboardDoneButton")
+                }
             }
         }
     }
@@ -166,8 +195,8 @@ struct ManualEntryView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Class")
                 .font(.subheadline)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
+            Group {
+                LazyVGrid(columns: choiceColumns, alignment: .leading, spacing: 8) {
                     ForEach(draft.game.supportedPerformanceClasses) { performanceClass in
                         choiceButton(
                             performanceClass.rawValue,
@@ -188,8 +217,8 @@ struct ManualEntryView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Drivetrain")
                 .font(.subheadline)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+            Group {
+                LazyVGrid(columns: choiceColumns, alignment: .leading, spacing: 8) {
                     ForEach(Drivetrain.allCases) { drivetrain in
                         choiceButton(
                             drivetrain.rawValue,
@@ -213,9 +242,10 @@ struct ManualEntryView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Text(title)
+            Label(title, systemImage: isSelected ? "checkmark.circle.fill" : "circle")
                 .font(.subheadline.weight(.semibold))
-                .frame(minWidth: 38)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 8)
                 .frame(minHeight: ForzAdvisorTheme.minimumTouchTarget)
                 .foregroundStyle(isSelected ? ForzAdvisorTheme.accent : .secondary)
@@ -232,6 +262,15 @@ struct ManualEntryView: View {
                 ? .isSelected
                 : []
         )
+    }
+
+    private func inlineIssues(for field: ManualEntryField) -> some View {
+        ForEach(formState.visibleIssues(for: draft).filter { $0.field == field }) { issue in
+            Label(issue.message, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(ForzAdvisorTheme.warning)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private func trackedText(
@@ -259,10 +298,18 @@ struct ManualEntryView: View {
         }
     }
 
-    private func submit() {
+    private var choiceColumns: [GridItem] {
+        dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible())]
+            : [GridItem(.adaptive(minimum: 88))]
+    }
+
+    private func submit(_ scrollProxy: ScrollViewProxy) {
         formState.markSubmitted()
         if let unresolved = formState.firstUnresolvedField(in: draft) {
-            focusedField = unresolved
+            let target = InputFieldFocus(manual: unresolved)
+            focusedField = unresolved == .performanceClass || unresolved == .drivetrain ? nil : target
+            scrollProxy.scrollTo(target, anchor: .top)
             UIAccessibility.post(
                 notification: .announcement,
                 argument: "Check \(unresolved.title)."
