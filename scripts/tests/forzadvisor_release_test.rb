@@ -368,9 +368,9 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
-    assert_equal "89", @config.fetch("release", "source_build_number")
+    assert_equal "90", @config.fetch("release", "source_build_number")
     assert_equal "87", @config.fetch("release", "current_app_store_build_number")
-    assert_equal "release-1.41.2-testflight-89-6", @config.fetch("repository", "release_ref")
+    assert_equal "release-1.41.2-testflight-90-2", @config.fetch("repository", "release_ref")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")
@@ -527,7 +527,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     assert_equal ForzAdvisorRelease::Preflight::CHECKS.sort, result["checks"].keys.sort
     assert result["checks"].values.all? { |check| check["passed"] }
     assert_equal @config.fetch("public_urls").values.sort, urls.urls.sort
-    assert_equal "89", result.dig("checks", "project", "evidence", "source_build_number")
+    assert_equal @config.fetch("release", "source_build_number"), result.dig("checks", "project", "evidence", "source_build_number")
     assert_equal 6, result.dig("checks", "screenshots", "evidence", "count")
   end
 
@@ -556,7 +556,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = with_project_build_settings { ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call }
 
     assert_equal "1.41.2", result["marketing_version"]
-    assert_equal "89", result["source_build_number"]
+    assert_equal @config.fetch("release", "source_build_number"), result["source_build_number"]
     assert_equal "Manual", result["signing_style"]
     assert_equal %w[forzadvisorTests forzadvisorUITests], result["test_targets"]
     assert_equal ["forzadvisor.xcscheme", "forzadvisor Cloud.xcscheme"], result["schemes"]
@@ -575,6 +575,11 @@ class ForzAdvisorReleaseTest < Minitest::Test
         with_project_build_settings(overrides: { key => "incorrect" }) { ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call }
       end
     end
+
+    error = assert_raises(ForzAdvisorRelease::PreflightError) do
+      with_project_build_settings(overrides: { "CURRENT_PROJECT_VERSION" => "89" }) { ForzAdvisorRelease::ProjectInspector.new(root: ROOT, config: @config).call }
+    end
+    assert_match(/CURRENT_PROJECT_VERSION/, error.message)
   end
 
   def test_metadata_inspector_enforces_store_limits_and_public_url_consistency
@@ -1175,6 +1180,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_build_88_blocked_state_and_prior_receipt_are_archived_exactly_for_build_89
     Dir.mktmpdir do |directory|
+      @config = release_config_for(directory, source_build_number: "89", release_ref: "release-1.41.2-testflight-89-6")
       state_dir = File.join(directory, "state")
       FileUtils.mkdir_p(state_dir, mode: 0o700)
       store = ForzAdvisorRelease::StableStateStore.new(directory: state_dir)
@@ -1240,6 +1246,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   def test_pending_candidate_supersession_archives_build_87_before_build_89_without_inventing_human_result
     Dir.mktmpdir do |directory|
+      @config = release_config_for(directory, source_build_number: "89", release_ref: "release-1.41.2-testflight-89-6")
       FileUtils.mkdir_p(File.join(directory, "state"), mode: 0o700)
       store = ForzAdvisorRelease::StableStateStore.new(directory: File.join(directory, "state"))
       previous = stable_identity.merge(
@@ -1294,7 +1301,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   end
 
   def test_pending_candidate_supersession_rejects_same_or_lower_build_without_archiving
-    ["88", "89"].each do |previous_build|
+    ["90", "91"].each do |previous_build|
       Dir.mktmpdir do |directory|
         store = ForzAdvisorRelease::StableStateStore.new(directory: directory)
         previous = store.save(stable_identity.merge(
@@ -1313,9 +1320,10 @@ class ForzAdvisorReleaseTest < Minitest::Test
           api: nil
         )
 
-        assert_raises(ForzAdvisorRelease::PreflightError) do
+        error = assert_raises(ForzAdvisorRelease::PreflightError) do
           coordinator.start(ref: @config.fetch("repository", "release_ref"), verify_run_id: "44", upload: false, confirmation: nil)
         end
+        assert_match(/pending candidate supersession requires a higher build number/, error.message)
         assert_equal previous, store.load
         assert_empty Dir.glob(File.join(directory, "history", "*.json"))
       end
@@ -1671,7 +1679,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
     result = ForzAdvisorRelease::AppStoreStatus.new(config: @config, api: api).call
 
     assert_equal true, result["read_only"]
-    assert_equal "89", result["source_build_number"]
+    assert_equal @config.fetch("release", "source_build_number"), result["source_build_number"]
     assert_equal @config.fetch("release", "current_app_store_build_number"), result.dig("build", "number")
     assert_equal "READY_FOR_REVIEW", result.dig("version", "state")
     assert_equal 4, api.requests.length
@@ -2065,14 +2073,16 @@ class ForzAdvisorReleaseTest < Minitest::Test
       data.each_value { |envelope| envelope["evidence_kind"] = "live" }
       observer = build.call(evidence_kind: :live)
       build_id = data["state"]["state"]["release_receipt"]["asc_build_id"]
-      @config.data["release"]["source_build_number"].replace("90")
+      pinned_build = @config.fetch("release", "source_build_number").dup
+      mutated_build = (Integer(pinned_build, 10) + 1).to_s
+      @config.data["release"]["source_build_number"].replace(mutated_build)
       state = data["state"]["state"]
-      state["source_build_number"] = "90"
+      state["source_build_number"] = mutated_build
       state["config_fingerprint"] = @config.fingerprint
-      state["release_receipt"]["build_number"] = "90"
-      api.get("/v1/builds/#{build_id}")["data"]["attributes"]["version"] = "90"
+      state["release_receipt"]["build_number"] = mutated_build
+      api.get("/v1/builds/#{build_id}")["data"]["attributes"]["version"] = mutated_build
       projected = observer.call.fetch("portal")
-      assert_equal "89", projected.dig("identity", "source_build_number")
+      assert_equal pinned_build, projected.dig("identity", "source_build_number")
       refute projected["install_ready"]
       assert_equal "UNVERIFIED", projected["availability"]
       assert_includes projected["blockers"], "controller_state_or_receipt_unverified"
@@ -2367,7 +2377,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
 
   # Unit observations only; the workflow's separate real preflight still resolves Xcode settings.
   def with_project_build_settings(overrides: {})
-    settings = { "MARKETING_VERSION" => "1.41.2", "CURRENT_PROJECT_VERSION" => "89", "DEVELOPMENT_TEAM" => "5RGU344VJR",
+    settings = { "MARKETING_VERSION" => "1.41.2", "CURRENT_PROJECT_VERSION" => @config.fetch("release", "source_build_number"), "DEVELOPMENT_TEAM" => "5RGU344VJR",
       "PRODUCT_BUNDLE_IDENTIFIER" => "com.michaelwilliams.forzadvisor", "CODE_SIGN_STYLE" => "Manual",
       "CODE_SIGN_IDENTITY" => "Apple Distribution", "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption" => "NO" }.merge(overrides)
     observation = lambda do |*command, **_options|
@@ -2522,6 +2532,15 @@ class ForzAdvisorReleaseTest < Minitest::Test
       path = File.join(directory, "config.json")
       yield data, path
     end
+  end
+
+  def release_config_for(directory, source_build_number:, release_ref:)
+    data = JSON.parse(File.read(CONFIG_PATH))
+    data["release"]["source_build_number"] = source_build_number
+    data["repository"]["release_ref"] = release_ref
+    path = File.join(directory, "release-config-#{source_build_number}.json")
+    File.write(path, JSON.generate(data))
+    ForzAdvisorRelease::Config.new(path)
   end
 
   def config_for_root(root)
