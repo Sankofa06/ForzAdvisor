@@ -104,11 +104,20 @@ lists that Xcode, the iOS 26.5 simulator runtime, and the iPhone 17 Pro device.
 The workflow checks the host and Xcode versions and runs the complete
 `ReleaseVerify` plan with warnings as errors and no test exclusions.
 
-Local verification uses the installed iOS 26.5 iPhone 17 Pro destination selected
-through XcodeBuildMCP. The ReleaseVerify plan does not pin a local Xcode version;
-the local Xcode 27.0 installation is verification-only and never has archive or
-upload authority. The manual `verification-ci.yml` smoke/regression lanes remain
-on their separately installed iOS 26.4.1 destination.
+Local verification uses the current host's stable `phone-standard` pool role,
+resolved by `~/.codex/scripts/simulator-pool.py` under the exclusive global lease
+specified in `AGENTS.md`. The child command receives `SIMULATOR_UDID` and
+`SIMULATOR_DESTINATION`; select that exact destination through the helper-wrapped
+CLI fallback. Direct XcodeBuildMCP/Argent simulator calls are prohibited until they
+can participate in the same reservation. Do not fall back to an available/booted device or
+reuse a UUID from another host. An unavailable or incompatible assignment blocks
+the run. ForzAdvisor remains iPhone-only; tablet roles require explicit compatible
+destination coverage, and beta coverage is separate from the stable release gate.
+
+The ReleaseVerify plan does not pin a local Xcode version. Local Xcode is
+verification-only and has no archive or upload authority. The manual
+`verification-ci.yml` smoke/regression lanes retain their separately installed
+iOS 26.4.1 destination; the GitHub `Release Verify` destination above is unchanged.
 
 ## Current TestFlight Candidate Route
 

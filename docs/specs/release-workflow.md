@@ -85,8 +85,14 @@ local gates
 - Automatically stage after upload, submit App Review, or publish the app.
 - Infer a build number, human acceptance, or review approval from a prior state.
 - Rewrite historical build-78 evidence to match the current runner policy.
-- Introduce another repository mirror or couple local validation to one stale
-  simulator UUID.
+- Introduce another repository mirror or treat a simulator UUID as portable
+  across hosts. Local validation resolves an explicit role in the current host's
+  shared six-device pool through `~/.codex/scripts/simulator-pool.py`; the host
+  manifest can replace an assignment without rewriting project schemes.
+- Bypass the global pool lease, silently select another available/booted device,
+  or automatically erase, recreate, or delete simulator state. Missing or
+  incompatible assignments fail closed. Stable phone verification and explicit
+  beta/tablet compatibility coverage remain separate; the app stays iPhone-only.
 
 ## Architecture and safety decisions
 

@@ -14,11 +14,20 @@ The canonical checkout is `/Users/blacbook-pro/Agents/ForzAdvisor`; the authorit
 
 ## Build, Test, and Development Commands
 
-- Prefer XcodeBuildMCP for local build, test, simulator, signing, and archive operations when it is available.
+- Use XcodeBuildMCP for project discovery and compile-only local builds. Simulator runtime work must follow the pool policy below: the current structured XcodeBuildMCP/Argent calls cannot inherit its lease, so use this repository's helper-wrapped CLI route or report the runtime gate blocked if the helper or pool is unavailable. Use the global `release-apple-app` route for archive and upload work.
 - `open forzadvisor.xcodeproj` opens the app in Xcode for simulator development.
 - `xcodebuild -list -project forzadvisor.xcodeproj` is the fallback discovery command. The shared `forzadvisor` and `forzadvisor Cloud` schemes are committed.
 - `ReleaseVerify.xctestplan` is the complete local release gate. Do not distribute a commit until this gate and GitHub Actions Release Verify are green.
 - `scripts/release preflight` validates release configuration and local App Store assets without App Store Connect credentials. See `AppStore/release-automation.md` for the full workflow.
+
+## Local Simulator Pool
+
+- Use the shared host pool through `python3 "$HOME/.codex/scripts/simulator-pool.py" run --role phone-standard --repo "$PWD" --task "$TASK_ID" --boot -- COMMAND`, with a unique nonempty task ID. The helper supplies `SIMULATOR_UDID` and `SIMULATOR_DESTINATION` to the child command and resolves the current host's `~/.codex/simulator-pool.json` manifest. UUIDs are host-specific; never copy another host's assignment, select the first available or booted device, or fall back by name.
+- The pool roles are `phone-compact`, `phone-standard`, `phone-large`, `tablet-compact`, `tablet-standard`, and `tablet-large`. One global lease covers all six. Each run has one repository/task owner; serial reuse is allowed, concurrent cross-repository use is not. Honor the host's single simulator-heavy lane.
+- Default local verification to the assigned stable `phone-standard` runtime. ForzAdvisor targets iPhone only; tablet roles are explicit compatibility coverage after checking destination eligibility, not native iPad acceptance. Beta runtime coverage must be explicitly requested and separately configured; never substitute it for the stable gate.
+- Missing helper, manifest, role, compatible runtime, eligible destination, or ownership lease is a blocker. Direct XcodeBuildMCP/Argent simulator calls are prohibited until they can participate in the same helper reservation. Use only the helper-wrapped CLI fallback explicitly authorized here; never start raw build/test commands outside the lease.
+- Boot only the leased role through the helper. Shutdown is limited to the device booted by that run and only after its child work completes; preserve a previously booted device. Never erase, delete, recreate, or shut down other devices automatically. Retain result bundles, screenshots, crash/runtime logs, and app state for failures or migration; report retention at handoff.
+- This local pool policy does not change the isolated GitHub runner destinations, complete `ReleaseVerify` gate, or stable archive/signing route.
 
 ## Coding Style & Naming Conventions
 
