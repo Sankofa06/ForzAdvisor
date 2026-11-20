@@ -52,7 +52,9 @@ final class InputFlowAccessibilityUITests: XCTestCase {
         let app = launchManualEntry()
         app.textFields["manualEntryYearField"].enterText("1997", in: app)
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3))
-        app.buttons["manualEntryKeyboardDoneButton"].tap()
+        let done = app.buttons["manualEntryKeyboardDoneButton"]
+        assertKeyboardDoneButton(done, in: app, screenshotName: "manual-keyboard-done")
+        done.tap()
         assertKeyboardDismissed(app)
     }
 
@@ -66,8 +68,24 @@ final class InputFlowAccessibilityUITests: XCTestCase {
         year.scrollToInteractionViewport(in: app)
         year.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 3))
-        app.buttons["ocrConfirmationKeyboardDoneButton"].tap()
+        let done = app.buttons["ocrConfirmationKeyboardDoneButton"]
+        assertKeyboardDoneButton(done, in: app, screenshotName: "ocr-keyboard-done")
+        done.tap()
         assertKeyboardDismissed(app)
+    }
+
+    @MainActor
+    private func assertKeyboardDoneButton(_ button: XCUIElement, in app: XCUIApplication, screenshotName: String) {
+        XCTAssertTrue(button.waitForExistence(timeout: 3))
+        XCTAssertTrue(button.isHittable)
+        XCTAssertGreaterThanOrEqual(button.frame.width, 44)
+        XCTAssertGreaterThanOrEqual(button.frame.height, 44)
+        // Let the keyboard's presentation animation settle before recording evidence.
+        Thread.sleep(forTimeInterval: 1)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = screenshotName
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     @MainActor

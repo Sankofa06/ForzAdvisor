@@ -167,6 +167,13 @@ struct ManualEntryView: View {
             .navigationTitle("Manual Entry")
             .scrollDismissesKeyboard(.interactively)
             .forzAdvisorScreenChrome()
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if focusedField != nil {
+                    InputKeyboardDoneBar(identifier: "manualEntryKeyboardDoneButton") {
+                        focusedField = nil
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") {
@@ -179,13 +186,6 @@ struct ManualEntryView: View {
                         submit(scrollProxy)
                     }
                     .accessibilityIdentifier("manualEntryNextButton")
-                }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") {
-                        focusedField = nil
-                    }
-                    .accessibilityIdentifier("manualEntryKeyboardDoneButton")
                 }
             }
         }

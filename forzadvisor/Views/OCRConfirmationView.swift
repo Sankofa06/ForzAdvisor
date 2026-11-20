@@ -50,12 +50,14 @@ struct OCRConfirmationView: View {
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Confirm Inputs")
             .forzAdvisorScreenChrome()
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { focusedField = nil }
-                        .accessibilityIdentifier("ocrConfirmationKeyboardDoneButton")
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if focusedField != nil {
+                    InputKeyboardDoneBar(identifier: "ocrConfirmationKeyboardDoneButton") {
+                        focusedField = nil
+                    }
                 }
+            }
+            .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Back", action: onBack)
                 }

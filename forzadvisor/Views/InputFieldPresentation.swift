@@ -24,6 +24,25 @@ enum InputFieldFocus: String, Hashable {
     }
 }
 
+struct InputKeyboardDoneBar: View {
+    let identifier: String
+    let dismiss: () -> Void
+
+    var body: some View {
+        HStack {
+            Spacer()
+            Button(action: dismiss) {
+                Text("Done")
+                    .frame(minWidth: ForzAdvisorTheme.minimumTouchTarget, minHeight: ForzAdvisorTheme.minimumTouchTarget)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityIdentifier(identifier)
+        }
+        .padding(.horizontal)
+        .background(.bar)
+    }
+}
+
 extension View {
     func inputFieldLabel(_ title: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
