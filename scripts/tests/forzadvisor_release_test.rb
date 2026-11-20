@@ -370,7 +370,7 @@ class ForzAdvisorReleaseTest < Minitest::Test
   def test_repository_release_config_records_verification_only_ci_and_stable_runner
     assert_equal "90", @config.fetch("release", "source_build_number")
     assert_equal "87", @config.fetch("release", "current_app_store_build_number")
-    assert_equal "release-1.41.2-testflight-90-2", @config.fetch("repository", "release_ref")
+    assert_equal "release-1.41.2-testflight-90-reconcile-20261120", @config.fetch("repository", "release_ref")
     assert_equal "FREE", @config.fetch("release", "price", "model")
     assert_equal "EXPLICIT_HUMAN_APPROVAL", @config.fetch("release", "submission_policy")
     assert_equal "AFTER_APPROVAL", @config.fetch("release", "app_store_release_type")

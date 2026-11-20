@@ -402,7 +402,7 @@ submit the app for review.
 ### 4. Complete human live verification
 
 Generate the numbered plan from
-`~/.codex/templates/apple-live-test-plan.md`. It must identify the exact build,
+`~/.codex/templates/apple-live-test-plan.html`. It must identify the exact build,
 commit, device/OS setup, changed-behavior scenarios, regression scenarios,
 Expected results, evidence requests, and stop conditions.
 
