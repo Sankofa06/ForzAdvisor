@@ -249,10 +249,10 @@ else
 fi
 
 skill_file="$framework_root/.agents/skills/the-perfect-agent/SKILL.md"
-# Consume each pipe fully: grep -q can SIGPIPE sed under pipefail.
-if head -n 1 "$skill_file" | grep -x -- '---' >/dev/null \
-  && sed -n '2,12p' "$skill_file" | grep -x 'name: the-perfect-agent' >/dev/null \
-  && sed -n '2,12p' "$skill_file" | grep '^description: .\+' >/dev/null; then
+skill_frontmatter="$(sed -n '1,12p' "$skill_file")"
+if [[ "$(sed -n '1p' "$skill_file")" == '---' ]] \
+  && grep -x 'name: the-perfect-agent' <<<"$skill_frontmatter" >/dev/null \
+  && grep -E '^description: .+' <<<"$skill_frontmatter" >/dev/null; then
   pass "skill frontmatter"
 else
   fail "invalid the-perfect-agent frontmatter"
