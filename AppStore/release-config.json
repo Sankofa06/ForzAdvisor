@@ -10,11 +10,11 @@
     "canonical_root": "~/Agents/ForzAdvisor",
     "remote_name": "origin",
     "remote_url": "https://github.com/Sankofa06/ForzAdvisor.git",
-    "release_ref": "release-1.41.2-testflight-89-6"
+    "release_ref": "release-1.41.2-testflight-90-reconcile-20261120"
   },
   "release": {
     "marketing_version": "1.41.2",
-    "source_build_number": "89",
+    "source_build_number": "90",
     "current_app_store_build_number": "87",
     "price": {
       "model": "FREE",
@@ -83,8 +83,8 @@
     "verify_workflow": ".github/workflows/release-verify.yml",
     "verify_job": "Xcode 26.6 ReleaseVerify",
     "runner": "macos-26",
-    "runner_os_version": "26.6.2",
-    "runner_os_build": "25G83",
+    "runner_os_version": "26.7.2",
+    "runner_os_build": "25G332",
     "xcode_version": "26.6",
     "xcode_build": "17F113"
   },
@@ -150,12 +150,12 @@
     "height": 2868,
     "require_opaque": true,
     "ordered_files": [
-      "01-build-a-tune-fast.png",
-      "02-photo-screenshot-or-manual.png",
-      "03-confirm-every-stat.png",
-      "04-tune-for-road-drift-drag.png",
-      "05-copy-complete-settings.png",
-      "06-refine-after-every-run.png"
+      "01-your-local-garage.png",
+      "02-choose-your-input.png",
+      "03-confirm-your-car.png",
+      "04-choose-your-discipline.png",
+      "05-your-saved-plan.png",
+      "06-guidance-for-next-step.png"
     ]
   }
 }

@@ -131,27 +131,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         capture("16-result-top-accessibility-xxxl", in: app)
 
         let withheldTitle = app.staticTexts["withheldSettingsTitle"]
-        let resultList = app.collectionViews.firstMatch
-        let scrollStart = resultList.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72)
-        )
-        let scrollEnd = resultList.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.5, dy: 0.68)
-        )
-        // The target follows the oversized setup-plan description. Small,
-        // slow drags reveal it without centering the whole section or
-        // flinging past the row.
-        for _ in 0..<24 where !withheldTitle.exists {
-            scrollStart.press(
-                forDuration: 0.05,
-                thenDragTo: scrollEnd,
-                withVelocity: .slow,
-                thenHoldForDuration: 0
-            )
-        }
-
-        XCTAssertTrue(withheldTitle.waitForExistence(timeout: 5))
-        centerInInteractionViewport(withheldTitle, using: resultList, in: app)
+        revealXXXLResultText(withheldTitle, in: app)
         XCTAssertTrue(
             withheldTitle.isHittable,
             "The withheld-settings title should be visible in the XXXL result screenshot."
@@ -168,7 +148,7 @@ final class ScreenshotEvidenceUITests: XCTestCase {
         capture("17-result-withheld-settings-title-accessibility-xxxl", in: app)
 
         let withheldExplanation = app.staticTexts["withheldSettingsExplanation"]
-        scrollToHittable(withheldExplanation, in: app)
+        revealXXXLResultText(withheldExplanation, in: app)
         XCTAssertTrue(
             withheldExplanation.isHittable,
             "The withheld-settings explanation should be visible in its XXXL result screenshot."
@@ -178,6 +158,42 @@ final class ScreenshotEvidenceUITests: XCTestCase {
             "Use the setup plan and confirm the missing parts or tuning-menu ranges in game. Then generate again when the evidence is ready."
         )
         capture("18-result-withheld-settings-explanation-accessibility-xxxl", in: app)
+    }
+
+    @MainActor
+    private func revealXXXLResultText(_ element: XCUIElement, in app: XCUIApplication) {
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 5))
+        let navigation = app.navigationBars.firstMatch
+        let top = navigation.exists ? navigation.frame.maxY + 12 : app.frame.minY + 60
+        let viewport = CGRect(x: app.frame.minX, y: top, width: app.frame.width,
+                              height: app.frame.maxY - top - 50)
+        // Oversized lazy rows before the target can exceed a whole screen.
+        // Cover meaningful distance until its text is realized; then use the
+        // text's own frame rather than centering the containing section.
+        for _ in 0..<40 {
+            if element.exists && element.isHittable && viewport.contains(element.frame) { return }
+            let above = element.exists && element.frame.height > 0
+                && element.frame.midY < viewport.midY
+            let distance: CGFloat
+            if element.exists && element.frame.height > 0 {
+                distance = min(viewport.height * 0.45,
+                               max(70, abs(element.frame.midY - viewport.midY)))
+            } else {
+                distance = viewport.height * 0.45
+            }
+            let start = CGPoint(x: viewport.midX,
+                                y: viewport.minY + viewport.height * (above ? 0.25 : 0.75))
+            let end = CGPoint(x: start.x, y: start.y + (above ? distance : -distance))
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            origin.withOffset(CGVector(dx: start.x - app.frame.minX, dy: start.y - app.frame.minY))
+                .press(forDuration: 0.05, thenDragTo: origin.withOffset(
+                    CGVector(dx: end.x - app.frame.minX, dy: end.y - app.frame.minY)
+                ), withVelocity: .slow, thenHoldForDuration: 0)
+        }
+        XCTAssertTrue(element.waitForExistence(timeout: 5))
+        XCTAssertTrue(element.isHittable)
+        XCTAssertTrue(viewport.contains(element.frame), "XXXL evidence text must fit in the visible content area.")
     }
 
     @MainActor

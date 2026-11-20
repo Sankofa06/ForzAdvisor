@@ -121,8 +121,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(sw_vers -productVersion)" = "26.6.2"
-          test "$(sw_vers -buildVersion)" = "25G83"
+          test "$(sw_vers -productVersion)" = "26.7.2"
+          test "$(sw_vers -buildVersion)" = "25G332"
           xcodebuild -version
           test "$(xcodebuild -version | head -1)" = "Xcode 26.6"
           test "$(xcodebuild -version | tail -1)" = "Build version 17F113"

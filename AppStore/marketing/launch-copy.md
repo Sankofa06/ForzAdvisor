@@ -1,0 +1,88 @@
+# ForzAdvisor launch copy
+
+Prepared 2026-10-14. Review drafts only: no posting, email delivery, submission, upload, or candidate release is represented here. Confirm the final candidate, verified screenshots, destination links, and release availability before use. No version or build is allocated by this package.
+
+## Positioning
+
+For iPhone racing-game players who want their car details and next setup in one place: ForzAdvisor turns a photo, screenshot, or manual entry into a reviewable setup workflow and a searchable local garage.
+
+Headline: **Your car. Clear setup guidance.**
+
+Short description: Start with your own car details, review the facts, and keep your next setup organized. FH5 creates local build plans; FH6 numeric output is experimental and evidence-gated.
+
+Primary CTA: View ForzAdvisor on the App Store.
+
+Link: https://apps.apple.com/us/app/forzadvisor/id6775224250
+
+## Launch post — long
+
+Your next setup starts with the car in front of you.
+
+With ForzAdvisor for iPhone, take a performance-screen photo, import a screenshot, or enter your car details manually. Check the facts, choose your drive style, and save the result in your local garage. Search cars, styles, and notes, then sort your saved setups by car name or recent updates.
+
+FH5 creates build plans without numeric tune values. FH6 guidance is experimental: numeric settings require the applicable evidence checks, and unsupported values stay withheld. Where verified settings permit refinement, preview changes before applying them.
+
+Explore ForzAdvisor: https://apps.apple.com/us/app/forzadvisor/id6775224250
+
+Unofficial companion; not affiliated with Microsoft, Xbox, Turn 10 Studios, Playground Games, or the Forza franchise.
+
+## Social — short
+
+Your car. Clear setup guidance. ForzAdvisor for iPhone starts with a photo, screenshot, or manual entry. Review your facts and organize your garage. FH5 is plan-only; FH6 numeric output is evidence-gated. https://apps.apple.com/us/app/forzadvisor/id6775224250
+
+## Social — feature post
+
+Find the setup you saved. Search ForzAdvisor’s Garage by car, style, or notes; filter by discipline; sort by car name or recent updates. FH5 stays plan-only, and FH6 numeric output depends on evidence checks.
+
+https://apps.apple.com/us/app/forzadvisor/id6775224250
+
+## Email draft
+
+Subject: Your car. A clearer next setup.
+
+Preview: Photo, screenshot, or manual entry—then review the facts.
+
+Your car details deserve a useful home.
+
+ForzAdvisor for iPhone helps you start a setup from your own performance-screen photo, screenshot, or manual entry. Review the values, choose your discipline, and save the result to your local garage. Search, filters, and sorting help you find it again.
+
+FH5 creates local build plans with no numeric tune settings. FH6 numeric output is experimental and evidence-gated; unsupported values stay withheld. Eligible Guided Refinement changes can be previewed before applying them.
+
+View ForzAdvisor on the App Store:
+https://apps.apple.com/us/app/forzadvisor/id6775224250
+
+ForzAdvisor is an unofficial companion and is not affiliated with the game’s creators or publishers.
+
+## Screenshot captions — real seeded app captures
+
+1. Your Local Garage — Search, filter, and sort saved setups.
+2. Photo, Screenshot, or Manual — Choose how to add your car.
+3. Confirm Your Car — Review manually entered details before generation.
+4. Choose Your Discipline — Keep your drive style with the setup.
+5. Review Your Saved Plan — Missing evidence keeps numeric settings withheld.
+6. Guidance for the Next Step — Open Step Guide for local workflow guidance.
+
+This order matches `AppStore/screenshots-spec.md` and the metadata shot list: Garage, source, manual details, discipline, saved plan with withheld settings, and Step Guide. No refinement screen is included.
+
+The canonical six dark screenshots are real Debug simulator app captures with deterministic local demonstration data; original light and dark captures remain in the capture output with provenance. Seed data is restricted to Debug simulator marketing capture. Production starts with user-owned data. Seed names and player notes demonstrate Garage behavior; they do not establish game observations, grants, verified status, or numeric tuning validation. The saved plan is a representative local seed, not proof of a live model response or verified numeric output. Preserve the plan and Step Guide prerequisite messaging, and review both appearances whenever captures are refreshed.
+
+## Claim map
+
+| Claim | Current source evidence | Boundary |
+| --- | --- | --- |
+| Photo, import, manual; review before generation | `forzadvisor/Views/NewTuneStartView.swift`, `forzadvisor/Views/OCRConfirmationView.swift`, `forzadvisor/Views/ManualEntryView.swift` | OCR accuracy is not promised. |
+| On-device photo reading | `forzadvisor/Services/OCRService.swift`, `forzadvisor/Services/PhotoOCRImportController.swift` | Describes image reading, not optional API generation. |
+| Four-step progress | `forzadvisor/ForzAdvisorWorkflowProgress.swift` and its screen call sites | Progress is shown in real simulator captures; final candidate acceptance is separate. |
+| Search cars/styles/notes, discipline filters, two sorts | `forzadvisor/Views/GarageHomeView.swift`, `forzadvisor/Views/GarageTuneSearch.swift` | Garage is shown in real simulator captures; capture does not certify every search or sorting interaction. |
+| FH5 local plan-only in every provider mode | `forzadvisor/Services/TuneProviderMode.swift`, `forzadvisor/Services/TuneOutputProjector.swift` | No numeric FH5 output is offered. |
+| FH6 evidence gates and withheld values | `forzadvisor/Services/TuneOutputProjector.swift`, `forzadvisor/Services/TuneCapabilityResolver.swift` | No complete tune, performance, or validation promise. |
+| Eligible refinement preview and reversible changes | `forzadvisor/Views/TuneRefinementSection.swift`, `forzadvisor/Services/TuneOutputProjector.swift` | Eligibility must pass; no universal availability claim. |
+| Drive styles | `forzadvisor/Models/TuningDomain.swift` (`DrivingDiscipline`) | A choice does not establish validated numeric coverage. |
+| Three input routes; no bundled roster in new-tune UI | `forzadvisor/Views/NewTuneStartView.swift` | No Choose a Car review route. |
+| Offline default and optional provider modes | `forzadvisor/Services/TuneProviderMode.swift`, `forzadvisor/Views/ProviderPreflightView.swift` | No new pricing, privacy, or availability assertions. |
+
+## Review and measurement
+
+Before publication, confirm exact-candidate runtime verification and source revision, final real app screenshots, copy-to-screen agreement, and App Store availability. The package does not certify any of those gates. Metadata's existing version/build fields are informational and must be reconciled by the release owner against the selected candidate; this copy change does not allocate or verify them.
+
+Use App Store Connect’s available aggregate product-page impressions, views, and downloads to evaluate the final listing. Compare equal date windows and record any simultaneous screenshot/copy change. No baseline, lift, attribution, or app analytics is claimed. Do not add tracking, send messages, or schedule posts as part of this draft package.
